@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>eu.arrowhead</groupId>
+		<artifactId>arrowhead-common</artifactId>
+		<version>5.0.0</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<artifactId>arrowhead-core</artifactId>
+	<version>${revision}</version>
+	<packaging>pom</packaging>
+	<name>ah5-core-java-spring</name>
+	<description>Arrowhead 5Gen Core using Spring Boot</description>
+
+	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
+	<!-- TODO: License -->
+	
+	<properties>
+		<base.version>5.0.0</base.version>
+		<revision>${base.version}</revision>
+		<ah.common.version>5.0.0</ah.common.version>
+		<mvn.resources.version>3.3.1</mvn.resources.version>
+		<mysql.jdbc.driver>8.0.28</mysql.jdbc.driver>
+	</properties>
+  	
+	<modules>
+		<module>serviceregistry</module>
+	</modules>
+	
+	<dependencies>
+		<dependency>
+			<groupId>eu.arrowhead</groupId>
+			<artifactId>arrowhead-common-utils</artifactId>
+			<version>${ah.common.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>eu.arrowhead</groupId>
+			<artifactId>arrowhead-data-transfer-objects</artifactId>
+			<version>${ah.common.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-integration</artifactId>
+		</dependency>
+		<dependency>
+      		<groupId>org.springdoc</groupId>
+      		<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      		<version>2.0.1</version>
+   		</dependency>
+		<dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>${mysql.jdbc.driver}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
