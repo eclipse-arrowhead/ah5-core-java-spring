@@ -13,5 +13,10 @@
     "name": "log.all.request.and.response",
     "type": "java.lang.Boolean",
     "description": "A description for 'log.all.request.and.response'"
+  },
+  {
+    "name": "authentication.policy",
+    "type": "eu.arrowhead.common.http.filter.authentication.AuthenticationPolicy",
+    "description": "A description for 'authentication.policy'"
   }
 ]}
