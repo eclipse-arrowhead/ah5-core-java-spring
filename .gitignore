@@ -3,3 +3,4 @@
 .classpath
 .settings/
 /serviceregistry/.factorypath
+/serviceregistry/*.log
