@@ -17,8 +17,7 @@
 	<!-- TODO: License -->
 	
 	<properties>
-		<base.version>5.0.0</base.version>
-		<revision>${base.version}</revision>
+		<revision>5.0.0</revision>
 		<ah.common.version>5.0.0</ah.common.version>
 		<mvn.resources.version>3.3.1</mvn.resources.version>
 		<mysql.jdbc.driver>8.0.28</mysql.jdbc.driver>

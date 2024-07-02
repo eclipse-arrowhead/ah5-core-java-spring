@@ -6,7 +6,6 @@
 		<artifactId>arrowhead-core</artifactId>
 		<version>${revision}</version>
 	</parent>
-	<groupId>eu.arrowhead</groupId>
 	<artifactId>arrowhead-serviceregistry</artifactId>
 	<version>5.0.0</version>
 	<packaging>jar</packaging>
