@@ -4,3 +4,4 @@
 .settings/
 /serviceregistry/.factorypath
 /serviceregistry/*.log
+.checkstyle
