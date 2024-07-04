@@ -6,7 +6,7 @@ import eu.arrowhead.common.swagger.DefaultSwaggerConfig;
 
 @Configuration
 public class SwaggerConfig extends DefaultSwaggerConfig {
-	
+
 	//=================================================================================================
 	// methods
 
