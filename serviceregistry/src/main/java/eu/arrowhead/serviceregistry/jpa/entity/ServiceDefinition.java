@@ -16,15 +16,16 @@ public class ServiceDefinition extends ArrowheadEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
-	
-	@Column(nullable = false, unique = true, length = 63)
-	private String serviceDefinition; 
+
+	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
+	private String serviceDefinition;
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition() {}
+	public ServiceDefinition() {
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinition(final String serviceDefinition) {
@@ -32,16 +33,31 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public long getId() { return id; }
-	public String getServiceDefinition() { return serviceDefinition; }
-
-	//-------------------------------------------------------------------------------------------------
-	public void setId(final long id) { this.id = id; }
-	public void setServiceDefinition(final String serviceDefinition) { this.serviceDefinition = serviceDefinition; }
-
-	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
 		return "ServiceDefinition [id = " + id + ", serviceDefinition = " + serviceDefinition + "]";
+	}
+
+	//=================================================================================================
+	// boilerplate
+
+	//-------------------------------------------------------------------------------------------------
+	public long getId() {
+		return id;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String getServiceDefinition() {
+		return serviceDefinition;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setId(final long id) {
+		this.id = id;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setServiceDefinition(final String serviceDefinition) {
+		this.serviceDefinition = serviceDefinition;
 	}
 }

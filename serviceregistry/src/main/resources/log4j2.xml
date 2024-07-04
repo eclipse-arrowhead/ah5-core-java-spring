@@ -42,13 +42,13 @@
         </Root>
 		<Logger name="eu.arrowhead" level="ALL" additivity="true" />
  		<AsyncLogger name="eu.arrowhead" level="ALL" additivity="true">
-            <AppenderRef ref="MySQLDatabase" />			
+            <AppenderRef ref="MySQLDatabase" />
     	</AsyncLogger>
  		<AsyncLogger name="org" level="WARN" additivity="true">
-            <AppenderRef ref="MySQLDatabase" />			
+            <AppenderRef ref="MySQLDatabase" />
     	</AsyncLogger>
  		<AsyncLogger name="com" level="WARN" additivity="true">
-            <AppenderRef ref="MySQLDatabase" />			
+            <AppenderRef ref="MySQLDatabase" />
     	</AsyncLogger>
     </Loggers>
 </Configuration>
