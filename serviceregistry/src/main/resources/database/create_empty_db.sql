@@ -9,3 +9,6 @@ source create_tables.sql
 CREATE USER IF NOT EXISTS 'serviceregistry'@'localhost' IDENTIFIED BY 'IsD3KDg8yfUblab';
 CREATE USER IF NOT EXISTS 'serviceregistry'@'%' IDENTIFIED BY 'IsD3KDg8yfUblab';
 source grant_privileges.sql
+
+-- Default content
+source default_inserts.sql
