@@ -15,8 +15,38 @@
     "description": "A description for 'authentication.policy'"
   },
   {
+    "name": "authenticator.secret.key",
+    "type": "java.lang.String",
+    "description": "A description for 'authenticator.secret.key'"
+  },
+  {
     "name": "enable.management.filter",
     "type": "java.lang.Boolean",
     "description": "A description for 'enable.management.filter'"
+  },
+  {
+    "name": "management.policy",
+    "type": "eu.arrowhead.common.http.filter.authorization.ManagementPolicy",
+    "description": "A description for 'management.policy'"
+  },
+  {
+    "name": "management.whitelist",
+    "type": "java.util.List",
+    "description": "A description for 'management.whitelist'"
+  },
+  {
+    "name": "enable.blacklist.filter",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'enable.blacklist.filter'"
+  },
+  {
+    "name": "service.discovery.policy",
+    "type": "eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy",
+    "description": "A description for 'service.discovery.policy'"
+  },
+  {
+    "name": "service.discovery.direct.access",
+    "type": "java.util.List",
+    "description": "A description for 'service.discovery.direct.access'"
   }
 ]}
