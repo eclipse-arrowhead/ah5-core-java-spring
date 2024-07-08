@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping(ServiceRegistryConstants.HTTP_API_MONITOR_PATH)
-@SecurityRequirement(name = "Authorization")
+@SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class MonitorAPI {
 
 	//=================================================================================================
