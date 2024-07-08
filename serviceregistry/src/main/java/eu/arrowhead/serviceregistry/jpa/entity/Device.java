@@ -8,7 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-public class ServiceDefinition extends ArrowheadEntity {
+public class Device extends ArrowheadEntity {
 
 	//=================================================================================================
 	// members
@@ -18,24 +18,28 @@ public class ServiceDefinition extends ArrowheadEntity {
 	private long id;
 
 	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
-	private String serviceDefinition;
+	private String name;
+
+	@Column(nullable = true)
+	private String metadata;
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition() {
+	public Device() {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public Device(final String name, final String metadata) {
+		this.name = name;
+		this.metadata = metadata;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceDefinition [id = " + id + ", serviceDefinition = " + serviceDefinition + "]";
+		return "Device [id = " + id + ", name = " + name + ", metadata = " + metadata + "]";
 	}
 
 	//=================================================================================================
@@ -47,17 +51,27 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return serviceDefinition;
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	public void setId(final long id) {
 		this.id = id;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public String getName() {
+		return name;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String getMetadata() {
+		return metadata;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setMetadata(final String metadata) {
+		this.metadata = metadata;
 	}
 }

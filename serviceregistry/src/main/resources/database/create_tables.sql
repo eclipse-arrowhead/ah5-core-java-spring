@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS `service_interface_template_property` (
   `service_interface_template_id` bigint(20) NOT NULL,
   `property_name` varchar(63) NOT NULL,
   `mandatory` tinyint(1) NOT NULL DEFAULT 0,
-  `validator` varchar(1000),
+  `validator` varchar(1024),
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),

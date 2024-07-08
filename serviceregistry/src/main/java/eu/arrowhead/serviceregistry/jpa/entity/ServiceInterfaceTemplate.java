@@ -8,7 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-public class ServiceDefinition extends ArrowheadEntity {
+public class ServiceInterfaceTemplate extends ArrowheadEntity {
 
 	//=================================================================================================
 	// members
@@ -17,25 +17,29 @@ public class ServiceDefinition extends ArrowheadEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
-	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
-	private String serviceDefinition;
+	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
+	private String name;
+
+	@Column(nullable = false, length = VARCHAR_SMALL)
+	private String protocol;
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition() {
+	public ServiceInterfaceTemplate() {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public ServiceInterfaceTemplate(final String name, final String protocol) {
+		this.name = name;
+		this.protocol = protocol;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceDefinition [id = " + id + ", serviceDefinition = " + serviceDefinition + "]";
+		return "ServiceInterfaceTemplate [id = " + id + ", name = " + name + ", protocol = " + protocol + "]";
 	}
 
 	//=================================================================================================
@@ -47,17 +51,27 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return serviceDefinition;
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	public void setId(final long id) {
 		this.id = id;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public String getName() {
+		return name;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setName(final String name) {
+		this.name = name;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String getProtocol() {
+		return protocol;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setProtocol(final String protocol) {
+		this.protocol = protocol;
 	}
 }

@@ -1,14 +1,20 @@
 package eu.arrowhead.serviceregistry.jpa.entity;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-public class ServiceDefinition extends ArrowheadEntity {
+@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "deviceId", "systemId" }), @UniqueConstraint(columnNames = { "systemId" }) })
+public class DeviceSystemConnector extends ArrowheadEntity {
 
 	//=================================================================================================
 	// members
@@ -17,25 +23,31 @@ public class ServiceDefinition extends ArrowheadEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
-	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
-	private String serviceDefinition;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "deviceId", referencedColumnName = "id", nullable = false)
+	private Device device;
+
+	@OneToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false)
+	private System system;
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition() {
+	public DeviceSystemConnector() {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public DeviceSystemConnector(final Device device, final System system) {
+		this.device = device;
+		this.system = system;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceDefinition [id = " + id + ", serviceDefinition = " + serviceDefinition + "]";
+		return "DeviceSystemConnector [id = " + id + ", device = " + device + ", system = " + system + "]";
 	}
 
 	//=================================================================================================
@@ -47,17 +59,28 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return serviceDefinition;
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	public void setId(final long id) {
 		this.id = id;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public Device getDevice() {
+		return device;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setDevice(final Device device) {
+		this.device = device;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public System getSystem() {
+		return system;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setSystem(final System system) {
+		this.system = system;
+	}
+
 }
