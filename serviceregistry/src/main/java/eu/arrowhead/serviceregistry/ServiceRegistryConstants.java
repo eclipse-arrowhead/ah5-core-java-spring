@@ -5,6 +5,8 @@ public final class ServiceRegistryConstants {
 	//=================================================================================================
 	// members
 
+	public static final String SYSTEM_NAME = "serviceregistry";
+
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.servicergistry.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.servicergistry.jpa.repository";
 	public static final String HTTP_API_BASE_PATH = "/serviceregistry";

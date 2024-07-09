@@ -13,7 +13,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return "serviceregistry";
+		return ServiceRegistryConstants.SYSTEM_NAME;
 	}
 
 	//-------------------------------------------------------------------------------------------------

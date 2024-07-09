@@ -17,6 +17,7 @@ public class SystemDiscoveryAPI {
 	// register-system operation: POST /register (201/200 depending on actual creation)
 	// you can register the same system instance twice (everything the same name/version/metadata/addresses/system-device conn) => no overwrite
 	// if anything is changed, then throw an error
+	// if authentication server is registered its login service, then SR automatically login itself (in the service layer) and store its token in the arrowhead context
 
 	// lookup-system operation: POST /lookup (200) (query param verbose)
 
