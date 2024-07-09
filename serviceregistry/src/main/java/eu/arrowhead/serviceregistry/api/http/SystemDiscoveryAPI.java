@@ -18,7 +18,7 @@ public class SystemDiscoveryAPI {
 	// you can register the same system instance twice (everything the same name/version/metadata/addresses/system-device conn) => no overwrite
 	// if anything is changed, then throw an error
 
-	// lookup-system operation: POST /lookup (200)
+	// lookup-system operation: POST /lookup (200) (query param verbose)
 
 	// revoke-system operation: DELETE /revoke (200/204 depending on actual delete)
 	// you can delete not-existing system => nothing happens

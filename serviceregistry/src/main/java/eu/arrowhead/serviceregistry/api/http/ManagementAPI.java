@@ -38,7 +38,7 @@ public class ManagementAPI {
 
 	// SYSTEMS
 
-	// query-systems POST /systems
+	// query-systems POST /systems (query param verbose)
 	// * paging: page, size, direction, sort
 	// * filter to: name list, metadata requirement list, version list, address list, address type, device name list
 
@@ -58,7 +58,7 @@ public class ManagementAPI {
 
 	// SERVICE INSTANCES
 
-	// query-service-instances POST /service-instances
+	// query-service-instances POST /service-instances (query param verbose)
 	// * paging: page, size, direction, sort
 	// * filter to: instance id list, system name list. service def list, version list, aliveAt, metadata requirement list, interface name list, policy list
 
@@ -72,7 +72,7 @@ public class ManagementAPI {
 
 	// query-interface-templates POST /interface-templates
 	// * paging: page, size, direction, sort
-	// * filter to: name list, protocoll list
+	// * filter to: name list, protocol list
 
 	// create-interface-templates POST /interface-templates
 

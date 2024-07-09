@@ -20,7 +20,7 @@ public class ServiceDiscoveryAPI {
 	//               (only in case of open interface policy) you can add a new interface template: name, protocol, policy and actual values (actual values are using to create the template, all fields
 	//               are mandatory)
 
-	// lookup-service operation: POST /lookup (200)
+	// lookup-service operation: POST /lookup (200) (query param verbose)
 
 	// revoke-service operation: DELETE /revoke (200/204 depending on actual delete)
 	// you can delete not-existing service instance => nothing happens
