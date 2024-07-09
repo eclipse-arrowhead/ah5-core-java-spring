@@ -10,12 +10,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.ManyToOne;
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"systemId", "serviceDefinitionId", "version"}))
 public class ServiceInstance extends ArrowheadEntity {
 
 	//=================================================================================================
@@ -25,14 +22,14 @@ public class ServiceInstance extends ArrowheadEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
-	@Column(nullable = false, length = VARCHAR_MEDIUM)
+	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
 	private String serviceInstanceId;
 
-	@OneToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false)
 	private System system;
 
-	@OneToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "serviceDefinitionId", referencedColumnName = "id", nullable = false)
 	private ServiceDefinition serviceDefinition;
 
@@ -40,7 +37,7 @@ public class ServiceInstance extends ArrowheadEntity {
 	private String version = "1.0.0";
 
 	@Column(nullable = true)
-	private ZonedDateTime expireAt;
+	private ZonedDateTime expiresAt;
 
 	@Column(nullable = true)
 	private String metadata;
@@ -53,12 +50,12 @@ public class ServiceInstance extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstance(final String serviceInstanceId, final System system, final ServiceDefinition serviceDefinition, final String version, final ZonedDateTime expireAt, final String metadata) {
+	public ServiceInstance(final String serviceInstanceId, final System system, final ServiceDefinition serviceDefinition, final String version, final ZonedDateTime expiresAt, final String metadata) {
 		this.serviceInstanceId = serviceInstanceId;
 		this.system = system;
 		this.serviceDefinition = serviceDefinition;
 		this.version = version;
-		this.expireAt = expireAt;
+		this.expiresAt = expiresAt;
 		this.metadata = metadata;
 	}
 
@@ -66,7 +63,7 @@ public class ServiceInstance extends ArrowheadEntity {
 	@Override
 	public String toString() {
 		return "ServiceInstance [id = " + id + ", serviceInstanceId = " + serviceInstanceId + ", system = " + system + ", serviceDefinition = " + serviceDefinition + ", version = " + version
-				+ ", expireAt = " + expireAt + ", metadata = " + metadata + "]";
+				+ ", expiresAt = " + expiresAt + ", metadata = " + metadata + "]";
 	}
 
 	//=================================================================================================
@@ -123,13 +120,13 @@ public class ServiceInstance extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ZonedDateTime getExpireAt() {
-		return expireAt;
+	public ZonedDateTime getExpiresAt() {
+		return expiresAt;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setExpireAt(final ZonedDateTime expireAt) {
-		this.expireAt = expireAt;
+	public void setExpiresAt(final ZonedDateTime expiresAt) {
+		this.expiresAt = expiresAt;
 	}
 
 	//-------------------------------------------------------------------------------------------------
