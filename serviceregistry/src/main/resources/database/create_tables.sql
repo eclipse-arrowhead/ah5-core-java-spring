@@ -89,12 +89,12 @@ CREATE TABLE IF NOT EXISTS `service_instance` (
   `system_id` bigint(20) NOT NULL,
   `service_definition_id` bigint(20) NOT NULL,
   `version` varchar(14) NOT NULL DEFAULT '1.0.0',
-  `expire_at` timestamp,
+  `expires_at` timestamp,
   `metadata` mediumtext,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `triplet` (`system_id`, `service_definition_id`, `version`),
+  UNIQUE KEY `unique_service_instance_id` (`service_instance_id`),
   CONSTRAINT `fk_system_id3` FOREIGN KEY (`system_id`) REFERENCES `system_` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_service_definition_id` FOREIGN KEY (`service_definition_id`) REFERENCES `service_definition` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
