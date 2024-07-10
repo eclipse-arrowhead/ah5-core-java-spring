@@ -18,7 +18,7 @@ public class ServiceDefinition extends ArrowheadEntity {
 	private long id;
 
 	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
-	private String serviceDefinition;
+	private String name;
 
 	//=================================================================================================
 	// methods
@@ -28,14 +28,14 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public ServiceDefinition(final String name) {
+		this.name = name;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceDefinition [id = " + id + ", serviceDefinition = " + serviceDefinition + "]";
+		return "ServiceDefinition [id = " + id + ", name = " + name + "]";
 	}
 
 	//=================================================================================================
@@ -47,8 +47,8 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return serviceDefinition;
+	public String getName() {
+		return name;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -57,7 +57,7 @@ public class ServiceDefinition extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public void setName(final String name) {
+		this.name = name;
 	}
 }
