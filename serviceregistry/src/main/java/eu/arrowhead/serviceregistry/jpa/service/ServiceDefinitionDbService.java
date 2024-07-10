@@ -19,7 +19,7 @@ import eu.arrowhead.serviceregistry.jpa.repository.ServiceDefinitionRepository;
 @Service
 public class ServiceDefinitionDbService {
 
-	// =================================================================================================
+	//=================================================================================================
 	// members
 
 	@Autowired
@@ -27,10 +27,10 @@ public class ServiceDefinitionDbService {
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
-	// =================================================================================================
+	//=================================================================================================
 	// methods
 
-	// -------------------------------------------------------------------------------------------------
+	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<ServiceDefinition> createBulk(final List<String> names) {
 		logger.debug("createBulk started...");
@@ -38,14 +38,16 @@ public class ServiceDefinitionDbService {
 		try {
 			final List<ServiceDefinition> existing = repo.findAllByNameIn(names);
 			if (!Utilities.isEmpty(existing)) {
-				final String existingNames = existing.stream().map(e -> e.getName()).collect(
-						Collectors.joining(", "));
+				final String existingNames = existing.stream()
+						.map(e -> e.getName())
+						.collect(Collectors.joining(", "));
 				throw new InvalidParameterException(
 						"Service definition names already exists: " + existingNames);
 			}
 
-			List<ServiceDefinition> entities = names.stream().map(n -> new ServiceDefinition(n)).collect(
-					Collectors.toList());
+			List<ServiceDefinition> entities = names.stream()
+					.map(n -> new ServiceDefinition(n))
+					.collect(Collectors.toList());
 			entities = repo.saveAll(entities);
 			repo.flush();
 			return entities;
