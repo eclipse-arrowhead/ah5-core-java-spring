@@ -2,7 +2,7 @@
 <Configuration status="WARN" monitorInterval="30">
     <Properties>
         <Property name="LOG_PATTERN">
-            %d{yyyy-MM-dd HH:mm:ss.SSS} %5p ${hostName} --- [%15.15t] %-40.40c{1.} : %m%n%ex
+            %d{yyyy-MM-dd HH:mm:ss.SSS}{GMT} %5p ${hostName} --- [%15.15t] %-40.40c{1.} : %m%n%ex
         </Property>
 		<Property name="SYSTEM_NAME">SERVICEREGISTRY</Property>
 		<Property name="JDBC_LEVEL">INFO</Property>
