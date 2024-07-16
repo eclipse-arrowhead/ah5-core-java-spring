@@ -3,7 +3,6 @@ package eu.arrowhead.serviceregistry.service.dto;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -35,38 +34,30 @@ public class DTOConverter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public DeviceListResponseDTO convertDeviceAddressEntityListToDTO(final List<DeviceAddress> entities) {
+	public DeviceListResponseDTO convertDeviceAddressEntityMapToDTO(final Map<Device, List<DeviceAddress>> entities) {
 		logger.debug("convertDeviceAddressEntityListToDTO started...");
-		Assert.isTrue(!Utilities.isEmpty(entities), "entity list is empty");
+		Assert.isTrue(!Utilities.isEmpty(entities), "entity map is empty");
 
 		final List<DeviceResponseDTO> entries = new ArrayList<>();
-		entities.forEach(da -> {
-			final Optional<DeviceResponseDTO> optional = entries.stream()
-					.filter(e -> e.name().equals(da.getDevice().getName()))
-					.findFirst();
-
-			final DeviceResponseDTO dto = optional.isPresent() ? optional.get() : convertDeviceEntityToDeviceResponseDTO(da.getDevice());
-			if (optional.isEmpty()) {
-				entries.add(dto);
-			}
-
-			dto.addresses().add(new AddressDTO(da.getAddressType().name(), da.getAddress()));
-		});
+		entities.keySet().forEach(device -> entries.add(convertDeviceEntityToDeviceResponseDTO(device, entities.get(device))));
 
 		return new DeviceListResponseDTO(entries, entries.size());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public DeviceResponseDTO convertDeviceEntityToDeviceResponseDTO(final Device entity) {
+	public DeviceResponseDTO convertDeviceEntityToDeviceResponseDTO(final Device deviceEntitiy, final List<DeviceAddress> addressEntities) {
 		logger.debug("convertDeviceAddressEntityListToDTO started...");
-		Assert.notNull(entity, "device entity is null");
+		Assert.notNull(deviceEntitiy, "device entity is null");
 
 		return new DeviceResponseDTO(
-				entity.getName(),
-				Utilities.fromJson(entity.getMetadata(), new TypeReference<Map<String, Object>>() { }),
-				new ArrayList<>(),
-				Utilities.convertZonedDateTimeToUTCString(entity.getCreatedAt()),
-				Utilities.convertZonedDateTimeToUTCString(entity.getUpdatedAt()));
+				deviceEntitiy.getName(),
+				Utilities.fromJson(deviceEntitiy.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				Utilities.isEmpty(addressEntities) ? null
+						: addressEntities.stream()
+								.map(address -> new AddressDTO(address.getAddressType().name(), address.getAddress()))
+								.collect(Collectors.toList()),
+				Utilities.convertZonedDateTimeToUTCString(deviceEntitiy.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(deviceEntitiy.getUpdatedAt()));
 	}
 
 	//-------------------------------------------------------------------------------------------------

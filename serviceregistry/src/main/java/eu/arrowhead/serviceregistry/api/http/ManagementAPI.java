@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.service.LogService;
+import eu.arrowhead.dto.DeviceListRequestDTO;
+import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.LogEntryListResponseDTO;
 import eu.arrowhead.dto.LogRequestDTO;
@@ -84,7 +86,28 @@ public class ManagementAPI {
 	// * paging: page, size, direction, sort
 	// * filter to: device name list, address list, address type, metadata requirement list
 
-	// create-devices POST /devices(bulk)
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the created device entries")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DeviceListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@ResponseStatus(code = HttpStatus.CREATED)
+	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody DeviceListResponseDTO createDevices(@RequestBody final DeviceListRequestDTO dto) {
+		logger.debug("createDevices started");
+
+		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+		return mgmtService.createDevices(dto, origin);
+	}
 
 	// update-devices PUT /devices(bulk) -> device name can't be changed
 
@@ -127,7 +150,6 @@ public class ManagementAPI {
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
 		return mgmtService.createServiceDefinitions(dto, origin);
-
 	}
 
 	// remove-service-definitions DELETE /service-definitions(list of service definition names as query params)

@@ -18,7 +18,15 @@ public final class ServiceRegistryConstants {
 
 	// Operation related
 
-	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definitions";
+	public static final String HTTP_API_OP_DEVICE_PATH = "/device";
+	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
+
+	// Configuration related
+
+	public static final String ALLOW_SELF_ADDRESSING = "allow.self.addressing";
+	public static final String $ALLOW_SELF_ADDRESSING_WD = "${" + ALLOW_SELF_ADDRESSING + ":true}";
+	public static final String ALLOW_NON_ROUTABLE_ADDRESSING = "allow.non.routable.addressing";
+	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
 
 	//=================================================================================================
 	// assistant methods

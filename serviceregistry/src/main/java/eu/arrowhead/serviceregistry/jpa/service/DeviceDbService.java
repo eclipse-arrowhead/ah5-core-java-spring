@@ -2,7 +2,9 @@ package eu.arrowhead.serviceregistry.jpa.service;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +43,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<DeviceAddress> createBulk(final List<DeviceRequestDTO> candidates) {
+	public Map<Device, List<DeviceAddress>> createBulk(final List<DeviceRequestDTO> candidates) {
 		logger.debug("createBulk started...");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "device candidate list is empty");
 
@@ -67,21 +69,28 @@ public class DeviceDbService {
 
 			final List<DeviceAddress> deviceAddressEntities = new ArrayList<>();
 			for (final DeviceRequestDTO candidate : candidates) {
-				final Device device = deviceEntities.stream()
-						.filter(d -> d.getName().equals(candidate.name()))
-						.findFirst()
-						.get();
+				if (!Utilities.isEmpty(candidate.addresses())) {
+					final Device device = deviceEntities.stream()
+							.filter(d -> d.getName().equals(candidate.name()))
+							.findFirst()
+							.get();
 
-				final List<DeviceAddress> addresses = candidate.addresses().stream()
-						.map(a -> new DeviceAddress(
-								device,
-								AddressType.valueOf(a.type()),
-								a.address()))
-						.collect(Collectors.toList());
-				deviceAddressEntities.addAll(addresses);
+					final List<DeviceAddress> addresses = candidate.addresses().stream()
+							.map(a -> new DeviceAddress(
+									device,
+									AddressType.valueOf(a.type()),
+									a.address()))
+							.collect(Collectors.toList());
+					deviceAddressEntities.addAll(addresses);
+				}
 			}
+			addressRepo.saveAllAndFlush(deviceAddressEntities);
 
-			return addressRepo.saveAllAndFlush(deviceAddressEntities);
+			final Map<Device, List<DeviceAddress>> results = new HashMap<>();
+			for (final Device device : deviceEntities) {
+				results.put(device, addressRepo.findAllByDevice(device));
+			}
+			return results;
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
