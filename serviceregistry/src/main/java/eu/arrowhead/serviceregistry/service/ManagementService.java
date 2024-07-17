@@ -71,23 +71,35 @@ public class ManagementService {
 		logger.debug("createDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateCreateDevice(dto, origin);
+		validator.validateCreateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = new ArrayList<>(dto.devices().size());
-		for (final DeviceRequestDTO device : dto.devices()) {
-			normalized.add(new DeviceRequestDTO(
-					device.name().trim(),
-					device.metadata(),
-					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
-							: device.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
-									.collect(Collectors.toList())));
-
-			normalized.getLast().addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
-		}
+		final List<DeviceRequestDTO> normalized = normalizeDeviceRequestDTOs(dto.devices());
+		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.createBulk(normalized);
+			return dtoConverter.convertDeviceAddressEntriesToDTO(entities, entities.size());
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public DeviceListResponseDTO updateDevices(final DeviceListRequestDTO dto, final String origin) {
+		logger.debug("updateDevices started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validator.validateUpdateDevices(dto, origin);
+
+		final List<DeviceRequestDTO> normalized = normalizeDeviceRequestDTOs(dto.devices());
+		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
+
+		try {
+			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.updateBulk(normalized);
 			return dtoConverter.convertDeviceAddressEntriesToDTO(entities, entities.size());
 
 		} catch (final InvalidParameterException ex) {
@@ -166,4 +178,21 @@ public class ManagementService {
 		}
 	}
 
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private List<DeviceRequestDTO> normalizeDeviceRequestDTOs(final List<DeviceRequestDTO> dtoList) {
+		final List<DeviceRequestDTO> normalized = new ArrayList<>(dtoList.size());
+		for (final DeviceRequestDTO device : dtoList) {
+			normalized.add(new DeviceRequestDTO(
+					device.name().trim(),
+					device.metadata(),
+					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
+							: device.addresses().stream()
+									.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
+									.collect(Collectors.toList())));
+		}
+		return normalized;
+	}
 }

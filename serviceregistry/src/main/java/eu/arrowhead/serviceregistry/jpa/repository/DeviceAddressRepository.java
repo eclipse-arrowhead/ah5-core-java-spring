@@ -23,4 +23,7 @@ public interface DeviceAddressRepository extends RefreshableRepository<DeviceAdd
 
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceAddress> findAllByDeviceAndAddressIn(final Device device, final List<String> addresses);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<DeviceAddress> deleteAllByDeviceIn(final List<Device> devices);
 }

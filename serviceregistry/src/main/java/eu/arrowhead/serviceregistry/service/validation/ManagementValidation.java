@@ -41,7 +41,7 @@ public class ManagementValidation {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateDevice(final DeviceListRequestDTO dto, final String origin) {
+	public void validateCreateDevices(final DeviceListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateDevice started");
 
 		if (dto == null) {
@@ -89,6 +89,12 @@ public class ManagementValidation {
 				}
 			}
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
+		logger.debug("validateUpdateDevice started");
+		validateCreateDevices(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -255,6 +255,69 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<Entry<Device, List<DeviceAddress>>> updateBulk(final List<DeviceRequestDTO> candidates) {
+		logger.debug("updateBulk started");
+		Assert.isTrue(!Utilities.isEmpty(candidates), "candidate list is missing or empty");
+
+		try {
+			final List<String> candidateNames = candidates.stream()
+					.map(c -> c.name())
+					.collect(Collectors.toList());
+
+			List<Device> deviceEntries = deviceRepo.findAllByNameIn(candidateNames);
+
+			if (deviceEntries.size() < candidates.size()) {
+				final String notExists = deviceEntries.stream()
+						.map(d -> d.getName())
+						.filter(n -> !candidateNames.contains(n))
+						.collect(Collectors.joining(", "));
+				throw new InvalidParameterException("Device(s) not exists: " + notExists);
+			}
+
+			for (final Device device : deviceEntries) {
+				final Map<String, Object> metadata = candidates.stream()
+						.filter(c -> c.name().equals(device.getName()))
+						.findFirst()
+						.get()
+						.metadata();
+				device.setMetadata(Utilities.toJson(metadata));
+			}
+			deviceEntries = deviceRepo.saveAllAndFlush(deviceEntries);
+
+			addressRepo.deleteAllByDeviceIn(deviceEntries);
+			final List<DeviceAddress> newAddresses = new ArrayList<>();
+			for (final DeviceRequestDTO candidate : candidates) {
+				if (!Utilities.isEmpty(candidate.addresses())) {
+					final Device device = deviceEntries.stream()
+							.filter(d -> candidate.name().equals(d.getName()))
+							.findFirst()
+							.get();
+
+					newAddresses.addAll(candidate.addresses().stream()
+							.map(a -> new DeviceAddress(device, AddressType.valueOf(a.type()), a.address()))
+							.collect(Collectors.toList()));
+				}
+			}
+			addressRepo.saveAllAndFlush(newAddresses);
+
+			final List<Entry<Device, List<DeviceAddress>>> results = new ArrayList<>(deviceEntries.size());
+			for (final Device device : deviceEntries) {
+				results.add(Map.entry(device, addressRepo.findAllByDevice(device)));
+			}
+			return results;
+
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteByNameList(final List<String> names) {
 		logger.debug("deleteByNameList started");
 		Assert.isTrue(!Utilities.isEmpty(names), "device name list is missing or empty");
