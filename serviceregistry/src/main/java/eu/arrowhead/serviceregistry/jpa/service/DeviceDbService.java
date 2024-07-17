@@ -52,6 +52,14 @@ public class DeviceDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	public List<Entry<Device, List<DeviceAddress>>> getByFilters(final List<String> names, final List<String> addresses, final AddressType addressType, final List<MetadataRequirementDTO> metadataRequirementList) {
+		logger.debug("getByName started");
+
+		final Page<Entry<Device, List<DeviceAddress>>> page = getPage(PageRequest.of(0, Integer.MAX_VALUE), names, addresses, addressType, metadataRequirementList);
+		return page.toList();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Page<Entry<Device, List<DeviceAddress>>> getPage(final PageRequest pagination) {
 		return getPage(pagination, null, null, null, null);
 	}

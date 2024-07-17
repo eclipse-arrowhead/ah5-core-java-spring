@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.dto.DeviceListResponseDTO;
+import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
@@ -33,8 +36,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 @RequestMapping(ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class DeviceDiscoveryAPI {
-
-	// TODO: implement the following endpoints (all endpoints are public)
 
 	//=================================================================================================
 	// members
@@ -73,10 +74,27 @@ public class DeviceDiscoveryAPI {
 		return new ResponseEntity<DeviceResponseDTO>(result.getKey(), result.getValue() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
-	// lookup-device operation: POST /lookup (200)
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns device entries according to the given filters")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DeviceListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody DeviceListResponseDTO lookup(@RequestBody(required = false) final DeviceLookupRequestDTO dto) {
+		logger.debug("lookup started");
 
-	// revoke-device operation: DELETE /revoke (200/204 depending on actual delete)
-	// you can delete not-existing device => nothing happens
+		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
+		return ddService.lookupDevice(dto, origin);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Delets device entry by name if exists")

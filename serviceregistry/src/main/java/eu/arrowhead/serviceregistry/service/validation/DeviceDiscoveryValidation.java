@@ -9,7 +9,9 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressTypeValidator;
 
@@ -69,6 +71,42 @@ public class DeviceDiscoveryValidation {
 			addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateLookupDevice(final DeviceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateLookupDevice started");
+
+		if (dto != null) {
+
+			if (!Utilities.isEmpty(dto.deviceNames())) {
+				for (final String name : dto.deviceNames()) {
+					if (Utilities.isEmpty(name)) {
+						throw new InvalidParameterException("Device name list contains null element", origin);
+					}
+				}
+			}
+
+			if (!Utilities.isEmpty(dto.addresses())) {
+				for (final String address : dto.addresses()) {
+					if (Utilities.isEmpty(address)) {
+						throw new InvalidParameterException("Address list contains null element", origin);
+					}
+				}
+			}
+
+			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
+				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
+			}
+
+			if (!Utilities.isEmpty(dto.metadataRequirementList())) {
+				for (final MetadataRequirementDTO metadata : dto.metadataRequirementList()) {
+					if (metadata == null) {
+						throw new InvalidParameterException("Metadata requirement list contains null element", origin);
+					}
+				}
+			}
 		}
 	}
 
