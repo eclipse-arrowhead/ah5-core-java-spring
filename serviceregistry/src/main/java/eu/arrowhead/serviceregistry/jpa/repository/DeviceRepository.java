@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.jpa.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +15,8 @@ public interface DeviceRepository extends RefreshableRepository<Device, Long> {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<Device> findAllByNameIn(final List<String> names);
+	public Optional<Device> findByName(final String names);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<Device> findAllByNameIn(final List<String> name);
 }

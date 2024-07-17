@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
@@ -73,9 +75,16 @@ public class ManagementService {
 			normalized.getLast().addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
 		}
 
-		final Map<Device, List<DeviceAddress>> entities = deviceDbService.createBulk(normalized);
-		return dtoConverter.convertDeviceAddressEntityMapToDTO(entities);
+		try {
+			final Map<Device, List<DeviceAddress>> entities = deviceDbService.createBulk(normalized);
+			return dtoConverter.convertDeviceAddressEntityMapToDTO(entities);
 
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	// SERVICES DEFINITIONS
@@ -90,8 +99,16 @@ public class ManagementService {
 				.stream()
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
-		final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
-		return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		try {
+			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
+			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 }

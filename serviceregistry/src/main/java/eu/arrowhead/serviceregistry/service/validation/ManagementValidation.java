@@ -47,6 +47,10 @@ public class ManagementValidation {
 		final Set<String> names = new HashSet<>();
 		for (final DeviceRequestDTO device : dto.devices()) {
 
+			if (Utilities.isEmpty(device.name())) {
+				throw new InvalidParameterException("Device name is empty", origin);
+			}
+
 			if (names.contains(device.name())) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
 			}
@@ -68,6 +72,15 @@ public class ManagementValidation {
 					}
 				}
 			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRegisterDevice(final DeviceRequestDTO dto, final String origin) {
+		logger.debug("validateRegisterDevice started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 	}
 
