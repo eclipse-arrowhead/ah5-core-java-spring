@@ -44,8 +44,8 @@ public class DeviceDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<Entry<Device, List<DeviceAddress>>> getDeviceByName(final String name) {
-		logger.debug("getDeviceByName started");
+	public Optional<Entry<Device, List<DeviceAddress>>> getByName(final String name) {
+		logger.debug("getByName started");
 
 		try {
 			final Optional<Device> deviceOpt = deviceRepo.findByName(name);
@@ -152,6 +152,29 @@ public class DeviceDbService {
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public boolean deleteByName(final String name) {
+		logger.debug("deleteByName started");
+		Assert.isTrue(!Utilities.isEmpty(name), "device name is empty");
+
+		try {
+			final Optional<Device> optional = deviceRepo.findByName(name);
+			if (optional.isPresent()) {
+				deviceRepo.delete(optional.get());
+				deviceRepo.flush();
+				return true;
+			}
+
+			return false;
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

@@ -15,8 +15,8 @@ public interface DeviceRepository extends RefreshableRepository<Device, Long> {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<Device> findByName(final String names);
+	public Optional<Device> findByName(final String name);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<Device> findAllByNameIn(final List<String> name);
+	public List<Device> findAllByNameIn(final List<String> names);
 }

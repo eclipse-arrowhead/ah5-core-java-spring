@@ -68,4 +68,13 @@ public class DeviceDiscoveryValidation {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRevokeDevice(final String name, final String origin) {
+		logger.debug("validateRevokeDevice started");
+
+		if (Utilities.isEmpty(name)) {
+			throw new InvalidParameterException("Device name is empty", origin);
+		}
+	}
 }

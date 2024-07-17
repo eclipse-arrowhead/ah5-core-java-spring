@@ -20,6 +20,7 @@ public final class ServiceRegistryConstants {
 
 	public static final String HTTP_API_OP_DEVICE_PATH = "/device";
 	public static final String HTTP_API_OP_REGISTER_PATH = "/register";
+	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke/{name}";
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
 
 	// Configuration related

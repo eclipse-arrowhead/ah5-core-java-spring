@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -52,6 +53,7 @@ public class DeviceDiscoveryService {
 	//-------------------------------------------------------------------------------------------------
 	public Entry<DeviceResponseDTO, Boolean> registerDevice(final DeviceRequestDTO dto, final String origin) {
 		logger.debug("registerDevice started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validator.validateRegisterDevice(dto, origin);
 
@@ -66,7 +68,7 @@ public class DeviceDiscoveryService {
 		normalized.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
 
 		try {
-			final Optional<Entry<Device, List<DeviceAddress>>> optional = dbService.getDeviceByName(normalized.name());
+			final Optional<Entry<Device, List<DeviceAddress>>> optional = dbService.getByName(normalized.name());
 
 			// Existing device
 			if (optional.isPresent()) {
@@ -113,4 +115,17 @@ public class DeviceDiscoveryService {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public boolean revokeDevice(final String name, final String origin) {
+		logger.debug("revokeDevice started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validator.validateRevokeDevice(name, origin);
+
+		try {
+			return dbService.deleteByName(name);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
 }
