@@ -21,6 +21,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.service.LogService;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.LogEntryListResponseDTO;
 import eu.arrowhead.dto.LogRequestDTO;
@@ -86,9 +87,27 @@ public class ManagementAPI {
 
 	// DEVICES
 
-	// query-devices POST /devices
-	// * paging: page, size, direction, sort
-	// * filter to: device name list, address list, address type, metadata requirement list
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the device entries according to the query request")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DeviceListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_DEVICE_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody DeviceListResponseDTO queryDevices(@RequestBody(required = false) final DeviceQueryRequestDTO dto) {
+		logger.debug("queryDevices started");
+
+		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_QUERY_PATH;
+		return mgmtService.queryDevices(dto, origin);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created device entries")
@@ -115,7 +134,6 @@ public class ManagementAPI {
 
 	// update-devices PUT /devices(bulk) -> device name can't be changed
 
-	// remove-devices DELETE /devices(list of device names as query params)
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes the defined device entries")
 	@ApiResponses(value = {

@@ -3,6 +3,7 @@ package eu.arrowhead.serviceregistry.service.dto;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -34,14 +35,14 @@ public class DTOConverter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public DeviceListResponseDTO convertDeviceAddressEntityMapToDTO(final Map<Device, List<DeviceAddress>> entities) {
+	public DeviceListResponseDTO convertDeviceAddressEntriesToDTO(final Iterable<Entry<Device, List<DeviceAddress>>> entries, final long count) {
 		logger.debug("convertDeviceAddressEntityListToDTO started...");
-		Assert.isTrue(!Utilities.isEmpty(entities), "entity map is empty");
+		Assert.notNull(entries, "entry list is null");
 
-		final List<DeviceResponseDTO> entries = new ArrayList<>();
-		entities.keySet().forEach(device -> entries.add(convertDeviceEntityToDeviceResponseDTO(device, entities.get(device))));
+		final List<DeviceResponseDTO> dtos = new ArrayList<>();
+		entries.forEach(entry -> dtos.add(convertDeviceEntityToDeviceResponseDTO(entry.getKey(), entry.getValue())));
 
-		return new DeviceListResponseDTO(entries, entries.size());
+		return new DeviceListResponseDTO(dtos, count);
 	}
 
 	//-------------------------------------------------------------------------------------------------

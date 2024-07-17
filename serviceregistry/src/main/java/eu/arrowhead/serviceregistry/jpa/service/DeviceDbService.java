@@ -1,7 +1,6 @@
 package eu.arrowhead.serviceregistry.jpa.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -11,15 +10,22 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
@@ -38,14 +44,93 @@ public class DeviceDbService {
 	@Autowired
 	private DeviceAddressRepository addressRepo;
 
+	private static final Object LOCK = new Object();
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	public Page<Entry<Device, List<DeviceAddress>>> getPage(final PageRequest pagination) {
+		return getPage(pagination, null, null, null, null);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Page<Entry<Device, List<DeviceAddress>>> getPage(final PageRequest pagination, final List<String> names, final List<String> addresses, final AddressType addressType, final List<MetadataRequirementDTO> metadataRequirementList) {
+		logger.debug("getByName started");
+		Assert.notNull(pagination, "page is null");
+
+		try {
+			Page<Device> deviceEntries = null;
+
+			// Without filters
+			if (Utilities.isEmpty(names)
+					&& Utilities.isEmpty(addresses)
+					&& addressType == null
+					&& Utilities.isEmpty(metadataRequirementList)) {
+				deviceEntries = deviceRepo.findAll(pagination);
+			}
+
+			// With filters
+			if (deviceEntries == null) {
+				final List<String> matchings = new ArrayList<>();
+
+				synchronized (LOCK) {
+					final List<Device> toFilter = Utilities.isEmpty(names) ? deviceRepo.findAll() : deviceRepo.findAllByNameIn(names);
+					for (final Device device : toFilter) {
+
+						if (addressType != null && Utilities.isEmpty(addressRepo.findAllByDeviceAndAddressType(device, addressType))) {
+							continue;
+						}
+
+						if (!Utilities.isEmpty(addresses) && Utilities.isEmpty(addressRepo.findAllByDeviceAndAddressIn(device, addresses))) {
+							continue;
+						}
+
+						if (!Utilities.isEmpty(metadataRequirementList)) {
+							final Map<String, Object> metadata = Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
+							});
+
+							boolean metadataMatch = true;
+							for (final MetadataRequirementDTO requirement : metadataRequirementList) {
+								if (!MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
+									metadataMatch = false;
+									break;
+								}
+							}
+							if (!metadataMatch) {
+								continue;
+							}
+						}
+
+						matchings.add(device.getName());
+					}
+					deviceEntries = deviceRepo.findAllByNameIn(matchings, pagination);
+				}
+			}
+
+			// Finalize
+			final List<Entry<Device, List<DeviceAddress>>> resultList = new ArrayList<>();
+			for (final Device device : deviceEntries) {
+				resultList.add(Map.entry(
+						device,
+						addressRepo.findAllByDevice(device)));
+			}
+
+			return new PageImpl<Entry<Device, List<DeviceAddress>>>(resultList, pagination, deviceEntries.getTotalElements());
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Optional<Entry<Device, List<DeviceAddress>>> getByName(final String name) {
 		logger.debug("getByName started");
+		Assert.isTrue(!Utilities.isEmpty(name), "device name is empty");
 
 		try {
 			final Optional<Device> deviceOpt = deviceRepo.findByName(name);
@@ -64,7 +149,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Map<Device, List<DeviceAddress>> createBulk(final List<DeviceRequestDTO> candidates) {
+	public List<Entry<Device, List<DeviceAddress>>> createBulk(final List<DeviceRequestDTO> candidates) {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "device candidate list is empty");
 
@@ -107,9 +192,9 @@ public class DeviceDbService {
 			}
 			addressRepo.saveAllAndFlush(deviceAddressEntities);
 
-			final Map<Device, List<DeviceAddress>> results = new HashMap<>();
+			final List<Entry<Device, List<DeviceAddress>>> results = new ArrayList<>(deviceEntities.size());
 			for (final Device device : deviceEntities) {
-				results.put(device, addressRepo.findAllByDevice(device));
+				results.add(Map.entry(device, addressRepo.findAllByDevice(device)));
 			}
 			return results;
 
