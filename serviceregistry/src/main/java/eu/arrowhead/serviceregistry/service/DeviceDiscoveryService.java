@@ -123,7 +123,7 @@ public class DeviceDiscoveryService {
 		validator.validateRevokeDevice(name, origin);
 
 		try {
-			return dbService.deleteByName(name);
+			return dbService.deleteByName(name.trim());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

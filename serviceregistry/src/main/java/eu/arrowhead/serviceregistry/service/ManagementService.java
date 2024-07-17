@@ -89,6 +89,23 @@ public class ManagementService {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void removeDevices(final List<String> names, final String origin) {
+		logger.debug("removeDevices started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalized = names.stream()
+				.filter(n -> !Utilities.isEmpty(n))
+				.map(n -> n.trim())
+				.collect(Collectors.toList());
+
+		try {
+			deviceDbService.deleteByNameList(normalized);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
 	// SERVICES DEFINITIONS
 
 	//-------------------------------------------------------------------------------------------------

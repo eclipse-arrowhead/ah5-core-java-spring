@@ -162,6 +162,24 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteByNameList(final List<String> names) {
+		logger.debug("deleteByNameList started");
+		Assert.isTrue(!Utilities.isEmpty(names), "device name list is missing or empty");
+
+		try {
+			final List<Device> entries = deviceRepo.findAllByNameIn(names);
+			deviceRepo.deleteAll(entries);
+			deviceRepo.flush();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
 	public boolean deleteByName(final String name) {
 		logger.debug("deleteByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "device name is empty");

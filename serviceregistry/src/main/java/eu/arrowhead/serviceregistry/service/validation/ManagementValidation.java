@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -93,6 +94,15 @@ public class ManagementValidation {
 			addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveDevices(final List<String> names, final String origin) {
+		logger.debug("validateRemoveDevices started");
+
+		if (Utilities.isEmpty(names)) {
+			throw new InvalidParameterException("Device name list is missing or empty", origin);
 		}
 	}
 
