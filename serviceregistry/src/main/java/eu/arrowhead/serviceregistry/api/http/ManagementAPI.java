@@ -170,7 +170,7 @@ public class ManagementAPI {
 	})
 	@DeleteMapping(path = ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH)
 	public void removeDevices(final @RequestParam List<String> names) {
-		logger.debug("createDevices started");
+		logger.debug("removeDevices started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
 		mgmtService.removeDevices(names, origin);

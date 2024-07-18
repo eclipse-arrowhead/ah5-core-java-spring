@@ -97,7 +97,7 @@ public class DeviceDiscoveryAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Delets device entry by name if exists")
+	@Operation(summary = "Deletes device entry by name if exists")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_NO_CONTENT, description = Constants.SWAGGER_HTTP_204_MESSAGE),
