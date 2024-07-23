@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,8 +26,8 @@ import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.DeviceDiscoveryValidation;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
 
 @Service
 public class DeviceDiscoveryService {
@@ -43,7 +42,7 @@ public class DeviceDiscoveryService {
 	private DeviceDiscoveryValidation validator;
 
 	@Autowired
-	private AddressNormalizator addressNormalizator;
+	private DeviceDiscoveryNormalization normalizator;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -59,15 +58,7 @@ public class DeviceDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validator.validateRegisterDevice(dto, origin);
-
-		final DeviceRequestDTO normalized = new DeviceRequestDTO(
-				dto.name().trim(),
-				dto.metadata(),
-				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
-						: dto.addresses().stream()
-								.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
-								.collect(Collectors.toList()));
-
+		final DeviceRequestDTO normalized = normalizator.normalizeDeviceRequestDTO(dto);
 		normalized.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
 
 		try {
@@ -124,13 +115,7 @@ public class DeviceDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validator.validateLookupDevice(dto, origin);
-
-		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null)
-				: new DeviceLookupRequestDTO(
-						Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
-						Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizator.normalize(a)).collect(Collectors.toList()),
-						Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
-						dto.metadataRequirementList());
+		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizator.normalizeDeviceLookupRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
