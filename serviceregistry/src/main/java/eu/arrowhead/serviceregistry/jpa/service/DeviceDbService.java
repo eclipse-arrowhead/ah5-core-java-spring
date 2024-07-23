@@ -53,7 +53,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<Entry<Device, List<DeviceAddress>>> getByFilters(final List<String> names, final List<String> addresses, final AddressType addressType, final List<MetadataRequirementDTO> metadataRequirementList) {
-		logger.debug("getByName started");
+		logger.debug("getByFilters started");
 
 		final Page<Entry<Device, List<DeviceAddress>>> page = getPage(PageRequest.of(0, Integer.MAX_VALUE), names, addresses, addressType, metadataRequirementList);
 		return page.toList();
@@ -66,7 +66,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<Entry<Device, List<DeviceAddress>>> getPage(final PageRequest pagination, final List<String> names, final List<String> addresses, final AddressType addressType, final List<MetadataRequirementDTO> metadataRequirementList) {
-		logger.debug("getByName started");
+		logger.debug("getPage started");
 		Assert.notNull(pagination, "page is null");
 
 		try {

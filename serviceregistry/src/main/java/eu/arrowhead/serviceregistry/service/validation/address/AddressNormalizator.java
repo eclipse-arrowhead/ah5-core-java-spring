@@ -26,6 +26,7 @@ public class AddressNormalizator {
 	private static final String DOUBLE_COLON = "::";
 	private static final int MAC_DOT_PARTS_LENGTH = 3;
 	private static final int MAC_DASH_OR_COLON_PARTS_LENGTH = 6;
+	private static final int MAC_DASH_OR_COLON_PART_CHAR_LENGTH = 2;
 	private static final int OCTET_MIN_LENGTH = 0;
 	private static final int OCTET_MAX_LENGTH = 255;
 	private static final int IPV4_PARTS_LENGTH = 4;
@@ -87,13 +88,13 @@ public class AddressNormalizator {
 
 		if (candidate.contains(DOT)) {
 			final String flat = candidate.replace(DOT, "");
-			if (flat.length() != MAC_DASH_OR_COLON_PARTS_LENGTH * 2) {
+			if (flat.length() != MAC_DASH_OR_COLON_PARTS_LENGTH * MAC_DASH_OR_COLON_PART_CHAR_LENGTH) {
 				return candidate; // not MAC
 			}
 
 			int startIdx = 0;
 			for (int i = 0; i < groups.length; ++i) {
-				groups[i] = flat.substring(startIdx, startIdx + 2);
+				groups[i] = flat.substring(startIdx, startIdx + MAC_DASH_OR_COLON_PART_CHAR_LENGTH);
 				startIdx = startIdx + 2;
 			}
 		}
@@ -114,7 +115,7 @@ public class AddressNormalizator {
 			return candidate; // not IPv6
 		}
 
-		final List<String> groups = new ArrayList<>(8);
+		final List<String> groups = new ArrayList<>(IPV6_SIZE);
 		int lastAbbreviatedGroupIdx = -1;
 
 		final String[] split = candidate.split(COLON, -1); // -1 is present in order to not trim trailing empty strings

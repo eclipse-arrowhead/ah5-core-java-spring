@@ -44,7 +44,7 @@ public class DeviceDiscoveryValidation {
 		if (!Utilities.isEmpty(dto.addresses())) {
 			for (final AddressDTO address : dto.addresses()) {
 				if (address == null) {
-					throw new InvalidParameterException("Address list containd null element", origin);
+					throw new InvalidParameterException("Address list contains null element", origin);
 				}
 
 				if (Utilities.isEmpty(address.type())) {
