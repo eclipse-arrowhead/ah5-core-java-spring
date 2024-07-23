@@ -17,7 +17,6 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
@@ -116,32 +115,20 @@ public class ManagementValidation {
 		if (dto != null) {
 			pageValidator.validatePageParameter(dto.pagination(), Device.SORTABLE_FIELDS_BY, origin);
 
-			if (!Utilities.isEmpty(dto.deviceNames())) {
-				for (final String name : dto.deviceNames()) {
-					if (Utilities.isEmpty(name)) {
-						throw new InvalidParameterException("Device name list contains null element", origin);
-					}
-				}
+			if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
+				throw new InvalidParameterException("Device name list contains null or empty element", origin);
 			}
 
-			if (!Utilities.isEmpty(dto.addresses())) {
-				for (final String address : dto.addresses()) {
-					if (Utilities.isEmpty(address)) {
-						throw new InvalidParameterException("Address list contains null element", origin);
-					}
-				}
+			if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
+				throw new InvalidParameterException("Address list contains null element or empty", origin);
 			}
 
 			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
 				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
 			}
 
-			if (!Utilities.isEmpty(dto.metadataRequirementList())) {
-				for (final MetadataRequirementDTO metadata : dto.metadataRequirementList()) {
-					if (metadata == null) {
-						throw new InvalidParameterException("Metadata requirement list contains null element", origin);
-					}
-				}
+			if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
+				throw new InvalidParameterException("Metadata requirement list contains null element", origin);
 			}
 		}
 	}
@@ -154,10 +141,8 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Device name list is missing or empty", origin);
 		}
 
-		for (final String name : names) {
-			if (Utilities.isEmpty(name)) {
-				throw new InvalidParameterException("Device name list contains null element", origin);
-			}
+		if (Utilities.containsNullOrEmpty(names)) {
+			throw new InvalidParameterException("Device name list contains null or empty element", origin);
 		}
 	}
 
