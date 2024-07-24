@@ -20,6 +20,8 @@ import eu.arrowhead.dto.LogEntryListResponseDTO;
 import eu.arrowhead.dto.LogRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
+import eu.arrowhead.dto.SystemListRequestDTO;
+import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.ManagementService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -95,7 +97,28 @@ public class ManagementAPI {
 	// query-systems POST /systems (query param verbose)
 	// * paging: page, size, direction, sort
 	// * filter to: name list, metadata requirement list, version list, address list, address type, device name list
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the created system entries")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SystemListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@ResponseStatus(code = HttpStatus.CREATED)
+	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody SystemListResponseDTO createSystems(@RequestBody final SystemListRequestDTO dto) {
+		logger.debug("createSystems started");
 
+		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+		return mgmtService.createSystems(dto, origin);
+	}
 	// create-systems POST /systems(bulk)
 
 	// update-systems PUT /systems(bulk) -> system name can't be changed
