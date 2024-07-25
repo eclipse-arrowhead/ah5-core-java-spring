@@ -77,7 +77,12 @@ public class SystemDbService {
 			
 			//returning the entries of the created entities
 			final List<Entry<System, List<SystemAddress>>> result = new ArrayList<>(systemEntities.size());
-			systemEntities.stream().map(s -> result.add(Map.entry(s, systemAddressRepo.findAllBySystem(s))));
+			
+			for (System systemEntity : systemEntities) {
+				List<SystemAddress> addresses = systemAddressRepo.findAllBySystem(systemEntity);
+				result.add(Map.entry(systemEntity, addresses));
+			}
+			
 			return result;
 			
 		} catch (final InvalidParameterException e) {

@@ -23,6 +23,7 @@ import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
@@ -81,17 +82,20 @@ public class DTOConverter {
 			
 			//converting the system addresses to dtos
 			List<SystemAddress> systemAddresses = entry.getValue();
-			List<AddressDTO> addressDTOs = new ArrayList<>(systemAddresses.size());
-			systemAddresses.forEach(sa -> addressDTOs.add(new AddressDTO(sa.getAddressType().toString(), sa.getAddress())));
+			List<AddressDTO> systemAddressDTOs = new ArrayList<>(systemAddresses.size());
+			systemAddresses.forEach(sa -> systemAddressDTOs.add(new AddressDTO(sa.getAddressType().toString(), sa.getAddress())));
 			
 			//convetring the device to dto
-			Optional<Device> device = deviceSystemConnectorRepo.findBySystem(system);
+			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+			List<DeviceAddress> deviceAddresses = deviceAddressRepo.findAllByDevice(device);
+			List<AddressDTO> deviceAddressDTOs = new ArrayList<>(deviceAddresses.size());
+			deviceAddresses.forEach(da -> deviceAddressDTOs.add(new AddressDTO(da.getAddressType().toString(), da.getAddress())));
 			DeviceResponseDTO deviceDTO = new DeviceResponseDTO(
-					device.get().getName(),
-					Utilities.fromJson(device.get().getMetadata(), new TypeReference<Map<String, Object>>() { }),
-					deviceAddressRepo.findAllByDevice(device.get()).stream().map(d -> new AddressDTO(d.getAddressType().toString(), d.getAddress())).collect(Collectors.toList()),
-					device.get().getCreatedAt().toString(),
-					device.get().getUpdatedAt().toString()
+					device.getName(),
+					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+					deviceAddressDTOs,
+					Utilities.convertZonedDateTimeToUTCString(device.getCreatedAt()),
+					Utilities.convertZonedDateTimeToUTCString(device.getUpdatedAt())
 					);
 			
 			//creating the system dto
@@ -99,10 +103,10 @@ public class DTOConverter {
 					system.getName(), 
 					Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }),
 					system.getVersion(), 
-					addressDTOs, 
+					systemAddressDTOs, 
 					deviceDTO, 
-					system.getCreatedAt().toString(), 
-					system.getUpdatedAt().toString()));
+					Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()), 
+					Utilities.convertZonedDateTimeToUTCString(system.getUpdatedAt())));
 			size++;
 		}
 		
