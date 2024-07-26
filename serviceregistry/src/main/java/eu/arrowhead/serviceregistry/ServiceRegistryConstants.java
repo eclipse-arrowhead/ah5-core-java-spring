@@ -19,7 +19,11 @@ public final class ServiceRegistryConstants {
 	// Operation related
 
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definitions";
+	
+	//System related operations
+	
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
+	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
 	
 	// Configuration related
 

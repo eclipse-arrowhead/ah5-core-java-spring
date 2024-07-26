@@ -3,6 +3,7 @@ package eu.arrowhead.serviceregistry.service.validation;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +12,15 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
+import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressTypeValidator;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
 
 @Service
 public class ManagementValidation {
@@ -26,6 +30,9 @@ public class ManagementValidation {
 	
 	@Autowired
 	private AddressTypeValidator addressTypeValidator;
+	
+	@Autowired
+	private PageValidator pageValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -116,6 +123,41 @@ public class ManagementValidation {
 					}
 				}
 			}
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQuerySystems started");
+		
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+		
+		pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
+		
+		if (!Utilities.isEmpty(dto.systemNames()) && Utilities.containsNullOrEmpty(dto.systemNames())) {
+			throw new InvalidParameterException("System name list contains null or empty element", origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
+			throw new InvalidParameterException("Address list contains null or empty element", origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
+			throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
+			throw new InvalidParameterException("Metadata requirement list contains null element", origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+			throw new InvalidParameterException("Version list contains null or empty element", origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
+			throw new InvalidParameterException("Device name list contains null or empty element", origin);
 		}
 	}
 
