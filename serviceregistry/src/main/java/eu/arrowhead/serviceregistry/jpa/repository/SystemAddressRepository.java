@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 
@@ -16,4 +17,10 @@ public interface SystemAddressRepository extends RefreshableRepository<SystemAdd
 
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> findAllBySystem(final System system);
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<SystemAddress> findAllBySystemAndAddressType(final System system, final AddressType addressType);
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<SystemAddress> findAllBySystemAndAddressIn(final System system, final List<String> addresses);
 }

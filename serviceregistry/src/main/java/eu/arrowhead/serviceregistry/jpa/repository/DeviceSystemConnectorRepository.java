@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 
@@ -15,4 +16,5 @@ public interface DeviceSystemConnectorRepository extends RefreshableRepository<D
 	
 	//-------------------------------------------------------------------------------------------------
 	public Optional<DeviceSystemConnector> findBySystem(final System system);
+	
 }

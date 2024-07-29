@@ -10,21 +10,35 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.PageService;
+import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceResponseDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
+import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.jpa.repository.DeviceAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceSystemConnectorRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 
@@ -38,13 +52,21 @@ public class SystemDbService {
 	private SystemRepository systemRepo;
 	
 	@Autowired
+	private PageService pageService;
+	
+	@Autowired
 	private SystemAddressRepository systemAddressRepo;
+	
+	@Autowired
+	private DeviceAddressRepository deviceAddressRepo;
 	
 	@Autowired
 	private DeviceRepository deviceRepo;
 	
 	@Autowired 
 	private DeviceSystemConnectorRepository deviceSystemConnectorRepo;
+	
+	private static final Object LOCK = new Object();
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -93,6 +115,82 @@ public class SystemDbService {
 			throw new InternalServerError("Database operation error");
 		}
 		
+	}
+	
+	public List<SystemResponseDTO> getPage(final SystemQueryRequestDTO dto, String origin) {
+		logger.debug("getPage for system query started");
+		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
+		Assert.notNull(dto.pagination(), "Page is null");
+		
+		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
+	
+		try {
+			
+			Page<System> systemEntries = null;
+			
+			// without filter
+			if (Utilities.isEmpty(dto.systemNames())
+					&& Utilities.isEmpty(dto.addresses())
+					&& Utilities.isEmpty(dto.addressType())
+					&& Utilities.isEmpty(dto.metadataRequirementList())
+					&& Utilities.isEmpty(dto.versions())
+					&& Utilities.isEmpty(dto.deviceNames())) {
+				
+				systemEntries = systemRepo.findAll(pageRequest);
+			}
+			
+			// with filters
+			if (systemEntries == null) {		
+			
+				final List<String> matchings = new ArrayList<>();
+				
+				synchronized (LOCK) {
+				
+					List<System> toFilter = Utilities.isEmpty(dto.systemNames()) ? systemRepo.findAll() : systemRepo.findAllByNameIn(dto.systemNames());
+				
+					for (System system : toFilter) {
+						if (!Utilities.isEmpty(dto.addresses()) && !Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, dto.addresses()))) {
+							continue;
+						}
+						if (dto.addressType() != null && !Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, Enum.valueOf(AddressType.class, dto.addressType())))) {
+							continue;
+						}
+						if (!Utilities.isEmpty(dto.metadataRequirementList())) {
+							final Map<String, Object> metadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {});
+							boolean metaDataMatch = false;
+							for (final MetadataRequirementDTO requirement : dto.metadataRequirementList()) {
+								if (!MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
+									metaDataMatch = true;
+									break;
+								}
+							}
+							if (!metaDataMatch) {
+								continue;
+							}
+						}
+						if (!Utilities.isEmpty(dto.versions()) && Utilities.isEmpty(systemRepo.findAllByVersionIn(dto.versions()))) {
+							continue;
+						}
+						if (!Utilities.isEmpty(dto.deviceNames()) && !dto.deviceNames().contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
+							continue;
+						}
+						
+						matchings.add(system.getName());
+					}
+				}
+				
+				systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
+			}
+			
+			return createSystemResponseDTOs(systemEntries);
+			
+		} catch (Exception ex) {
+			
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+			
+		}
 	}
 	
 	//=================================================================================================
@@ -181,6 +279,43 @@ public class SystemDbService {
 						systemRepo.findAllByNameIn(Arrays.asList(c.name())).getFirst()
 						))
 				.collect(Collectors.toList());
+	}
+	
+	private List<SystemResponseDTO> createSystemResponseDTOs(Page<System> systems) {
+		List<SystemResponseDTO> result = new ArrayList<>();
+		
+		for (System system : systems) {
+			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
+					.map(sa -> new AddressDTO(sa.getAddress(), sa.getAddressType().toString()))
+					.collect(Collectors.toList());
+			
+			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+			
+			List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+					.map(sa -> new AddressDTO(sa.getAddress(), sa.getAddressType().toString()))
+					.collect(Collectors.toList());
+			
+			DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
+					device.getName(), 
+					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
+					deviceAddresses, 
+					device.getCreatedAt().toString(), 
+					device.getUpdatedAt().toString());
+			
+			SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
+					system.getName(),
+					Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {}),
+					system.getVersion(),
+					systemAddresses,
+					deviceResponseDTO,
+					system.getCreatedAt().toString(),
+					system.getUpdatedAt().toString()
+					);
+			
+			result.add(systemResponseDTO);
+		}
+		
+		return result;
 	}
 
 }

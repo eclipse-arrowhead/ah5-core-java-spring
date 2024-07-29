@@ -10,19 +10,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
@@ -41,6 +47,9 @@ public class ManagementService {
 
 	@Autowired
 	private ManagementValidation validator;
+	
+	@Autowired
+	private PageService pageService;
 
 	@Autowired
 	private ServiceDefinitionDbService serviceDefinitionDbService;
@@ -104,10 +113,12 @@ public class ManagementService {
 
 	}
 	
+	
+	
 	//TODO: ket kulon fuggveny, az egyik a verbose-nak, a masik a terse-nek. A fuggvenyekben ellenorizni kell,
 	//hogy az application.properties-ben milyen ertek van beallitva!
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO querySystemsVerbose(final SystemQueryRequestDTO dto, final String origin) {
+	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, boolean verbose, final String origin) {
 		
 		logger.debug("querySystemsVerbose started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
@@ -118,19 +129,36 @@ public class ManagementService {
 		SystemQueryRequestDTO normalized = normalizeSystemQueryRequestDTO(dto);
 		
 		//validate the normalized DTO's addresses
+		if (!Utilities.isEmpty(normalized.addressType())&&!Utilities.isEmpty(normalized.addresses())) {
+			normalized.addresses().forEach(na -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), na), origin));
+		}
+				
+		//get the response list
+		List<SystemResponseDTO> result = systemDbService.getPage(normalized, origin);
 		
-		//create the pageRequest
+		//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
+		if (!verbose || !verboseEnabled) {
+			List<SystemResponseDTO> resultTerse = new ArrayList<>();
+			
+			for (SystemResponseDTO systemResponseDTO : result) {
+				
+				DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+				
+				resultTerse.add(new SystemResponseDTO(
+						systemResponseDTO.name(),
+						systemResponseDTO.metadata(),
+						systemResponseDTO.version(),
+						systemResponseDTO.addresses(),
+						device,
+						systemResponseDTO.createdAt(),
+						systemResponseDTO.updatedAt()
+						));
+			}
+			
+			result = resultTerse;
+		}
 		
-		//create the page
-		
-		//convert the page to DTO and return with it
-		
-		//TODO!!!
-		throw new NotImplementedException();
-	}
-	
-	public SystemListResponseDTO querySystemsTerse(final SystemQueryRequestDTO dto, final String origin) {
-		throw new NotImplementedException();
+		return new SystemListResponseDTO(result, result.size());
 	}
 	
 	//=================================================================================================
