@@ -100,10 +100,10 @@ public class DeviceDbService {
 							final Map<String, Object> metadata = Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
 							});
 
-							boolean metadataMatch = true;
+							boolean metadataMatch = false;
 							for (final MetadataRequirementDTO requirement : metadataRequirementList) {
-								if (!MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
-									metadataMatch = false;
+								if (MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
+									metadataMatch = true;
 									break;
 								}
 							}
@@ -172,7 +172,7 @@ public class DeviceDbService {
 						.map(e -> e.getName())
 						.collect(Collectors.joining(", "));
 				throw new InvalidParameterException(
-						"Device names already exists: " + existingNames);
+						"Device with names already exists: " + existingNames);
 			}
 
 			List<Device> deviceEntities = candidates.stream()
@@ -182,14 +182,14 @@ public class DeviceDbService {
 			deviceEntities = deviceRepo.saveAllAndFlush(deviceEntities);
 
 			final List<DeviceAddress> deviceAddressEntities = new ArrayList<>();
-			for (final DeviceRequestDTO candidate : candidates) {
-				if (!Utilities.isEmpty(candidate.addresses())) {
+			for (final DeviceRequestDTO deviceEntry : candidates) {
+				if (!Utilities.isEmpty(deviceEntry.addresses())) {
 					final Device device = deviceEntities.stream()
-							.filter(d -> d.getName().equals(candidate.name()))
+							.filter(d -> d.getName().equals(deviceEntry.name()))
 							.findFirst()
 							.get();
 
-					final List<DeviceAddress> addresses = candidate.addresses().stream()
+					final List<DeviceAddress> addresses = deviceEntry.addresses().stream()
 							.map(a -> new DeviceAddress(
 									device,
 									AddressType.valueOf(a.type()),
@@ -267,9 +267,13 @@ public class DeviceDbService {
 			List<Device> deviceEntries = deviceRepo.findAllByNameIn(candidateNames);
 
 			if (deviceEntries.size() < candidates.size()) {
-				final String notExists = deviceEntries.stream()
+				final List<String> existingDeviceNames = deviceEntries.stream()
 						.map(d -> d.getName())
-						.filter(n -> !candidateNames.contains(n))
+						.collect(Collectors.toList());
+
+				final String notExists = candidates.stream()
+						.map(c -> c.name())
+						.filter(n -> !existingDeviceNames.contains(n))
 						.collect(Collectors.joining(", "));
 				throw new InvalidParameterException("Device(s) not exists: " + notExists);
 			}

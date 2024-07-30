@@ -23,7 +23,7 @@ public class ManagementNormalization {
 	// members
 
 	@Autowired
-	private AddressNormalizator addressNormalizator;
+	private AddressNormalizator addressNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -43,7 +43,7 @@ public class ManagementNormalization {
 					device.metadata(),
 					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
 							: device.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
+									.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
 									.collect(Collectors.toList())));
 		}
 		return normalized;
@@ -57,7 +57,7 @@ public class ManagementNormalization {
 		return new DeviceQueryRequestDTO(
 				dto.pagination(),
 				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizator.normalize(a)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
 				dto.metadataRequirementList());
 	}

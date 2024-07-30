@@ -42,7 +42,7 @@ public class DeviceDiscoveryService {
 	private DeviceDiscoveryValidation validator;
 
 	@Autowired
-	private DeviceDiscoveryNormalization normalizator;
+	private DeviceDiscoveryNormalization normalizer;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -58,7 +58,7 @@ public class DeviceDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validator.validateRegisterDevice(dto, origin);
-		final DeviceRequestDTO normalized = normalizator.normalizeDeviceRequestDTO(dto);
+		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
 		normalized.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
 
 		try {
@@ -82,12 +82,12 @@ public class DeviceDiscoveryService {
 				final List<DeviceAddress> existingAddresses = optional.get().getValue();
 				final Set<String> existingAddressesSTR = existingAddresses
 						.stream()
-						.map(a -> a.getAddressType().name() + a.getAddress())
+						.map(a -> a.getAddressType().name() + "-" + a.getAddress())
 						.collect(Collectors.toSet());
 				final Set<String> candidateAddressesSTR = Utilities.isEmpty(normalized.addresses()) ? Set.of()
 						: normalized.addresses()
 								.stream()
-								.map(a -> a.type() + a.address())
+								.map(a -> a.type() + "-" + a.address())
 								.collect(Collectors.toSet());
 
 				if (!existingAddressesSTR.equals(candidateAddressesSTR)) {
@@ -115,7 +115,7 @@ public class DeviceDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validator.validateLookupDevice(dto, origin);
-		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizator.normalizeDeviceLookupRequestDTO(dto);
+		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizer.normalizeDeviceLookupRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
@@ -124,7 +124,7 @@ public class DeviceDiscoveryService {
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entries = dbService.getByFilters(normalized.deviceNames(), normalized.addresses(),
 					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
-			return dtoConverter.convertDeviceAddressEntriesToDTO(entries, entries.size());
+			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(entries, entries.size());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

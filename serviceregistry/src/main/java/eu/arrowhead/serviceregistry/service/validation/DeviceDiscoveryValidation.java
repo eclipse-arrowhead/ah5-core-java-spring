@@ -8,6 +8,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -38,6 +39,10 @@ public class DeviceDiscoveryValidation {
 
 		if (Utilities.isEmpty(dto.name())) {
 			throw new InvalidParameterException("Device name is empty", origin);
+		}
+
+		if (dto.name().length() > ArrowheadEntity.VARCHAR_SMALL) {
+			throw new InvalidParameterException("Device name is too long", origin);
 		}
 
 		if (!Utilities.isEmpty(dto.addresses())) {

@@ -22,7 +22,7 @@ public class DeviceDiscoveryNormalization {
 	// members
 
 	@Autowired
-	private AddressNormalizator addressNormalizator;
+	private AddressNormalizator addressNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -40,7 +40,7 @@ public class DeviceDiscoveryNormalization {
 				dto.metadata(),
 				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
 						: dto.addresses().stream()
-								.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
+								.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
 								.collect(Collectors.toList()));
 	}
 
@@ -51,7 +51,7 @@ public class DeviceDiscoveryNormalization {
 
 		return new DeviceLookupRequestDTO(
 				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizator.normalize(a)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
 				dto.metadataRequirementList());
 	}

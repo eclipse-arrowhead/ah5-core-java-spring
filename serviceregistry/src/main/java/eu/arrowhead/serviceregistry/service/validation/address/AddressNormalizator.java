@@ -95,7 +95,7 @@ public class AddressNormalizator {
 			int startIdx = 0;
 			for (int i = 0; i < groups.length; ++i) {
 				groups[i] = flat.substring(startIdx, startIdx + MAC_DASH_OR_COLON_PART_CHAR_LENGTH);
-				startIdx = startIdx + 2;
+				startIdx = startIdx + MAC_DASH_OR_COLON_PART_CHAR_LENGTH;
 			}
 		}
 
@@ -119,7 +119,7 @@ public class AddressNormalizator {
 		int lastAbbreviatedGroupIdx = -1;
 
 		final String[] split = candidate.split(COLON, -1); // -1 is present in order to not trim trailing empty strings
-		for (int i = 0; i < split.length; i++) {
+		for (int i = 0; i < split.length; ++i) {
 			String group = split[i];
 
 			// Handle double colons
@@ -130,7 +130,7 @@ public class AddressNormalizator {
 				// Add leading zeroes
 			} else if (group.length() < IPV6_GROUP_LENGTH) {
 				final int candidateGroupLength = group.length();
-				for (int j = 0; j < (IPV6_GROUP_LENGTH - candidateGroupLength); j++) {
+				for (int j = 0; j < (IPV6_GROUP_LENGTH - candidateGroupLength); ++j) {
 					group = "0" + group;
 				}
 			}
@@ -151,7 +151,7 @@ public class AddressNormalizator {
 				return candidate; // not IPv6
 			}
 
-			for (int i = 0; i < (IPV6_SIZE - candidateSize); i++) {
+			for (int i = 0; i < (IPV6_SIZE - candidateSize); ++i) {
 				groups.add(lastAbbreviatedGroupIdx, "0000");
 			}
 		}
@@ -176,18 +176,18 @@ public class AddressNormalizator {
 		// handle invalid IPv4 size
 		if (ip4parts.length != IPV4_PARTS_LENGTH) {
 			logger.debug("unprocessable IPv6-IPv4 hybrid. Invalid IPv4 part: " + ip4str);
-			return candidate; // NetworkAddressVerifier will filter it out
+			return candidate; // AddressTypeValidator will filter it out
 		}
 
 		// transform IPv4 to Hexadecimal
 		final StringBuilder ip4HexBuilder = new StringBuilder();
 
-		for (int i = 0; i < IPV4_PARTS_LENGTH; i++) {
+		for (int i = 0; i < IPV4_PARTS_LENGTH; ++i) {
 			try {
 				final int octet = Integer.parseInt(ip4parts[i]);
 				if (octet > OCTET_MAX_LENGTH || octet < OCTET_MIN_LENGTH) {
 					logger.debug("unprocessable IPv6-IPv4 hybrid. Invalid IPv4 part: " + ip4str);
-					return candidate; // NetworkAddressVerifier will filter it out
+					return candidate; // AddressTypeValidator will filter it out
 				}
 
 				final String hex = Integer.toHexString(octet);
@@ -200,7 +200,7 @@ public class AddressNormalizator {
 				}
 			} catch (final NumberFormatException ex) {
 				logger.debug("unprocessable IPv6-IPv4 hybrid. Not number octet: " + ip4str);
-				return candidate; // NetworkAddressVerifier will filter it out
+				return candidate; // AddressTypeValidator will filter it out
 			}
 		}
 

@@ -35,8 +35,8 @@ public class DTOConverter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public DeviceListResponseDTO convertDeviceAddressEntriesToDTO(final Iterable<Entry<Device, List<DeviceAddress>>> entries, final long count) {
-		logger.debug("convertDeviceAddressEntityListToDTO started...");
+	public DeviceListResponseDTO convertDeviceAndDeviceAddressEntriesToDTO(final Iterable<Entry<Device, List<DeviceAddress>>> entries, final long count) {
+		logger.debug("convertDeviceAndDeviceAddressEntriesToDTO started...");
 		Assert.notNull(entries, "entry list is null");
 
 		final List<DeviceResponseDTO> dtos = new ArrayList<>();

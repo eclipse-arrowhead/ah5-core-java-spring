@@ -53,7 +53,7 @@ public class ManagementService {
 	private ServiceDefinitionDbService serviceDefinitionDbService;
 
 	@Autowired
-	private ManagementNormalization normalizator;
+	private ManagementNormalization normalizer;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -72,12 +72,12 @@ public class ManagementService {
 
 		validator.validateCreateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(dto.devices());
+		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.createBulk(normalized);
-			return dtoConverter.convertDeviceAddressEntriesToDTO(entities, entities.size());
+			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(entities, entities.size());
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -94,12 +94,12 @@ public class ManagementService {
 
 		validator.validateUpdateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(dto.devices());
+		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.updateBulk(normalized);
-			return dtoConverter.convertDeviceAddressEntriesToDTO(entities, entities.size());
+			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(entities, entities.size());
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -117,7 +117,7 @@ public class ManagementService {
 		validator.validateQueryDevices(dto, origin);
 
 		final DeviceQueryRequestDTO normalized = dto == null ? new DeviceQueryRequestDTO(null, null, null, null, null)
-				: normalizator.normalizeDeviceQueryRequestDTO(dto);
+				: normalizer.normalizeDeviceQueryRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
@@ -127,7 +127,7 @@ public class ManagementService {
 
 		final Page<Entry<Device, List<DeviceAddress>>> page = deviceDbService.getPage(pageRequest, normalized.deviceNames(), normalized.addresses(),
 				Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
-		return dtoConverter.convertDeviceAddressEntriesToDTO(page, page.getTotalElements());
+		return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(page, page.getTotalElements());
 	}
 
 	//-------------------------------------------------------------------------------------------------

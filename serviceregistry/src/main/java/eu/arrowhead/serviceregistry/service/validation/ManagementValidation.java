@@ -120,7 +120,7 @@ public class ManagementValidation {
 			}
 
 			if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
-				throw new InvalidParameterException("Address list contains null element or empty", origin);
+				throw new InvalidParameterException("Address list contains null element or empty element", origin);
 			}
 
 			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {

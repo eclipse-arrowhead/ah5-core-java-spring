@@ -16,7 +16,7 @@ public class Device extends ArrowheadEntity {
 	// members
 
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
-	public static final String DEFAULT_SORT_FIELD = "createdAt";
+	public static final String DEFAULT_SORT_FIELD = "name";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
