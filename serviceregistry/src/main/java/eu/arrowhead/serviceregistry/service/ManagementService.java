@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -32,8 +31,8 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
 
 @Service
 public class ManagementService {
@@ -54,7 +53,7 @@ public class ManagementService {
 	private ServiceDefinitionDbService serviceDefinitionDbService;
 
 	@Autowired
-	private AddressNormalizator addressNormalizator;
+	private ManagementNormalization normalizator;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -73,7 +72,7 @@ public class ManagementService {
 
 		validator.validateCreateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = normalizeDeviceRequestDTOs(dto.devices());
+		final List<DeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
 
 		try {
@@ -95,7 +94,7 @@ public class ManagementService {
 
 		validator.validateUpdateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = normalizeDeviceRequestDTOs(dto.devices());
+		final List<DeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
 
 		try {
@@ -118,12 +117,7 @@ public class ManagementService {
 		validator.validateQueryDevices(dto, origin);
 
 		final DeviceQueryRequestDTO normalized = dto == null ? new DeviceQueryRequestDTO(null, null, null, null, null)
-				: new DeviceQueryRequestDTO(
-						dto.pagination(),
-						Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
-						Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizator.normalize(a)).collect(Collectors.toList()),
-						Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
-						dto.metadataRequirementList());
+				: normalizator.normalizeDeviceQueryRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
@@ -176,23 +170,5 @@ public class ManagementService {
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
-	}
-
-	//=================================================================================================
-	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private List<DeviceRequestDTO> normalizeDeviceRequestDTOs(final List<DeviceRequestDTO> dtoList) {
-		final List<DeviceRequestDTO> normalized = new ArrayList<>(dtoList.size());
-		for (final DeviceRequestDTO device : dtoList) {
-			normalized.add(new DeviceRequestDTO(
-					device.name().trim(),
-					device.metadata(),
-					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
-							: device.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
-									.collect(Collectors.toList())));
-		}
-		return normalized;
 	}
 }
