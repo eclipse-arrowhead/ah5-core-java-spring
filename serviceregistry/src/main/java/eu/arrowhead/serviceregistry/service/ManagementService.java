@@ -182,6 +182,7 @@ public class ManagementService {
 		return normalized;
 	}
 	
+	//-------------------------------------------------------------------------------------------------
 	private SystemQueryRequestDTO normalizeSystemQueryRequestDTO(final SystemQueryRequestDTO dto) {
 		return new SystemQueryRequestDTO(
 				dto.pagination(), //no need to normailze, because it will happen in the getPageRequest method

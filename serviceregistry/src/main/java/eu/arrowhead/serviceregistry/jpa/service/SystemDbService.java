@@ -168,7 +168,7 @@ public class SystemDbService {
 								continue;
 							}
 						}
-						if (!Utilities.isEmpty(dto.versions()) && Utilities.isEmpty(systemRepo.findAllByVersionIn(dto.versions()))) {
+						if (!Utilities.isEmpty(dto.versions()) && !systemRepo.findAllByVersionIn(dto.versions()).contains(system)) {
 							continue;
 						}
 						if (!Utilities.isEmpty(dto.deviceNames()) && !dto.deviceNames().contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
