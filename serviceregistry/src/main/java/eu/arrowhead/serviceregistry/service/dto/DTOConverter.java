@@ -87,9 +87,11 @@ public class DTOConverter {
 			
 			//convetring the device to dto
 			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+			
 			List<DeviceAddress> deviceAddresses = deviceAddressRepo.findAllByDevice(device);
 			List<AddressDTO> deviceAddressDTOs = new ArrayList<>(deviceAddresses.size());
 			deviceAddresses.forEach(da -> deviceAddressDTOs.add(new AddressDTO(da.getAddressType().toString(), da.getAddress())));
+			
 			DeviceResponseDTO deviceDTO = new DeviceResponseDTO(
 					device.getName(),
 					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),

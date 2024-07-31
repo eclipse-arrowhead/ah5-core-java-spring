@@ -149,17 +149,17 @@ public class SystemDbService {
 					List<System> toFilter = Utilities.isEmpty(dto.systemNames()) ? systemRepo.findAll() : systemRepo.findAllByNameIn(dto.systemNames());
 				
 					for (System system : toFilter) {
-						if (!Utilities.isEmpty(dto.addresses()) && !Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, dto.addresses()))) {
+						if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, dto.addresses()))) {
 							continue;
 						}
-						if (dto.addressType() != null && !Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, Enum.valueOf(AddressType.class, dto.addressType())))) {
+						if (dto.addressType() != null && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, Enum.valueOf(AddressType.class, dto.addressType())))) {
 							continue;
 						}
 						if (!Utilities.isEmpty(dto.metadataRequirementList())) {
 							final Map<String, Object> metadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {});
 							boolean metaDataMatch = false;
 							for (final MetadataRequirementDTO requirement : dto.metadataRequirementList()) {
-								if (!MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
+								if (MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
 									metaDataMatch = true;
 									break;
 								}
@@ -210,7 +210,7 @@ public class SystemDbService {
 			final String existingSystemNames = existingSystems.stream()
 					.map(e -> e.getName())
 					.collect(Collectors.joining(", "));
-			throw new InvalidParameterException("System names already exists: " + existingSystemNames);
+			throw new InvalidParameterException("Systems with names already exist: " + existingSystemNames);
 		}
 	}
 	
@@ -286,13 +286,13 @@ public class SystemDbService {
 		
 		for (System system : systems) {
 			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
-					.map(sa -> new AddressDTO(sa.getAddress(), sa.getAddressType().toString()))
+					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 			
 			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
 			
 			List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
-					.map(sa -> new AddressDTO(sa.getAddress(), sa.getAddressType().toString()))
+					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 			
 			DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
