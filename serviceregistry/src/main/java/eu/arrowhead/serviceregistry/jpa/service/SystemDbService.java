@@ -75,7 +75,9 @@ public class SystemDbService {
 	
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Entry<System, List<SystemAddress>>> createBulk(final List<SystemRequestDTO> candidates) {
+	// TODO: return with List<SystemResponseDTO>
+	// (createSystemResponseDTOs)
+	public List<SystemResponseDTO> createBulk(final List<SystemRequestDTO> candidates) {
 		
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "system candidate list is empty");
@@ -97,15 +99,7 @@ public class SystemDbService {
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
 			deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			
-			//returning the entries of the created entities
-			final List<Entry<System, List<SystemAddress>>> result = new ArrayList<>(systemEntities.size());
-			
-			for (System systemEntity : systemEntities) {
-				List<SystemAddress> addresses = systemAddressRepo.findAllBySystem(systemEntity);
-				result.add(Map.entry(systemEntity, addresses));
-			}
-			
-			return result;
+			return createSystemResponseDTOs(systemEntities);
 			
 		} catch (final InvalidParameterException e) {
 			throw e;
@@ -182,7 +176,7 @@ public class SystemDbService {
 				systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
 			}
 			
-			return createSystemResponseDTOs(systemEntries);
+			return createSystemResponseDTOs(systemEntries.stream().map(se -> se).collect(Collectors.toList()));
 			
 		} catch (Exception ex) {
 			
@@ -281,7 +275,7 @@ public class SystemDbService {
 				.collect(Collectors.toList());
 	}
 	
-	private List<SystemResponseDTO> createSystemResponseDTOs(Page<System> systems) {
+	private List<SystemResponseDTO> createSystemResponseDTOs(List<System> systems) {
 		List<SystemResponseDTO> result = new ArrayList<>();
 		
 		for (System system : systems) {

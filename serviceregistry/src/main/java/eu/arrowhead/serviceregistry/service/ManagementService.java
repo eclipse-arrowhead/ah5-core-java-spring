@@ -47,9 +47,6 @@ public class ManagementService {
 
 	@Autowired
 	private ManagementValidation validator;
-	
-	@Autowired
-	private PageService pageService;
 
 	@Autowired
 	private ServiceDefinitionDbService serviceDefinitionDbService;
@@ -98,8 +95,8 @@ public class ManagementService {
 
 		try {
 			
-			final List<Entry<System, List<SystemAddress>>> entities = systemDbService.createBulk(normalized); 
-			return dtoConverter.convertSystemEntriesToDTO(entities);
+			final List<SystemResponseDTO> created = systemDbService.createBulk(normalized);
+			return new SystemListResponseDTO(created, created.size());
 			
 		} catch (final InvalidParameterException ex) {
 			
@@ -169,9 +166,13 @@ public class ManagementService {
 		
 		final List<SystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
 		for (final SystemRequestDTO system : dtoList.systems()) {
+			
+			//String normalizedVersion = Utilities.isEmpty(system.version()) ? "1.0.0" : system.version().trim(); 
+			
 			normalized.add(new SystemRequestDTO(
 					system.name().trim(),
 					system.metadata(),
+					//normalizedVersion,
 					system.version().trim(),
 					Utilities.isEmpty(system.addresses()) ? new ArrayList<>()
 							: system.addresses().stream()

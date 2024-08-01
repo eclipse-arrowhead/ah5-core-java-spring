@@ -38,12 +38,11 @@ public class DTOConverter {
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
-	//TODO: atgondolni hogy normalis dolog-e konvertalas miatt adatbazismuveleteket vegezni... (szerintem igen(???))
-	@Autowired 
+	/*@Autowired 
 	private DeviceSystemConnectorRepository deviceSystemConnectorRepo;
 	
 	@Autowired 
-	private DeviceAddressRepository deviceAddressRepo;
+	private DeviceAddressRepository deviceAddressRepo;*/
 
 	//=================================================================================================
 	// methods
@@ -69,7 +68,7 @@ public class DTOConverter {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO convertSystemEntriesToDTO(final Iterable<Entry<System, List<SystemAddress>>> entries) {
+	/*public SystemListResponseDTO convertSystemEntriesToDTO(final Iterable<Entry<System, List<SystemAddress>>> entries) {
 		
 		logger.debug("convertSystemEntriesToDTO started");
 		Assert.notNull(entries, "entity are null");
@@ -114,5 +113,5 @@ public class DTOConverter {
 		
 		return new SystemListResponseDTO(data, size);
 		
-	}
+	}*/
 }
