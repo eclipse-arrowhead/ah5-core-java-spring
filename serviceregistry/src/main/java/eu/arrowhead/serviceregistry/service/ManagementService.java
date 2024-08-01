@@ -35,6 +35,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
 
@@ -55,7 +56,10 @@ public class ManagementService {
 	private SystemDbService systemDbService;
 	
 	@Autowired
-	private AddressNormalizator addressNormalizator;
+	private AddressNormalizator addressNormalizer;
+	
+	@Autowired
+	private ManagementNormalization managementNormalizer;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -89,7 +93,7 @@ public class ManagementService {
 		
 		validator.validateCreateSystem(dto, origin);
 		
-		final List<SystemRequestDTO> normalized = normalizeSystemRequestDTOs(dto);
+		final List<SystemRequestDTO> normalized = managementNormalizer.normalizeSystemRequestDTOs(dto);
 			
 		normalized.forEach(n -> n.addresses().forEach(a -> validator.validateNormalizedAddress(a, origin)));
 
@@ -123,7 +127,7 @@ public class ManagementService {
 		validator.validateQuerySystems(dto, origin);
 		
 		//normalize DTOs
-		SystemQueryRequestDTO normalized = normalizeSystemQueryRequestDTO(dto);
+		SystemQueryRequestDTO normalized = managementNormalizer.normalizeSystemQueryRequestDTO(dto);
 		
 		//validate the normalized DTO's addresses
 		if (!Utilities.isEmpty(normalized.addressType())&&!Utilities.isEmpty(normalized.addresses())) {
@@ -160,44 +164,5 @@ public class ManagementService {
 	
 	//=================================================================================================
 	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private List<SystemRequestDTO> normalizeSystemRequestDTOs(final SystemListRequestDTO dtoList) {
-		
-		final List<SystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
-		for (final SystemRequestDTO system : dtoList.systems()) {
-			
-			//String normalizedVersion = Utilities.isEmpty(system.version()) ? "1.0.0" : system.version().trim(); 
-			
-			normalized.add(new SystemRequestDTO(
-					system.name().trim(),
-					system.metadata(),
-					//normalizedVersion,
-					system.version().trim(),
-					Utilities.isEmpty(system.addresses()) ? new ArrayList<>()
-							: system.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim(), addressNormalizator.normalize(a.address())))
-									.collect(Collectors.toList()),
-					system.deviceName().trim()));
-		}
-		return normalized;
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	private SystemQueryRequestDTO normalizeSystemQueryRequestDTO(final SystemQueryRequestDTO dto) {
-		return new SystemQueryRequestDTO(
-				dto.pagination(), //no need to normailze, because it will happen in the getPageRequest method
-				Utilities.isEmpty(dto.systemNames()) ? null 
-						: dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()), 
-				Utilities.isEmpty(dto.addresses()) ? null 
-						: dto.addresses().stream().map(n -> n.trim()).collect(Collectors.toList()), 
-				Utilities.isEmpty(dto.addressType()) ? null 
-						: dto.addressType().trim(),
-				dto.metadataRequirementList(), 
-				Utilities.isEmpty(dto.versions()) ? null 
-						: dto.versions().stream().map(n -> n.trim()).collect(Collectors.toList()), 
-				Utilities.isEmpty(dto.deviceNames()) ? null 
-						: dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()));
-	}
 
 }
