@@ -55,8 +55,8 @@ public class ManagementService {
 	@Autowired
 	private SystemDbService systemDbService;
 	
-	@Autowired
-	private AddressNormalizator addressNormalizer;
+	//@Autowired
+	//private AddressNormalizator addressNormalizer;
 	
 	@Autowired
 	private ManagementNormalization managementNormalizer;
@@ -114,14 +114,10 @@ public class ManagementService {
 
 	}
 	
-	
-	
-	//TODO: ket kulon fuggveny, az egyik a verbose-nak, a masik a terse-nek. A fuggvenyekben ellenorizni kell,
-	//hogy az application.properties-ben milyen ertek van beallitva!
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, boolean verbose, final String origin) {
 		
-		logger.debug("querySystemsVerbose started");
+		logger.debug("querySystems started, verbose = " + verbose);
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
 		validator.validateQuerySystems(dto, origin);
@@ -160,6 +156,31 @@ public class ManagementService {
 		}
 		
 		return new SystemListResponseDTO(result, result.size());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO updateSystems(final SystemListRequestDTO dto, final String origin) {
+		
+		logger.debug("updateSystems started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		validator.validateCreateSystem(dto, origin);
+		
+		final List<SystemRequestDTO> normalized = managementNormalizer.normalizeSystemRequestDTOs(dto);
+			
+		normalized.forEach(n -> n.addresses().forEach(a -> validator.validateNormalizedAddress(a, origin)));
+		
+		try {
+			final List<SystemResponseDTO> entities = systemDbService.updateBulk(normalized);
+			return new SystemListResponseDTO(entities, entities.size());
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+		
 	}
 	
 	//=================================================================================================

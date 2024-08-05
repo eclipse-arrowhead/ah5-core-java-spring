@@ -82,9 +82,9 @@ public class SystemDbService {
 		Assert.isTrue(!Utilities.isEmpty(candidates), "system candidate list is empty");
 		
 		try {
-			checkSystemNames(candidates); //checks if none of the system names exist (system name has to be unique)
+			checkSystemNamesNotExist(candidates); //checks if none of the system names exist (system name has to be unique)
 			
-			checkDeviceNames(candidates); //checks if device names already exist
+			checkDeviceNamesExist(candidates); //checks if device names already exist
 			
 			//writing the system entities to the database
 			List<System> systemEntities = createSystemEntities(candidates);
@@ -94,7 +94,7 @@ public class SystemDbService {
 			final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(candidates, systemEntities);
 			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
 			
-			//writing the devices-system connections to the database
+			//writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
 			deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			
@@ -110,6 +110,7 @@ public class SystemDbService {
 		
 	}
 	
+	//-------------------------------------------------------------------------------------------------
 	public List<SystemResponseDTO> getPage(final SystemQueryRequestDTO dto, String origin) {
 		logger.debug("getPage for system query started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
@@ -186,12 +187,90 @@ public class SystemDbService {
 		}
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<SystemResponseDTO> updateBulk(final List<SystemRequestDTO> toUpdate) {
+		logger.debug("updateBulk started");
+		Assert.isTrue(!Utilities.isEmpty(toUpdate), "The list of systems to update is empty or missing.");
+		
+		try {
+			
+			checkSystemNamesExist(toUpdate); // system name can't be changed
+			
+			checkDeviceNamesExist(toUpdate); // checks if device names already exist
+			
+			//writing the updated system entities to the database
+			List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
+			for (System systemEntity : systemEntities) {
+				Map<String, Object> metadata = toUpdate.stream()
+						.filter(s -> s.name().equals(systemEntity.getName()))
+						.findFirst()
+						.get()
+						.metadata();
+				
+				String version = toUpdate.stream()
+						.filter(s -> s.name().equals(systemEntity.getName()))
+						.findFirst()
+						.get()
+						.version();
+				
+				systemEntity.setMetadata(Utilities.toJson(metadata));
+				systemEntity.setVersion(version);
+			}
+			systemEntities = systemRepo.saveAllAndFlush(systemEntities);
+			
+			//removing the old system addresses from the database
+			systemAddressRepo.deleteAllBySystemIn(systemEntities);
+			
+			//writing the new system address entities to the database
+			final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(toUpdate, systemEntities);
+			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
+			
+			//updating the old device-system connections
+			java.lang.System.out.println(systemEntities.size());
+			List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
+			for (System systemEntity : systemEntities) {
+				java.lang.System.out.println(systemEntity.getName());
+				DeviceSystemConnector connection = deviceSystemConnectorRepo.findBySystem(systemEntity).get();
+				java.lang.System.out.println(connection.toString());
+				connectionsToUpdate.add(connection);
+			}
+			//systemEntities.stream().map(se -> connectionsToUpdate.add(deviceSystemConnectorRepo.findBySystem(se).get()));
+			java.lang.System.out.println(connectionsToUpdate.size());
+			for (DeviceSystemConnector connection : connectionsToUpdate) {
+				String deviceName = toUpdate.stream()
+						.filter(s -> s.name().equals(connection.getSystem().getName()))
+						.findFirst()
+						.get()
+						.deviceName();
+				java.lang.System.out.println("teszt");
+				java.lang.System.out.println(deviceName);
+				Device device = deviceRepo.findByName(deviceName).get();
+				
+				connection.setDevice(device);
+			}
+			
+			//writing the new device-system connections to the database
+			deviceSystemConnectorRepo.saveAllAndFlush(connectionsToUpdate);
+			
+			return createSystemResponseDTOs(systemEntities);
+			
+		} catch (final InvalidParameterException e) {
+			throw e;
+		} catch (final Exception e) {
+			logger.error(e.getMessage());
+			logger.debug(e);
+			throw new InternalServerError("Database operation error");
+		}
+		
+	}
+	
 	//=================================================================================================
 	// assistant methods
 	
 	//-------------------------------------------------------------------------------------------------
-	//checks if system name already exists, throws exception if it does
-	private void checkSystemNames(final List<SystemRequestDTO> candidates) {
+	//checks if system name already exists, throws exception if it DOES
+	private void checkSystemNamesNotExist(final List<SystemRequestDTO> candidates) {
 		
 		final List<String> candidateNames = candidates.stream()
 				.map(c -> c.name())
@@ -208,8 +287,33 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
+	//checks if system name already exists, throws exception if it does NOT
+	private void checkSystemNamesExist(final List<SystemRequestDTO> requested) {
+		
+		List<String> requestedNames = requested.stream()
+				.map(s -> s.name())
+				.collect(Collectors.toList());
+		
+		List<System> givenSystems = systemRepo.findAllByNameIn(requestedNames);
+		
+		if (requestedNames.size() > givenSystems.size()) {
+			
+			List<String> existingNames = givenSystems.stream()
+					.map(s -> s.getName())
+					.collect(Collectors.toList());
+			List<String> notExistingNames = new ArrayList<String>(requestedNames.size()-existingNames.size());
+			for (String name : requestedNames) {
+				if (!existingNames.contains(name)) {
+					notExistingNames.add(name);
+				}
+			}
+			throw new InvalidParameterException("System(s) not exists: " + notExistingNames.stream().collect(Collectors.joining(", ")));
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
 	//checks if device name already exists, throws exception if it does NOT
-	private void checkDeviceNames(final List<SystemRequestDTO> candidates) {
+	private void checkDeviceNamesExist(final List<SystemRequestDTO> candidates) {
 		final List<String> candidateDeviceNames = candidates.stream()
 				.map(c -> c.deviceName())
 				.collect(Collectors.toList())
