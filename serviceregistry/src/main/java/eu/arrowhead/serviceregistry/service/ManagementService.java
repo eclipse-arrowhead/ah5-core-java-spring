@@ -183,6 +183,20 @@ public class ManagementService {
 		
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	public void removeSystems(final List<String> names, final String origin) {
+		logger.debug("removeSystems started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		List<String> normalizedNames = managementNormalizer.normalizeSystemNames(names);
+
+		try {
+			systemDbService.deleteByNameList(normalizedNames);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+	
 	//=================================================================================================
 	// assistant methods
 

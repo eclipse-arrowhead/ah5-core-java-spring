@@ -227,24 +227,17 @@ public class SystemDbService {
 			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
 			
 			//updating the old device-system connections
-			java.lang.System.out.println(systemEntities.size());
 			List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
 			for (System systemEntity : systemEntities) {
-				java.lang.System.out.println(systemEntity.getName());
 				DeviceSystemConnector connection = deviceSystemConnectorRepo.findBySystem(systemEntity).get();
-				java.lang.System.out.println(connection.toString());
 				connectionsToUpdate.add(connection);
 			}
-			//systemEntities.stream().map(se -> connectionsToUpdate.add(deviceSystemConnectorRepo.findBySystem(se).get()));
-			java.lang.System.out.println(connectionsToUpdate.size());
 			for (DeviceSystemConnector connection : connectionsToUpdate) {
 				String deviceName = toUpdate.stream()
 						.filter(s -> s.name().equals(connection.getSystem().getName()))
 						.findFirst()
 						.get()
 						.deviceName();
-				java.lang.System.out.println("teszt");
-				java.lang.System.out.println(deviceName);
 				Device device = deviceRepo.findByName(deviceName).get();
 				
 				connection.setDevice(device);
@@ -263,6 +256,24 @@ public class SystemDbService {
 			throw new InternalServerError("Database operation error");
 		}
 		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteByNameList(final List<String> names) {
+		logger.debug("deleteByNameList started");
+		Assert.isTrue(!Utilities.isEmpty(names), "system name list is missing or empty");
+
+		try {
+			final List<System> entries = systemRepo.findAllByNameIn(names);
+			systemRepo.deleteAll(entries);
+			systemRepo.flush();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
 	}
 	
 	//=================================================================================================

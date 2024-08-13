@@ -75,5 +75,13 @@ public class ManagementNormalization {
 						: dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()));
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeSystemNames(final List<String> originalNames) {
+		return originalNames.stream()
+				.filter(n -> !Utilities.isEmpty(n))
+				.map(n -> n.trim())
+				.collect(Collectors.toList());
+	}
+	
 	
 }
