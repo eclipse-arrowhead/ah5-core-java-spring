@@ -102,9 +102,6 @@ public class ManagementAPI {
 
 	// SYSTEMS
 
-	// query-systems POST /systems (query param verbose)
-	// * paging: page, size, direction, sort
-	// * filter to: name list, metadata requirement list, version list, address list, address type, device name list
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the system entries according to the query request")
 	@ApiResponses(value = {
@@ -135,7 +132,7 @@ public class ManagementAPI {
 		return mgmtService.querySystems(dto, verbose, origin);
 	}
 	
-	// create-systems POST /systems(bulk)
+	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created system entries")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
@@ -158,7 +155,6 @@ public class ManagementAPI {
 		return mgmtService.createSystems(dto, origin);
 	}
 
-	// update-systems PUT /systems(bulk) -> system name can't be changed
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the updated system entries")
 	@ApiResponses(value = {
@@ -181,7 +177,6 @@ public class ManagementAPI {
 		return mgmtService.updateSystems(dto, origin);
 	}
 
-	// remove-systems DELETE /systems(list of system names as query params)
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes the defined system entries")
 	@ApiResponses(value = {
