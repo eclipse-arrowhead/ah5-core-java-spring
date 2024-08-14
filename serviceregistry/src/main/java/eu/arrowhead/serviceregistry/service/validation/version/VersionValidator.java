@@ -38,10 +38,6 @@ public class VersionValidator {
 
 		// check the number of version numbers
 		String[] chunksOfVersion = version.split(DOT_REGEX);
-		/*System.out.println("LENGTH: " + chunksOfVersion.length);
-		for (int i = 0; i < chunksOfVersion.length; i++) {
-			System.out.println(chunksOfVersion[i]);
-		}*/
 		if (chunksOfVersion.length != NUMBER_OF_SEPARATORS + 1) {
 			throw new InvalidParameterException(ERROR_MSG_PREFIX + "version must contain exactly " + (NUMBER_OF_SEPARATORS + 1) + " numbers.");
 		}
