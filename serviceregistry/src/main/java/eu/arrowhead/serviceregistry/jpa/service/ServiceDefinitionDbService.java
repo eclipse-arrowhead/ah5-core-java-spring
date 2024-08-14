@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
@@ -34,6 +35,7 @@ public class ServiceDefinitionDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<ServiceDefinition> createBulk(final List<String> names) {
 		logger.debug("createBulk started...");
+		Assert.isTrue(!Utilities.isEmpty(names), "service definition name list is empty");
 
 		try {
 			final List<ServiceDefinition> existing = repo.findAllByNameIn(names);
@@ -45,12 +47,11 @@ public class ServiceDefinitionDbService {
 						"Service definition names already exists: " + existingNames);
 			}
 
-			List<ServiceDefinition> entities = names.stream()
+			final List<ServiceDefinition> entities = names.stream()
 					.map(n -> new ServiceDefinition(n))
 					.collect(Collectors.toList());
-			entities = repo.saveAll(entities);
-			repo.flush();
-			return entities;
+
+			return repo.saveAllAndFlush(entities);
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;

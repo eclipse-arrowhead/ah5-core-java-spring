@@ -58,5 +58,15 @@
     "name": "service.discovery.interface.policy",
     "type": "eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy",
     "description": "A description for 'service.discovery.interface.policy'"
+  },
+  {
+    "name": "allow.self.addressing",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'allow.self.addressing'"
+  },
+  {
+    "name": "allow.non.routable.addressing",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'allow.non.routable.addressing'"
   }
 ]}
