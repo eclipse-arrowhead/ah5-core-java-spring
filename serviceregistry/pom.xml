@@ -18,8 +18,8 @@
 	 	<plugins>
 	   		<plugin>
 	 			<artifactId>maven-resources-plugin</artifactId>
-	        	<version>${mvn.resources.version}</version>
-	        	<executions>
+	        <version>${mvn.resources.version}</version>
+	        <executions>
 	          		<execution>
 	            		<id>copy-resources</id>
 	            		<phase>validate</phase>

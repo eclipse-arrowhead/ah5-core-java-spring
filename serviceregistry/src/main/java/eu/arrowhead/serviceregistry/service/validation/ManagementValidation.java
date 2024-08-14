@@ -25,7 +25,10 @@ import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.service.validation.address.AddressTypeValidator;
 
 @Service
 public class ManagementValidation {
@@ -125,18 +128,6 @@ public class ManagementValidation {
 	public void validateUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
 		logger.debug("validateUpdateDevice started");
 		validateCreateDevices(dto, origin);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateNormalizedAddress(final AddressDTO dto, final String origin) {
-		logger.debug("validateNormalizedAddress started");
-		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
-
-		try {
-			addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
 	}
 
 	//-------------------------------------------------------------------------------------------------

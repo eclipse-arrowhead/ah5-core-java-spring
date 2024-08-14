@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Utilities;

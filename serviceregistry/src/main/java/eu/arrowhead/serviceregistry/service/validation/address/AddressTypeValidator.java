@@ -98,7 +98,7 @@ public class AddressTypeValidator {
 		logger.debug("AddressTypeValidator.validateMAC started...");
 
 		if (!macPattern.matcher(address).matches()) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " is not MAC");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " is not MAC address");
 		}
 
 		// Filter out local broadcast
@@ -118,31 +118,31 @@ public class AddressTypeValidator {
 		logger.debug("AddressTypeValidator.validateIPV4 started...");
 
 		if (!ipv4Pattern.matcher(address).matches()) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " is not IPV4");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " is not IPv4 address");
 		}
 
 		if (!allowSelfAddressing) {
 			// Filter out loopback (127.0.0.0 - 127.255.255.255)
 			if (address.startsWith(IPV4_LOOPBACK_1ST_OCTET)) {
-				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv4 address is invalid: self-addressing is disabled.");
+				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv4 address is invalid: self-addressing is disabled.");
 			}
 		}
 
 		if (!allowNonRoutableAddressing) {
 			// Filter out APIPA (Automatic Private IP Address: 169.254.?.?)
 			if (address.startsWith(IPV4_APIPA_1ST_AND_2ND_OCTET)) {
-				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv4 address is invalid: non-routable-addressing is disabled.");
+				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv4 address is invalid: non-routable-addressing is disabled.");
 			}
 		}
 
 		// Filter out IP placeholder(default route) (0.0.0.0)
 		if (address.equalsIgnoreCase(IPV4_PLACEHOLDER)) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv4 address is invalid: placeholder address is denied.");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv4 address is invalid: placeholder address is denied.");
 		}
 
 		// Filter out local broadcast (255.255.255.255)
 		if (address.equalsIgnoreCase(IPV4_LOCAL_BROADCAST)) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv4 address is invalid: local broadcast address is denied.");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv4 address is invalid: local broadcast address is denied.");
 		}
 
 		// Could not filter out directed broadcast (cannot determine it without the subnet mask)
@@ -151,7 +151,7 @@ public class AddressTypeValidator {
 		final String[] octets = address.split("\\.");
 		final Integer firstOctet = Integer.valueOf(octets[0]);
 		if (firstOctet >= IPV4_MULTICAST_1ST_OCTET_START && firstOctet <= IPV4_MULTICAST_1ST_OCTET_END) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv4 address is invalid: multicast addresses are denied.");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv4 address is invalid: multicast addresses are denied.");
 		}
 	}
 
@@ -160,31 +160,31 @@ public class AddressTypeValidator {
 		logger.debug("AddressTypeValidator.validateIPV6 started...");
 
 		if (!ipv6Pattern.matcher(address).matches()) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " is not IPV6");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " is not IPv6 address");
 		}
 
 		if (!allowSelfAddressing) {
 			// Filter out loopback address (0000:0000:0000:0000:0000:0000:0000:0001)
 			if (address.equalsIgnoreCase(IPV6_LOOPBACK)) {
-				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv6 address is invalid: self-addressing is disabled.");
+				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv6 address is invalid: self-addressing is disabled.");
 			}
 		}
 
 		if (!allowNonRoutableAddressing) {
 			// Filter out link-local addresses (prefix fe80)
 			if (address.startsWith(IPV6_LINK_LOCAL_PREFIX)) {
-				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv6 address is invalid: non-routable-addressing is disabled.");
+				throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv6 address is invalid: non-routable-addressing is disabled.");
 			}
 		}
 
 		// Filter out unspecified address (0000:0000:0000:0000:0000:0000:0000:0000)
 		if (address.equalsIgnoreCase(IPV6_UNSPECIFIED)) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv6 address is invalid: unspecified address is denied.");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv6 address is invalid: unspecified address is denied.");
 		}
 
 		// Filter out multicast (prefix ff)
 		if (address.startsWith(IPV6_MULTICAST_PREFIX)) {
-			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " ipv6 address is invalid: multicast addresses are denied.");
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + address + " IPv6 address is invalid: multicast addresses are denied.");
 		}
 
 		// Could not filter out anycast addresses (indistinguishable from other unicast addresses)

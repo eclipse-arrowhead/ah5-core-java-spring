@@ -17,16 +17,11 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizator;
-
-@Service
-public class ManagementNormalization {
-	
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 
 @Service
 public class ManagementNormalization {
-
 	//=================================================================================================
 	// members
 
@@ -35,7 +30,6 @@ public class ManagementNormalization {
 	
 	@Autowired
 	private VersionNormalizator versionNormalizer;
-	
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
@@ -49,8 +43,6 @@ public class ManagementNormalization {
 		
 		final List<SystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
 		for (final SystemRequestDTO system : dtoList.systems()) {
-			
-			//String normalizedVersion = Utilities.isEmpty(system.version()) ? "1.0.0" : system.version().trim(); 
 			
 			normalized.add(new SystemRequestDTO(
 					system.name().trim(),
@@ -93,13 +85,6 @@ public class ManagementNormalization {
 				.collect(Collectors.toList());
 	}
 	
-	
-
-	private final Logger logger = LogManager.getLogger(this.getClass());
-
-	//=================================================================================================
-	// methods
-
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceRequestDTO> normalizeDeviceRequestDTOList(final List<DeviceRequestDTO> dtoList) {
 		logger.debug("normalizeDeviceRequestDTOs started");

@@ -11,12 +11,13 @@ import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 
 @Repository
 public interface DeviceAddressRepository extends RefreshableRepository<DeviceAddress, Long> {
+
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceAddress> findAllByDevice(final Device device);
-
+	
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceAddress> findAllByDeviceAndAddressType(final Device device, final AddressType type);
 

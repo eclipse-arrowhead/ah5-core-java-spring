@@ -30,8 +30,6 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
-import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
-import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
@@ -45,7 +43,6 @@ import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
 
 
 @Service
@@ -190,6 +187,8 @@ public class ManagementService {
 		return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
 	}
 	
+	// SYSTEMS
+	
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO createSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("createSystems started");
@@ -301,8 +300,4 @@ public class ManagementService {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
-	
-	//=================================================================================================
-	// assistant methods
-
 }
