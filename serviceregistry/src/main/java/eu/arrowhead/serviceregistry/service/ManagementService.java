@@ -96,6 +96,7 @@ public class ManagementService {
 		final List<SystemRequestDTO> normalized = managementNormalizer.normalizeSystemRequestDTOs(dto);
 			
 		normalized.forEach(n -> n.addresses().forEach(a -> validator.validateNormalizedAddress(a, origin)));
+		normalized.forEach(n -> validator.validateNormalizedVersion(n.version(), origin));
 
 		try {
 			

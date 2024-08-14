@@ -20,6 +20,7 @@ import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressTypeValidator;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ManagementValidation {
@@ -32,11 +33,25 @@ public class ManagementValidation {
 
 	@Autowired
 	private PageValidator pageValidator;
+	
+	@Autowired
+	private VersionValidator versionValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateNormalizedVersion(final String version, final String origin) {
+		logger.debug("validateNormalizedVersion started");
+		
+		try {
+			versionValidator.validateNormalizedVersion(version);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateNormalizedAddress(final AddressDTO dto, final String origin) {

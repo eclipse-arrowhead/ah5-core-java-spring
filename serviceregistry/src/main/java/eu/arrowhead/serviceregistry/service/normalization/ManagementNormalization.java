@@ -16,6 +16,7 @@ import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizator;
 
 @Service
 public class ManagementNormalization {
@@ -25,6 +26,10 @@ public class ManagementNormalization {
 
 	@Autowired
 	private AddressNormalizator addressNormalizer;
+	
+	@Autowired
+	private VersionNormalizator versionNormalizer;
+	
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
@@ -44,8 +49,7 @@ public class ManagementNormalization {
 			normalized.add(new SystemRequestDTO(
 					system.name().trim(),
 					system.metadata(),
-					//normalizedVersion,
-					system.version().trim(),
+					versionNormalizer.normalize(system.version()),
 					Utilities.isEmpty(system.addresses()) ? new ArrayList<>()
 							: system.addresses().stream()
 									.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))

@@ -74,8 +74,6 @@ public class SystemDbService {
 	
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	// TODO: return with List<SystemResponseDTO>
-	// (createSystemResponseDTOs)
 	public List<SystemResponseDTO> createBulk(final List<SystemRequestDTO> candidates) {
 		
 		logger.debug("createBulk started");
