@@ -14,7 +14,7 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 
 @Component
-public class AddressTypeValidator {
+public class AddressValidator {
 
 	//=================================================================================================
 	// members

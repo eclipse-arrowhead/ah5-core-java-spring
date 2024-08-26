@@ -2,12 +2,20 @@ package eu.arrowhead.serviceregistry.service.validation;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
+import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class SystemDiscoveryValidation {
@@ -16,12 +24,23 @@ public class SystemDiscoveryValidation {
 	// members
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
+	
+	@Autowired
+	private SystemDiscoveryNormalization normalizer;
+	
+	@Autowired
+	private AddressValidator addressValidator;
+	
+	@Autowired
+	private VersionValidator versionValidator;
 
 	//=================================================================================================
 	// methods
 	
+	// VALIDATION
+	
 	//-------------------------------------------------------------------------------------------------
-	/*public void validateRegisterSystem(final SystemRequestDTO dto, final String origin) {
+	public void validateRegisterSystem(final SystemRequestDTO dto, final String origin) {
 		logger.debug("validateRegisterSystem started");
 
 		if (dto == null) {
@@ -55,5 +74,87 @@ public class SystemDiscoveryValidation {
 				}
 			}
 		}
-	}*/
+	}
+	
+	//TODO: check length
+	//-------------------------------------------------------------------------------------------------
+	public void validateLookupSystem(final SystemLookupRequestDTO dto, final String origin) {
+		logger.debug("validateLookupSystem started");
+
+		if (dto != null) {
+
+			//system name list
+			if (!Utilities.isEmpty(dto.systemNames()) && Utilities.containsNullOrEmpty(dto.systemNames())) {
+				throw new InvalidParameterException("System name list contains null or empty element", origin);
+			}
+
+			//address list
+			if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
+				throw new InvalidParameterException("Address list contains null or empty element", origin);
+			}
+
+			//address type
+			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
+				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
+			}
+
+			//metadata
+			if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
+				throw new InvalidParameterException("Metadata requirement list contains null element", origin);
+			}
+			
+			//version list
+			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNull(dto.versions())) {
+				throw new InvalidParameterException("Version list contains null element", origin);
+			}
+			
+			//device name list
+			if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
+				throw new InvalidParameterException("Device name list contains null or empty element", origin);
+			}
+		}
+	}
+	
+	// VALIDATION AND NORMALIZATION
+	
+	//-------------------------------------------------------------------------------------------------
+	public SystemRequestDTO validateAndNormalizeRegisterSystem(final SystemRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeRegisterSystem started");
+		
+		validateRegisterSystem(dto, origin);
+		
+		final SystemRequestDTO normalized = normalizer.normalizeSystemRequestDTO(dto);
+		
+		try {
+			normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+			versionValidator.validateNormalizedVersion(normalized.version());
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+		
+		return normalized;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public SystemLookupRequestDTO validateAndNormalizeLookupSystem(final SystemLookupRequestDTO dto, final String origin) {
+		
+		validateLookupSystem(dto, origin);
+		
+		SystemLookupRequestDTO normalized = normalizer.normalizeSystemLookupRequestDTO(dto);
+		
+		try {
+			if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
+				normalized.addresses().forEach(a -> addressValidator.validateNormalizedAddress(AddressType.valueOf(normalized.addressType()), a));
+			}
+			
+			if (!Utilities.isEmpty(normalized.versions())) {
+				normalized.versions().forEach(v -> versionValidator.validateNormalizedVersion(v));
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+		
+		return normalized;
+	}
+	
 }

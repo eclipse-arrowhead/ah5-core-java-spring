@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceregistry;
 
+import eu.arrowhead.common.jpa.ArrowheadEntity;
+
 public final class ServiceRegistryConstants {
 
 	//=================================================================================================
@@ -36,7 +38,15 @@ public final class ServiceRegistryConstants {
 	public static final String $ALLOW_SELF_ADDRESSING_WD = "${" + ALLOW_SELF_ADDRESSING + ":true}";
 	public static final String ALLOW_NON_ROUTABLE_ADDRESSING = "allow.non.routable.addressing";
 	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
-
+	
+	// Property size related 
+	
+	public static final int DEVICE_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
+	public static final int ADDRESS_TYPE_LENGTH = 30;
+	public static final int ADDRESS_ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
+	
 	//=================================================================================================
 	// assistant methods
 

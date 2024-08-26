@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +19,6 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
@@ -68,9 +66,6 @@ public class ManagementService {
 	
 	//@Autowired
 	//private AddressNormalizator addressNormalizer;
-	
-	@Autowired
-	private ManagementNormalization managementNormalizer;
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -93,10 +88,12 @@ public class ManagementService {
 		logger.debug("createDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateCreateDevices(dto, origin);
+		/*validator.validateCreateDevices(dto, origin);
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
+		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));*/
+		
+		final List<DeviceRequestDTO> normalized = validator.validateAndNormalizeCreateDevices(dto, origin);
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.createBulk(normalized);
@@ -115,10 +112,12 @@ public class ManagementService {
 		logger.debug("updateDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateUpdateDevices(dto, origin);
+		/*validator.validateUpdateDevices(dto, origin);
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
+		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));*/
+		
+		final List<DeviceRequestDTO> normalized = validator.validateAndNormalizeUpdateDevices(dto, origin);
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.updateBulk(normalized);
@@ -137,14 +136,16 @@ public class ManagementService {
 		logger.debug("queryDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateQueryDevices(dto, origin);
+		/*validator.validateQueryDevices(dto, origin);
 
 		final DeviceQueryRequestDTO normalized = dto == null ? new DeviceQueryRequestDTO(null, null, null, null, null)
 				: normalizer.normalizeDeviceQueryRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
-		}
+		}*/
+		
+		final DeviceQueryRequestDTO normalized = validator.validateAndNormalizeQueryDevices(dto, origin);
 
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, Device.SORTABLE_FIELDS_BY, Device.DEFAULT_SORT_FIELD, origin);
 
@@ -194,12 +195,7 @@ public class ManagementService {
 		logger.debug("createSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		validator.validateCreateSystem(dto, origin);
-		
-		final List<SystemRequestDTO> normalized = managementNormalizer.normalizeSystemRequestDTOs(dto);
-			
-		normalized.forEach(n -> n.addresses().forEach(a -> validator.validateNormalizedAddress(a, origin)));
-		normalized.forEach(n -> validator.validateNormalizedVersion(n.version(), origin));
+		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeCreateSystems(dto, origin);
 
 		try {
 			
@@ -224,42 +220,37 @@ public class ManagementService {
 		logger.debug("querySystems started, verbose = " + verbose);
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		validator.validateQuerySystems(dto, origin);
+		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
 		
-		//normalize DTOs
-		SystemQueryRequestDTO normalized = managementNormalizer.normalizeSystemQueryRequestDTO(dto);
-		
-		//validate the normalized DTO's addresses
-		if (!Utilities.isEmpty(normalized.addressType())&&!Utilities.isEmpty(normalized.addresses())) {
-			normalized.addresses().forEach(na -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), na), origin));
-		}
-				
-		//get the response list
-		List<SystemResponseDTO> result = systemDbService.getPage(normalized, origin);
-		
-		//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
-		if (!verbose || !verboseEnabled) {
-			List<SystemResponseDTO> resultTerse = new ArrayList<>();
+		try {
+			List<SystemResponseDTO> result = systemDbService.getPageByFilters(normalized, origin);
 			
-			for (SystemResponseDTO systemResponseDTO : result) {
+			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
+			if (!verbose || !verboseEnabled) {
+				List<SystemResponseDTO> resultTerse = new ArrayList<>();
 				
-				DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+				for (SystemResponseDTO systemResponseDTO : result) {
+					
+					DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					
+					resultTerse.add(new SystemResponseDTO(
+							systemResponseDTO.name(),
+							systemResponseDTO.metadata(),
+							systemResponseDTO.version(),
+							systemResponseDTO.addresses(),
+							device,
+							systemResponseDTO.createdAt(),
+							systemResponseDTO.updatedAt()
+							));
+				}
 				
-				resultTerse.add(new SystemResponseDTO(
-						systemResponseDTO.name(),
-						systemResponseDTO.metadata(),
-						systemResponseDTO.version(),
-						systemResponseDTO.addresses(),
-						device,
-						systemResponseDTO.createdAt(),
-						systemResponseDTO.updatedAt()
-						));
+				result = resultTerse;
 			}
 			
-			result = resultTerse;
+			return new SystemListResponseDTO(result, result.size());
+		} catch (InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
-		
-		return new SystemListResponseDTO(result, result.size());
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -268,11 +259,7 @@ public class ManagementService {
 		logger.debug("updateSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		validator.validateCreateSystem(dto, origin);
-		
-		final List<SystemRequestDTO> normalized = managementNormalizer.normalizeSystemRequestDTOs(dto);
-			
-		normalized.forEach(n -> n.addresses().forEach(a -> validator.validateNormalizedAddress(a, origin)));
+		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeCreateSystems(dto, origin);
 		
 		try {
 			final List<SystemResponseDTO> entities = systemDbService.updateBulk(normalized);
@@ -292,7 +279,7 @@ public class ManagementService {
 		logger.debug("removeSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		List<String> normalizedNames = managementNormalizer.normalizeSystemNames(names);
+		List<String> normalizedNames = normalizer.normalizeSystemNames(names);
 
 		try {
 			systemDbService.deleteByNameList(normalizedNames);

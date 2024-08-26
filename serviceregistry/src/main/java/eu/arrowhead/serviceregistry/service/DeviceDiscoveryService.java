@@ -42,9 +42,6 @@ public class DeviceDiscoveryService {
 	private DeviceDiscoveryValidation validator;
 
 	@Autowired
-	private DeviceDiscoveryNormalization normalizer;
-
-	@Autowired
 	private DTOConverter dtoConverter;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
@@ -57,9 +54,11 @@ public class DeviceDiscoveryService {
 		logger.debug("registerDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateRegisterDevice(dto, origin);
+		/*validator.validateRegisterDevice(dto, origin);
 		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
-		normalized.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
+		normalized.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));*/
+		
+		final DeviceRequestDTO normalized = validator.validateAndNormalizeRegisterDevice(dto, origin);
 
 		try {
 			final Optional<Entry<Device, List<DeviceAddress>>> optional = dbService.getByName(normalized.name());
@@ -114,12 +113,14 @@ public class DeviceDiscoveryService {
 		logger.debug("lookupDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateLookupDevice(dto, origin);
+		/*validator.validateLookupDevice(dto, origin);
 		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizer.normalizeDeviceLookupRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
-		}
+		}*/
+		
+		final DeviceLookupRequestDTO normalized = validator.validateAndNormalizeLookupDevice(dto, origin);
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entries = dbService.getByFilters(normalized.deviceNames(), normalized.addresses(),

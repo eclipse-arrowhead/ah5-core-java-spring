@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import eu.arrowhead.common.Utilities;
 
 @Component
-public class AddressNormalizator {
+public class AddressNormalizer {
 
 	//=================================================================================================
 	// members

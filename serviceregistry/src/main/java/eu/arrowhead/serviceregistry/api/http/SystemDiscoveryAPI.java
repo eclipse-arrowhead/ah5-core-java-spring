@@ -8,18 +8,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.dto.DeviceListResponseDTO;
+import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
+import eu.arrowhead.dto.SystemListResponseDTO;
+import eu.arrowhead.dto.SystemLookupRequestDTO;
+import eu.arrowhead.dto.SystemRegisterRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceregistry.service.SystemDiscoveryService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -39,6 +49,9 @@ public class SystemDiscoveryAPI {
 
 	@Autowired
 	private SystemDiscoveryService sdService;
+	
+	@Autowired
+	private SystemNamePreprocessor preprocessor;
 	
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
@@ -69,17 +82,45 @@ public class SystemDiscoveryAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<SystemResponseDTO> register(@RequestBody final SystemRequestDTO dto) {
+	public ResponseEntity<SystemResponseDTO> register(final HttpServletRequest httpServletRequest, @RequestBody final SystemRegisterRequestDTO dto) {
 		logger.debug("register started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH;
-
-		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(dto, origin);
+		SystemRequestDTO identifiedDto = preprocessor.process(dto, httpServletRequest, origin);
+		
+		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(identifiedDto, origin);
 		return new ResponseEntity<SystemResponseDTO>(result.getKey(), result.getValue() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 	
 	// lookup-system operation: POST /lookup (200) (query param verbose)
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns system entries according to the given filters")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DeviceListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody SystemListResponseDTO lookup(@RequestBody(required = false) final SystemLookupRequestDTO dto, 
+			@Parameter( 
+					name =  "verbose",
+					description  = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
+					example = "true") 
+			@RequestParam boolean verbose) {
+		logger.debug("lookup started");
 
+		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
+		return sdService.lookupSystem(dto, verbose, origin);
+	}
+
+	//TODO: preprocess
 	// revoke-system operation: DELETE /revoke (200/204 depending on actual delete)
 	// you can delete not-existing system => nothing happens
 }

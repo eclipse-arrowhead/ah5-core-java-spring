@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -109,7 +111,7 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public List<SystemResponseDTO> getPage(final SystemQueryRequestDTO dto, String origin) {
+	/*public List<SystemResponseDTO> getPage(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("getPage for system query started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
 		Assert.notNull(dto.pagination(), "Page is null");
@@ -183,7 +185,7 @@ public class SystemDbService {
 			throw new InternalServerError("Database operation error");
 			
 		}
-	}
+	}*/
 	
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
@@ -271,6 +273,164 @@ public class SystemDbService {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<SystemRequestDTO> getByName(String name) {
+		logger.debug("getByName started");
+		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
+		
+		synchronized (LOCK) {
+			
+			Optional<System> system = systemRepo.findByName(name);
+			if (system.isEmpty()) {
+				return Optional.empty();
+			}
+			
+			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system.get()).stream()
+					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+					.collect(Collectors.toList());
+			
+			Device device = deviceSystemConnectorRepo.findBySystem(system.get()).get().getDevice();
+			
+			return Optional.of(new SystemRequestDTO(
+					name, 
+					Utilities.fromJson(system.get().getMetadata(), new TypeReference<Map<String, Object>>() {}),
+					system.get().getVersion(), 
+					systemAddresses, 
+					device.getName()));
+		}
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<System> getSystemByName(String name) {
+		logger.debug("getByName started");
+		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
+		
+		return systemRepo.findByName(name);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public SystemResponseDTO createSystemResponseDTO(System system) {
+		
+		synchronized (LOCK) {
+			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
+					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+					.collect(Collectors.toList());
+				
+			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+				
+			List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+					.collect(Collectors.toList());
+				
+			DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
+					device.getName(), 
+					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
+					deviceAddresses, 
+					device.getCreatedAt().toString(), 
+					device.getUpdatedAt().toString());
+				
+			SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
+					system.getName(),
+					Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {}),
+					system.getVersion(),
+					systemAddresses,
+					deviceResponseDTO,
+					system.getCreatedAt().toString(),
+					system.getUpdatedAt().toString()
+					);
+				
+			return systemResponseDTO;
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<SystemResponseDTO> getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
+		logger.debug("getPageByFilters for system query started");
+		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
+		
+		boolean withPage = dto.pagination() == null ? false : true;
+		
+		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
+	
+		try {
+			
+			List<System> systemEntries = null;
+			
+			// without filter
+			if (Utilities.isEmpty(dto.systemNames())
+					&& Utilities.isEmpty(dto.addresses())
+					&& Utilities.isEmpty(dto.addressType())
+					&& Utilities.isEmpty(dto.metadataRequirementList())
+					&& Utilities.isEmpty(dto.versions())
+					&& Utilities.isEmpty(dto.deviceNames())) {
+				
+				if (withPage) {
+					systemEntries = systemRepo.findAll(pageRequest).toList();
+				} else {
+					systemEntries = systemRepo.findAll();
+				}
+			}
+			
+			// with filters
+			if (systemEntries == null) {		
+			
+				final List<String> matchings = new ArrayList<>();
+				
+				synchronized (LOCK) {
+				
+					List<System> toFilter = Utilities.isEmpty(dto.systemNames()) ? systemRepo.findAll() : systemRepo.findAllByNameIn(dto.systemNames());
+				
+					for (System system : toFilter) {
+						if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, dto.addresses()))) {
+							continue;
+						}
+						if (dto.addressType() != null && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, Enum.valueOf(AddressType.class, dto.addressType())))) {
+							continue;
+						}
+						if (!Utilities.isEmpty(dto.metadataRequirementList())) {
+							final Map<String, Object> metadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {});
+							boolean metaDataMatch = false;
+							for (final MetadataRequirementDTO requirement : dto.metadataRequirementList()) {
+								if (MetadataRequirementsMatcher.isMetadataMatch(metadata, requirement)) {
+									metaDataMatch = true;
+									break;
+								}
+							}
+							if (!metaDataMatch) {
+								continue;
+							}
+						}
+						if (!Utilities.isEmpty(dto.versions()) && !systemRepo.findAllByVersionIn(dto.versions()).contains(system)) {
+							continue;
+						}
+						if (!Utilities.isEmpty(dto.deviceNames()) && !dto.deviceNames().contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
+							continue;
+						}
+						
+						matchings.add(system.getName());
+					}
+				}
+				
+				if (withPage) {
+					systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest).toList();
+				} else {
+					systemEntries = systemRepo.findAllByNameIn(matchings);
+				}
+				
+			}
+			
+			return createSystemResponseDTOs(systemEntries);
+			
+		} catch (Exception ex) {
+			
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+			
 		}
 	}
 	
@@ -379,12 +539,14 @@ public class SystemDbService {
 	
 	//-------------------------------------------------------------------------------------------------
 	private final List<DeviceSystemConnector> createDeviceSystemConnectorEntities(final List<SystemRequestDTO> candidates) {
-		return candidates.stream()
-				.map(c -> new DeviceSystemConnector(
-						deviceRepo.findAllByNameIn(Arrays.asList(c.deviceName())).getFirst(),
-						systemRepo.findAllByNameIn(Arrays.asList(c.name())).getFirst()
-						))
-				.collect(Collectors.toList());
+		synchronized (LOCK) {
+			return candidates.stream()
+					.map(c -> new DeviceSystemConnector(
+							deviceRepo.findAllByNameIn(Arrays.asList(c.deviceName())).getFirst(),
+							systemRepo.findAllByNameIn(Arrays.asList(c.name())).getFirst()
+							))
+					.collect(Collectors.toList());
+		}
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -392,37 +554,42 @@ public class SystemDbService {
 		List<SystemResponseDTO> result = new ArrayList<>();
 		
 		for (System system : systems) {
-			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
-					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
-					.collect(Collectors.toList());
 			
-			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+			synchronized (LOCK) {
 			
-			List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
-					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
-					.collect(Collectors.toList());
-			
-			DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
-					device.getName(), 
-					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
-					deviceAddresses, 
-					device.getCreatedAt().toString(), 
-					device.getUpdatedAt().toString());
-			
-			SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
-					system.getName(),
-					Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {}),
-					system.getVersion(),
-					systemAddresses,
-					deviceResponseDTO,
-					system.getCreatedAt().toString(),
-					system.getUpdatedAt().toString()
-					);
-			
-			result.add(systemResponseDTO);
+				List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
+						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+						.collect(Collectors.toList());
+				
+				Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+				
+				List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+						.collect(Collectors.toList());
+				
+				DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
+						device.getName(), 
+						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
+						deviceAddresses, 
+						device.getCreatedAt().toString(), 
+						device.getUpdatedAt().toString());
+				
+				SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
+						system.getName(),
+						Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {}),
+						system.getVersion(),
+						systemAddresses,
+						deviceResponseDTO,
+						system.getCreatedAt().toString(),
+						system.getUpdatedAt().toString()
+						);
+				
+				result.add(systemResponseDTO);
+			}
 		}
 		
 		return result;
 	}
+
 
 }

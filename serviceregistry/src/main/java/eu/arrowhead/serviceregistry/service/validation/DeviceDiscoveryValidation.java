@@ -13,7 +13,9 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressTypeValidator;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
 
 @Service
 public class DeviceDiscoveryValidation {
@@ -22,7 +24,10 @@ public class DeviceDiscoveryValidation {
 	// members
 
 	@Autowired
-	private AddressTypeValidator addressTypeValidator;
+	private AddressValidator addressValidator;
+	
+	@Autowired
+	private DeviceDiscoveryNormalization normalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -41,7 +46,7 @@ public class DeviceDiscoveryValidation {
 			throw new InvalidParameterException("Device name is empty", origin);
 		}
 
-		if (dto.name().length() > ArrowheadEntity.VARCHAR_SMALL) {
+		if (dto.name().length() > ServiceRegistryConstants.DEVICE_NAME_LENGTH) {
 			throw new InvalidParameterException("Device name is too long", origin);
 		}
 
@@ -62,21 +67,40 @@ public class DeviceDiscoveryValidation {
 				if (Utilities.isEmpty(address.address())) {
 					throw new InvalidParameterException("Address value is missing", origin);
 				}
+				if (address.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
+					throw new InvalidParameterException("Address type is too long", origin);
+				}
+				
+				if (address.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
+					throw new InvalidParameterException("Address is too long", origin);
+				}
 			}
 		}
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public DeviceRequestDTO validateAndNormalizeRegisterDevice(final DeviceRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeRegisterDevice started");
+		
+		validateRegisterDevice(dto, origin);
+		
+		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
+		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+		
+		return normalized;
+	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateNormalizedAddress(final AddressDTO dto, final String origin) {
+	/*private void validateNormalizedAddress(final AddressDTO dto, final String origin) {
 		logger.debug("validateNormalizedAddress started");
 		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
 
 		try {
-			addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
+			addressValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
-	}
+	}*/
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateLookupDevice(final DeviceLookupRequestDTO dto, final String origin) {
@@ -100,6 +124,21 @@ public class DeviceDiscoveryValidation {
 				throw new InvalidParameterException("Metadata requirement list contains null element", origin);
 			}
 		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public DeviceLookupRequestDTO validateAndNormalizeLookupDevice(final DeviceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeLookupDevice started");
+		
+		validateLookupDevice(dto, origin);
+		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizer.normalizeDeviceLookupRequestDTO(dto);
+
+		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
+			//normalized.addresses().forEach(a -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
+			normalized.addresses().forEach(a -> addressValidator.validateNormalizedAddress(AddressType.valueOf(normalized.addressType()), a));
+		}
+		
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------

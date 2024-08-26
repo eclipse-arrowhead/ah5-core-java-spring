@@ -15,8 +15,8 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizator;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizator;
+import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 
@@ -26,10 +26,10 @@ public class ManagementNormalization {
 	// members
 
 	@Autowired
-	private AddressNormalizator addressNormalizer;
+	private AddressNormalizer addressNormalizer;
 	
 	@Autowired
-	private VersionNormalizator versionNormalizer;
+	private VersionNormalizer versionNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	

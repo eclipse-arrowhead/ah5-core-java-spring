@@ -6,6 +6,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.jpa.ArrowheadEntity;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 
 @Component
 public class VersionValidator {
@@ -30,6 +32,11 @@ public class VersionValidator {
 	public void validateNormalizedVersion(final String version) {
 
 		logger.debug("Validate version started: " + version);
+		
+		//check size
+		if (version.length() > ServiceRegistryConstants.SYSTEM_VERSION_LENGTH) {
+			throw new InvalidParameterException(ERROR_MSG_PREFIX + "verson size is too long!");
+		}
 
 		// check the number of the dot characters
 		if (version.chars().filter(ch -> ch == DOT).count() != NUMBER_OF_SEPARATORS) {

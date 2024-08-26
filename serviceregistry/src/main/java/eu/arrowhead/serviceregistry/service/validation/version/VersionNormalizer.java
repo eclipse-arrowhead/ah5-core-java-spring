@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import eu.arrowhead.common.Utilities;
 
 @Component
-public class VersionNormalizator {
+public class VersionNormalizer {
 	
 	//=================================================================================================
 	// members
