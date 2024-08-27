@@ -5,13 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -201,14 +199,14 @@ public class SystemDbService {
 			
 			//writing the updated system entities to the database
 			List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
-			for (System systemEntity : systemEntities) {
-				Map<String, Object> metadata = toUpdate.stream()
+			for (final System systemEntity : systemEntities) {
+				final Map<String, Object> metadata = toUpdate.stream()
 						.filter(s -> s.name().equals(systemEntity.getName()))
 						.findFirst()
 						.get()
 						.metadata();
 				
-				String version = toUpdate.stream()
+				final String version = toUpdate.stream()
 						.filter(s -> s.name().equals(systemEntity.getName()))
 						.findFirst()
 						.get()
@@ -227,18 +225,18 @@ public class SystemDbService {
 			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
 			
 			//updating the old device-system connections
-			List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
-			for (System systemEntity : systemEntities) {
-				DeviceSystemConnector connection = deviceSystemConnectorRepo.findBySystem(systemEntity).get();
+			final List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
+			for (final System systemEntity : systemEntities) {
+				final DeviceSystemConnector connection = deviceSystemConnectorRepo.findBySystem(systemEntity).get();
 				connectionsToUpdate.add(connection);
 			}
-			for (DeviceSystemConnector connection : connectionsToUpdate) {
-				String deviceName = toUpdate.stream()
+			for (final DeviceSystemConnector connection : connectionsToUpdate) {
+				final String deviceName = toUpdate.stream()
 						.filter(s -> s.name().equals(connection.getSystem().getName()))
 						.findFirst()
 						.get()
 						.deviceName();
-				Device device = deviceRepo.findByName(deviceName).get();
+				final Device device = deviceRepo.findByName(deviceName).get();
 				
 				connection.setDevice(device);
 			}
@@ -277,22 +275,22 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public Optional<SystemRequestDTO> getByName(String name) {
+	public Optional<SystemRequestDTO> getByName(final String name) {
 		logger.debug("getByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
 		
 		synchronized (LOCK) {
 			
-			Optional<System> system = systemRepo.findByName(name);
+			final Optional<System> system = systemRepo.findByName(name);
 			if (system.isEmpty()) {
 				return Optional.empty();
 			}
 			
-			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system.get()).stream()
+			final List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system.get()).stream()
 					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 			
-			Device device = deviceSystemConnectorRepo.findBySystem(system.get()).get().getDevice();
+			final Device device = deviceSystemConnectorRepo.findBySystem(system.get()).get().getDevice();
 			
 			return Optional.of(new SystemRequestDTO(
 					name, 
@@ -305,7 +303,7 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public Optional<System> getSystemByName(String name) {
+	public Optional<System> getSystemByName(final String name) {
 		logger.debug("getByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
 		
@@ -313,27 +311,27 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public SystemResponseDTO createSystemResponseDTO(System system) {
+	public SystemResponseDTO createSystemResponseDTO(final System system) {
 		
 		synchronized (LOCK) {
-			List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
+			final List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
 					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 				
-			Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+			final Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
 				
-			List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+			final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
 					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 				
-			DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
+			final DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
 					device.getName(), 
 					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
 					deviceAddresses, 
 					device.getCreatedAt().toString(), 
 					device.getUpdatedAt().toString());
 				
-			SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
+			final SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
 					system.getName(),
 					Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {}),
 					system.getVersion(),
@@ -352,7 +350,7 @@ public class SystemDbService {
 		logger.debug("getPageByFilters for system query started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
 		
-		boolean withPage = dto.pagination() == null ? false : true;
+		final boolean withPage = dto.pagination() == null ? false : true;
 		
 		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
 	
@@ -382,9 +380,9 @@ public class SystemDbService {
 				
 				synchronized (LOCK) {
 				
-					List<System> toFilter = Utilities.isEmpty(dto.systemNames()) ? systemRepo.findAll() : systemRepo.findAllByNameIn(dto.systemNames());
+					final List<System> toFilter = Utilities.isEmpty(dto.systemNames()) ? systemRepo.findAll() : systemRepo.findAllByNameIn(dto.systemNames());
 				
-					for (System system : toFilter) {
+					for (final System system : toFilter) {
 						if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, dto.addresses()))) {
 							continue;
 						}
@@ -425,7 +423,7 @@ public class SystemDbService {
 			
 			return createSystemResponseDTOs(systemEntries);
 			
-		} catch (Exception ex) {
+		} catch (final Exception ex) {
 			
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -461,7 +459,7 @@ public class SystemDbService {
 	// assistant methods
 	
 	//-------------------------------------------------------------------------------------------------
-	//checks if system name already exists, throws exception if it DOES
+	//checks if system name already exists, throws exception if it does
 	private void checkSystemNamesNotExist(final List<SystemRequestDTO> candidates) {
 		
 		final List<String> candidateNames = candidates.stream()
@@ -479,22 +477,22 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	//checks if system name already exists, throws exception if it does NOT
+	//checks if system name already exists, throws exception if it does not
 	private void checkSystemNamesExist(final List<SystemRequestDTO> requested) {
 		
-		List<String> requestedNames = requested.stream()
+		final List<String> requestedNames = requested.stream()
 				.map(s -> s.name())
 				.collect(Collectors.toList());
 		
-		List<System> givenSystems = systemRepo.findAllByNameIn(requestedNames);
+		final List<System> givenSystems = systemRepo.findAllByNameIn(requestedNames);
 		
 		if (requestedNames.size() > givenSystems.size()) {
 			
-			List<String> existingNames = givenSystems.stream()
+			final List<String> existingNames = givenSystems.stream()
 					.map(s -> s.getName())
 					.collect(Collectors.toList());
-			List<String> notExistingNames = new ArrayList<String>(requestedNames.size()-existingNames.size());
-			for (String name : requestedNames) {
+			final List<String> notExistingNames = new ArrayList<String>(requestedNames.size()-existingNames.size());
+			for (final String name : requestedNames) {
 				if (!existingNames.contains(name)) {
 					notExistingNames.add(name);
 				}
@@ -504,7 +502,7 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	//checks if device name already exists, throws exception if it does NOT
+	//checks if device name already exists, throws exception if it does not
 	private void checkDeviceNamesExist(final List<SystemRequestDTO> candidates) {
 		final List<String> candidateDeviceNames = candidates.stream()
 				.map(c -> c.deviceName())
@@ -573,31 +571,31 @@ public class SystemDbService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	private List<SystemResponseDTO> createSystemResponseDTOs(List<System> systems) {
-		List<SystemResponseDTO> result = new ArrayList<>();
+	private List<SystemResponseDTO> createSystemResponseDTOs(final List<System> systems) {
+		final List<SystemResponseDTO> result = new ArrayList<>();
 		
-		for (System system : systems) {
+		for (final System system : systems) {
 			
 			synchronized (LOCK) {
 			
-				List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
+				final List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
 						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 						.collect(Collectors.toList());
 				
-				Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+				final Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
 				
-				List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+				final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
 						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 						.collect(Collectors.toList());
 				
-				DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
+				final DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
 						device.getName(), 
 						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
 						deviceAddresses, 
 						device.getCreatedAt().toString(), 
 						device.getUpdatedAt().toString());
 				
-				SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
+				final SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
 						system.getName(),
 						Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {}),
 						system.getVersion(),

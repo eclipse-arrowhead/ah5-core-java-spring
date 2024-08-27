@@ -63,4 +63,12 @@ public class SystemDiscoveryNormalization {
 				Utilities.isEmpty(dto.versions()) ? null : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(dn -> dn.trim()).collect(Collectors.toList()));	
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public String normalizeSystemName(final String name) {
+		logger.debug("normalizeSystemName started");
+		Assert.notNull(name, "System name is null");
+		
+		return name.trim();
+	}
 }

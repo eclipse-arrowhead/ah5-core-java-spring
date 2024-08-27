@@ -44,7 +44,7 @@ public class VersionValidator {
 		}
 
 		// check the number of version numbers
-		String[] chunksOfVersion = version.split(DOT_REGEX);
+		final String[] chunksOfVersion = version.split(DOT_REGEX);
 		if (chunksOfVersion.length != NUMBER_OF_SEPARATORS + 1) {
 			throw new InvalidParameterException(ERROR_MSG_PREFIX + "version must contain exactly " + (NUMBER_OF_SEPARATORS + 1) + " numbers.");
 		}

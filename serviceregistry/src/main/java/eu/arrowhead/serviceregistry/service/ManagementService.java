@@ -68,9 +68,6 @@ public class ManagementService {
 	//private AddressNormalizator addressNormalizer;
 
 	@Autowired
-	private ManagementNormalization normalizer;
-
-	@Autowired
 	private DTOConverter dtoConverter;
 	
     @Value("${service.discovery.verbose}")
@@ -159,10 +156,12 @@ public class ManagementService {
 		logger.debug("removeDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final List<String> normalized = names.stream()
+		/*final List<String> normalized = names.stream()
 				.filter(n -> !Utilities.isEmpty(n))
 				.map(n -> n.trim())
-				.collect(Collectors.toList());
+				.collect(Collectors.toList());*/
+		
+		final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 
 		try {
 			deviceDbService.deleteByNameList(normalized);
@@ -215,7 +214,7 @@ public class ManagementService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, boolean verbose, final String origin) {
+	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, final boolean verbose, final String origin) {
 		
 		logger.debug("querySystems started, verbose = " + verbose);
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
@@ -227,11 +226,11 @@ public class ManagementService {
 			
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
-				List<SystemResponseDTO> resultTerse = new ArrayList<>();
+				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
 				
-				for (SystemResponseDTO systemResponseDTO : result) {
+				for (final SystemResponseDTO systemResponseDTO : result) {
 					
-					DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					final DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
 					
 					resultTerse.add(new SystemResponseDTO(
 							systemResponseDTO.name(),
@@ -248,7 +247,7 @@ public class ManagementService {
 			}
 			
 			return new SystemListResponseDTO(result, result.size());
-		} catch (InternalServerError ex) {
+		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
@@ -259,7 +258,7 @@ public class ManagementService {
 		logger.debug("updateSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeCreateSystems(dto, origin);
+		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeUpdateSystems(dto, origin);
 		
 		try {
 			final List<SystemResponseDTO> entities = systemDbService.updateBulk(normalized);
@@ -279,7 +278,7 @@ public class ManagementService {
 		logger.debug("removeSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		List<String> normalizedNames = normalizer.normalizeSystemNames(names);
+		final List<String> normalizedNames = validator.validateAndNormalizeRemoveSystems(names, origin);
 
 		try {
 			systemDbService.deleteByNameList(normalizedNames);

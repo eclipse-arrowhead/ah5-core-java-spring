@@ -33,6 +33,8 @@ public class DeviceDiscoveryValidation {
 
 	//=================================================================================================
 	// methods
+	
+	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateRegisterDevice(final DeviceRequestDTO dto, final String origin) {
@@ -79,30 +81,6 @@ public class DeviceDiscoveryValidation {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public DeviceRequestDTO validateAndNormalizeRegisterDevice(final DeviceRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeRegisterDevice started");
-		
-		validateRegisterDevice(dto, origin);
-		
-		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
-		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
-		
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	/*private void validateNormalizedAddress(final AddressDTO dto, final String origin) {
-		logger.debug("validateNormalizedAddress started");
-		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
-
-		try {
-			addressValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}*/
-
-	//-------------------------------------------------------------------------------------------------
 	public void validateLookupDevice(final DeviceLookupRequestDTO dto, final String origin) {
 		logger.debug("validateLookupDevice started");
 
@@ -127,6 +105,29 @@ public class DeviceDiscoveryValidation {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
+	public void validateRevokeDevice(final String name, final String origin) {
+		logger.debug("validateRevokeDevice started");
+
+		if (Utilities.isEmpty(name)) {
+			throw new InvalidParameterException("Device name is empty", origin);
+		}
+	}
+	
+	// // VALIDATION AND NORMALIZATION
+	
+	//-------------------------------------------------------------------------------------------------
+	public DeviceRequestDTO validateAndNormalizeRegisterDevice(final DeviceRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeRegisterDevice started");
+		
+		validateRegisterDevice(dto, origin);
+		
+		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
+		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+		
+		return normalized;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
 	public DeviceLookupRequestDTO validateAndNormalizeLookupDevice(final DeviceLookupRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeLookupDevice started");
 		
@@ -134,19 +135,19 @@ public class DeviceDiscoveryValidation {
 		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizer.normalizeDeviceLookupRequestDTO(dto);
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
-			//normalized.addresses().forEach(a -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
 			normalized.addresses().forEach(a -> addressValidator.validateNormalizedAddress(AddressType.valueOf(normalized.addressType()), a));
 		}
 		
 		return normalized;
 	}
-
+	
 	//-------------------------------------------------------------------------------------------------
-	public void validateRevokeDevice(final String name, final String origin) {
-		logger.debug("validateRevokeDevice started");
+	public String validateAndNormalizeRevokeDevice(final String name, final String origin) {
+		logger.debug("validateAndNormalizeRevokeDevice started");
 
-		if (Utilities.isEmpty(name)) {
-			throw new InvalidParameterException("Device name is empty", origin);
-		}
+		validateRevokeDevice(name, origin);
+		
+		return normalizer.normalizeDeviceName(name);
+		
 	}
 }

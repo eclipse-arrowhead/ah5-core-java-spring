@@ -116,4 +116,12 @@ public class ManagementNormalization {
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
 				dto.metadataRequirementList());
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeDeviceNames(final List<String> originalNames) {
+		return originalNames.stream()
+				.filter(n -> !Utilities.isEmpty(n))
+				.map(n -> n.trim())
+				.collect(Collectors.toList());
+	}
 }

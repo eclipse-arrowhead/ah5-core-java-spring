@@ -166,4 +166,13 @@ public class SystemDiscoveryValidation {
 		}
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	public String validateAndNormalizeRevokeSystem(final String name, final String origin) {
+		logger.debug("validateRevokeSystem started");
+
+		validateRevokeSystem(name, origin);
+		
+		return normalizer.normalizeSystemName(name);
+	}	
+	
 }

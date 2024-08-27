@@ -69,8 +69,8 @@ public class SystemDiscoveryService {
 				checkSameSystemInstance(existingSystemAsDTO, dto);
 
 				//convert to response and return
-				System existing = dbService.getSystemByName(dto.name()).get();
-				SystemResponseDTO existingSystemAsResponseDTO = dbService.createSystemResponseDTO(existing);
+				final System existing = dbService.getSystemByName(dto.name()).get();
+				final SystemResponseDTO existingSystemAsResponseDTO = dbService.createSystemResponseDTO(existing);
 				return Map.entry(existingSystemAsResponseDTO, false);
 			}
 
@@ -87,7 +87,7 @@ public class SystemDiscoveryService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO lookupSystem(final SystemLookupRequestDTO dto, boolean verbose, final String origin) {
+	public SystemListResponseDTO lookupSystem(final SystemLookupRequestDTO dto, final boolean verbose, final String origin) {
 		logger.debug("lookupSystem started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
@@ -107,11 +107,11 @@ public class SystemDiscoveryService {
 			
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
-				List<SystemResponseDTO> resultTerse = new ArrayList<>();
+				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
 				
-				for (SystemResponseDTO systemResponseDTO : result) {
+				for (final SystemResponseDTO systemResponseDTO : result) {
 					
-					DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					final DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
 					
 					resultTerse.add(new SystemResponseDTO(
 							systemResponseDTO.name(),
@@ -128,7 +128,7 @@ public class SystemDiscoveryService {
 			}
 			
 			return new SystemListResponseDTO(result, result.size());
-		} catch (InternalServerError ex ) {
+		} catch (final InternalServerError ex ) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
@@ -138,7 +138,7 @@ public class SystemDiscoveryService {
 		logger.debug("revokeSystem started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateRevokeSystem(name, origin);
+		validator.validateAndNormalizeRevokeSystem(name, origin);
 
 		try {
 			return dbService.deleteByName(name.trim());
@@ -152,7 +152,7 @@ public class SystemDiscoveryService {
 	
 	//-------------------------------------------------------------------------------------------------
 	// thyrows exception, if the two systems doesn't have the same attributes
-	private void checkSameSystemInstance(SystemRequestDTO system1, SystemRequestDTO system2) {
+	private void checkSameSystemInstance(final SystemRequestDTO system1, final SystemRequestDTO system2) {
 		logger.debug("checkSameSystemInstance started");
 		
 		Assert.isTrue(system1.name().equals(system2.name()), "The systems are not identical!");
