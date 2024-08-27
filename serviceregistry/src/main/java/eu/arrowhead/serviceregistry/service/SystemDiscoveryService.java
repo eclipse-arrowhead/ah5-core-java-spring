@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,22 +16,15 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
-import eu.arrowhead.dto.DeviceListResponseDTO;
-import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
-import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
-import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 
 @Service
@@ -105,12 +97,12 @@ public class SystemDiscoveryService {
 			List<SystemResponseDTO> result = dbService.getPageByFilters(
 					new SystemQueryRequestDTO(
 							null,
-							dto.systemNames(),
-							dto.addresses(),
-							dto.addressType(),
-							dto.metadataRequirementList(),
-							dto.versions(),
-							dto.deviceNames()), 
+							normalized.systemNames(),
+							normalized.addresses(),
+							normalized.addressType(),
+							normalized.metadataRequirementList(),
+							normalized.versions(),
+							normalized.deviceNames()), 
 					origin);
 			
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
@@ -137,6 +129,20 @@ public class SystemDiscoveryService {
 			
 			return new SystemListResponseDTO(result, result.size());
 		} catch (InternalServerError ex ) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public boolean revokeSystem(final String name, final String origin) {
+		logger.debug("revokeSystem started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validator.validateRevokeSystem(name, origin);
+
+		try {
+			return dbService.deleteByName(name.trim());
+		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}

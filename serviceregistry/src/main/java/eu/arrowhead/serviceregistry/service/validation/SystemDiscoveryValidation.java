@@ -13,6 +13,7 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
@@ -51,7 +52,7 @@ public class SystemDiscoveryValidation {
 			throw new InvalidParameterException("System name is empty", origin);
 		}
 
-		if (dto.name().length() > ArrowheadEntity.VARCHAR_SMALL) {
+		if (dto.name().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
 			throw new InvalidParameterException("System name is too long", origin);
 		}
 
@@ -76,7 +77,6 @@ public class SystemDiscoveryValidation {
 		}
 	}
 	
-	//TODO: check length
 	//-------------------------------------------------------------------------------------------------
 	public void validateLookupSystem(final SystemLookupRequestDTO dto, final String origin) {
 		logger.debug("validateLookupSystem started");
@@ -155,6 +155,15 @@ public class SystemDiscoveryValidation {
 		}
 		
 		return normalized;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateRevokeSystem(final String name, final String origin) {
+		logger.debug("validateRevokeSystem started");
+
+		if (Utilities.isEmpty(name)) {
+			throw new InvalidParameterException("System name is empty", origin);
+		}
 	}
 	
 }

@@ -434,6 +434,29 @@ public class SystemDbService {
 		}
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public boolean deleteByName(final String name) {
+		logger.debug("deleteByName started");
+		Assert.isTrue(!Utilities.isEmpty(name), "system name is empty");
+
+		try {
+			final Optional<System> optional = systemRepo.findByName(name);
+			if (optional.isPresent()) {
+				systemRepo.delete(optional.get());
+				systemRepo.flush();
+				return true;
+			}
+
+			return false;
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
 	//=================================================================================================
 	// assistant methods
 	

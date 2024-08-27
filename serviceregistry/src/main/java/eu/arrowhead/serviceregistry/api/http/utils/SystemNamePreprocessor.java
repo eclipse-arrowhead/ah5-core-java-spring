@@ -32,5 +32,14 @@ public class SystemNamePreprocessor {
 		
 		return new SystemRequestDTO(name, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName());
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public String process(final HttpServletRequest request, final String origin) throws InvalidParameterException {
+		logger.debug("process started");
+		
+		final String name = HttpUtilities.acquireName(request, origin);
+		
+		return name;
+	}
 
 }
