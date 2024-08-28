@@ -350,10 +350,10 @@ public class SystemDbService {
 		logger.debug("getPageByFilters for system query started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
 		
-		final boolean withPage = dto.pagination() == null ? false : true;
-		
-		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
-	
+		PageRequest pageRequest = null;
+		if (dto.pagination() != null) {
+			pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
+		}
 		try {
 			
 			List<System> systemEntries = null;
@@ -366,7 +366,7 @@ public class SystemDbService {
 					&& Utilities.isEmpty(dto.versions())
 					&& Utilities.isEmpty(dto.deviceNames())) {
 				
-				if (withPage) {
+				if (pageRequest != null) {
 					systemEntries = systemRepo.findAll(pageRequest).toList();
 				} else {
 					systemEntries = systemRepo.findAll();
@@ -413,7 +413,7 @@ public class SystemDbService {
 					}
 				}
 				
-				if (withPage) {
+				if (pageRequest != null) {
 					systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest).toList();
 				} else {
 					systemEntries = systemRepo.findAllByNameIn(matchings);
@@ -577,23 +577,31 @@ public class SystemDbService {
 		for (final System system : systems) {
 			
 			synchronized (LOCK) {
-			
+				
 				final List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
 						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 						.collect(Collectors.toList());
 				
-				final Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
+				// There may not be a device associated with the system because it has been deleted in the meantime
+				Device device = null;
+				final Optional<DeviceSystemConnector> optionalConnector = deviceSystemConnectorRepo.findBySystem(system);
+				if (optionalConnector.isPresent()) {
+					device = optionalConnector.get().getDevice();
+				}
 				
-				final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
-						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
-						.collect(Collectors.toList());
-				
-				final DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
-						device.getName(), 
-						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
-						deviceAddresses, 
-						device.getCreatedAt().toString(), 
-						device.getUpdatedAt().toString());
+				DeviceResponseDTO deviceResponseDTO = null;
+				if (device != null) {
+					final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+							.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+							.collect(Collectors.toList());
+					
+					 deviceResponseDTO = new DeviceResponseDTO(
+							device.getName(), 
+							Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {}), 
+							deviceAddresses, 
+							device.getCreatedAt().toString(), 
+							device.getUpdatedAt().toString());
+				}
 				
 				final SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
 						system.getName(),

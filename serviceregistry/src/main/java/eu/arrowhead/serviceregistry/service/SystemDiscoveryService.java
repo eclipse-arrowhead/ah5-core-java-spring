@@ -66,7 +66,7 @@ public class SystemDiscoveryService {
 				final SystemRequestDTO existingSystemAsDTO = optional.get();
 				
 				// We should check if every property is the same
-				checkSameSystemInstance(existingSystemAsDTO, dto);
+				checkIfSameSystemInstance(existingSystemAsDTO, dto);
 
 				//convert to response and return
 				final System existing = dbService.getSystemByName(dto.name()).get();
@@ -152,8 +152,8 @@ public class SystemDiscoveryService {
 	
 	//-------------------------------------------------------------------------------------------------
 	// thyrows exception, if the two systems doesn't have the same attributes
-	private void checkSameSystemInstance(final SystemRequestDTO system1, final SystemRequestDTO system2) {
-		logger.debug("checkSameSystemInstance started");
+	private void checkIfSameSystemInstance(final SystemRequestDTO system1, final SystemRequestDTO system2) {
+		logger.debug("checkIfSameSystemInstance started");
 		
 		Assert.isTrue(system1.name().equals(system2.name()), "The systems are not identical!");
 		

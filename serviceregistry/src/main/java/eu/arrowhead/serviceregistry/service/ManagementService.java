@@ -160,13 +160,14 @@ public class ManagementService {
 				.filter(n -> !Utilities.isEmpty(n))
 				.map(n -> n.trim())
 				.collect(Collectors.toList());*/
-		
-		final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
-
 		try {
+			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
+			
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 	}
 

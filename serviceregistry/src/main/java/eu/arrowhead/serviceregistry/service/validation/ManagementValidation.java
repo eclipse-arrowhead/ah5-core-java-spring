@@ -209,7 +209,11 @@ public class ManagementValidation {
 	public List<String> validateAndNormalizeRemoveDevices(final List<String> names, final String origin) {
 		logger.debug("validateAndNormalizeRemoveDevices started");
 
-		validateRemoveDevices(names, origin);
+		try {
+			validateRemoveDevices(names, origin);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
 
 		return normalizer.normalizeDeviceNames(names);
 	}
