@@ -75,7 +75,7 @@ public class SystemDiscoveryService {
 			}
 
 			// New system
-			final SystemResponseDTO response = dbService.createBulk(List.of(dto)).get(0);
+			final SystemResponseDTO response = dbService.createBulk(List.of(normalized)).get(0);
 			return Map.entry(response, true);
 			
 		} catch (final InvalidParameterException ex) {
