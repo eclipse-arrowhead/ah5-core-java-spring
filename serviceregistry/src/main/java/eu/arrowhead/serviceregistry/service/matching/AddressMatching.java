@@ -24,7 +24,7 @@ public class AddressMatching {
 		List<AddressDTO> temp1 = new ArrayList<>(addresses1);
 		final List<AddressDTO> temp2 = new ArrayList<>(addresses2);
 		
-		final int temp1Size = temp1.size();
+		int temp1Size = temp1.size();
 		while (temp1Size != 0) {
 			for (final AddressDTO temp2Address : temp2) {
 				temp1 = removeMatch(temp1, temp2Address);
@@ -33,6 +33,7 @@ public class AddressMatching {
 				if (temp1.size() == temp1Size) {
 					return false;
 				}
+				temp1Size = temp1.size();
 			}
 		}
 		
