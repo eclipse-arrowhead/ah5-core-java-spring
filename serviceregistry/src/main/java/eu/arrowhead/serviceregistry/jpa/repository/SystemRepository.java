@@ -12,19 +12,19 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 
 @Repository
 public interface SystemRepository extends RefreshableRepository<System, Long> {
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<System> findAllByNameIn(final List<String> names);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<System> findByName(final String name);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Page<System> findAllByNameIn(final List<String> names, Pageable pageble);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<System> findAllByVersionIn(final List<String> versions);
 }

@@ -27,23 +27,23 @@ public class ManagementNormalization {
 
 	@Autowired
 	private AddressNormalizer addressNormalizer;
-	
+
 	@Autowired
 	private VersionNormalizer versionNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemRequestDTO> normalizeSystemRequestDTOs(final SystemListRequestDTO dtoList) {
 		logger.debug("normalizeSystemRequestDTOs started");
 		Assert.notNull(dtoList, "SystemListRequestDTO is null");
-		
+
 		final List<SystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
 		for (final SystemRequestDTO system : dtoList.systems()) {
-			
+
 			normalized.add(new SystemRequestDTO(
 					system.name().trim(),
 					system.metadata(),
@@ -56,27 +56,27 @@ public class ManagementNormalization {
 		}
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public SystemQueryRequestDTO normalizeSystemQueryRequestDTO(final SystemQueryRequestDTO dto) {
 		logger.debug("normalizeSystemQueryRequestDTO started");
 		Assert.notNull(dto, "SystemQueryRequestDTO is null");
-		
+
 		return new SystemQueryRequestDTO(
 				dto.pagination(), //no need to normailze, because it will happen in the getPageRequest method
-				Utilities.isEmpty(dto.systemNames()) ? null 
-						: dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()), 
-				Utilities.isEmpty(dto.addresses()) ? null 
-						: dto.addresses().stream().map(n -> n.trim()).collect(Collectors.toList()), 
-				Utilities.isEmpty(dto.addressType()) ? null 
+				Utilities.isEmpty(dto.systemNames()) ? null
+						: dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.addresses()) ? null
+						: dto.addresses().stream().map(n -> n.trim()).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.addressType()) ? null
 						: dto.addressType().trim(),
-				dto.metadataRequirementList(), 
-				Utilities.isEmpty(dto.versions()) ? null 
-						: dto.versions().stream().map(n -> n.trim()).collect(Collectors.toList()), 
-				Utilities.isEmpty(dto.deviceNames()) ? null 
+				dto.metadataRequirementList(),
+				Utilities.isEmpty(dto.versions()) ? null
+						: dto.versions().stream().map(n -> n.trim()).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.deviceNames()) ? null
 						: dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeSystemNames(final List<String> originalNames) {
 		return originalNames.stream()
@@ -84,7 +84,7 @@ public class ManagementNormalization {
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceRequestDTO> normalizeDeviceRequestDTOList(final List<DeviceRequestDTO> dtoList) {
 		logger.debug("normalizeDeviceRequestDTOs started");
@@ -116,7 +116,7 @@ public class ManagementNormalization {
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
 				dto.metadataRequirementList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeDeviceNames(final List<String> originalNames) {
 		return originalNames.stream()

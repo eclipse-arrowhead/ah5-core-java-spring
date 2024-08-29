@@ -17,7 +17,6 @@ import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
-import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -28,11 +27,8 @@ import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
-import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
 
 @Service
 public class ManagementValidation {
@@ -45,10 +41,10 @@ public class ManagementValidation {
 
 	@Autowired
 	private PageValidator pageValidator;
-	
+
 	@Autowired
 	private VersionValidator versionValidator;
-	
+
 	@Autowired
 	private ManagementNormalization normalizer;
 
@@ -56,7 +52,7 @@ public class ManagementValidation {
 
 	//=================================================================================================
 	// methods
-	
+
 	// DEVICE VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -81,7 +77,7 @@ public class ManagementValidation {
 			if (Utilities.isEmpty(device.name())) {
 				throw new InvalidParameterException("Device name is empty", origin);
 			}
-			
+
 			if (device.name().length() > ServiceRegistryConstants.DEVICE_NAME_LENGTH) {
 				throw new InvalidParameterException("Device name is too long", origin);
 			}
@@ -109,11 +105,11 @@ public class ManagementValidation {
 					if (Utilities.isEmpty(address.address())) {
 						throw new InvalidParameterException("Address value is missing", origin);
 					}
-					
+
 					if (address.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
 						throw new InvalidParameterException("Address type is too long", origin);
 					}
-					
+
 					if (address.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
@@ -121,13 +117,13 @@ public class ManagementValidation {
 			}
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
 		logger.debug("validateUpdateDevice started");
 		validateCreateDevices(dto, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateQueryDevices(final DeviceQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryDevices started");
@@ -152,7 +148,7 @@ public class ManagementValidation {
 			}
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateRemoveDevices(final List<String> names, final String origin) {
 		logger.debug("validateRemoveDevices started");
@@ -165,34 +161,34 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Device name list contains null or empty element", origin);
 		}
 	}
-	
+
 	// DEVICE VALIDATION AND NORMALIZATION
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceRequestDTO> validateAndNormalizeCreateDevices(final DeviceListRequestDTO dto, final String origin) {
-		
+
 		validateCreateDevices(dto, origin);
-		
+
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		
+
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceRequestDTO> validateAndNormalizeUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
-		
+
 		validateUpdateDevices(dto, origin);
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		
+
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public DeviceQueryRequestDTO validateAndNormalizeQueryDevices(final DeviceQueryRequestDTO dto, final String origin) {
-		
+
 		validateQueryDevices(dto, origin);
 
 		final DeviceQueryRequestDTO normalized = dto == null ? new DeviceQueryRequestDTO(null, null, null, null, null)
@@ -201,10 +197,10 @@ public class ManagementValidation {
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
 		}
-		
+
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeRemoveDevices(final List<String> names, final String origin) {
 		logger.debug("validateAndNormalizeRemoveDevices started");
@@ -217,7 +213,7 @@ public class ManagementValidation {
 
 		return normalizer.normalizeDeviceNames(names);
 	}
-	
+
 	// SERVICE DEFINITION VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -242,10 +238,10 @@ public class ManagementValidation {
 			// TODO: max 63 chars and naming convention!
 		}
 	}
-	
+
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
 	// TODO
-	
+
 	// SYSTEM VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -275,11 +271,11 @@ public class ManagementValidation {
 			if (names.contains(system.name())) {
 				throw new InvalidParameterException("Duplicate system name: " + system.name(), origin);
 			}
-			
+
 			if (system.name().length() > ArrowheadEntity.VARCHAR_SMALL) {
 				throw new InvalidParameterException("System name is too long: " + system.name(), origin);
 			}
-			
+
 			names.add(system.name());
 
 			if (!Utilities.isEmpty(system.addresses())) {
@@ -300,11 +296,11 @@ public class ManagementValidation {
 					if (Utilities.isEmpty(address.address())) {
 						throw new InvalidParameterException("Address value is missing", origin);
 					}
-					
+
 					if (address.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
 						throw new InvalidParameterException("Address type is too long", origin);
 					}
-					
+
 					if (address.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
@@ -312,14 +308,14 @@ public class ManagementValidation {
 			}
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateUpdateSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateSystems started");
-		
+
 		validateCreateSystems(dto, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQuerySystems started");
@@ -354,7 +350,7 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Device name list contains null or empty element", origin);
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateRemoveSystems(final List<String> originalNames, final  String origin) {
 		logger.debug("validateRemoveSystems started");
@@ -367,60 +363,60 @@ public class ManagementValidation {
 			throw new InvalidParameterException("System name list contains null or empty element", origin);
 		}
 	}
-	
+
 	// SYSTEM VALIDATION AND NORMALIZATION
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemRequestDTO> validateAndNormalizeCreateSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeUpdateSystems started");
 		validateCreateSystems(dto, origin);
-		
+
 		final List<SystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(dto);
-			
+
 		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
-		
+
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemRequestDTO> validateAndNormalizeUpdateSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeUpdateSystems started");
-		
+
 		return validateAndNormalizeCreateSystems(dto, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public SystemQueryRequestDTO validateAndNormalizeQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeQuerySystems started");
-		
+
 		validateQuerySystems(dto, origin);
-		
+
 		final SystemQueryRequestDTO normalized = normalizer.normalizeSystemQueryRequestDTO(dto);
-		
-		if (!Utilities.isEmpty(normalized.addressType())&&!Utilities.isEmpty(normalized.addresses())) {
+
+		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(na -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), na), origin));
 		}
-		
+
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeRemoveSystems(final List<String> originalNames, final String origin) {
 		logger.debug("validateAndNormalizeRemoveSystems started");
-		
+
 		validateRemoveSystems(originalNames, origin);
-		
+
 		return normalizer.normalizeSystemNames(originalNames);
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
 	private void validateNormalizedVersion(final String version, final String origin) {
 		logger.debug("validateNormalizedVersion started");
-		
+
 		try {
 			versionValidator.validateNormalizedVersion(version);
 		} catch (final InvalidParameterException ex) {
@@ -432,11 +428,11 @@ public class ManagementValidation {
 	private void validateNormalizedAddress(final AddressDTO dto, final String origin) {
 		logger.debug("validateNormalizedAddress started");
 		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
-		
+
 		if (dto.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
 			throw new InvalidParameterException("Address type is too long", origin);
 		}
-		
+
 		if (dto.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
 			throw new InvalidParameterException("Address is too long", origin);
 		}

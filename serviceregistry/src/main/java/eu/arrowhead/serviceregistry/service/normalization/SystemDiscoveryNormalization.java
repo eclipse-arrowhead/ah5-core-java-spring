@@ -11,7 +11,6 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
-import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
@@ -25,10 +24,10 @@ public class SystemDiscoveryNormalization {
 
 	@Autowired
 	private AddressNormalizer addressNormalizer;
-	
+
 	@Autowired
 	private VersionNormalizer versionNormalizer;
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -38,7 +37,7 @@ public class SystemDiscoveryNormalization {
 	public SystemRequestDTO normalizeSystemRequestDTO(final SystemRequestDTO dto) {
 		logger.debug("normalizeSystemRequestDTO started");
 		Assert.notNull(dto, "SystemRequestDTO is null");
-		
+
 		return new SystemRequestDTO(
 				dto.name().trim(),
 				dto.metadata(),
@@ -49,7 +48,7 @@ public class SystemDiscoveryNormalization {
 								.collect(Collectors.toList()),
 				dto.deviceName().trim());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public SystemLookupRequestDTO normalizeSystemLookupRequestDTO(final SystemLookupRequestDTO dto) {
 		logger.debug("normalizeSystemLookupRequestDTO started");
@@ -61,14 +60,14 @@ public class SystemDiscoveryNormalization {
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
 				dto.metadataRequirementList(),
 				Utilities.isEmpty(dto.versions()) ? null : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(dn -> dn.trim()).collect(Collectors.toList()));	
+				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(dn -> dn.trim()).collect(Collectors.toList()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String normalizeSystemName(final String name) {
 		logger.debug("normalizeSystemName started");
 		Assert.notNull(name, "System name is null");
-		
+
 		return name.trim();
 	}
 }

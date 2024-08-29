@@ -55,12 +55,12 @@ public class DeviceDiscoveryNormalization {
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
 				dto.metadataRequirementList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String normalizeDeviceName(final String name) {
 		logger.debug("normalizeDeviceName started");
 		Assert.notNull(name, "Device name is null");
-		
+
 		return name.trim();
 	}
 }

@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.DeviceListResponseDTO;
-import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
@@ -45,18 +43,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @RequestMapping(ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class SystemDiscoveryAPI {
-	
+
 	//=================================================================================================
 	// members
 
 	@Autowired
 	private SystemDiscoveryService sdService;
-	
+
 	@Autowired
 	private SystemNamePreprocessor preprocessor;
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	//=================================================================================================
 	// methods
 
@@ -66,7 +64,7 @@ public class SystemDiscoveryAPI {
 	// you can register the same system instance twice (everything the same name/version/metadata/addresses/system-device conn) => no overwrite
 	// if anything is changed, then throw an error
 	// if authentication server is registered its login service, then SR automatically login itself (in the service layer) and store its token in the arrowhead context
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the newly created or matching system entry")
 	@ApiResponses(value = {
@@ -88,12 +86,12 @@ public class SystemDiscoveryAPI {
 		logger.debug("register started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH;
-		SystemRequestDTO identifiedDto = preprocessor.process(dto, httpServletRequest, origin);
-		
+		final SystemRequestDTO identifiedDto = preprocessor.process(dto, httpServletRequest, origin);
+
 		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(identifiedDto, origin);
 		return new ResponseEntity<SystemResponseDTO>(result.getKey(), result.getValue() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
-	
+
 	// lookup-system operation: POST /lookup (200) (query param verbose)
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns system entries according to the given filters")
@@ -110,12 +108,12 @@ public class SystemDiscoveryAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody SystemListResponseDTO lookup(@RequestBody(required = false) final SystemLookupRequestDTO dto, 
-			@Parameter( 
+	public @ResponseBody SystemListResponseDTO lookup(@RequestBody(required = false) final SystemLookupRequestDTO dto,
+			@Parameter(
 					name =  "verbose",
 					description  = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
-					example = "true") 
-			@RequestParam boolean verbose) {
+					example = "true")
+			@RequestParam final boolean verbose) {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
@@ -145,7 +143,7 @@ public class SystemDiscoveryAPI {
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH;
 		final String identifiedName = preprocessor.process(httpServletRequest, origin);
-		
+
 		final boolean result = sdService.revokeSystem(identifiedName, origin);
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}

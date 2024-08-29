@@ -11,19 +11,19 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 
 @Repository
 public interface SystemAddressRepository extends RefreshableRepository<SystemAddress, Long> {
-	
+
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> findAllBySystem(final System system);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> findAllBySystemAndAddressType(final System system, final AddressType addressType);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> findAllBySystemAndAddressIn(final System system, final List<String> addresses);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> deleteAllBySystemIn(final List<System> systems);
 }

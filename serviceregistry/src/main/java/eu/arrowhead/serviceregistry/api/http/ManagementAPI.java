@@ -199,19 +199,19 @@ public class ManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody SystemListResponseDTO querySystems(@RequestBody(required = false) final SystemQueryRequestDTO dto, 
+	public @ResponseBody SystemListResponseDTO querySystems(@RequestBody(required = false) final SystemQueryRequestDTO dto,
 			@Parameter(
 					name =  "verbose",
 					description  = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
-					example = "true") 
-			@RequestParam boolean verbose) {
+					example = "true")
+			@RequestParam final boolean verbose) {
 		logger.debug("querySystems started, verbose = " + Boolean.toString(verbose));
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH;
-		
+
 		return mgmtService.querySystems(dto, verbose, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created system entries")
 	@ApiResponses(value = {
