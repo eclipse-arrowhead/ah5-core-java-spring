@@ -98,11 +98,6 @@ public class DeviceDbService {
 
 						if (!Utilities.isEmpty(metadataRequirementList)) {
 
-							//TODO
-							/*if (device.getMetadata() == null) {
-								continue;
-							}*/
-
 							final Map<String, Object> metadata = Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
 							});
 

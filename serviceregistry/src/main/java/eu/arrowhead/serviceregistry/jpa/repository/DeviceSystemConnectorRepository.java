@@ -12,11 +12,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 public interface DeviceSystemConnectorRepository extends RefreshableRepository<DeviceSystemConnector, Long> {
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<DeviceSystemConnector> findBySystem(final System system);
-	
-	//-------------------------------------------------------------------------------------------------
-	//public List<DeviceSystemConnector> findAllBySystem(final List<System> systems);
-	
 }
