@@ -111,6 +111,7 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	//TODO: LOCK???
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<SystemResponseDTO> updateBulk(final List<SystemRequestDTO> toUpdate) {
 		logger.debug("updateBulk started");
@@ -154,21 +155,25 @@ public class SystemDbService {
 
 			//updating the old device-system connections
 			final List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
-			for (final System systemEntity : systemEntities) {
-				final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(systemEntity);
+			final List<DeviceSystemConnector> connectionsToDelete = new ArrayList<>();
+
+			for (final SystemRequestDTO dto : toUpdate) {
+				final System system = systemEntities.stream().filter(s -> s.getName().equals(dto.name())).findFirst().get();
+				final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
 				if (connection.isPresent()) {
-					connectionsToUpdate.add(connection.get());
+					if (dto.deviceName() == null) {
+						connectionsToDelete.add(connection.get());
+					} else {
+						connectionsToUpdate.add(connection.get());
+					}
 				} else {
-					//create new connection if necessary
-					final SystemRequestDTO dto = toUpdate.stream()
-							.filter(s -> s.name().equals(systemEntity.getName()))
-							.findFirst()
-							.get();
-					if (dto != null && dto.deviceName() != null) {
-						connectionsToUpdate.add(new DeviceSystemConnector(null, systemEntity)); // we set the device later
+					// if the device is not null, we have to create a new connection
+					if (dto.deviceName() != null) {
+						connectionsToUpdate.add(new DeviceSystemConnector(null, system)); // we set the device later
 					}
 				}
 			}
+			
 			for (final DeviceSystemConnector connection : connectionsToUpdate) {
 				final String deviceName = toUpdate.stream()
 						.filter(s -> s.name().equals(connection.getSystem().getName()))
@@ -179,9 +184,11 @@ public class SystemDbService {
 
 				connection.setDevice(device);
 			}
-
-			//writing the new device-system connections to the database
-			deviceSystemConnectorRepo.saveAllAndFlush(connectionsToUpdate);
+			
+			//writing the changes into the database
+			deviceSystemConnectorRepo.deleteAll(connectionsToDelete);
+			deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
+			deviceSystemConnectorRepo.flush();
 
 			return createSystemResponseDTOs(systemEntities);
 
@@ -455,7 +462,7 @@ public class SystemDbService {
 
 		final List<String> notExistingDeviceNames = new ArrayList<>();
 		for (final String candidateDeviceName : candidateDeviceNames) {
-			if (!existingDeviceNames.contains(candidateDeviceName)) {
+			if (!existingDeviceNames.contains(candidateDeviceName) && candidateDeviceName != null) {
 				notExistingDeviceNames.add(candidateDeviceName);
 			}
 		}
