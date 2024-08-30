@@ -368,7 +368,7 @@ public class ManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemRequestDTO> validateAndNormalizeCreateSystems(final SystemListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeUpdateSystems started");
+		logger.debug("validateAndNormalizeCreateSystems started");
 		validateCreateSystems(dto, origin);
 
 		final List<SystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(dto);

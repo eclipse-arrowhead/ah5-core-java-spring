@@ -35,6 +35,8 @@ public class ManagementNormalization {
 
 	//=================================================================================================
 	// methods
+	
+	// SYSTEMS
 
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemRequestDTO> normalizeSystemRequestDTOs(final SystemListRequestDTO dtoList) {
@@ -52,7 +54,7 @@ public class ManagementNormalization {
 							: system.addresses().stream()
 									.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
 									.collect(Collectors.toList()),
-					system.deviceName().trim()));
+					Utilities.isEmpty(system.deviceName()) ? null : system.deviceName().trim()));
 		}
 		return normalized;
 	}
@@ -84,6 +86,8 @@ public class ManagementNormalization {
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
 	}
+	
+	// DEVICES
 
 	//-------------------------------------------------------------------------------------------------
 	public List<DeviceRequestDTO> normalizeDeviceRequestDTOList(final List<DeviceRequestDTO> dtoList) {

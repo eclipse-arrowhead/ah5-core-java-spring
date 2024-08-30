@@ -94,15 +94,17 @@ public class SystemDbService {
 
 			//writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
-			deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
+			if (deviceSystemConnectorEntities != null) {
+				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
+			}
 
 			return createSystemResponseDTOs(systemEntities);
 
-		} catch (final InvalidParameterException e) {
-			throw e;
-		} catch (final Exception e) {
-			logger.error(e.getMessage());
-			logger.debug(e);
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
 
@@ -122,6 +124,7 @@ public class SystemDbService {
 
 			//writing the updated system entities to the database
 			List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
+
 			for (final System systemEntity : systemEntities) {
 				final Map<String, Object> metadata = toUpdate.stream()
 						.filter(s -> s.name().equals(systemEntity.getName()))
@@ -136,8 +139,10 @@ public class SystemDbService {
 						.version();
 
 				systemEntity.setMetadata(Utilities.toJson(metadata));
+
 				systemEntity.setVersion(version);
 			}
+
 			systemEntities = systemRepo.saveAllAndFlush(systemEntities);
 
 			//removing the old system addresses from the database
@@ -150,8 +155,19 @@ public class SystemDbService {
 			//updating the old device-system connections
 			final List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
 			for (final System systemEntity : systemEntities) {
-				final DeviceSystemConnector connection = deviceSystemConnectorRepo.findBySystem(systemEntity).get();
-				connectionsToUpdate.add(connection);
+				final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(systemEntity);
+				if (connection.isPresent()) {
+					connectionsToUpdate.add(connection.get());
+				} else {
+					//create new connection if necessary
+					final SystemRequestDTO dto = toUpdate.stream()
+							.filter(s -> s.name().equals(systemEntity.getName()))
+							.findFirst()
+							.get();
+					if (dto != null && dto.deviceName() != null) {
+						connectionsToUpdate.add(new DeviceSystemConnector(null, systemEntity)); // we set the device later
+					}
+				}
 			}
 			for (final DeviceSystemConnector connection : connectionsToUpdate) {
 				final String deviceName = toUpdate.stream()
@@ -169,14 +185,13 @@ public class SystemDbService {
 
 			return createSystemResponseDTOs(systemEntities);
 
-		} catch (final InvalidParameterException e) {
-			throw e;
-		} catch (final Exception e) {
-			logger.error(e.getMessage());
-			logger.debug(e);
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -484,12 +499,18 @@ public class SystemDbService {
 	//-------------------------------------------------------------------------------------------------
 	private final List<DeviceSystemConnector> createDeviceSystemConnectorEntities(final List<SystemRequestDTO> candidates) {
 		synchronized (LOCK) {
-			return candidates.stream()
-					.map(c -> new DeviceSystemConnector(
-							deviceRepo.findAllByNameIn(Arrays.asList(c.deviceName())).getFirst(),
-							systemRepo.findAllByNameIn(Arrays.asList(c.name())).getFirst()
-							))
-					.collect(Collectors.toList());
+
+			final List<DeviceSystemConnector> connections = new ArrayList<>();
+
+			for (final SystemRequestDTO candidate : candidates) {
+				if (candidate.deviceName() != null) {
+					final Device device = deviceRepo.findAllByNameIn(Arrays.asList(candidate.deviceName())).getFirst();
+					final System system = systemRepo.findAllByNameIn(Arrays.asList(candidate.name())).getFirst();
+					connections.add(new DeviceSystemConnector(device, system));
+				}
+			}
+
+			return connections;
 		}
 	}
 
@@ -542,6 +563,4 @@ public class SystemDbService {
 
 		return result;
 	}
-
-
 }
