@@ -170,8 +170,7 @@ public class ManagementService {
 
 		try {
 
-			final List<SystemResponseDTO> created = systemDbService.createBulk(normalized);
-			return new SystemListResponseDTO(created, created.size());
+			return systemDbService.createBulk(normalized);
 
 		} catch (final InvalidParameterException ex) {
 
@@ -194,15 +193,19 @@ public class ManagementService {
 		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
 
 		try {
-			List<SystemResponseDTO> result = systemDbService.getPageByFilters(normalized, origin);
+			SystemListResponseDTO result = systemDbService.getPageByFilters(normalized, origin);
 
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
 				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
 
-				for (final SystemResponseDTO systemResponseDTO : result) {
+				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
 
-					final DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					
+					DeviceResponseDTO device = null;
+					if (systemResponseDTO.device() != null) {
+						device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					}
 
 					resultTerse.add(new SystemResponseDTO(
 							systemResponseDTO.name(),
@@ -215,10 +218,10 @@ public class ManagementService {
 							));
 				}
 
-				result = resultTerse;
+				return new SystemListResponseDTO(resultTerse, result.count());
 			}
 
-			return new SystemListResponseDTO(result, result.size());
+			return result;
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -233,8 +236,7 @@ public class ManagementService {
 		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeUpdateSystems(dto, origin);
 
 		try {
-			final List<SystemResponseDTO> entities = systemDbService.updateBulk(normalized);
-			return new SystemListResponseDTO(entities, entities.size());
+			return systemDbService.updateBulk(normalized);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

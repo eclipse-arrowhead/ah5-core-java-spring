@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
+import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
@@ -74,7 +76,7 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<SystemResponseDTO> createBulk(final List<SystemRequestDTO> candidates) {
+	public SystemListResponseDTO createBulk(final List<SystemRequestDTO> candidates) {
 
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "system candidate list is empty");
@@ -98,7 +100,7 @@ public class SystemDbService {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
-			return createSystemResponseDTOs(systemEntities);
+			return createSystemListResponseDTOs(systemEntities, systemEntities.size());
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
@@ -113,7 +115,7 @@ public class SystemDbService {
 	//-------------------------------------------------------------------------------------------------
 	//TODO: LOCK???
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<SystemResponseDTO> updateBulk(final List<SystemRequestDTO> toUpdate) {
+	public SystemListResponseDTO updateBulk(final List<SystemRequestDTO> toUpdate) {
 		logger.debug("updateBulk started");
 		Assert.isTrue(!Utilities.isEmpty(toUpdate), "The list of systems to update is empty or missing.");
 
@@ -173,7 +175,7 @@ public class SystemDbService {
 					}
 				}
 			}
-			
+
 			for (final DeviceSystemConnector connection : connectionsToUpdate) {
 				final String deviceName = toUpdate.stream()
 						.filter(s -> s.name().equals(connection.getSystem().getName()))
@@ -184,13 +186,13 @@ public class SystemDbService {
 
 				connection.setDevice(device);
 			}
-			
+
 			//writing the changes into the database
 			deviceSystemConnectorRepo.deleteAll(connectionsToDelete);
 			deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
 			deviceSystemConnectorRepo.flush();
 
-			return createSystemResponseDTOs(systemEntities);
+			return createSystemListResponseDTOs(systemEntities, (long)systemEntities.size());
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
@@ -291,7 +293,8 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<SystemResponseDTO> getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
+	@SuppressWarnings("unchecked")
+	public SystemListResponseDTO getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("getPageByFilters for system query started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
 
@@ -301,7 +304,7 @@ public class SystemDbService {
 		}
 		try {
 
-			List<System> systemEntries = null;
+			Page<System> systemEntries = null;
 
 			// without filter
 			if (Utilities.isEmpty(dto.systemNames())
@@ -312,11 +315,13 @@ public class SystemDbService {
 					&& Utilities.isEmpty(dto.deviceNames())) {
 
 				if (pageRequest != null) {
-					systemEntries = systemRepo.findAll(pageRequest).toList();
+					systemEntries = systemRepo.findAll(pageRequest);
 				} else {
-					systemEntries = systemRepo.findAll();
+					systemEntries = (Page<System>) systemRepo.findAll();
 				}
 			}
+			
+			SystemListResponseDTO result = null;
 
 			// with filters
 			if (systemEntries == null) {
@@ -359,14 +364,15 @@ public class SystemDbService {
 				}
 
 				if (pageRequest != null) {
-					systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest).toList();
+					systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
+					result = createSystemListResponseDTOs(systemEntries.toList(), systemEntries.getTotalElements());
 				} else {
-					systemEntries = systemRepo.findAllByNameIn(matchings);
+					final List<System> systemEntriesList = systemRepo.findAllByNameIn(matchings);
+					result = createSystemListResponseDTOs(systemEntriesList, systemEntriesList.size());
 				}
-
 			}
-
-			return createSystemResponseDTOs(systemEntries);
+			
+			return result;
 
 		} catch (final Exception ex) {
 
@@ -522,7 +528,7 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<SystemResponseDTO> createSystemResponseDTOs(final List<System> systems) {
+	private SystemListResponseDTO createSystemListResponseDTOs(final List<System> systems, final long pageSize) {
 		final List<SystemResponseDTO> result = new ArrayList<>();
 
 		for (final System system : systems) {
@@ -568,6 +574,6 @@ public class SystemDbService {
 			}
 		}
 
-		return result;
+		return new SystemListResponseDTO(result, pageSize);
 	}
 }

@@ -75,7 +75,7 @@ public class SystemDiscoveryService {
 			}
 
 			// New system
-			final SystemResponseDTO response = dbService.createBulk(List.of(normalized)).get(0);
+			final SystemResponseDTO response = dbService.createBulk(List.of(normalized)).entries().get(0);
 			return Map.entry(response, true);
 
 		} catch (final InvalidParameterException ex) {
@@ -94,7 +94,7 @@ public class SystemDiscoveryService {
 		final SystemLookupRequestDTO normalized = validator.validateAndNormalizeLookupSystem(dto, origin);
 
 		try {
-			List<SystemResponseDTO> result = dbService.getPageByFilters(
+			SystemListResponseDTO result = dbService.getPageByFilters(
 					new SystemQueryRequestDTO(
 							null,
 							normalized.systemNames(),
@@ -109,7 +109,7 @@ public class SystemDiscoveryService {
 			if (!verbose || !verboseEnabled) {
 				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
 
-				for (final SystemResponseDTO systemResponseDTO : result) {
+				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
 
 					final DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
 
@@ -124,10 +124,10 @@ public class SystemDiscoveryService {
 							));
 				}
 
-				result = resultTerse;
+				return new SystemListResponseDTO(resultTerse, result.count());
 			}
 
-			return new SystemListResponseDTO(result, result.size());
+			return result;
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
