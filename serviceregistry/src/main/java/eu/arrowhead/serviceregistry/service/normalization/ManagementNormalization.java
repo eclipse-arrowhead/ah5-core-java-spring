@@ -74,7 +74,9 @@ public class ManagementNormalization {
 						: dto.addressType().trim(),
 				dto.metadataRequirementList(),
 				Utilities.isEmpty(dto.versions()) ? null
-						: dto.versions().stream().map(n -> n.trim()).collect(Collectors.toList()),
+						: dto.versions().stream()
+								.map(v -> versionNormalizer.normalize(v))
+								.collect(Collectors.toList()),
 				Utilities.isEmpty(dto.deviceNames()) ? null
 						: dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()));
 	}
