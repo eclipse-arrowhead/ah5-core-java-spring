@@ -75,21 +75,6 @@ public class DeviceDiscoveryService {
 					}
 				}
 
-				/*final List<DeviceAddress> existingAddresses = optional.get().getValue();
-				final Set<String> existingAddressesSTR = existingAddresses
-						.stream()
-						.map(a -> a.getAddressType().name() + "-" + a.getAddress())
-						.collect(Collectors.toSet());
-				final Set<String> candidateAddressesSTR = Utilities.isEmpty(normalized.addresses()) ? Set.of()
-						: normalized.addresses()
-								.stream()
-								.map(a -> a.type() + "-" + a.address())
-								.collect(Collectors.toSet());
-
-				if (!existingAddressesSTR.equals(candidateAddressesSTR)) {
-					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided interfaces are not matching");
-				}*/
-
 				final List<AddressDTO> existingAddresses = optional.get().getValue()
 						.stream()
 						.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
@@ -98,7 +83,6 @@ public class DeviceDiscoveryService {
 					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided interfaces are not matching");
 				}
 
-				//return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(existing, existingAddresses), false);
 				return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(existing, optional.get().getValue()), false);
 			}
 

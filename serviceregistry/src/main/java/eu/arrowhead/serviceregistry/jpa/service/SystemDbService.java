@@ -113,7 +113,6 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	//TODO: LOCK???
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public SystemListResponseDTO updateBulk(final List<SystemRequestDTO> toUpdate) {
 		logger.debug("updateBulk started");
@@ -121,78 +120,81 @@ public class SystemDbService {
 
 		try {
 
-			checkSystemNamesExist(toUpdate); // system name can't be changed
+			synchronized (LOCK) {
 
-			checkDeviceNamesExist(toUpdate); // checks if device names already exist
+				checkSystemNamesExist(toUpdate); // system name can't be changed
 
-			//writing the updated system entities to the database
-			List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
+				checkDeviceNamesExist(toUpdate); // checks if device names already exist
 
-			for (final System systemEntity : systemEntities) {
-				final Map<String, Object> metadata = toUpdate.stream()
-						.filter(s -> s.name().equals(systemEntity.getName()))
-						.findFirst()
-						.get()
-						.metadata();
+				//writing the updated system entities to the database
+				List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
 
-				final String version = toUpdate.stream()
-						.filter(s -> s.name().equals(systemEntity.getName()))
-						.findFirst()
-						.get()
-						.version();
+				for (final System systemEntity : systemEntities) {
+					final Map<String, Object> metadata = toUpdate.stream()
+							.filter(s -> s.name().equals(systemEntity.getName()))
+							.findFirst()
+							.get()
+							.metadata();
 
-				systemEntity.setMetadata(Utilities.toJson(metadata));
+					final String version = toUpdate.stream()
+							.filter(s -> s.name().equals(systemEntity.getName()))
+							.findFirst()
+							.get()
+							.version();
 
-				systemEntity.setVersion(version);
-			}
+					systemEntity.setMetadata(Utilities.toJson(metadata));
 
-			systemEntities = systemRepo.saveAllAndFlush(systemEntities);
+					systemEntity.setVersion(version);
+				}
 
-			//removing the old system addresses from the database
-			systemAddressRepo.deleteAllBySystemIn(systemEntities);
+				systemEntities = systemRepo.saveAllAndFlush(systemEntities);
 
-			//writing the new system address entities to the database
-			final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(toUpdate, systemEntities);
-			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
+				//removing the old system addresses from the database
+				systemAddressRepo.deleteAllBySystemIn(systemEntities);
 
-			//updating the old device-system connections
-			final List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
-			final List<DeviceSystemConnector> connectionsToDelete = new ArrayList<>();
+				//writing the new system address entities to the database
+				final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(toUpdate, systemEntities);
+				systemAddressRepo.saveAllAndFlush(systemAddressEntities);
 
-			for (final SystemRequestDTO dto : toUpdate) {
-				final System system = systemEntities.stream().filter(s -> s.getName().equals(dto.name())).findFirst().get();
-				final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
-				if (connection.isPresent()) {
-					if (dto.deviceName() == null) {
-						connectionsToDelete.add(connection.get());
+				//updating the old device-system connections
+				final List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
+				final List<DeviceSystemConnector> connectionsToDelete = new ArrayList<>();
+
+				for (final SystemRequestDTO dto : toUpdate) {
+					final System system = systemEntities.stream().filter(s -> s.getName().equals(dto.name())).findFirst().get();
+					final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
+					if (connection.isPresent()) {
+						if (dto.deviceName() == null) {
+							connectionsToDelete.add(connection.get());
+						} else {
+							connectionsToUpdate.add(connection.get());
+						}
 					} else {
-						connectionsToUpdate.add(connection.get());
-					}
-				} else {
-					// if the device is not null, we have to create a new connection
-					if (dto.deviceName() != null) {
-						connectionsToUpdate.add(new DeviceSystemConnector(null, system)); // we set the device later
+						// if the device is not null, we have to create a new connection
+						if (dto.deviceName() != null) {
+							connectionsToUpdate.add(new DeviceSystemConnector(null, system)); // we set the device later
+						}
 					}
 				}
+
+				for (final DeviceSystemConnector connection : connectionsToUpdate) {
+					final String deviceName = toUpdate.stream()
+							.filter(s -> s.name().equals(connection.getSystem().getName()))
+							.findFirst()
+							.get()
+							.deviceName();
+					final Device device = deviceRepo.findByName(deviceName).get();
+
+					connection.setDevice(device);
+				}
+
+				//writing the changes into the database
+				deviceSystemConnectorRepo.deleteAll(connectionsToDelete);
+				deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
+				deviceSystemConnectorRepo.flush();
+
+				return createSystemListResponseDTOs(systemEntities, systemEntities.size());
 			}
-
-			for (final DeviceSystemConnector connection : connectionsToUpdate) {
-				final String deviceName = toUpdate.stream()
-						.filter(s -> s.name().equals(connection.getSystem().getName()))
-						.findFirst()
-						.get()
-						.deviceName();
-				final Device device = deviceRepo.findByName(deviceName).get();
-
-				connection.setDevice(device);
-			}
-
-			//writing the changes into the database
-			deviceSystemConnectorRepo.deleteAll(connectionsToDelete);
-			deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
-			deviceSystemConnectorRepo.flush();
-
-			return createSystemListResponseDTOs(systemEntities, (long)systemEntities.size());
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
@@ -267,17 +269,16 @@ public class SystemDbService {
 					.collect(Collectors.toList());
 
 			final Optional<DeviceSystemConnector> deviceSystemConncetor = deviceSystemConnectorRepo.findBySystem(system);
-			
+
 			DeviceResponseDTO deviceResponseDTO = null;
-			
+
 			if (deviceSystemConncetor.isPresent()) {
-				
-				Device device = deviceSystemConncetor.get().getDevice();
-	
+
+				final Device device = deviceSystemConncetor.get().getDevice();
 				final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
 						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 						.collect(Collectors.toList());
-	
+
 				deviceResponseDTO = new DeviceResponseDTO(
 						device.getName(),
 						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),
@@ -328,7 +329,7 @@ public class SystemDbService {
 					systemEntries = (Page<System>) systemRepo.findAll();
 				}
 			}
-			
+
 			SystemListResponseDTO result = null;
 
 			// with filters
@@ -379,7 +380,7 @@ public class SystemDbService {
 					result = createSystemListResponseDTOs(systemEntriesList, systemEntriesList.size());
 				}
 			}
-			
+
 			return result;
 
 		} catch (final Exception ex) {

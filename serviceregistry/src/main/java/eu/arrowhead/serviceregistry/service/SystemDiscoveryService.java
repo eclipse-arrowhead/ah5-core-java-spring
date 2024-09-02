@@ -94,7 +94,7 @@ public class SystemDiscoveryService {
 		final SystemLookupRequestDTO normalized = validator.validateAndNormalizeLookupSystem(dto, origin);
 
 		try {
-			SystemListResponseDTO result = dbService.getPageByFilters(
+			final SystemListResponseDTO result = dbService.getPageByFilters(
 					new SystemQueryRequestDTO(
 							null,
 							normalized.systemNames(),
@@ -174,15 +174,15 @@ public class SystemDiscoveryService {
 		if (!addressMatcher.isAddressListMatching(existing.addresses(), dto.addresses())) {
 			throw new InvalidParameterException("System with name: " + existing.name() + " already exists, but provided address list is not matching");
 		}
-		
+
 		// device names
 		final String existingName = existing.deviceName();
 		final String dtoName = dto.deviceName();
-		
+
 		if ((existingName == null && dtoName != null) || existingName != null && dtoName == null) {
 			throw new InvalidParameterException("System with name: " + existingName + " already exists, but provided device name is not matching");
 		}
-		
+
 		if (existingName != null && !existingName.equals(dtoName)) {
 			throw new InvalidParameterException("System with name: " + existingName + " already exists, but provided device name is not matching");
 		}

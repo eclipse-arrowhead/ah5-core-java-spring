@@ -193,7 +193,7 @@ public class ManagementService {
 		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
 
 		try {
-			SystemListResponseDTO result = systemDbService.getPageByFilters(normalized, origin);
+			final SystemListResponseDTO result = systemDbService.getPageByFilters(normalized, origin);
 
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
@@ -201,7 +201,6 @@ public class ManagementService {
 
 				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
 
-					
 					DeviceResponseDTO device = null;
 					if (systemResponseDTO.device() != null) {
 						device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);

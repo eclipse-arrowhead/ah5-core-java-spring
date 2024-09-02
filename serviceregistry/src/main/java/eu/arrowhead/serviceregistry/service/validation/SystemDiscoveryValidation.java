@@ -138,7 +138,7 @@ public class SystemDiscoveryValidation {
 
 		validateLookupSystem(dto, origin);
 
-		SystemLookupRequestDTO normalized = normalizer.normalizeSystemLookupRequestDTO(dto);
+		final SystemLookupRequestDTO normalized = normalizer.normalizeSystemLookupRequestDTO(dto);
 
 		try {
 			if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {

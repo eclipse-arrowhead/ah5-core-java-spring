@@ -58,13 +58,6 @@ public class SystemDiscoveryAPI {
 	//=================================================================================================
 	// methods
 
-	// TODO: implement the following endpoints (all endpoints are public)
-
-	// register-system operation: POST /register (201/200 depending on actual creation)
-	// you can register the same system instance twice (everything the same name/version/metadata/addresses/system-device conn) => no overwrite
-	// if anything is changed, then throw an error
-	// if authentication server is registered its login service, then SR automatically login itself (in the service layer) and store its token in the arrowhead context
-
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the newly created or matching system entry")
 	@ApiResponses(value = {
@@ -92,7 +85,6 @@ public class SystemDiscoveryAPI {
 		return new ResponseEntity<SystemResponseDTO>(result.getKey(), result.getValue() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
-	// lookup-system operation: POST /lookup (200) (query param verbose)
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns system entries according to the given filters")
 	@ApiResponses(value = {
@@ -120,9 +112,6 @@ public class SystemDiscoveryAPI {
 		return sdService.lookupSystem(dto, verbose, origin);
 	}
 
-	//TODO: preprocess
-	// revoke-system operation: DELETE /revoke (200/204 depending on actual delete)
-	// you can delete not-existing system => nothing happens
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes system entry if exists")
 	@ApiResponses(value = {

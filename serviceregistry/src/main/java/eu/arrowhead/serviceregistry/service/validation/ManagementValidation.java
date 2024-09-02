@@ -397,7 +397,7 @@ public class ManagementValidation {
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(na -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), na), origin));
 		}
-		
+
 		if (!Utilities.isEmpty(normalized.versions())) {
 			normalized.versions().forEach(nv -> validateNormalizedVersion(nv, origin));
 		}
