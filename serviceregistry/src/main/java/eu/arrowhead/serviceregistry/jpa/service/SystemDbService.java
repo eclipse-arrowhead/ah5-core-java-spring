@@ -303,7 +303,7 @@ public class SystemDbService {
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("unchecked")
 	public SystemListResponseDTO getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
-		logger.debug("getPageByFilters for system query started");
+		logger.debug("getPageByFilters started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
 
 		PageRequest pageRequest = null;

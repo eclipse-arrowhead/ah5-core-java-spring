@@ -111,7 +111,10 @@ public class SystemDiscoveryService {
 
 				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
 
-					final DeviceResponseDTO device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					DeviceResponseDTO device = null;
+					if (systemResponseDTO.device() != null) {
+						device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+					}
 
 					resultTerse.add(new SystemResponseDTO(
 							systemResponseDTO.name(),
