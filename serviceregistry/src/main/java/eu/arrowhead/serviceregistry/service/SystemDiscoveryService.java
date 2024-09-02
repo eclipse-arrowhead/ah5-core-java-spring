@@ -66,10 +66,10 @@ public class SystemDiscoveryService {
 				final SystemRequestDTO existingSystemAsDTO = optional.get();
 
 				// We should check if every property is the same
-				checkSameSystemAttributes(existingSystemAsDTO, dto);
+				checkSameSystemAttributes(existingSystemAsDTO, normalized);
 
-				//convert to response and return
-				final System existing = dbService.getSystemByName(dto.name()).get();
+				// Convert to response and return
+				final System existing = dbService.getSystemByName(existingSystemAsDTO.name()).get();
 				final SystemResponseDTO existingSystemAsResponseDTO = dbService.createSystemResponseDTO(existing);
 				return Map.entry(existingSystemAsResponseDTO, false);
 			}
@@ -152,29 +152,36 @@ public class SystemDiscoveryService {
 
 	//-------------------------------------------------------------------------------------------------
 	// throws exception, if the two systems doesn't have the same attributes
-	private void checkSameSystemAttributes(final SystemRequestDTO system1, final SystemRequestDTO system2) {
+	private void checkSameSystemAttributes(final SystemRequestDTO existing, final SystemRequestDTO dto) {
 		logger.debug("checkSameSystemAttributes started");
 
-		Assert.isTrue(system1.name().equals(system2.name()), "The systems are not identical!");
+		Assert.isTrue(existing.name().equals(dto.name()), "The systems are not identical!");
 
-		//metadata
-		if (!system1.metadata().equals(system2.metadata())) {
-			throw new InvalidParameterException("System with name: " + system1.name() + " already exists, but provided metadata is not matching");
+		// metadata
+		if (!existing.metadata().equals(dto.metadata())) {
+			throw new InvalidParameterException("System with name: " + existing.name() + " already exists, but provided metadata is not matching");
 		}
 
-		//version
-		if (!system1.version().equals(system2.version())) {
-			throw new InvalidParameterException("System with name: " + system1.name() + " already exists, but provided version is not matching");
+		// version
+		if (!existing.version().equals(dto.version())) {
+			throw new InvalidParameterException("System with name: " + existing.name() + " already exists, but provided version is not matching");
 		}
 
-		//addresses
-		if (!addressMatcher.isAddressListMatching(system1.addresses(), system2.addresses())) {
-			throw new InvalidParameterException("System with name: " + system1.name() + " already exists, but provided address list is not matching");
+		// addresses
+		if (!addressMatcher.isAddressListMatching(existing.addresses(), dto.addresses())) {
+			throw new InvalidParameterException("System with name: " + existing.name() + " already exists, but provided address list is not matching");
 		}
-
-		//device name
-		if (!system1.deviceName().equals(system2.deviceName())) {
-			throw new InvalidParameterException("System with name: " + system1.name() + " already exists, but provided device name is not matching");
+		
+		// device names
+		final String existingName = existing.deviceName();
+		final String dtoName = dto.deviceName();
+		
+		if ((existingName == null && dtoName != null) || existingName != null && dtoName == null) {
+			throw new InvalidParameterException("System with name: " + existingName + " already exists, but provided device name is not matching");
+		}
+		
+		if (existingName != null && !existingName.equals(dtoName)) {
+			throw new InvalidParameterException("System with name: " + existingName + " already exists, but provided device name is not matching");
 		}
 	}
 }

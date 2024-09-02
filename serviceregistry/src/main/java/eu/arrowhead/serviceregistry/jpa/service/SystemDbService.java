@@ -237,21 +237,22 @@ public class SystemDbService {
 					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 
-			final Device device = deviceSystemConnectorRepo.findBySystem(system.get()).get().getDevice();
+			final Optional<DeviceSystemConnector> deviceSystemConnection = deviceSystemConnectorRepo.findBySystem(system.get());
+			final String deviceName = deviceSystemConnection.isEmpty() ? null : deviceSystemConnection.get().getDevice().getName();
 
 			return Optional.of(new SystemRequestDTO(
 					name,
 					Utilities.fromJson(system.get().getMetadata(), new TypeReference<Map<String, Object>>() { }),
 					system.get().getVersion(),
 					systemAddresses,
-					device.getName()));
+					deviceName));
 		}
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<System> getSystemByName(final String name) {
-		logger.debug("getByName started");
+		logger.debug("getSystemByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
 
 		return systemRepo.findByName(name);
@@ -265,18 +266,25 @@ public class SystemDbService {
 					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
 					.collect(Collectors.toList());
 
-			final Device device = deviceSystemConnectorRepo.findBySystem(system).get().getDevice();
-
-			final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
-					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
-					.collect(Collectors.toList());
-
-			final DeviceResponseDTO deviceResponseDTO = new DeviceResponseDTO(
-					device.getName(),
-					Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),
-					deviceAddresses,
-					device.getCreatedAt().toString(),
-					device.getUpdatedAt().toString());
+			final Optional<DeviceSystemConnector> deviceSystemConncetor = deviceSystemConnectorRepo.findBySystem(system);
+			
+			DeviceResponseDTO deviceResponseDTO = null;
+			
+			if (deviceSystemConncetor.isPresent()) {
+				
+				Device device = deviceSystemConncetor.get().getDevice();
+	
+				final List<AddressDTO> deviceAddresses = deviceAddressRepo.findAllByDevice(device).stream()
+						.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
+						.collect(Collectors.toList());
+	
+				deviceResponseDTO = new DeviceResponseDTO(
+						device.getName(),
+						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+						deviceAddresses,
+						device.getCreatedAt().toString(),
+						device.getUpdatedAt().toString());
+			}
 
 			final SystemResponseDTO systemResponseDTO = new SystemResponseDTO(
 					system.getName(),

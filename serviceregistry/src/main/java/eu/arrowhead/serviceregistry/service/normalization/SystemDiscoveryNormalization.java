@@ -46,7 +46,7 @@ public class SystemDiscoveryNormalization {
 						: dto.addresses().stream()
 								.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
 								.collect(Collectors.toList()),
-				dto.deviceName().trim());
+				Utilities.isEmpty(dto.deviceName()) ? null : dto.deviceName().trim());
 	}
 
 	//-------------------------------------------------------------------------------------------------
