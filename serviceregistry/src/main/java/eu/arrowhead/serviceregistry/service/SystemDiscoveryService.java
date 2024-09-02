@@ -141,10 +141,10 @@ public class SystemDiscoveryService {
 		logger.debug("revokeSystem started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateAndNormalizeRevokeSystem(name, origin);
+		final String normalizedName = validator.validateAndNormalizeRevokeSystem(name, origin);
 
 		try {
-			return dbService.deleteByName(name.trim());
+			return dbService.deleteByName(normalizedName);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
