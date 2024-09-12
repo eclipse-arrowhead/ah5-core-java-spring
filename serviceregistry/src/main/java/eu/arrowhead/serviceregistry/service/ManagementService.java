@@ -198,8 +198,6 @@ public class ManagementService {
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
 				
-				//TODO: result lehet null
-				
 				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
 
 				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
