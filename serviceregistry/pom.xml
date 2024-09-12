@@ -44,15 +44,5 @@
 	 	</plugins>
   	</build>
 	<dependencies>
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>arrowhead-common-utils</artifactId>
-			<version>5.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>arrowhead-data-transfer-objects</artifactId>
-			<version>5.0.0</version>
-		</dependency>
 	</dependencies>
 </project>

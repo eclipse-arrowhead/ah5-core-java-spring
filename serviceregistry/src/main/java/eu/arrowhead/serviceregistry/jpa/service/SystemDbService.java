@@ -100,7 +100,7 @@ public class SystemDbService {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
-			return createSystemListResponseDTOs(systemEntities, systemEntities.size());
+			return createSystemListResponseDTO(systemEntities, systemEntities.size());
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
@@ -193,7 +193,7 @@ public class SystemDbService {
 				deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
 				deviceSystemConnectorRepo.flush();
 
-				return createSystemListResponseDTOs(systemEntities, systemEntities.size());
+				return createSystemListResponseDTO(systemEntities, systemEntities.size());
 			}
 
 		} catch (final InvalidParameterException ex) {
@@ -312,8 +312,8 @@ public class SystemDbService {
 			pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
 		}
 		try {
-
-			Page<System> systemEntries = null;
+			
+			SystemListResponseDTO result = null;
 
 			// without filter
 			if (Utilities.isEmpty(dto.systemNames())
@@ -324,16 +324,16 @@ public class SystemDbService {
 					&& Utilities.isEmpty(dto.deviceNames())) {
 
 				if (pageRequest != null) {
-					systemEntries = systemRepo.findAll(pageRequest);
+					Page<System> systemEntries = systemRepo.findAll(pageRequest);
+					result = createSystemListResponseDTO(systemEntries.toList(), systemEntries.getTotalElements());
 				} else {
-					systemEntries = (Page<System>) systemRepo.findAll();
+					List<System> systemEntryList = systemRepo.findAll();
+					result = createSystemListResponseDTO(systemEntryList, systemEntryList.size());
 				}
 			}
 
-			SystemListResponseDTO result = null;
-
 			// with filters
-			if (systemEntries == null) {
+			else {
 
 				final List<String> matchings = new ArrayList<>();
 
@@ -373,11 +373,11 @@ public class SystemDbService {
 				}
 
 				if (pageRequest != null) {
-					systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
-					result = createSystemListResponseDTOs(systemEntries.toList(), systemEntries.getTotalElements());
+					Page<System> systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
+					result = createSystemListResponseDTO(systemEntries.toList(), systemEntries.getTotalElements());
 				} else {
-					final List<System> systemEntriesList = systemRepo.findAllByNameIn(matchings);
-					result = createSystemListResponseDTOs(systemEntriesList, systemEntriesList.size());
+					final List<System> systemEntryList = systemRepo.findAllByNameIn(matchings);
+					result = createSystemListResponseDTO(systemEntryList, systemEntryList.size());
 				}
 			}
 
@@ -537,7 +537,7 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private SystemListResponseDTO createSystemListResponseDTOs(final List<System> systems, final long pageSize) {
+	private SystemListResponseDTO createSystemListResponseDTO(final List<System> systems, final long pageSize) {
 		final List<SystemResponseDTO> result = new ArrayList<>();
 
 		for (final System system : systems) {
