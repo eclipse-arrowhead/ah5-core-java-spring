@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,13 @@ import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
+import eu.arrowhead.dto.SystemListResponseDTO;
+import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
 
 @Service
 public class DTOConverter {
@@ -80,4 +85,50 @@ public class DTOConverter {
 
 		return new ServiceDefinitionResponseDTO(entity.getName(), Utilities.convertZonedDateTimeToUTCString(entity.getCreatedAt()), Utilities.convertZonedDateTimeToUTCString(entity.getUpdatedAt()));
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO convertSystemTriplesToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
+		logger.debug("convertSystemTriplesToDTO started...");
+		Assert.isTrue(!Utilities.isEmpty(entities), "entity list is empty");
+
+		final List<SystemResponseDTO> result = new ArrayList<>();
+
+		for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity : entities) {
+			result.add(convertSystemTripleToDTO(entity));
+		}
+
+		return new SystemListResponseDTO(result, result.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public SystemResponseDTO convertSystemTripleToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
+		logger.debug("convertSystemTripleToDTO started...");
+		Assert.notNull(entity.getLeft(), "the System in the triple is null");
+		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
+
+		final System system = entity.getLeft();
+		final List<SystemAddress> systemAddressList = entity.getMiddle();
+		final Device device = entity.getRight().getKey();
+		final List<DeviceAddress> deviceAddresses = entity.getRight().getValue();
+
+		return new SystemResponseDTO(
+				system.getName(),
+				Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				system.getVersion(),
+				systemAddressList
+					.stream()
+					.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
+					.collect(Collectors.toList()),
+				device == null ? null : new DeviceResponseDTO(
+						device.getName(),
+						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+						deviceAddresses.stream().map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress())).collect(Collectors.toList()),
+						Utilities.convertZonedDateTimeToUTCString(device.getCreatedAt()),
+						Utilities.convertZonedDateTimeToUTCString(device.getUpdatedAt())),
+				Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(system.getUpdatedAt()));
+	}
+	
+	//=================================================================================================
+	// assistant methods
 }

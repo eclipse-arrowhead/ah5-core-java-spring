@@ -2,11 +2,14 @@ package eu.arrowhead.serviceregistry.jpa.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +43,7 @@ import eu.arrowhead.serviceregistry.jpa.repository.DeviceSystemConnectorReposito
 import eu.arrowhead.serviceregistry.jpa.repository.SystemAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 
@@ -76,7 +80,7 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public SystemListResponseDTO createBulk(final List<SystemRequestDTO> candidates) {
+	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createBulk(final List<SystemRequestDTO> candidates) {
 
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "system candidate list is empty");
@@ -100,7 +104,14 @@ public class SystemDbService {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
-			return createSystemListResponseDTO(systemEntities, systemEntities.size());
+			//finding the corresponding device addresses
+			final List<Device> devices = new ArrayList<>(new LinkedHashSet<>(deviceSystemConnectorEntities
+					.stream()
+					.map(c -> c.getDevice())
+					.collect(Collectors.toList()))); //the list will contain unique elemenst because of the conversion to LinkedHashSet
+			final List<DeviceAddress> deviceAddresses = deviceAddressRepo.findAllByDeviceIn(devices);
+
+			return createTriples(systemEntities, systemAddressEntities, deviceSystemConnectorEntities, deviceAddresses);
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
@@ -130,21 +141,15 @@ public class SystemDbService {
 				List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
 
 				for (final System systemEntity : systemEntities) {
-					final Map<String, Object> metadata = toUpdate.stream()
+
+					final SystemRequestDTO dto = toUpdate.stream()
 							.filter(s -> s.name().equals(systemEntity.getName()))
 							.findFirst()
-							.get()
-							.metadata();
+							.get();
 
-					final String version = toUpdate.stream()
-							.filter(s -> s.name().equals(systemEntity.getName()))
-							.findFirst()
-							.get()
-							.version();
+					systemEntity.setMetadata(Utilities.toJson(dto.metadata()));
 
-					systemEntity.setMetadata(Utilities.toJson(metadata));
-
-					systemEntity.setVersion(version);
+					systemEntity.setVersion(dto.version());
 				}
 
 				systemEntities = systemRepo.saveAllAndFlush(systemEntities);
@@ -302,7 +307,6 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("unchecked")
 	public SystemListResponseDTO getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("getPageByFilters started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
@@ -312,7 +316,7 @@ public class SystemDbService {
 			pageRequest = pageService.getPageRequest(dto.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
 		}
 		try {
-			
+
 			SystemListResponseDTO result = null;
 
 			// without filter
@@ -324,16 +328,14 @@ public class SystemDbService {
 					&& Utilities.isEmpty(dto.deviceNames())) {
 
 				if (pageRequest != null) {
-					Page<System> systemEntries = systemRepo.findAll(pageRequest);
+					final Page<System> systemEntries = systemRepo.findAll(pageRequest);
 					result = createSystemListResponseDTO(systemEntries.toList(), systemEntries.getTotalElements());
 				} else {
-					List<System> systemEntryList = systemRepo.findAll();
+					final List<System> systemEntryList = systemRepo.findAll();
 					result = createSystemListResponseDTO(systemEntryList, systemEntryList.size());
 				}
-			}
-
-			// with filters
-			else {
+			//with filter
+			} else {
 
 				final List<String> matchings = new ArrayList<>();
 
@@ -373,7 +375,7 @@ public class SystemDbService {
 				}
 
 				if (pageRequest != null) {
-					Page<System> systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
+					final Page<System> systemEntries = systemRepo.findAllByNameIn(matchings, pageRequest);
 					result = createSystemListResponseDTO(systemEntries.toList(), systemEntries.getTotalElements());
 				} else {
 					final List<System> systemEntryList = systemRepo.findAllByNameIn(matchings);
@@ -584,5 +586,39 @@ public class SystemDbService {
 		}
 
 		return new SystemListResponseDTO(result, pageSize);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createTriples(
+			final List<System> systems, final List<SystemAddress> addresses, final List<DeviceSystemConnector> deviceConnections, final List<DeviceAddress> deviceAddresses) {
+
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>();
+
+		for (final System system : systems) {
+
+			// corresponding addresses
+			final List<SystemAddress> systemAddresses = addresses
+					.stream()
+					.filter(a -> a.getSystem().equals(system))
+					.collect(Collectors.toList());
+
+			// corresponding device
+			final Optional<DeviceSystemConnector> connection = deviceConnections
+					.stream()
+					.filter(c -> c.getSystem().equals(system))
+					.findFirst();
+
+			final Device device = connection.isEmpty() ? null : connection.get().getDevice();
+
+			// corresponding device addresses
+			final List<DeviceAddress> deviceAddressList = deviceAddresses
+					.stream()
+					.filter(a -> a.getDevice().equals(device))
+					.collect(Collectors.toList());
+
+			result.add(Triple.of(system, systemAddresses, Map.entry(device, deviceAddressList)));
+		}
+
+		return result;
 	}
 }

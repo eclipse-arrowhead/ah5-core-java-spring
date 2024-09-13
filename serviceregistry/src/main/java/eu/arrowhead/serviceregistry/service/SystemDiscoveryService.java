@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +24,13 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
+import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
 import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 
 @Service
 public class SystemDiscoveryService {
@@ -41,6 +46,9 @@ public class SystemDiscoveryService {
 
 	@Autowired
 	private SystemDbService dbService;
+
+	@Autowired
+	private DTOConverter dtoConverter;
 
     @Value("${service.discovery.verbose}")
     private boolean verboseEnabled;
@@ -75,8 +83,8 @@ public class SystemDiscoveryService {
 			}
 
 			// New system
-			final SystemResponseDTO response = dbService.createBulk(List.of(normalized)).entries().get(0);
-			return Map.entry(response, true);
+			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> response = dbService.createBulk(List.of(normalized)).getFirst();
+			return Map.entry(dtoConverter.convertSystemTripleToDTO(response), true);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

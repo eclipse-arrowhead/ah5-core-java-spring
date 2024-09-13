@@ -28,6 +28,8 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
@@ -40,6 +42,7 @@ import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
+import org.apache.commons.lang3.tuple.Triple;
 
 
 @Service
@@ -170,7 +173,8 @@ public class ManagementService {
 
 		try {
 
-			return systemDbService.createBulk(normalized);
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities = systemDbService.createBulk(normalized);
+			return dtoConverter.convertSystemTriplesToDTO(entities);
 
 		} catch (final InvalidParameterException ex) {
 
@@ -197,7 +201,7 @@ public class ManagementService {
 
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
-				
+
 				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
 
 				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
