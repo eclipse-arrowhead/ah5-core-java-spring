@@ -108,8 +108,8 @@ public class DTOConverter {
 
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
-		final Device device = entity.getRight().getKey();
-		final List<DeviceAddress> deviceAddresses = entity.getRight().getValue();
+		final Device device = entity.getRight() == null ? null : entity.getRight().getKey();
+		final List<DeviceAddress> deviceAddresses =  entity.getRight() == null ? null : entity.getRight().getValue();
 
 		return new SystemResponseDTO(
 				system.getName(),
@@ -128,7 +128,7 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(system.getUpdatedAt()));
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
 }

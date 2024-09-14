@@ -89,15 +89,15 @@ public class SystemDbService {
 			checkSystemNamesNotExist(candidates); //checks if none of the system names exist (system name has to be unique)
 
 			checkDeviceNamesExist(candidates); //checks if device names already exist
-
+			
 			//writing the system entities to the database
 			List<System> systemEntities = createSystemEntities(candidates);
 			systemEntities = systemRepo.saveAllAndFlush(systemEntities);
-
+			
 			//writing the system address entities to the database
 			final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(candidates, systemEntities);
 			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
-
+			
 			//writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
 			if (deviceSystemConnectorEntities != null) {
@@ -105,11 +105,15 @@ public class SystemDbService {
 			}
 
 			//finding the corresponding device addresses
-			final List<Device> devices = new ArrayList<>(new LinkedHashSet<>(deviceSystemConnectorEntities
+			final List<Device> devices = deviceSystemConnectorEntities == null? new ArrayList<Device>() : deviceSystemConnectorEntities
 					.stream()
 					.map(c -> c.getDevice())
-					.collect(Collectors.toList()))); //the list will contain unique elemenst because of the conversion to LinkedHashSet
-			final List<DeviceAddress> deviceAddresses = deviceAddressRepo.findAllByDeviceIn(devices);
+					.collect(Collectors.toList())
+					.stream()
+					.distinct()
+					.collect(Collectors.toList());
+			
+			final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
 
 			return createTriples(systemEntities, systemAddressEntities, deviceSystemConnectorEntities, deviceAddresses);
 
@@ -229,44 +233,46 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<SystemRequestDTO> getByName(final String name) {
+	public Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByName(final String name) {
 		logger.debug("getByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
 
 		synchronized (LOCK) {
 
+			// system
 			final Optional<System> system = systemRepo.findByName(name);
 			if (system.isEmpty()) {
 				return Optional.empty();
 			}
 
-			final List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system.get()).stream()
-					.map(sa -> new AddressDTO(sa.getAddressType().toString(), sa.getAddress()))
-					.collect(Collectors.toList());
+			// system addresses
+			final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystem(system.get());
 
+			// device
 			final Optional<DeviceSystemConnector> deviceSystemConnection = deviceSystemConnectorRepo.findBySystem(system.get());
-			final String deviceName = deviceSystemConnection.isEmpty() ? null : deviceSystemConnection.get().getDevice().getName();
+			final Device device = deviceSystemConnection.isEmpty() ? null : deviceSystemConnection.get().getDevice();
+			
+			// device addresses
+			final List<DeviceAddress> deviceAddresses = device == null? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDevice(device);
 
-			return Optional.of(new SystemRequestDTO(
-					name,
-					Utilities.fromJson(system.get().getMetadata(), new TypeReference<Map<String, Object>>() { }),
-					system.get().getVersion(),
-					systemAddresses,
-					deviceName));
+			return Optional.of(Triple.of(
+					system.get(),
+					systemAddresses, 
+					device == null? null : Map.entry(device, deviceAddresses)));
 		}
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<System> getSystemByName(final String name) {
+	/*public Optional<System> getSystemByName(final String name) {
 		logger.debug("getSystemByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
 
 		return systemRepo.findByName(name);
-	}
+	}*/
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemResponseDTO createSystemResponseDTO(final System system) {
+	/*public SystemResponseDTO createSystemResponseDTO(final System system) {
 
 		synchronized (LOCK) {
 			final List<AddressDTO> systemAddresses = systemAddressRepo.findAllBySystem(system).stream()
@@ -304,7 +310,7 @@ public class SystemDbService {
 
 			return systemResponseDTO;
 		}
-	}
+	}*/
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
@@ -466,12 +472,14 @@ public class SystemDbService {
 	//-------------------------------------------------------------------------------------------------
 	//checks if device name already exists, throws exception if it does not
 	private void checkDeviceNamesExist(final List<SystemRequestDTO> candidates) {
-		final List<String> candidateDeviceNames = candidates.stream()
-				.map(c -> c.deviceName())
-				.collect(Collectors.toList())
-				.stream()
-				.distinct()
-				.collect(Collectors.toList());
+		
+		List<String> candidateDeviceNames = new ArrayList<String>();
+		
+		for (SystemRequestDTO candidate : candidates) {
+			if (candidate.deviceName() != null) {
+				candidateDeviceNames.add(candidate.deviceName());
+			}
+		}
 
 		final List<String> existingDeviceNames = deviceRepo.findAllByNameIn(candidateDeviceNames).stream()
 				.map(e -> e.getName())
@@ -479,7 +487,7 @@ public class SystemDbService {
 
 		final List<String> notExistingDeviceNames = new ArrayList<>();
 		for (final String candidateDeviceName : candidateDeviceNames) {
-			if (!existingDeviceNames.contains(candidateDeviceName) && candidateDeviceName != null) {
+			if (!existingDeviceNames.contains(candidateDeviceName)) {
 				notExistingDeviceNames.add(candidateDeviceName);
 			}
 		}
@@ -611,12 +619,12 @@ public class SystemDbService {
 			final Device device = connection.isEmpty() ? null : connection.get().getDevice();
 
 			// corresponding device addresses
-			final List<DeviceAddress> deviceAddressList = deviceAddresses
+			final List<DeviceAddress> deviceAddressList = device == null ? new ArrayList<DeviceAddress>() : deviceAddresses
 					.stream()
 					.filter(a -> a.getDevice().equals(device))
 					.collect(Collectors.toList());
 
-			result.add(Triple.of(system, systemAddresses, Map.entry(device, deviceAddressList)));
+			result.add(Triple.of(system, systemAddresses, device == null ? null : Map.entry(device, deviceAddressList)));
 		}
 
 		return result;
