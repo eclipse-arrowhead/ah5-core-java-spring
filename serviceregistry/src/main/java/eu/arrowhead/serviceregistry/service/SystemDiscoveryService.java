@@ -64,7 +64,7 @@ public class SystemDiscoveryService {
 	private DTOConverter dtoConverter;
 
     @Value("${service.discovery.verbose}")
-    private boolean verboseEnabled;
+    private static boolean verboseEnabled;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 

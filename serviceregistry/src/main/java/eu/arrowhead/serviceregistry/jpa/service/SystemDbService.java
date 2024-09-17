@@ -100,17 +100,17 @@ public class SystemDbService {
 			}
 
 			//finding the corresponding device addresses
-			final List<Device> devices = deviceSystemConnectorEntities == null? new ArrayList<Device>() : deviceSystemConnectorEntities
+			/*final List<Device> devices = deviceSystemConnectorEntities == null? new ArrayList<Device>() : deviceSystemConnectorEntities
 					.stream()
 					.map(c -> c.getDevice())
 					.collect(Collectors.toList())
 					.stream()
 					.distinct()
-					.collect(Collectors.toList());
+					.collect(Collectors.toList());*/
 			
-			final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
+			//final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
 
-			return createTriples(systemEntities, systemAddressEntities, deviceSystemConnectorEntities, deviceAddresses);
+			return createTriples(systemEntities, systemAddressEntities, deviceSystemConnectorEntities);
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
@@ -124,7 +124,7 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public SystemListResponseDTO updateBulk(final List<SystemRequestDTO> toUpdate) {
+	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updateBulk(final List<SystemRequestDTO> toUpdate) {
 		logger.debug("updateBulk started");
 		Assert.isTrue(!Utilities.isEmpty(toUpdate), "The list of systems to update is empty or missing.");
 
@@ -197,7 +197,7 @@ public class SystemDbService {
 				deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
 				deviceSystemConnectorRepo.flush();
 
-				return createSystemListResponseDTO(systemEntities, systemEntities.size());
+				return createTriples(systemEntities, systemAddressEntities, connectionsToUpdate);
 			}
 
 		} catch (final InvalidParameterException ex) {
@@ -379,18 +379,18 @@ public class SystemDbService {
 				// system addresses
 				final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystemIn(systemEntries.toList());
 				
-				// devices
+				// device-system connections
 				final Optional<List<DeviceSystemConnector>> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.toList());
-				final List<Device> devices = deviceSystemConnections.isEmpty() ? new ArrayList<Device>() : 
+				/*final List<Device> devices = deviceSystemConnections.isEmpty() ? new ArrayList<Device>() : 
 					deviceSystemConnections
 						.get()
 						.stream()
 						.map(c -> c.getDevice())
-						.collect(Collectors.toList());
+						.collect(Collectors.toList());*/
 				// device addresses
-				final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
+				//final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
 				
-				List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections.isEmpty() ? new ArrayList<DeviceSystemConnector>() : deviceSystemConnections.get(), deviceAddresses);
+				List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections.isEmpty() ? new ArrayList<DeviceSystemConnector>() : deviceSystemConnections.get());
 
 				return new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
 					result,
@@ -584,7 +584,7 @@ public class SystemDbService {
 				notExistingDeviceNames.add(candidateDeviceName);
 			}
 		}
-		if (notExistingDeviceNames.size() != 0) {
+		if (!notExistingDeviceNames.isEmpty()) {
 			throw new InvalidParameterException("Device names do not exist: " + notExistingDeviceNames.stream()
 				.collect(Collectors.joining(", ")));
 		}
@@ -640,7 +640,7 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private SystemListResponseDTO createSystemListResponseDTO(final List<System> systems, final long pageSize) {
+	/*private SystemListResponseDTO createSystemListResponseDTO(final List<System> systems, final long pageSize) {
 		final List<SystemResponseDTO> result = new ArrayList<>();
 
 		for (final System system : systems) {
@@ -687,11 +687,11 @@ public class SystemDbService {
 		}
 
 		return new SystemListResponseDTO(result, pageSize);
-	}
+	}*/
 
 	//-------------------------------------------------------------------------------------------------
 	private List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createTriples(
-			final List<System> systems, final List<SystemAddress> addresses, final List<DeviceSystemConnector> deviceConnections, final List<DeviceAddress> deviceAddresses) {
+			final List<System> systems, final List<SystemAddress> addresses, final List<DeviceSystemConnector> deviceConnections) {
 
 		Assert.notNull(systems, "systems are null");
 		
@@ -714,10 +714,11 @@ public class SystemDbService {
 			final Device device = connection.isEmpty() ? null : connection.get().getDevice();
 
 			// corresponding device addresses
-			final List<DeviceAddress> deviceAddressList = device == null ? new ArrayList<DeviceAddress>() : deviceAddresses
+			/*final List<DeviceAddress> deviceAddressList = device == null ? new ArrayList<DeviceAddress>() : deviceAddresses
 					.stream()
 					.filter(a -> a.getDevice().equals(device))
-					.collect(Collectors.toList());
+					.collect(Collectors.toList());*/
+			final List<DeviceAddress> deviceAddressList = device == null ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDevice(device);
 			
 			result.add(Triple.of(system, systemAddresses, device == null ? null : Map.entry(device, deviceAddressList)));
 		}

@@ -72,7 +72,7 @@ public class ManagementService {
 	private DTOConverter dtoConverter;
 
     @Value("${service.discovery.verbose}")
-    private boolean verboseEnabled;
+    private static boolean verboseEnabled;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -230,7 +230,8 @@ public class ManagementService {
 		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeUpdateSystems(dto, origin);
 
 		try {
-			return systemDbService.updateBulk(normalized);
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updatedEntities = systemDbService.updateBulk(normalized);
+			return dtoConverter.convertSystemTriplesToDTO(updatedEntities);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -238,7 +239,6 @@ public class ManagementService {
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
