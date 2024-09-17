@@ -193,7 +193,7 @@ public class ManagementService {
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, final boolean verbose, final String origin) {
 
-		logger.debug("querySystems started, verbose = " + verbose);
+		logger.debug("querySystems started, verbose = {}", verbose);
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);

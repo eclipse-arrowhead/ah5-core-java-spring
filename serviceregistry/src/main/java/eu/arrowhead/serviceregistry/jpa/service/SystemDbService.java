@@ -629,8 +629,8 @@ public class SystemDbService {
 
 			for (final SystemRequestDTO candidate : candidates) {
 				if (candidate.deviceName() != null) {
-					final Device device = deviceRepo.findAllByNameIn(Arrays.asList(candidate.deviceName())).getFirst();
-					final System system = systemRepo.findAllByNameIn(Arrays.asList(candidate.name())).getFirst();
+					final Device device = deviceRepo.findByName(candidate.deviceName()).get();
+					final System system = systemRepo.findByName(candidate.name()).get();
 					connections.add(new DeviceSystemConnector(device, system));
 				}
 			}
