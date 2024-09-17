@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -15,10 +17,13 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
+import eu.arrowhead.dto.PageDTO;
 
 @Service
 public class ManagementNormalization {
@@ -62,10 +67,20 @@ public class ManagementNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public SystemQueryRequestDTO normalizeSystemQueryRequestDTO(final SystemQueryRequestDTO dto) {
 		logger.debug("normalizeSystemQueryRequestDTO started");
-		Assert.notNull(dto, "SystemQueryRequestDTO is null");
+		
+		if (dto == null) {
+			return new SystemQueryRequestDTO(
+					new PageDTO(0, Integer.MAX_VALUE, Direction.DESC.toString(), System.DEFAULT_SORT_FIELD), 
+					null, 
+					null, 
+					null, 
+					new ArrayList<MetadataRequirementDTO>(),
+					null,
+					null);
+		}
 
 		return new SystemQueryRequestDTO(
-				dto.pagination(), //no need to normailze, because it will happen in the getPageRequest method
+				dto.pagination(), //no need to normalize, because it will happen in the getPageRequest method
 				Utilities.isEmpty(dto.systemNames()) ? null
 						: dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null

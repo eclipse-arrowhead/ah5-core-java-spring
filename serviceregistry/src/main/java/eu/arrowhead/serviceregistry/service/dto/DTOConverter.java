@@ -51,19 +51,19 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public DeviceResponseDTO convertDeviceEntityToDeviceResponseDTO(final Device deviceEntitiy, final List<DeviceAddress> addressEntities) {
+	public DeviceResponseDTO convertDeviceEntityToDeviceResponseDTO(final Device deviceEntity, final List<DeviceAddress> addressEntities) {
 		logger.debug("convertDeviceAddressEntityListToDTO started...");
-		Assert.notNull(deviceEntitiy, "device entity is null");
+		Assert.notNull(deviceEntity, "device entity is null");
 
 		return new DeviceResponseDTO(
-				deviceEntitiy.getName(),
-				Utilities.fromJson(deviceEntitiy.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				deviceEntity.getName(),
+				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>() { }),
 				Utilities.isEmpty(addressEntities) ? null
 						: addressEntities.stream()
 								.map(address -> new AddressDTO(address.getAddressType().name(), address.getAddress()))
 								.collect(Collectors.toList()),
-				Utilities.convertZonedDateTimeToUTCString(deviceEntitiy.getCreatedAt()),
-				Utilities.convertZonedDateTimeToUTCString(deviceEntitiy.getUpdatedAt()));
+				Utilities.convertZonedDateTimeToUTCString(deviceEntity.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(deviceEntity.getUpdatedAt()));
 	}
 
 	//-------------------------------------------------------------------------------------------------

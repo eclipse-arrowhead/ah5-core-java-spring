@@ -272,7 +272,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Duplicate system name: " + system.name(), origin);
 			}
 
-			if (system.name().length() > ArrowheadEntity.VARCHAR_SMALL) {
+			if (system.name().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
 				throw new InvalidParameterException("System name is too long: " + system.name(), origin);
 			}
 
@@ -320,38 +320,37 @@ public class ManagementValidation {
 	public void validateQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQuerySystems started");
 
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
+		if (dto != null) {
 
-		pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
-
-		if (!Utilities.isEmpty(dto.systemNames()) && Utilities.containsNullOrEmpty(dto.systemNames())) {
-			throw new InvalidParameterException("System name list contains null or empty element", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
-			throw new InvalidParameterException("Address list contains null or empty element", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
-			throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
-		}
-		
-		if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(dto.addressType())) {
-			throw new InvalidParameterException("Address list is not empty, but the address type was not specified!");
-		}
-
-		if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
-			throw new InvalidParameterException("Metadata requirement list contains null element", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
-			throw new InvalidParameterException("Version list contains null or empty element", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
-			throw new InvalidParameterException("Device name list contains null or empty element", origin);
+			pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
+	
+			if (!Utilities.isEmpty(dto.systemNames()) && Utilities.containsNullOrEmpty(dto.systemNames())) {
+				throw new InvalidParameterException("System name list contains null or empty element", origin);
+			}
+	
+			if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
+				throw new InvalidParameterException("Address list contains null or empty element", origin);
+			}
+	
+			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
+				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
+			}
+			
+			if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(dto.addressType())) {
+				throw new InvalidParameterException("Address list is not empty, but the address type was not specified!");
+			}
+	
+			if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
+				throw new InvalidParameterException("Metadata requirement list contains null element", origin);
+			}
+	
+			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+				throw new InvalidParameterException("Version list contains null or empty element", origin);
+			}
+	
+			if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
+				throw new InvalidParameterException("Device name list contains null or empty element", origin);
+			}
 		}
 	}
 
