@@ -89,7 +89,6 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemTriplesToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
 		logger.debug("convertSystemTriplesToDTO started...");
-		Assert.isTrue(!Utilities.isEmpty(entities), "entity list is empty");
 
 		final List<SystemResponseDTO> result = new ArrayList<>();
 
@@ -102,14 +101,14 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemResponseDTO convertSystemTripleToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
-		logger.debug("convertSystemTripleToDTO started...");
 		Assert.notNull(entity.getLeft(), "the System in the triple is null");
 		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
+		
 
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
 		final Device device = entity.getRight() == null ? null : entity.getRight().getKey();
-		final List<DeviceAddress> deviceAddresses =  entity.getRight() == null ? null : entity.getRight().getValue();
+		final List<DeviceAddress> deviceAddresses = entity.getRight() == null ? null : entity.getRight().getValue();
 
 		return new SystemResponseDTO(
 				system.getName(),
@@ -127,6 +126,33 @@ public class DTOConverter {
 						Utilities.convertZonedDateTimeToUTCString(device.getUpdatedAt())),
 				Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(system.getUpdatedAt()));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO convertSystemListResponseDtoToTerse(final SystemListResponseDTO verbose) {
+		
+		final List<SystemResponseDTO> terse = new ArrayList<SystemResponseDTO>();
+		
+		for (final SystemResponseDTO systemResponseDTO : verbose.entries()) {
+
+			DeviceResponseDTO device = null;
+			if (systemResponseDTO.device() != null) {
+				device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
+			}
+
+			terse.add(new SystemResponseDTO(
+					systemResponseDTO.name(),
+					systemResponseDTO.metadata(),
+					systemResponseDTO.version(),
+					systemResponseDTO.addresses(),
+					device,
+					systemResponseDTO.createdAt(),
+					systemResponseDTO.updatedAt()
+					));
+		}
+
+		return new SystemListResponseDTO(terse, terse.size());
+		
 	}
 
 	//=================================================================================================

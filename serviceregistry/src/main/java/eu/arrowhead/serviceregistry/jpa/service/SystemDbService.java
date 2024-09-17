@@ -2,7 +2,6 @@ package eu.arrowhead.serviceregistry.jpa.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,8 +13,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -32,7 +31,6 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
-import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -55,9 +53,6 @@ public class SystemDbService {
 
 	@Autowired
 	private SystemRepository systemRepo;
-
-	@Autowired
-	private PageService pageService;
 
 	@Autowired
 	private SystemAddressRepository systemAddressRepo;
@@ -311,9 +306,107 @@ public class SystemDbService {
 			return systemResponseDTO;
 		}
 	}*/
+	
+	//-------------------------------------------------------------------------------------------------
+	public Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getPageByFilters(
+			final PageRequest pagination, final List<String> systemNames, final List<String> addresses, final AddressType addressType, 
+			final Map<String, Object> metadataRequirementList, final List<String> versions, final List<String> deviceNames) {
+		logger.debug("getPageByFilters started");
+		Assert.notNull(pagination, "page is null");
+		
+		synchronized (LOCK) {
+			try {
+				Page<System> systemEntries = new PageImpl<System>(new ArrayList<System>());
+
+				// without filter
+				if (Utilities.isEmpty(systemNames)
+						&& Utilities.isEmpty(addresses)
+						&& addressType == null
+						&& Utilities.isEmpty(metadataRequirementList)
+						&& Utilities.isEmpty(versions)
+						&& Utilities.isEmpty(deviceNames)) {
+					
+					systemEntries = systemRepo.findAll(pagination);
+
+				}
+				//with filter
+				else {
+
+					final List<String> matchings = new ArrayList<>();
+
+						final Page<System> toFilter = Utilities.isEmpty(systemNames) ? systemRepo.findAll(pagination) : systemRepo.findAllByNameIn(systemNames, pagination);
+
+						for (final System system : toFilter) {
+							
+							// address type
+							if (addressType != null && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, addressType))) {
+								continue;
+							}
+							
+							// addresses
+							if (!Utilities.isEmpty(addresses) && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, addresses))) {
+								continue;
+							}
+							
+							// version
+							if (!Utilities.isEmpty(versions) && !systemRepo.findAllByVersionIn(versions).contains(system)) {
+								continue;
+							}
+							
+							// device names
+							if (!Utilities.isEmpty(deviceNames) && deviceSystemConnectorRepo.findBySystem(system).isPresent() && !deviceNames.contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
+								continue;
+							}
+							
+							// metadata
+							if (!Utilities.isEmpty(metadataRequirementList)) {
+								boolean metaDataMatch = false;
+								for (final Map.Entry<String, Object> requirement : metadataRequirementList.entrySet()) {
+									if (MetadataRequirementsMatcher.isMetadataMatch(Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }), (MetadataRequirementDTO)requirement)) {
+										metaDataMatch = true;
+										break;
+									}
+								}
+								if (!metaDataMatch) {
+									continue;
+								}
+							}
+							matchings.add(system.getName());
+						}
+					systemEntries = systemRepo.findAllByNameIn(matchings, pagination);
+				}
+				
+				// system addresses
+				final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystemIn(systemEntries.toList());
+				
+				// devices
+				final Optional<List<DeviceSystemConnector>> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.toList());
+				final List<Device> devices = deviceSystemConnections.isEmpty() ? new ArrayList<Device>() : 
+					deviceSystemConnections
+						.get()
+						.stream()
+						.map(c -> c.getDevice())
+						.collect(Collectors.toList());
+				// device addresses
+				final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
+				
+				List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections.isEmpty() ? new ArrayList<DeviceSystemConnector>() : deviceSystemConnections.get(), deviceAddresses);
+
+				return new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
+					result,
+					pagination, 
+					systemEntries.getTotalElements());
+
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
+	/*public SystemListResponseDTO getPageByFilters(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("getPageByFilters started");
 		Assert.notNull(dto, "SystemQueryRequestDTO dto is null");
 
@@ -398,7 +491,7 @@ public class SystemDbService {
 			throw new InternalServerError("Database operation error");
 
 		}
-	}
+	}*/
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
@@ -473,9 +566,9 @@ public class SystemDbService {
 	//checks if device name already exists, throws exception if it does not
 	private void checkDeviceNamesExist(final List<SystemRequestDTO> candidates) {
 		
-		List<String> candidateDeviceNames = new ArrayList<String>();
+		final List<String> candidateDeviceNames = new ArrayList<String>();
 		
-		for (SystemRequestDTO candidate : candidates) {
+		for (final SystemRequestDTO candidate : candidates) {
 			if (candidate.deviceName() != null) {
 				candidateDeviceNames.add(candidate.deviceName());
 			}
@@ -600,8 +693,10 @@ public class SystemDbService {
 	private List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createTriples(
 			final List<System> systems, final List<SystemAddress> addresses, final List<DeviceSystemConnector> deviceConnections, final List<DeviceAddress> deviceAddresses) {
 
+		Assert.notNull(systems, "systems are null");
+		
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>();
-
+		
 		for (final System system : systems) {
 
 			// corresponding addresses
@@ -623,7 +718,7 @@ public class SystemDbService {
 					.stream()
 					.filter(a -> a.getDevice().equals(device))
 					.collect(Collectors.toList());
-
+			
 			result.add(Triple.of(system, systemAddresses, device == null ? null : Map.entry(device, deviceAddressList)));
 		}
 

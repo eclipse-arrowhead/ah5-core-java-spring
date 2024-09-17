@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -12,12 +13,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
@@ -25,6 +32,7 @@ import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
@@ -48,6 +56,9 @@ public class SystemDiscoveryService {
 
 	@Autowired
 	private SystemDbService dbService;
+	
+	@Autowired
+	private PageService pageService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -103,40 +114,21 @@ public class SystemDiscoveryService {
 		final SystemLookupRequestDTO normalized = validator.validateAndNormalizeLookupSystem(dto, origin);
 
 		try {
-			final SystemListResponseDTO result = dbService.getPageByFilters(
-					new SystemQueryRequestDTO(
-							null,
-							normalized.systemNames(),
-							normalized.addresses(),
-							normalized.addressType(),
-							normalized.metadataRequirementList(),
-							normalized.versions(),
-							normalized.deviceNames()),
-					origin);
-
+			final PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD);
+			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> page = dbService.getPageByFilters(
+					pageRequest,
+					normalized.systemNames(),
+					normalized.addresses(),
+					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
+					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>() : Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
+					normalized.versions(),
+					normalized.deviceNames());
+			
+			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page.get().toList());
+			
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
-				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
-
-				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
-
-					DeviceResponseDTO device = null;
-					if (systemResponseDTO.device() != null) {
-						device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
-					}
-
-					resultTerse.add(new SystemResponseDTO(
-							systemResponseDTO.name(),
-							systemResponseDTO.metadata(),
-							systemResponseDTO.version(),
-							systemResponseDTO.addresses(),
-							device,
-							systemResponseDTO.createdAt(),
-							systemResponseDTO.updatedAt()
-							));
-				}
-
-				return new SystemListResponseDTO(resultTerse, result.count());
+				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
 
 			return result;

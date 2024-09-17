@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,7 @@ public interface DeviceSystemConnectorRepository extends RefreshableRepository<D
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<DeviceSystemConnector> findBySystem(final System system);
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<List<DeviceSystemConnector>> findBySystemIn(final List<System> system);
 }

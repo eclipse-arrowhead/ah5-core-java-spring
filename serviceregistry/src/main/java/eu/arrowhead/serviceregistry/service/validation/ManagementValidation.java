@@ -337,6 +337,10 @@ public class ManagementValidation {
 		if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
 			throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
 		}
+		
+		if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(dto.addressType())) {
+			throw new InvalidParameterException("Address list is not empty, but the address type was not specified!");
+		}
 
 		if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
 			throw new InvalidParameterException("Metadata requirement list contains null element", origin);

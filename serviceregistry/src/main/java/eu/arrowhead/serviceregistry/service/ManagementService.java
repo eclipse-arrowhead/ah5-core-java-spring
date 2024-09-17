@@ -1,7 +1,9 @@
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -15,18 +17,18 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
-import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
@@ -196,33 +198,21 @@ public class ManagementService {
 
 		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
 
-		try {
-			final SystemListResponseDTO result = systemDbService.getPageByFilters(normalized, origin);
+		try {			
+			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
+			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> page = systemDbService.getPageByFilters(
+					pageRequest,
+					normalized.systemNames(),
+					normalized.addresses(),
+					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
+					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>() : Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
+					normalized.versions(),
+					normalized.deviceNames());
 
+			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page.get().toList());
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
-
-				final List<SystemResponseDTO> resultTerse = new ArrayList<>();
-
-				for (final SystemResponseDTO systemResponseDTO : result.entries()) {
-
-					DeviceResponseDTO device = null;
-					if (systemResponseDTO.device() != null) {
-						device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
-					}
-
-					resultTerse.add(new SystemResponseDTO(
-							systemResponseDTO.name(),
-							systemResponseDTO.metadata(),
-							systemResponseDTO.version(),
-							systemResponseDTO.addresses(),
-							device,
-							systemResponseDTO.createdAt(),
-							systemResponseDTO.updatedAt()
-							));
-				}
-
-				return new SystemListResponseDTO(resultTerse, result.count());
+				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
 
 			return result;
