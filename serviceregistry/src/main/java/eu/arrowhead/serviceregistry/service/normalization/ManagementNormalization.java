@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -67,13 +66,13 @@ public class ManagementNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public SystemQueryRequestDTO normalizeSystemQueryRequestDTO(final SystemQueryRequestDTO dto) {
 		logger.debug("normalizeSystemQueryRequestDTO started");
-		
+
 		if (dto == null) {
 			return new SystemQueryRequestDTO(
-					new PageDTO(0, Integer.MAX_VALUE, Direction.DESC.toString(), System.DEFAULT_SORT_FIELD), 
-					null, 
-					null, 
-					null, 
+					new PageDTO(0, Integer.MAX_VALUE, Direction.DESC.toString(), System.DEFAULT_SORT_FIELD),
+					null,
+					null,
+					null,
 					new ArrayList<MetadataRequirementDTO>(),
 					null,
 					null);

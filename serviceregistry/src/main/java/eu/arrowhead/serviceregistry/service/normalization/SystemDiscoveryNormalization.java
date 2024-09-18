@@ -53,7 +53,7 @@ public class SystemDiscoveryNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public SystemLookupRequestDTO normalizeSystemLookupRequestDTO(final SystemLookupRequestDTO dto) {
 		logger.debug("normalizeSystemLookupRequestDTO started");
-		
+
 		if (dto == null) {
 			return new SystemLookupRequestDTO(null, null, null, new ArrayList<MetadataRequirementDTO>(), null, null);
 		}

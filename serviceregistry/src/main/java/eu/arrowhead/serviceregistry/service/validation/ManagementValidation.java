@@ -12,7 +12,6 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
@@ -323,31 +322,31 @@ public class ManagementValidation {
 		if (dto != null) {
 
 			pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
-	
+
 			if (!Utilities.isEmpty(dto.systemNames()) && Utilities.containsNullOrEmpty(dto.systemNames())) {
 				throw new InvalidParameterException("System name list contains null or empty element", origin);
 			}
-	
+
 			if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
 				throw new InvalidParameterException("Address list contains null or empty element", origin);
 			}
-	
+
 			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
 				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
 			}
-			
+
 			if (!Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(dto.addressType())) {
 				throw new InvalidParameterException("Address list is not empty, but the address type was not specified!");
 			}
-	
+
 			if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
 				throw new InvalidParameterException("Metadata requirement list contains null element", origin);
 			}
-	
+
 			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
 				throw new InvalidParameterException("Version list contains null or empty element", origin);
 			}
-	
+
 			if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
 				throw new InvalidParameterException("Device name list contains null or empty element", origin);
 			}

@@ -17,7 +17,7 @@ public interface SystemAddressRepository extends RefreshableRepository<SystemAdd
 
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> findAllBySystem(final System system);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<SystemAddress> findAllBySystemIn(final List<System> system);
 

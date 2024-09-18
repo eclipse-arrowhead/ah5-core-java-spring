@@ -99,7 +99,7 @@ public class DTOConverter {
 
 		return new SystemListResponseDTO(result, entities.getTotalElements());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemTripleListToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
 		logger.debug("convertSystemTriplesToDTO started...");
@@ -117,7 +117,7 @@ public class DTOConverter {
 	public SystemResponseDTO convertSystemTripleToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
 		Assert.notNull(entity.getLeft(), "the System in the triple is null");
 		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
-		
+
 
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
@@ -141,12 +141,12 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(system.getUpdatedAt()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemListResponseDtoToTerse(final SystemListResponseDTO verbose) {
-		
+
 		final List<SystemResponseDTO> terse = new ArrayList<SystemResponseDTO>();
-		
+
 		for (final SystemResponseDTO systemResponseDTO : verbose.entries()) {
 
 			DeviceResponseDTO device = null;
@@ -166,7 +166,7 @@ public class DTOConverter {
 		}
 
 		return new SystemListResponseDTO(terse, verbose.count());
-		
+
 	}
 
 	//=================================================================================================

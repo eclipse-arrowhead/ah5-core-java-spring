@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,14 +197,15 @@ public class ManagementService {
 
 		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
 
-		try {			
+		try {
 			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
 			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> page = systemDbService.getPageByFilters(
 					pageRequest,
 					normalized.systemNames(),
 					normalized.addresses(),
 					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
-					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>() : Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
+					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>()
+							: Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
 					normalized.versions(),
 					normalized.deviceNames());
 
@@ -214,7 +214,7 @@ public class ManagementService {
 			if (!verbose || !verboseEnabled) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
-			
+
 			java.lang.System.out.println(result.count());
 
 			return result;

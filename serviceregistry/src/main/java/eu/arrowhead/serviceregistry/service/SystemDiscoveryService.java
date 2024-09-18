@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,12 +23,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.AddressDTO;
-import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
-import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -56,9 +52,6 @@ public class SystemDiscoveryService {
 
 	@Autowired
 	private SystemDbService dbService;
-	
-	@Autowired
-	private PageService pageService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -120,12 +113,13 @@ public class SystemDiscoveryService {
 					normalized.systemNames(),
 					normalized.addresses(),
 					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
-					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>() : Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
+					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>()
+							: Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
 					normalized.versions(),
 					normalized.deviceNames());
-			
+
 			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page);
-			
+
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
@@ -156,10 +150,10 @@ public class SystemDiscoveryService {
 
 	//-------------------------------------------------------------------------------------------------
 	// throws exception, if the two systems doesn't have the same attributes
-	private void checkSameSystemAttributes(Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final SystemRequestDTO dto) {
+	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final SystemRequestDTO dto) {
 		logger.debug("checkSameSystemAttributes started");
 		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical!");
-		
+
 		final System existingSystem = existing.getLeft();
 
 		// metadata
@@ -173,7 +167,7 @@ public class SystemDiscoveryService {
 		}
 
 		// addresses
-		List<AddressDTO> existingAddresses = existing.getMiddle()
+		final List<AddressDTO> existingAddresses = existing.getMiddle()
 				.stream()
 				.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
 				.collect(Collectors.toList());
