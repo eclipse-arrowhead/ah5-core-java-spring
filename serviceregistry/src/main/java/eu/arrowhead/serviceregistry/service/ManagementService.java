@@ -176,7 +176,7 @@ public class ManagementService {
 		try {
 
 			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities = systemDbService.createBulk(normalized);
-			return dtoConverter.convertSystemTriplesToDTO(entities);
+			return dtoConverter.convertSystemTripleListToDTO(entities);
 
 		} catch (final InvalidParameterException ex) {
 
@@ -209,11 +209,13 @@ public class ManagementService {
 					normalized.versions(),
 					normalized.deviceNames());
 
-			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page.get().toList());
+			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page);
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
+			
+			java.lang.System.out.println(result.count());
 
 			return result;
 		} catch (final InternalServerError ex) {
@@ -231,7 +233,7 @@ public class ManagementService {
 
 		try {
 			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updatedEntities = systemDbService.updateBulk(normalized);
-			return dtoConverter.convertSystemTriplesToDTO(updatedEntities);
+			return dtoConverter.convertSystemTripleListToDTO(updatedEntities);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

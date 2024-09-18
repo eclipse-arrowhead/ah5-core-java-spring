@@ -317,7 +317,7 @@ public class SystemDbService {
 		synchronized (LOCK) {
 			try {
 				Page<System> systemEntries = new PageImpl<System>(new ArrayList<System>());
-
+				
 				// without filter
 				if (Utilities.isEmpty(systemNames)
 						&& Utilities.isEmpty(addresses)
@@ -327,14 +327,13 @@ public class SystemDbService {
 						&& Utilities.isEmpty(deviceNames)) {
 					
 					systemEntries = systemRepo.findAll(pagination);
-
 				}
 				//with filter
 				else {
 
 					final List<String> matchings = new ArrayList<>();
 
-						final Page<System> toFilter = Utilities.isEmpty(systemNames) ? systemRepo.findAll(pagination) : systemRepo.findAllByNameIn(systemNames, pagination);
+						final List<System> toFilter = Utilities.isEmpty(systemNames) ? systemRepo.findAll() : systemRepo.findAllByNameIn(systemNames);
 
 						for (final System system : toFilter) {
 							
@@ -373,6 +372,8 @@ public class SystemDbService {
 							}
 							matchings.add(system.getName());
 						}
+						
+					//TODO: talan ez??
 					systemEntries = systemRepo.findAllByNameIn(matchings, pagination);
 				}
 				
@@ -391,7 +392,7 @@ public class SystemDbService {
 				//final List<DeviceAddress> deviceAddresses = Utilities.isEmpty(devices) ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDeviceIn(devices);
 				
 				List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections.isEmpty() ? new ArrayList<DeviceSystemConnector>() : deviceSystemConnections.get());
-
+				
 				return new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
 					result,
 					pagination, 

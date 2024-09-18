@@ -30,7 +30,7 @@ public class VersionValidator {
 	//-------------------------------------------------------------------------------------------------
 	public void validateNormalizedVersion(final String version) {
 
-		logger.debug("Validate version started: " + version);
+		logger.debug("Validate version started: {}", version);
 
 		//check size
 		if (version.length() > ServiceRegistryConstants.SYSTEM_VERSION_LENGTH) {

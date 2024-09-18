@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -87,7 +88,20 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO convertSystemTriplesToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
+	public SystemListResponseDTO convertSystemTriplesToDTO(final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
+		logger.debug("convertSystemTriplesToDTO started...");
+
+		final List<SystemResponseDTO> result = new ArrayList<>();
+
+		for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity : entities) {
+			result.add(convertSystemTripleToDTO(entity));
+		}
+
+		return new SystemListResponseDTO(result, entities.getTotalElements());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO convertSystemTripleListToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
 		logger.debug("convertSystemTriplesToDTO started...");
 
 		final List<SystemResponseDTO> result = new ArrayList<>();
@@ -151,7 +165,7 @@ public class DTOConverter {
 					));
 		}
 
-		return new SystemListResponseDTO(terse, terse.size());
+		return new SystemListResponseDTO(terse, verbose.count());
 		
 	}
 

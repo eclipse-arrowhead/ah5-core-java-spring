@@ -124,7 +124,7 @@ public class SystemDiscoveryService {
 					normalized.versions(),
 					normalized.deviceNames());
 			
-			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page.get().toList());
+			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page);
 			
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !verboseEnabled) {
