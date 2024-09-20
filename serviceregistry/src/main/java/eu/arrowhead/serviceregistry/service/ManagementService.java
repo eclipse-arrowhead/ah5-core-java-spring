@@ -1,8 +1,6 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -15,8 +13,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -36,6 +32,7 @@ import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
@@ -70,8 +67,8 @@ public class ManagementService {
 	@Autowired
 	private DTOConverter dtoConverter;
 
-    @Value("${service.discovery.verbose}")
-    private static boolean verboseEnabled;
+	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_VERBOSE_WD)
+	private boolean serviceDiscoveryVerbose;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -175,7 +172,7 @@ public class ManagementService {
 		try {
 
 			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities = systemDbService.createBulk(normalized);
-			return dtoConverter.convertSystemTripleListToDTO(entities);
+			return dtoConverter.convertSystemTripletListToDTO(entities);
 
 		} catch (final InvalidParameterException ex) {
 
@@ -204,18 +201,15 @@ public class ManagementService {
 					normalized.systemNames(),
 					normalized.addresses(),
 					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
-					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>()
-							: Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
+					normalized.metadataRequirementList(),
 					normalized.versions(),
 					normalized.deviceNames());
 
-			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page);
+			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
-			if (!verbose || !verboseEnabled) {
+			if (!verbose || !serviceDiscoveryVerbose) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
-
-			java.lang.System.out.println(result.count());
 
 			return result;
 		} catch (final InternalServerError ex) {
@@ -233,7 +227,7 @@ public class ManagementService {
 
 		try {
 			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updatedEntities = systemDbService.updateBulk(normalized);
-			return dtoConverter.convertSystemTripleListToDTO(updatedEntities);
+			return dtoConverter.convertSystemTripletListToDTO(updatedEntities);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

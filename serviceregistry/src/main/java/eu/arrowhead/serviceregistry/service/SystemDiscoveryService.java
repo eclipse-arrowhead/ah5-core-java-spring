@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,6 +32,7 @@ import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
 import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
@@ -56,8 +56,8 @@ public class SystemDiscoveryService {
 	@Autowired
 	private DTOConverter dtoConverter;
 
-    @Value("${service.discovery.verbose}")
-    private static boolean verboseEnabled;
+	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_VERBOSE_WD)
+	private boolean serviceDiscoveryVerbose;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -83,13 +83,13 @@ public class SystemDiscoveryService {
 				checkSameSystemAttributes(existingSystem, normalized);
 
 				// Convert to response and return
-				final SystemResponseDTO existingSystemAsResponseDTO = dtoConverter.convertSystemTripleToDTO(existingSystem);
+				final SystemResponseDTO existingSystemAsResponseDTO = dtoConverter.convertSystemTripletToDTO(existingSystem);
 				return Map.entry(existingSystemAsResponseDTO, false);
 			}
 
 			// New system
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> response = dbService.createBulk(List.of(normalized)).getFirst();
-			return Map.entry(dtoConverter.convertSystemTripleToDTO(response), true);
+			return Map.entry(dtoConverter.convertSystemTripletToDTO(response), true);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -113,15 +113,14 @@ public class SystemDiscoveryService {
 					normalized.systemNames(),
 					normalized.addresses(),
 					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
-					Utilities.isEmpty(normalized.metadataRequirementList()) ? new HashMap<String, Object>()
-							: Utilities.fromJson(Utilities.toJson(normalized.metadataRequirementList()), new TypeReference<Map<String, Object>>() { }),
+					normalized.metadataRequirementList(),
 					normalized.versions(),
 					normalized.deviceNames());
 
-			final SystemListResponseDTO result = dtoConverter.convertSystemTriplesToDTO(page);
+			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
 
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
-			if (!verbose || !verboseEnabled) {
+			if (!verbose || !serviceDiscoveryVerbose) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
 
@@ -157,7 +156,7 @@ public class SystemDiscoveryService {
 		final System existingSystem = existing.getLeft();
 
 		// metadata
-		if (!existingSystem.getMetadata().equals(Utilities.toJson(dto.metadata()))) {
+		if (!Utilities.fromJson(existingSystem.getMetadata(), new TypeReference<Map<String, Object>>() { }).equals(dto.metadata())) {
 			throw new InvalidParameterException("System with name: " + existingSystem.getName() + " already exists, but provided metadata is not matching");
 		}
 

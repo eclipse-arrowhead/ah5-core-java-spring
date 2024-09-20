@@ -18,5 +18,5 @@ public interface DeviceSystemConnectorRepository extends RefreshableRepository<D
 	public Optional<DeviceSystemConnector> findBySystem(final System system);
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<List<DeviceSystemConnector>> findBySystemIn(final List<System> system);
+	public List<DeviceSystemConnector> findBySystemIn(final List<System> system);
 }

@@ -21,7 +21,6 @@ import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 
 @Service
@@ -69,13 +68,7 @@ public class ManagementNormalization {
 
 		if (dto == null) {
 			return new SystemQueryRequestDTO(
-					new PageDTO(0, Integer.MAX_VALUE, Direction.DESC.toString(), System.DEFAULT_SORT_FIELD),
-					null,
-					null,
-					null,
-					new ArrayList<MetadataRequirementDTO>(),
-					null,
-					null);
+					new PageDTO(0, Integer.MAX_VALUE, Direction.DESC.toString(), System.DEFAULT_SORT_FIELD), null, null, null, null, null, null);
 		}
 
 		return new SystemQueryRequestDTO(

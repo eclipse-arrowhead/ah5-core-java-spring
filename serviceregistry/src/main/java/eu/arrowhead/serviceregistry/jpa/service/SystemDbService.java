@@ -244,7 +244,7 @@ public class SystemDbService {
 	//-------------------------------------------------------------------------------------------------
 	public Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getPageByFilters(
 			final PageRequest pagination, final List<String> systemNames, final List<String> addresses, final AddressType addressType,
-			final Map<String, Object> metadataRequirementList, final List<String> versions, final List<String> deviceNames) {
+			final List<MetadataRequirementDTO> metadataRequirementList, final List<String> versions, final List<String> deviceNames) {
 		logger.debug("getPageByFilters started");
 		Assert.notNull(pagination, "page is null");
 
@@ -294,8 +294,8 @@ public class SystemDbService {
 							// metadata
 							if (!Utilities.isEmpty(metadataRequirementList)) {
 								boolean metaDataMatch = false;
-								for (final Map.Entry<String, Object> requirement : metadataRequirementList.entrySet()) {
-									if (MetadataRequirementsMatcher.isMetadataMatch(Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }), (MetadataRequirementDTO) requirement)) {
+								for (final MetadataRequirementDTO requirement : metadataRequirementList) {
+									if (MetadataRequirementsMatcher.isMetadataMatch(Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }), requirement)) {
 										metaDataMatch = true;
 										break;
 									}
@@ -314,10 +314,9 @@ public class SystemDbService {
 				final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystemIn(systemEntries.toList());
 
 				// device-system connections
-				final Optional<List<DeviceSystemConnector>> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.toList());
+				final List<DeviceSystemConnector> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.toList());
 
-				final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections.isEmpty()
-						? new ArrayList<DeviceSystemConnector>() : deviceSystemConnections.get());
+				final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections);
 
 				return new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
 					result,

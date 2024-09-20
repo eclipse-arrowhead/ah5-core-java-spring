@@ -11,7 +11,6 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
-import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
@@ -55,7 +54,7 @@ public class SystemDiscoveryNormalization {
 		logger.debug("normalizeSystemLookupRequestDTO started");
 
 		if (dto == null) {
-			return new SystemLookupRequestDTO(null, null, null, new ArrayList<MetadataRequirementDTO>(), null, null);
+			return new SystemLookupRequestDTO(null, null, null, null, null, null);
 		}
 
 		return new SystemLookupRequestDTO(

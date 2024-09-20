@@ -88,33 +88,33 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO convertSystemTriplesToDTO(final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
-		logger.debug("convertSystemTriplesToDTO started...");
+	public SystemListResponseDTO convertSystemTripletPageToDTO(final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
+		logger.debug("convertSystemTripletPageToDTO started...");
 
-		final List<SystemResponseDTO> result = new ArrayList<>();
+		final List<SystemResponseDTO> result = new ArrayList<>(entities.getNumberOfElements());
 
 		for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity : entities) {
-			result.add(convertSystemTripleToDTO(entity));
+			result.add(convertSystemTripletToDTO(entity));
 		}
 
 		return new SystemListResponseDTO(result, entities.getTotalElements());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemListResponseDTO convertSystemTripleListToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
-		logger.debug("convertSystemTriplesToDTO started...");
+	public SystemListResponseDTO convertSystemTripletListToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
+		logger.debug("convertSystemTripletListToDTO started...");
 
-		final List<SystemResponseDTO> result = new ArrayList<>();
+		final List<SystemResponseDTO> result = new ArrayList<>(entities.size());
 
 		for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity : entities) {
-			result.add(convertSystemTripleToDTO(entity));
+			result.add(convertSystemTripletToDTO(entity));
 		}
 
 		return new SystemListResponseDTO(result, result.size());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemResponseDTO convertSystemTripleToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
+	public SystemResponseDTO convertSystemTripletToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
 		Assert.notNull(entity.getLeft(), "the System in the triple is null");
 		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
 
@@ -145,7 +145,7 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemListResponseDtoToTerse(final SystemListResponseDTO verbose) {
 
-		final List<SystemResponseDTO> terse = new ArrayList<SystemResponseDTO>();
+		final List<SystemResponseDTO> terse = new ArrayList<SystemResponseDTO>(verbose.entries().size());
 
 		for (final SystemResponseDTO systemResponseDTO : verbose.entries()) {
 
