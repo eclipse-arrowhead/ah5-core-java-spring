@@ -250,7 +250,7 @@ public class SystemDbService {
 
 		synchronized (LOCK) {
 			try {
-				Page<System> systemEntries = new PageImpl<System>(new ArrayList<System>());
+				Page<System> systemEntries;
 
 				// without filter
 				if (Utilities.isEmpty(systemNames)
@@ -281,7 +281,7 @@ public class SystemDbService {
 							}
 
 							// version
-							if (!Utilities.isEmpty(versions) && !systemRepo.findAllByVersionIn(versions).contains(system)) {
+							if (!Utilities.isEmpty(versions) && !systemRepo.findAllByVersionIn(versions).stream().map(s -> s.getName()).collect(Collectors.toList()).contains(system.getName())) {
 								continue;
 							}
 
@@ -291,16 +291,24 @@ public class SystemDbService {
 								continue;
 							}
 
+							if (!Utilities.isEmpty(deviceNames)) {
+								Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
+								if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
+									continue;
+								}
+							}
+
 							// metadata
 							if (!Utilities.isEmpty(metadataRequirementList)) {
-								boolean metaDataMatch = false;
+								boolean metadataMatch = false;
+								Map<String, Object> systemMetadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { });
 								for (final MetadataRequirementDTO requirement : metadataRequirementList) {
-									if (MetadataRequirementsMatcher.isMetadataMatch(Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }), requirement)) {
-										metaDataMatch = true;
+									if (MetadataRequirementsMatcher.isMetadataMatch(systemMetadata, requirement)) {
+										metadataMatch = true;
 										break;
 									}
 								}
-								if (!metaDataMatch) {
+								if (!metadataMatch) {
 									continue;
 								}
 							}
@@ -311,12 +319,12 @@ public class SystemDbService {
 				}
 
 				// system addresses
-				final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystemIn(systemEntries.toList());
+				final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystemIn(systemEntries.getContent());
 
 				// device-system connections
-				final List<DeviceSystemConnector> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.toList());
+				final List<DeviceSystemConnector> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.getContent());
 
-				final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.toList(), systemAddresses, deviceSystemConnections);
+				final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.getContent(), systemAddresses, deviceSystemConnections);
 
 				return new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
 					result,
@@ -404,13 +412,11 @@ public class SystemDbService {
 	//checks if device name already exists, throws exception if it does not
 	private void checkDeviceNamesExist(final List<SystemRequestDTO> candidates) {
 
-		final List<String> candidateDeviceNames = new ArrayList<String>();
-
-		for (final SystemRequestDTO candidate : candidates) {
-			if (candidate.deviceName() != null) {
-				candidateDeviceNames.add(candidate.deviceName());
-			}
-		}
+		final List<String> candidateDeviceNames = candidates.stream()
+                .filter(c -> c.deviceName() != null)
+                .map(c -> c.deviceName())
+                .distinct()
+                .collect(Collectors.toList());
 
 		final List<String> existingDeviceNames = deviceRepo.findAllByNameIn(candidateDeviceNames).stream()
 				.map(e -> e.getName())
@@ -483,26 +489,26 @@ public class SystemDbService {
 
 		Assert.notNull(systems, "systems are null");
 
-		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>();
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
 
 		for (final System system : systems) {
 
 			// corresponding addresses
 			final List<SystemAddress> systemAddresses = addresses
 					.stream()
-					.filter(a -> a.getSystem().equals(system))
+					.filter(a -> a.getSystem().getName().equals(system.getName()))
 					.collect(Collectors.toList());
 
 			// corresponding device
 			final Optional<DeviceSystemConnector> connection = deviceConnections
 					.stream()
-					.filter(c -> c.getSystem().equals(system))
+					.filter(c -> c.getSystem().getName().equals(system.getName()))
 					.findFirst();
 
 			final Device device = connection.isEmpty() ? null : connection.get().getDevice();
 
 			// corresponding device addresses
-			final List<DeviceAddress> deviceAddressList = device == null ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDevice(device);
+			final List<DeviceAddress> deviceAddressList = device == null ? List.of() : deviceAddressRepo.findAllByDevice(device);
 
 			result.add(Triple.of(system, systemAddresses, device == null ? null : Map.entry(device, deviceAddressList)));
 		}
