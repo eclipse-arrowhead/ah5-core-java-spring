@@ -231,7 +231,7 @@ public class SystemDbService {
 			final Device device = deviceSystemConnection.isEmpty() ? null : deviceSystemConnection.get().getDevice();
 
 			// device addresses
-			final List<DeviceAddress> deviceAddresses = device == null ? new ArrayList<DeviceAddress>() : deviceAddressRepo.findAllByDevice(device);
+			final List<DeviceAddress> deviceAddresses = device == null ? List.of() : deviceAddressRepo.findAllByDevice(device);
 
 			return Optional.of(Triple.of(
 					system.get(),
