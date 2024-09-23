@@ -292,7 +292,7 @@ public class SystemDbService {
 							}
 
 							if (!Utilities.isEmpty(deviceNames)) {
-								Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
+								final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
 								if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
 									continue;
 								}
@@ -301,7 +301,7 @@ public class SystemDbService {
 							// metadata
 							if (!Utilities.isEmpty(metadataRequirementList)) {
 								boolean metadataMatch = false;
-								Map<String, Object> systemMetadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { });
+								final Map<String, Object> systemMetadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { });
 								for (final MetadataRequirementDTO requirement : metadataRequirementList) {
 									if (MetadataRequirementsMatcher.isMetadataMatch(systemMetadata, requirement)) {
 										metadataMatch = true;
