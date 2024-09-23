@@ -281,7 +281,7 @@ public class SystemDbService {
 							}
 
 							// version
-							if (!Utilities.isEmpty(versions) && !systemRepo.findAllByVersionIn(versions).stream().map(s -> s.getName()).collect(Collectors.toList()).contains(system.getName())) {
+							if (!Utilities.isEmpty(versions) && systemRepo.findAllByVersionIn(versions).stream().filter(s -> s.getName().equals(system.getName())).findAny().isEmpty()) {
 								continue;
 							}
 
