@@ -21,13 +21,17 @@ import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
-import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 
 @Service
 public class DTOConverter {
@@ -167,6 +171,30 @@ public class DTOConverter {
 
 		return new SystemListResponseDTO(terse, verbose.count());
 
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceResponseDTO convertServiceInstanceEntityToDTO(final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry, final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTripet) {
+		logger.debug("convertServiceInstanceEntityToDTO started...");
+
+		final ServiceInstance instance = instanceEntry.getKey();
+		final List<ServiceInstanceInterface> interfaceList = instanceEntry.getValue();
+
+		return new ServiceInstanceResponseDTO(
+				instance.getServiceInstanceId(),
+				convertSystemTripletToDTO(systemTripet),
+				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
+				instance.getVersion(),
+				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
+				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				interfaceList.stream().map(interf -> new ServiceInstanceInterfaceResponseDTO(
+						interf.getServiceInterfaceTemplate().getName(),
+						interf.getServiceInterfaceTemplate().getProtocol(),
+						interf.getPolicy().toString(),
+						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() { }))).toList(),
+				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt())
+		);
 	}
 
 	//=================================================================================================

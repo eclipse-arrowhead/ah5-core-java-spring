@@ -1,10 +1,76 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ServiceDiscoveryValidation {
 
-	// TODO: every operation has a validation method that takes the input (DTO and/or params) and throws ArrowheadExceptions if anything is not valid.
-	// must be called from the service layer (example: ServiceDiscoveryService component)
+	//=================================================================================================
+	// members
+
+	@Autowired
+	private ServiceDiscoveryNormalization normalizer;
+
+	@Autowired
+	private VersionValidator versionValidator;
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	//=================================================================================================
+	// methods
+
+	// VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
+		logger.debug("validateRegisterService started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.systemName())) {
+			throw new InvalidParameterException("System name is empty", origin);
+		}
+
+		if (Utilities.isEmpty(dto.serviceDefinitionName())) {
+			throw new InvalidParameterException("Service definition name is empty", origin);
+		}
+
+		if (dto.serviceDefinitionName().length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+			throw new InvalidParameterException("Service definition name is too long", origin);
+		}
+
+		// TODO
+	}
+
+	// VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceRequestDTO validateAndNormalizeRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
+		logger.debug("validateRegisterService started");
+
+		validateRegisterService(dto, origin);
+
+		final ServiceInstanceRequestDTO normalized = normalizer.normalizeServiceInstanceRequestDTO(dto);
+
+		try {
+			// TODO validate normalized addresses
+			versionValidator.validateNormalizedVersion(normalized.version());
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
 }

@@ -135,6 +135,7 @@ public class SystemDiscoveryValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemLookupRequestDTO validateAndNormalizeLookupSystem(final SystemLookupRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeLookupSystem started");
 
 		validateLookupSystem(dto, origin);
 
@@ -171,6 +172,6 @@ public class SystemDiscoveryValidation {
 		validateRevokeSystem(name, origin);
 
 		return normalizer.normalizeSystemName(name);
-		}
+	}
 
 }
