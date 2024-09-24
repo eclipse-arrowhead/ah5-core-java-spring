@@ -15,6 +15,7 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
+import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.api.http.utils.ServiceInstanceIdCalculator;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
@@ -32,6 +33,9 @@ public class ServiceDiscoveryService {
 
 	//=================================================================================================
 	// members
+
+	@Autowired
+	private ServiceRegistrySystemInfo sysInfo;
 
 	@Autowired
 	private ServiceDiscoveryValidation validator;
@@ -59,7 +63,7 @@ public class ServiceDiscoveryService {
 
 		try {
 			instanceDbService.deleteByInstanceId(instanceId);
-			final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = instanceDbService.createBulk(List.of(dto)).getFirst();
+			final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = instanceDbService.createBulk(List.of(dto), sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryPolicy.RESTRICTED).getFirst();
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = systemDbService.getByName(instanceEntry.getKey().getSystem().getName()).get();
 
 			return dtoConverter.convertServiceInstanceEntityToDTO(instanceEntry, systemTriplet);

@@ -16,4 +16,7 @@ public interface ServiceInterfaceTemplateRepository extends RefreshableRepositor
 
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInterfaceTemplate> findAllByNameIn(final Collection<String> names);
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean existsByName(final String name);
 }

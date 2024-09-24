@@ -66,7 +66,7 @@ public class ServiceInstanceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> createBulk(final List<ServiceInstanceRequestDTO> candidates) {
+	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> createBulk(final List<ServiceInstanceRequestDTO> candidates, final boolean restrictedInterface) {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "service instance candidate list is empty");
 
@@ -91,6 +91,14 @@ public class ServiceInstanceDbService {
 				systemRepo.findAllByNameIn(systemNames).forEach(system -> systemCache.put(system.getName(), system));
 				serviceDefinitionRepo.findAllByNameIn(serviceDefinitionNames).forEach(definition -> definitionCache.put(definition.getName(), definition));
 				serviceInterfaceTemplateRepo.findAllByNameIn(serviceInterfaceTemlateNames).forEach(template -> interfaceTemplateCache.put(template.getName(), template));
+
+				if (restrictedInterface) {
+					serviceInterfaceTemlateNames.forEach(templateName -> {
+						if (!interfaceTemplateCache.containsKey(templateName)) {
+							throw new InvalidParameterException("Interface template not exists: " + templateName);
+						}
+					});
+				}
 
 				// Handle instance records
 				for (final ServiceInstanceRequestDTO candidate : candidates) {
