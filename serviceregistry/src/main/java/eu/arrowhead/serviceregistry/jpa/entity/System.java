@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceregistry.jpa.entity;
 
+import java.util.List;
+
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +16,8 @@ public class System extends ArrowheadEntity {
 
 	//=================================================================================================
 	// members
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
+	public static final String DEFAULT_SORT_FIELD = "createdAt";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

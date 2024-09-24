@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
@@ -17,22 +18,30 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
+import eu.arrowhead.dto.SystemListRequestDTO;
+import eu.arrowhead.dto.SystemListResponseDTO;
+import eu.arrowhead.dto.SystemQueryRequestDTO;
+import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
-import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
-import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
+import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
-import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
+import org.apache.commons.lang3.tuple.Triple;
+
 
 @Service
 public class ManagementService {
@@ -53,10 +62,13 @@ public class ManagementService {
 	private ServiceDefinitionDbService serviceDefinitionDbService;
 
 	@Autowired
-	private ManagementNormalization normalizer;
+	private SystemDbService systemDbService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
+
+	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_VERBOSE_WD)
+	private boolean serviceDiscoveryVerbose;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -70,10 +82,7 @@ public class ManagementService {
 		logger.debug("createDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateCreateDevices(dto, origin);
-
-		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
+		final List<DeviceRequestDTO> normalized = validator.validateAndNormalizeCreateDevices(dto, origin);
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.createBulk(normalized);
@@ -92,10 +101,7 @@ public class ManagementService {
 		logger.debug("updateDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateUpdateDevices(dto, origin);
-
-		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> n.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin)));
+		final List<DeviceRequestDTO> normalized = validator.validateAndNormalizeUpdateDevices(dto, origin);
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.updateBulk(normalized);
@@ -113,15 +119,7 @@ public class ManagementService {
 	public DeviceListResponseDTO queryDevices(final DeviceQueryRequestDTO dto, final String origin) {
 		logger.debug("queryDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		validator.validateQueryDevices(dto, origin);
-
-		final DeviceQueryRequestDTO normalized = dto == null ? new DeviceQueryRequestDTO(null, null, null, null, null)
-				: normalizer.normalizeDeviceQueryRequestDTO(dto);
-
-		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
-			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
-		}
+		final DeviceQueryRequestDTO normalized = validator.validateAndNormalizeQueryDevices(dto, origin);
 
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, Device.SORTABLE_FIELDS_BY, Device.DEFAULT_SORT_FIELD, origin);
 
@@ -134,16 +132,14 @@ public class ManagementService {
 	public void removeDevices(final List<String> names, final String origin) {
 		logger.debug("removeDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		final List<String> normalized = names.stream()
-				.filter(n -> !Utilities.isEmpty(n))
-				.map(n -> n.trim())
-				.collect(Collectors.toList());
-
 		try {
+			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
+
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 	}
 
@@ -160,13 +156,96 @@ public class ManagementService {
 				.stream()
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
+		final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
+		return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+	}
+
+	// SYSTEMS
+
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO createSystems(final SystemListRequestDTO dto, final String origin) {
+		logger.debug("createSystems started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeCreateSystems(dto, origin);
+
 		try {
-			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
-			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities = systemDbService.createBulk(normalized);
+			return dtoConverter.convertSystemTripletListToDTO(entities);
+
+		} catch (final InvalidParameterException ex) {
+
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+
+			throw new InternalServerError(ex.getMessage(), origin);
+
+		}
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, final boolean verbose, final String origin) {
+
+		logger.debug("querySystems started, verbose = {}", verbose);
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
+
+		try {
+			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
+			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> page = systemDbService.getPageByFilters(
+					pageRequest,
+					normalized.systemNames(),
+					normalized.addresses(),
+					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
+					normalized.metadataRequirementList(),
+					normalized.versions(),
+					normalized.deviceNames());
+
+			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
+			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
+			if (!verbose || !serviceDiscoveryVerbose) {
+				return dtoConverter.convertSystemListResponseDtoToTerse(result);
+			}
+
+			return result;
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public SystemListResponseDTO updateSystems(final SystemListRequestDTO dto, final String origin) {
+
+		logger.debug("updateSystems started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<SystemRequestDTO> normalized = validator.validateAndNormalizeUpdateSystems(dto, origin);
+
+		try {
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updatedEntities = systemDbService.updateBulk(normalized);
+			return dtoConverter.convertSystemTripletListToDTO(updatedEntities);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeSystems(final List<String> names, final String origin) {
+		logger.debug("removeSystems started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalizedNames = validator.validateAndNormalizeRemoveSystems(names, origin);
+
+		try {
+			systemDbService.deleteByNameList(normalizedNames);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

@@ -4,9 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +24,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
-import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
 import eu.arrowhead.serviceregistry.service.validation.DeviceDiscoveryValidation;
 
 @Service
@@ -42,10 +40,10 @@ public class DeviceDiscoveryService {
 	private DeviceDiscoveryValidation validator;
 
 	@Autowired
-	private DeviceDiscoveryNormalization normalizer;
+	private DTOConverter dtoConverter;
 
 	@Autowired
-	private DTOConverter dtoConverter;
+	private AddressMatching addressMatcher;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -57,9 +55,7 @@ public class DeviceDiscoveryService {
 		logger.debug("registerDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateRegisterDevice(dto, origin);
-		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
-		normalized.addresses().forEach(address -> validator.validateNormalizedAddress(address, origin));
+		final DeviceRequestDTO normalized = validator.validateAndNormalizeRegisterDevice(dto, origin);
 
 		try {
 			final Optional<Entry<Device, List<DeviceAddress>>> optional = dbService.getByName(normalized.name());
@@ -79,22 +75,15 @@ public class DeviceDiscoveryService {
 					}
 				}
 
-				final List<DeviceAddress> existingAddresses = optional.get().getValue();
-				final Set<String> existingAddressesSTR = existingAddresses
+				final List<AddressDTO> existingAddresses = optional.get().getValue()
 						.stream()
-						.map(a -> a.getAddressType().name() + "-" + a.getAddress())
-						.collect(Collectors.toSet());
-				final Set<String> candidateAddressesSTR = Utilities.isEmpty(normalized.addresses()) ? Set.of()
-						: normalized.addresses()
-								.stream()
-								.map(a -> a.type() + "-" + a.address())
-								.collect(Collectors.toSet());
-
-				if (!existingAddressesSTR.equals(candidateAddressesSTR)) {
+						.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
+						.collect(Collectors.toList());
+				if (!addressMatcher.isAddressListMatching(existingAddresses, dto.addresses())) {
 					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided interfaces are not matching");
 				}
 
-				return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(existing, existingAddresses), false);
+				return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(existing, optional.get().getValue()), false);
 			}
 
 			// New device
@@ -114,12 +103,7 @@ public class DeviceDiscoveryService {
 		logger.debug("lookupDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateLookupDevice(dto, origin);
-		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizer.normalizeDeviceLookupRequestDTO(dto);
-
-		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
-			normalized.addresses().forEach(a -> validator.validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
-		}
+		final DeviceLookupRequestDTO normalized = validator.validateAndNormalizeLookupDevice(dto, origin);
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entries = dbService.getByFilters(normalized.deviceNames(), normalized.addresses(),
