@@ -150,14 +150,17 @@ public class ManagementService {
 		logger.debug("createServiceDefinitions started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateCreateServiceDefinition(dto, origin);
+		List<String> normalized = validator.validateAndNormalizeCreateServiceDefinitions(dto, origin);
+		
+		try {
+			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalized);
+			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 
-		final List<String> normalizedNames = dto.serviceDefinitionNames()
-				.stream()
-				.map(n -> n.trim())
-				.collect(Collectors.toList());
-		final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
-		return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	// SYSTEMS

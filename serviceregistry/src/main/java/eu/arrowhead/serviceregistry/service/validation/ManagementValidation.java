@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -216,30 +217,50 @@ public class ManagementValidation {
 	// SERVICE DEFINITION VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateServiceDefinition(final ServiceDefinitionListRequestDTO dto, final String origin) {
+	public void validateCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateServiceDefinition started");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
-
+		
 		if (Utilities.isEmpty(dto.serviceDefinitionNames())) {
-			throw new InvalidParameterException("Request payload is empty", origin);
+			throw new InvalidParameterException("Service definition name list is empty", origin);
 		}
 
-		for (final String definitionName : dto.serviceDefinitionNames()) {
-			if (Utilities.isEmpty(definitionName)) {
-				throw new InvalidParameterException("Service definition name is missing", origin);
+		if (Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+		}
+		
+		List<String> names = new ArrayList<>(dto.serviceDefinitionNames().size());
+		
+		for (String name : dto.serviceDefinitionNames()) {
+			
+			if (names.contains(name)) {
+				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
-
-			// verify no duplicates in list
-
-			// TODO: max 63 chars and naming convention!
+			
+			if (name.length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
+			}
+			
+			names.add(name);
+			
 		}
+
+		// TODO: naming convention!
 	}
 
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
 	// TODO
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateServiceDefinitions started");
+		
+		validateCreateServiceDefinitions(dto, origin);
+		
+		return normalizer.normalizeCreateServiceDefinitions(dto);
+	}
 
 	// SYSTEM VALIDATION
 

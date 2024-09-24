@@ -1,6 +1,4 @@
 package eu.arrowhead.serviceregistry.jpa.service;
-
-import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +12,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceDefinitionRepository;
 
@@ -55,7 +54,6 @@ public class ServiceDefinitionDbService {
 
 		} catch (final InvalidParameterException ex) {
 			throw ex;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
