@@ -13,10 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
+import eu.arrowhead.dto.HttpOperationDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
@@ -38,6 +39,8 @@ public class ServiceDiscoveryNormalization {
 
 	@Autowired
 	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
+
+	private static final ObjectMapper mapper = new ObjectMapper();
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -70,7 +73,6 @@ public class ServiceDiscoveryNormalization {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("unchecked")
 	private Map<String, Object> normalizeInterfaceProperties(final String templateName, final Map<String, Object> interfaceProperties) {
 		final List<ServiceInterfaceTemplateProperty> templateProps = interfaceTemplateDbService.getPropertiesByName(templateName);
 
@@ -81,15 +83,20 @@ public class ServiceDiscoveryNormalization {
 					final Object operationsObj = interfaceProperties.get(templateProperty.getPropertyName());
 					if (operationsObj != null) {
 						try {
-//							final Map<String, Map<String, String>> operations = Utilities.fromJson(Utilities.toJson(operationsObj), new TypeReference<Map<String, Map<String, String>>>() { });
-//							final Map<String, Object> normalizedOperations = new HashMap<>();
-//							for (final Entry<String, Map<String, String>> entry : operations.entrySet()) {
-//								normalizedOperations.put(entry.getKey().trim().toLowerCase(), Utilities.toJson(new HttpOperationModel(entry.getValue().path().trim(), entry.getValue().method())));
-//							}
-//							interfaceProperties.put(templateProperty.getPropertyName(), normalizedOperations);
-						} catch (final ClassCastException ex) {
+							final Map<String, HttpOperationDTO> operations = mapper.readValue(mapper.writeValueAsBytes(operationsObj), new TypeReference<Map<String, HttpOperationDTO>>() { });
+							final Map<String, HttpOperationDTO> normalizedOperations = new HashMap<>();
+							for (final Entry<String, HttpOperationDTO> entry : operations.entrySet()) {
+								normalizedOperations.put(
+										entry.getKey().trim().toLowerCase(),
+										entry.getValue() == null ? null : new HttpOperationDTO(
+												Utilities.isEmpty(entry.getValue().path()) ? "" : entry.getValue().path().trim(),
+												Utilities.isEmpty(entry.getValue().method()) ? "" : entry.getValue().method().trim().toUpperCase())
+								);
+							}
+							interfaceProperties.put(templateProperty.getPropertyName(), normalizedOperations);
+						} catch (final Exception ex) {
 							logger.debug(ex);
-							logger.error(ex.getMessage());
+							logger.error("HTTP_OPERATIONS normalization error: " + ex.getMessage());
 						}
 					}
 				}
@@ -98,12 +105,12 @@ public class ServiceDiscoveryNormalization {
 					final Object addressListObj = interfaceProperties.get(templateProperty.getPropertyName());
 					if (addressListObj != null) {
 						try {
-							final List<String> addresses = (List<String>) addressListObj;
+							final List<String> addresses = mapper.readValue(mapper.writeValueAsBytes(addressListObj), new TypeReference<List<String>>() { });
 							final List<String> normalizedAddresses = addresses.stream().map(a -> addressNormalizer.normalize(a)).toList();
 							interfaceProperties.put(templateProperty.getPropertyName(), normalizedAddresses);
-						} catch (final ClassCastException ex) {
+						} catch (final Exception ex) {
 							logger.debug(ex);
-							logger.error(ex.getMessage());
+							logger.error("NOT_EMPTY_ADDRESS_LIST normalization error " + ex.getMessage());
 						}
 
 					}
