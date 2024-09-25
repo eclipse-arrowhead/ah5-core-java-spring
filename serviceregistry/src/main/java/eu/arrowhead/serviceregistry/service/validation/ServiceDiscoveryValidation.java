@@ -102,6 +102,15 @@ public class ServiceDiscoveryValidation {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validateRevokeService(final String instanceId, final String origin) {
+		logger.debug("validateRevokeService started");
+
+		if (Utilities.isEmpty(instanceId)) {
+			throw new InvalidParameterException("Service instance ID is missing", origin);
+		}
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -148,5 +157,13 @@ public class ServiceDiscoveryValidation {
 		}
 
 		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String validateAndNormalizeRevokeService(final String instanceId, final String origin) {
+		logger.debug("validateAndNormalizeRevokeService started");
+
+		validateRevokeService(instanceId, origin);
+		return normalizer.normalizeServiceInstanceId(instanceId);
 	}
 }

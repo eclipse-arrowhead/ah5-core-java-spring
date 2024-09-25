@@ -54,7 +54,7 @@ public class ServiceDiscoveryNormalization {
 
 		return new ServiceInstanceRequestDTO(
 				dto.systemName().trim(),
-				dto.serviceDefinitionName().trim(),
+				dto.serviceDefinitionName().trim().toLowerCase(),
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
 				dto.metadata(),
@@ -67,6 +67,14 @@ public class ServiceDiscoveryNormalization {
 										i.policy().trim().toUpperCase(),
 										normalizeInterfaceProperties(i.templateName(), i.properties())))
 								.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String normalizeServiceInstanceId(final String instanceId) {
+		logger.debug("normalizeServiceInstanceRequestDTO started");
+		Assert.isTrue(!Utilities.isEmpty(instanceId), "Service instance id is empty");
+
+		return instanceId.trim().toLowerCase();
 	}
 
 	//=================================================================================================

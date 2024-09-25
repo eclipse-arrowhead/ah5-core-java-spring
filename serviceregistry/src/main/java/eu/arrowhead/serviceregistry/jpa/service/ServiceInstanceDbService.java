@@ -24,7 +24,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
-import eu.arrowhead.serviceregistry.api.http.utils.ServiceInstanceIdCalculator;
+import eu.arrowhead.serviceregistry.api.http.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
@@ -110,7 +110,7 @@ public class ServiceInstanceDbService {
 								candidate.serviceDefinitionName(),
 								serviceDefinitionRepo.saveAndFlush(new ServiceDefinition(candidate.serviceDefinitionName())));
 					}
-					final String instanceId = ServiceInstanceIdCalculator.calculate(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version());
+					final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version());
 
 					instanceEntities.add(new ServiceInstance(
 							instanceId,
@@ -127,7 +127,7 @@ public class ServiceInstanceDbService {
 				for (final ServiceInstanceRequestDTO candidate : candidates) {
 					final ServiceInstance serviceInstance = instanceEntities
 							.stream()
-							.filter(i -> i.getServiceInstanceId().equals(ServiceInstanceIdCalculator.calculate(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version())))
+							.filter(i -> i.getServiceInstanceId().equals(ServiceInstanceIdUtils.calculateInstanceId(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version())))
 							.findFirst()
 							.get();
 
