@@ -2,6 +2,7 @@ package eu.arrowhead.serviceregistry.jpa.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
@@ -18,5 +19,5 @@ public interface ServiceInterfaceTemplateRepository extends RefreshableRepositor
 	public List<ServiceInterfaceTemplate> findAllByNameIn(final Collection<String> names);
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean existsByName(final String name);
+	public Optional<ServiceInterfaceTemplate> findByName(final String name);
 }
