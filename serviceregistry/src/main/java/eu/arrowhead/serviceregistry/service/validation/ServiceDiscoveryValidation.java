@@ -92,7 +92,7 @@ public class ServiceDiscoveryValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceRequestDTO validateAndNormalizeRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
-		logger.debug("validateRegisterService started");
+		logger.debug("validateAndNormalizeRegisterService started");
 
 		validateRegisterService(dto, origin);
 
