@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -72,7 +73,7 @@ public class ServiceDiscoveryAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(HttpStatus.CREATED)
-	public @ResponseBody ServiceInstanceResponseDTO register(final HttpServletRequest httpServletRequest, final ServiceInstanceCreateRequestDTO dto) {
+	public @ResponseBody ServiceInstanceResponseDTO register(final HttpServletRequest httpServletRequest, @RequestBody final ServiceInstanceCreateRequestDTO dto) {
 		logger.debug("register started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH;

@@ -1,6 +1,9 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
 import java.time.DateTimeException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,10 +12,15 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.intf.properties.IPropertyValidator;
+import eu.arrowhead.common.intf.properties.PropertyValidatorType;
+import eu.arrowhead.common.intf.properties.PropertyValidators;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
@@ -27,6 +35,12 @@ public class ServiceDiscoveryValidation {
 
 	@Autowired
 	private VersionValidator versionValidator;
+
+	@Autowired
+	private PropertyValidators interfacePropertyValidator;
+
+	@Autowired
+	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -79,7 +93,7 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.policy())) {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
-			if (!Utilities.isEnumValue(interfaceDTO.policy(), ServiceInterfacePolicy.class)) {
+			if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
 				throw new InvalidParameterException("Invalid inteface policy", origin);
 			}
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
@@ -99,8 +113,36 @@ public class ServiceDiscoveryValidation {
 		final ServiceInstanceRequestDTO normalized = normalizer.normalizeServiceInstanceRequestDTO(dto);
 
 		try {
-			// TODO validate normalized interface DTOs
 			versionValidator.validateNormalizedVersion(normalized.version());
+
+			normalized.interfaces().forEach(interfaceInstance -> {
+				final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
+				if (templateOpt.isPresent()) {
+					if (!interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
+						throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
+					}
+
+					interfaceTemplateDbService.getPropertiesByName(interfaceInstance.templateName())
+							.forEach(templateProp -> {
+								final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
+
+								if (instanceProp == null && templateProp.isMandatory()) {
+									throw new InvalidParameterException(templateProp.getPropertyName() + " interface property is missing for " + templateProp.getServiceInterfaceTemplate().getName());
+								}
+
+								if (!Utilities.isEmpty(templateProp.getValidator())) {
+									final List<String> validatorWithArgs = Arrays.asList(templateProp.getValidator().split("\\|"));
+									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs.get(0)));
+									if (validator != null) {
+										validator.validate(
+												instanceProp,
+												validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0]));
+									}
+								}
+							});
+				}
+			});
+
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}

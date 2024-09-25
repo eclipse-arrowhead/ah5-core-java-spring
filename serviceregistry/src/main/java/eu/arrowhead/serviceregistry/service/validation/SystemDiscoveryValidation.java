@@ -64,7 +64,7 @@ public class SystemDiscoveryValidation {
 					throw new InvalidParameterException("Address type is missing", origin);
 				}
 
-				if (!Utilities.isEnumValue(address.type(), AddressType.class)) {
+				if (!Utilities.isEnumValue(address.type().toUpperCase(), AddressType.class)) {
 					throw new InvalidParameterException("Invalid address type: " + address.type(), origin);
 				}
 
@@ -92,7 +92,7 @@ public class SystemDiscoveryValidation {
 			}
 
 			//address type
-			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType(), AddressType.class)) {
+			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType().toUpperCase(), AddressType.class)) {
 				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
 			}
 
