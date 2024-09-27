@@ -41,7 +41,8 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		// TODO Auto-generated method stub
 		return null;
 	}
-}	//-------------------------------------------------------------------------------------------------
+
+	//-------------------------------------------------------------------------------------------------
 	public ServiceDiscoveryInterfacePolicy getServiceDisciveryInterfacePolicy() {
 		return this.serviceDisciveryInterfacePolicy;
 	}
