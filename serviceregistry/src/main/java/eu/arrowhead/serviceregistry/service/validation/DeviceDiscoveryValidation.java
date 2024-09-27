@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
 
 @Service
 public class DeviceDiscoveryValidation {

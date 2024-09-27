@@ -11,7 +11,7 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'GENERIC_HTTP'),
 	'accessPort',
 	1,
-	'MINMAX|1|65535'
+	'PORT'
 ); 
 
 INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`) VALUES (
@@ -41,7 +41,7 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'GENERIC_HTTPS'),
 	'accessPort',
 	1,
-	'MINMAX|1|65535'
+	'PORT'
 ); 
 
 INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`) VALUES (

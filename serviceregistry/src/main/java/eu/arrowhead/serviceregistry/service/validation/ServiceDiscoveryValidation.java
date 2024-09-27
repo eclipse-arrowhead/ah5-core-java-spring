@@ -143,7 +143,7 @@ public class ServiceDiscoveryValidation {
 									final List<String> validatorWithArgs = Arrays.asList(templateProp.getValidator().split("\\|"));
 									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs.get(0)));
 									if (validator != null) {
-										validator.validateNormalize(
+										validator.validateAndNormalize(
 												instanceProp,
 												validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0]));
 									}

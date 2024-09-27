@@ -32,10 +32,6 @@ public final class ServiceRegistryConstants {
 
 	// Configuration related
 
-	public static final String ALLOW_SELF_ADDRESSING = "allow.self.addressing";
-	public static final String $ALLOW_SELF_ADDRESSING_WD = "${" + ALLOW_SELF_ADDRESSING + ":true}";
-	public static final String ALLOW_NON_ROUTABLE_ADDRESSING = "allow.non.routable.addressing";
-	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
 	public static final String SERVICE_DISCOVERY_VERBOSE = "service.discovery.verbose";
 	public static final String $SERVICE_DISCOVERY_VERBOSE_WD = "${" + SERVICE_DISCOVERY_VERBOSE + ":false}";
 	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
