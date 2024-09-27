@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.jpa.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
@@ -14,5 +15,5 @@ public interface ServiceDefinitionRepository extends RefreshableRepository<Servi
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<ServiceDefinition> findAllByNameIn(final List<String> names);
+	public List<ServiceDefinition> findAllByNameIn(final Collection<String> names);
 }

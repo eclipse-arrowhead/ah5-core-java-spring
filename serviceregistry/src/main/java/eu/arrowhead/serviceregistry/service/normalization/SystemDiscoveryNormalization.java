@@ -44,7 +44,7 @@ public class SystemDiscoveryNormalization {
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
 						: dto.addresses().stream()
-								.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
+								.map(a -> new AddressDTO(a.type().trim().toUpperCase(), addressNormalizer.normalize(a.address())))
 								.collect(Collectors.toList()),
 				Utilities.isEmpty(dto.deviceName()) ? null : dto.deviceName().trim());
 	}
@@ -60,7 +60,7 @@ public class SystemDiscoveryNormalization {
 		return new SystemLookupRequestDTO(
 				Utilities.isEmpty(dto.systemNames()) ? null : dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
+				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList(),
 				Utilities.isEmpty(dto.versions()) ? null : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(dn -> dn.trim()).collect(Collectors.toList()));
