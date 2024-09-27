@@ -24,6 +24,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.api.http.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
@@ -35,12 +36,16 @@ import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceInterfaceRepos
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
+import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 
 @Service
 public class ServiceInstanceDbService {
 
 	//=================================================================================================
 	// members
+
+	@Autowired
+	private ServiceRegistrySystemInfo sysInfo;
 
 	@Autowired
 	private ServiceInstanceRepository serviceInstanceRepo;
@@ -66,7 +71,7 @@ public class ServiceInstanceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> createBulk(final List<ServiceInstanceRequestDTO> candidates, final boolean restrictedInterface) {
+	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> createBulk(final List<ServiceInstanceRequestDTO> candidates) {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "service instance candidate list is empty");
 
@@ -92,7 +97,7 @@ public class ServiceInstanceDbService {
 				serviceDefinitionRepo.findAllByNameIn(serviceDefinitionNames).forEach(definition -> definitionCache.put(definition.getName(), definition));
 				serviceInterfaceTemplateRepo.findAllByNameIn(serviceInterfaceTemlateNames).forEach(template -> interfaceTemplateCache.put(template.getName(), template));
 
-				if (restrictedInterface) {
+				if (sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					serviceInterfaceTemlateNames.forEach(templateName -> {
 						if (!interfaceTemplateCache.containsKey(templateName)) {
 							throw new InvalidParameterException("Interface template not exists: " + templateName);
