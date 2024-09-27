@@ -65,7 +65,8 @@ public class ServiceDiscoveryService {
 
 		try {
 			instanceDbService.deleteByInstanceId(instanceId);
-			final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = instanceDbService.createBulk(List.of(normalized), sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryPolicy.RESTRICTED).getFirst();
+			final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = instanceDbService.createBulk(List.of(normalized),
+					sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED).getFirst();
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = systemDbService.getByName(instanceEntry.getKey().getSystem().getName()).get();
 
 			return dtoConverter.convertServiceInstanceEntityToDTO(instanceEntry, systemTriplet);

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 import eu.arrowhead.common.SystemInfo;
 import eu.arrowhead.common.model.ServiceModel;
-import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
+import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 
 @Component
 public class ServiceRegistrySystemInfo extends SystemInfo {
@@ -16,7 +16,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	// members
 
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_INTERFACE_POLICY_WD)
-	private ServiceDiscoveryPolicy serviceDisciveryInterfacePolicy;
+	private ServiceDiscoveryInterfacePolicy serviceDisciveryInterfacePolicy;
 
 	//=================================================================================================
 	// methods
@@ -35,7 +35,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDiscoveryPolicy getServiceDisciveryInterfacePolicy() {
+	public ServiceDiscoveryInterfacePolicy getServiceDisciveryInterfacePolicy() {
 		return this.serviceDisciveryInterfacePolicy;
 	}
 }
