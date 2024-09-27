@@ -30,10 +30,12 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceDefinitionRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceInterfaceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
@@ -61,6 +63,9 @@ public class ServiceInstanceDbService {
 
 	@Autowired
 	private ServiceInterfaceTemplateRepository serviceInterfaceTemplateRepo;
+
+	@Autowired
+	private ServiceInterfaceTemplatePropertyRepository serviceInterfaceTemplatePropsRepo;
 
 	private static final Object LOCK = new Object();
 
@@ -129,6 +134,7 @@ public class ServiceInstanceDbService {
 				instanceEntities = serviceInstanceRepo.saveAllAndFlush(instanceEntities);
 
 				// Handle instance interface records
+				Set<String> templatesCreated = new HashSet<>();
 				for (final ServiceInstanceRequestDTO candidate : candidates) {
 					final ServiceInstance serviceInstance = instanceEntities
 							.stream()
@@ -138,11 +144,42 @@ public class ServiceInstanceDbService {
 
 					for (final ServiceInstanceInterfaceRequestDTO interfaceCandidate : candidate.interfaces()) {
 						Assert.isTrue(Utilities.isEnumValue(interfaceCandidate.policy(), ServiceInterfacePolicy.class), "Invalid service interface policy");
+
 						if (!interfaceTemplateCache.containsKey(interfaceCandidate.templateName())) {
+							if (Utilities.isEmpty(interfaceCandidate.protocol())) {
+								throw new InvalidParameterException("No protocol has been defined");
+							}
+
 							interfaceTemplateCache.put(
 									interfaceCandidate.templateName(),
 									serviceInterfaceTemplateRepo.saveAndFlush(new ServiceInterfaceTemplate(interfaceCandidate.templateName(), interfaceCandidate.protocol())));
+							templatesCreated.add(interfaceCandidate.templateName());
+
+							if (sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
+								final List<ServiceInterfaceTemplateProperty> templateProps = new ArrayList<>();
+								interfaceCandidate.properties().keySet().forEach(propName -> {
+									templateProps.add(new ServiceInterfaceTemplateProperty(
+											interfaceTemplateCache.get(interfaceCandidate.templateName()),
+											propName,
+											false,
+											null));
+								});
+							}
 						}
+
+						// Need to validate the properties if the template was created in this bulk operation (only in case of EXTENDABLE policy)
+						if (templatesCreated.contains(interfaceCandidate.templateName()) && sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
+							serviceInterfaceTemplatePropsRepo.findByServiceInterfaceTemplate(interfaceTemplateCache.get(interfaceCandidate.templateName())).forEach(templateProp -> {
+								if (templateProp.isMandatory() && !interfaceCandidate.properties().containsKey(templateProp.getPropertyName())) {
+									throw new InvalidParameterException("Mandatory interface property is missing: " + templateProp.getPropertyName());
+								}
+							});
+						}
+
+						if (!Utilities.isEmpty(interfaceCandidate.protocol()) && interfaceTemplateCache.get(interfaceCandidate.templateName()).getProtocol().equalsIgnoreCase(interfaceCandidate.protocol())) {
+							throw new InvalidParameterException("Interface has different protocol than " + interfaceCandidate.templateName() + " template");
+						}
+
 						instanceInterfaceEntities.add(new ServiceInstanceInterface(
 								serviceInstance,
 								interfaceTemplateCache.get(interfaceCandidate.templateName()),

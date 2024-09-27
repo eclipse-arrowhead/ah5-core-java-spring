@@ -87,9 +87,6 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.templateName())) {
 				throw new InvalidParameterException("Interface template name is missing", origin);
 			}
-			if (Utilities.isEmpty(interfaceDTO.protocol())) {
-				throw new InvalidParameterException("Interface protocol is missing", origin); // TODO nem kötelező megadni, de ha meg van adva akkor csekkolni kell ha létező a template
-			}
 			if (Utilities.isEmpty(interfaceDTO.policy())) {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
@@ -143,9 +140,11 @@ public class ServiceDiscoveryValidation {
 									final List<String> validatorWithArgs = Arrays.asList(templateProp.getValidator().split("\\|"));
 									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs.get(0)));
 									if (validator != null) {
-										validator.validateNormalize(
-												instanceProp,
-												validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0]));
+										final Object normalizedProp = validator.validateNormalize(
+															instanceProp,
+															validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0])
+										);
+										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
 									}
 								}
 							});
