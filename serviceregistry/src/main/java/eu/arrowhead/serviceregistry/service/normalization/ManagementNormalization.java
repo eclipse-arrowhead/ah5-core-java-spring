@@ -138,9 +138,9 @@ public class ManagementNormalization {
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
 	}
-	
+
 	// SERVICE DEFINITIONS
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto) {
 		return dto.serviceDefinitionNames()
@@ -148,7 +148,7 @@ public class ManagementNormalization {
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeServiceDefinitionNames(final List<String> originalNames) {
 		return originalNames.stream()

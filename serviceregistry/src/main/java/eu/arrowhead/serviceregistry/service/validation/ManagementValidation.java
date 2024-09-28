@@ -218,11 +218,11 @@ public class ManagementValidation {
 	}
 
 	// SERVICE DEFINITION VALIDATION
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
 		logger.debug("validateGetServiceDefinitions started");
-		
+
 		if (dto != null) {
 			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
 		}
@@ -235,7 +235,7 @@ public class ManagementValidation {
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
-		
+
 		if (Utilities.isEmpty(dto.serviceDefinitionNames())) {
 			throw new InvalidParameterException("Service definition name list is empty", origin);
 		}
@@ -243,27 +243,27 @@ public class ManagementValidation {
 		if (Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
 			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
 		}
-		
-		List<String> names = new ArrayList<>(dto.serviceDefinitionNames().size());
-		
-		for (String name : dto.serviceDefinitionNames()) {
-			
+
+		final List<String> names = new ArrayList<>(dto.serviceDefinitionNames().size());
+
+		for (final String name : dto.serviceDefinitionNames()) {
+
 			if (names.contains(name)) {
 				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
-			
+
 			if (name.length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
-			
+
 			NameValidator.validateName(name);
-			
+
 			names.add(name);
-			
+
 		}
 
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validateRemoveServiceDefinitions(final List<String> names, final String origin) {
 		logger.debug("validateRemoveServiceDefinitions started");
@@ -281,12 +281,12 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateServiceDefinitions started");
-		
+
 		validateCreateServiceDefinitions(dto, origin);
-		
+
 		return normalizer.normalizeCreateServiceDefinitions(dto);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeRemoveServiceDefinitions(final List<String> names, final String origin) {
 		logger.debug("validateAndNormalizeRemoveServiceDefinitions started");

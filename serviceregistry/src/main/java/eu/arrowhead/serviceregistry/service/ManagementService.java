@@ -2,7 +2,6 @@ package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -145,15 +144,15 @@ public class ManagementService {
 	}
 
 	// SERVICES DEFINITIONS
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO getServiceDefinitions(final PageDTO dto, final String origin) {
 		logger.debug("getServiceDefinitions started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		
+
 		validator.validateQueryServiceDefinitions(dto, origin);
 		final PageRequest pageRequest = pageService.getPageRequest(dto, Direction.DESC, ServiceDefinition.SORTABLE_FIELDS_BY, ServiceDefinition.DEFAULT_SORT_FIELD, origin);
-		
+
 		try {
 			final Page<ServiceDefinition> entities = serviceDefinitionDbService.getPage(pageRequest);
 			return dtoConverter.convertServiceDefinitionEntityPageToDTO(entities);
@@ -168,7 +167,7 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final List<String> normalized = validator.validateAndNormalizeCreateServiceDefinitions(dto, origin);
-		
+
 		try {
 			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalized);
 			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
@@ -179,14 +178,14 @@ public class ManagementService {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void removeServiceDefinitions(final List<String> names, final String origin) {
 		logger.debug("removeServiceDefinitions started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		
+
 		final List<String> normalized = validator.validateAndNormalizeRemoveServiceDefinitions(names, origin);
-		
+
 		try {
 			serviceDefinitionDbService.removeBulk(normalized);
 		} catch (final InvalidParameterException ex) {

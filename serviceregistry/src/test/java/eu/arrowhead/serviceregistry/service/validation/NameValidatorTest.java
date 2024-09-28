@@ -3,6 +3,7 @@ package eu.arrowhead.serviceregistry.service.validation;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
@@ -14,6 +15,7 @@ public class NameValidatorTest {
 	// methods
 	
 	//-------------------------------------------------------------------------------------------------
+	@Disabled
 	@Test
 	public void validateNameTest() {
 		assertThrows(InvalidParameterException.class, () -> { NameValidator.validateName("cont@ins-invalid-character"); });

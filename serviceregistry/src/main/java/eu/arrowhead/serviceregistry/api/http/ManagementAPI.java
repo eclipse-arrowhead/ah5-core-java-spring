@@ -301,7 +301,7 @@ public class ManagementAPI {
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
 		return mgmtService.getServiceDefinitions(dto, origin);
 	}
-	
+
 
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created service definition entries")
