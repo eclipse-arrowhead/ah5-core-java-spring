@@ -326,7 +326,26 @@ public class ManagementAPI {
 		return mgmtService.createServiceDefinitions(dto, origin);
 	}
 
-	// remove-service-definitions DELETE /service-definitions(list of service definition names as query params)
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Deletes the defined service definition entries")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@DeleteMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH)
+	public void removeServiceDefinitions(final @RequestParam List<String> names) {
+		logger.debug("removeServiceDefinitions started");
+
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+		mgmtService.removeServiceDefinitions(names, origin);
+	}
 
 	// SERVICE INSTANCES
 

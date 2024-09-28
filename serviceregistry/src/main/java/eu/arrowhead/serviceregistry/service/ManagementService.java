@@ -167,11 +167,28 @@ public class ManagementService {
 		logger.debug("createServiceDefinitions started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		List<String> normalized = validator.validateAndNormalizeCreateServiceDefinitions(dto, origin);
+		final List<String> normalized = validator.validateAndNormalizeCreateServiceDefinitions(dto, origin);
 		
 		try {
 			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalized);
 			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void removeServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("removeServiceDefinitions started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final List<String> normalized = validator.validateAndNormalizeRemoveServiceDefinitions(names, origin);
+		
+		try {
+			serviceDefinitionDbService.removeBulk(normalized);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 

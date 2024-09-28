@@ -79,5 +79,22 @@ public class ServiceDefinitionDbService {
 			}
 		}
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void removeBulk(final List<String> names) {
+		logger.debug("removeBulk started...");
+		
+		try {
+			final List<ServiceDefinition> entries = repo.findAllByNameIn(names);
+			repo.deleteAll(entries);
+			repo.flush();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
 
 }

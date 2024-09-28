@@ -263,6 +263,19 @@ public class ManagementValidation {
 		}
 
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("validateRemoveServiceDefinitions started");
+
+		if (Utilities.isEmpty(names)) {
+			throw new InvalidParameterException("Service definition name list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(names)) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+		}
+	}
 
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
 	//-------------------------------------------------------------------------------------------------
@@ -272,6 +285,19 @@ public class ManagementValidation {
 		validateCreateServiceDefinitions(dto, origin);
 		
 		return normalizer.normalizeCreateServiceDefinitions(dto);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeRemoveServiceDefinitions started");
+
+		try {
+			validateRemoveServiceDefinitions(names, origin);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalizer.normalizeServiceDefinitionNames(names);
 	}
 
 	// SYSTEM VALIDATION
