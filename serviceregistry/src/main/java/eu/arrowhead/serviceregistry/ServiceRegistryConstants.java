@@ -29,9 +29,10 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
+	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 
 	// Configuration related
-
+	
 	public static final String ALLOW_SELF_ADDRESSING = "allow.self.addressing";
 	public static final String $ALLOW_SELF_ADDRESSING_WD = "${" + ALLOW_SELF_ADDRESSING + ":true}";
 	public static final String ALLOW_NON_ROUTABLE_ADDRESSING = "allow.non.routable.addressing";
