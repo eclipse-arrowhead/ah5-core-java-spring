@@ -25,7 +25,7 @@ public class NameValidator {
 	public static void validateName(final String name) {
 		logger.debug("Validate name started: {}", name);
 		
-		if (!NAME_REGEX_PATTERN.matcher(name).matches()) {
+		if (!NAME_REGEX_PATTERN.matcher(name.trim()).matches()) {
 			throw new InvalidParameterException("The specified name does not match the naming convention: " + name);
 		}
 	}

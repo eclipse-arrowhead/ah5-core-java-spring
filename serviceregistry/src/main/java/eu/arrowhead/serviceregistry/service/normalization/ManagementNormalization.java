@@ -150,9 +150,9 @@ public class ManagementNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<String> normalizeServiceDefinitionNames(final List<String> originalNames) {
-		return originalNames.stream()
-				.filter(n -> !Utilities.isEmpty(n))
+	public List<String> normalizeRemoveServiceDefinitions(final List<String> names) {
+		return names
+				.stream()
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
 	}

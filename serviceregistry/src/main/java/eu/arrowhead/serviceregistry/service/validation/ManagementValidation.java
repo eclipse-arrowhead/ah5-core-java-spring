@@ -297,7 +297,7 @@ public class ManagementValidation {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		return normalizer.normalizeServiceDefinitionNames(names);
+		return normalizer.normalizeRemoveServiceDefinitions(names);
 	}
 
 	// SYSTEM VALIDATION
