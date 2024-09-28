@@ -88,6 +88,7 @@ public class ManagementValidation {
 			if (names.contains(device.name())) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
 			}
+
 			names.add(device.name());
 
 			if (!Utilities.isEmpty(device.addresses())) {
@@ -174,6 +175,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
+		normalized.forEach(n -> NameValidator.validateName(n.name()));
 
 		return normalized;
 	}
@@ -185,6 +187,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
+		normalized.forEach(n -> NameValidator.validateName(n.name()));
 
 		return normalized;
 	}
@@ -256,8 +259,6 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 
-			NameValidator.validateName(name);
-
 			names.add(name);
 
 		}
@@ -284,7 +285,10 @@ public class ManagementValidation {
 
 		validateCreateServiceDefinitions(dto, origin);
 
-		return normalizer.normalizeCreateServiceDefinitions(dto);
+		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
+		normalized.forEach(n -> NameValidator.validateName(n));
+
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -432,6 +436,7 @@ public class ManagementValidation {
 
 		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
+		normalized.forEach(n -> NameValidator.validateName(n.name()));
 
 		return normalized;
 	}

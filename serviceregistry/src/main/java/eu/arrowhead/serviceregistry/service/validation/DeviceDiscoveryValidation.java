@@ -14,6 +14,7 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
+import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 
 @Service
 public class DeviceDiscoveryValidation {
@@ -121,6 +122,7 @@ public class DeviceDiscoveryValidation {
 
 		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
 		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+		NameValidator.validateName(normalized.name());
 
 		return normalized;
 	}

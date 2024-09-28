@@ -76,7 +76,7 @@ public class DTOConverter {
 				.collect(Collectors.toList());
 		return new ServiceDefinitionListResponseDTO(converted, converted.size());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityPageToDTO(final Page<ServiceDefinition> entities) {
 		logger.debug("convertServiceDefinitionEntityListToDTO started...");
@@ -177,7 +177,4 @@ public class DTOConverter {
 		return new SystemListResponseDTO(terse, verbose.count());
 
 	}
-
-	//=================================================================================================
-	// assistant methods
 }

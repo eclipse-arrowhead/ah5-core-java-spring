@@ -14,6 +14,7 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
+import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
@@ -126,6 +127,7 @@ public class SystemDiscoveryValidation {
 		try {
 			normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
 			versionValidator.validateNormalizedVersion(normalized.version());
+			NameValidator.validateName(normalized.name());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -148,6 +150,7 @@ public class SystemDiscoveryValidation {
 			if (!Utilities.isEmpty(normalized.versions())) {
 				normalized.versions().forEach(v -> versionValidator.validateNormalizedVersion(v));
 			}
+
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}

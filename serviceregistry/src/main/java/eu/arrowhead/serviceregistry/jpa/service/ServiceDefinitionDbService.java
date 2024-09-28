@@ -26,7 +26,7 @@ public class ServiceDefinitionDbService {
 
 	@Autowired
 	private ServiceDefinitionRepository repo;
-	
+
 	private static final Object LOCK = new Object();
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
@@ -64,11 +64,11 @@ public class ServiceDefinitionDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public Page<ServiceDefinition> getPage(PageRequest pagination) {
+	public Page<ServiceDefinition> getPage(final PageRequest pagination) {
 		logger.debug("getServiceDefinitionEntities started...");
-		
+
 		synchronized (LOCK) {
 			try {
 				return repo.findAll(pagination);
@@ -79,12 +79,12 @@ public class ServiceDefinitionDbService {
 			}
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void removeBulk(final List<String> names) {
 		logger.debug("removeBulk started...");
-		
+
 		try {
 			final List<ServiceDefinition> entries = repo.findAllByNameIn(names);
 			repo.deleteAll(entries);
