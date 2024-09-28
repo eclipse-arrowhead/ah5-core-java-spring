@@ -31,6 +31,7 @@ import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
@@ -144,6 +145,22 @@ public class ManagementService {
 	}
 
 	// SERVICES DEFINITIONS
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceDefinitionListResponseDTO getServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("getServiceDefinitions started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		validator.validateQueryServiceDefinitions(dto, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(dto, Direction.DESC, ServiceDefinition.SORTABLE_FIELDS_BY, ServiceDefinition.DEFAULT_SORT_FIELD, origin);
+		
+		try {
+			final Page<ServiceDefinition> entities = serviceDefinitionDbService.getPage(pageRequest);
+			return dtoConverter.convertServiceDefinitionEntityPageToDTO(entities);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO createServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {

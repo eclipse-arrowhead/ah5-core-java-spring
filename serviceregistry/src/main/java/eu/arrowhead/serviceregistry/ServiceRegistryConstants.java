@@ -27,6 +27,7 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
 	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{name}";
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
+	public static final String HTTP_API_OP_SERVICE_DEFINITION_QUERY_PATH = HTTP_API_OP_SERVICE_DEFINITION_PATH + "/query";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
 

@@ -23,12 +23,15 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
+import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 
 @Service
 public class ManagementValidation {
@@ -215,6 +218,15 @@ public class ManagementValidation {
 	}
 
 	// SERVICE DEFINITION VALIDATION
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("validateGetServiceDefinitions started");
+		
+		if (dto != null) {
+			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
@@ -244,15 +256,15 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 			
+			NameValidator.validateName(name);
+			
 			names.add(name);
 			
 		}
 
-		// TODO: naming convention!
 	}
 
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
-	// TODO
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateServiceDefinitions started");

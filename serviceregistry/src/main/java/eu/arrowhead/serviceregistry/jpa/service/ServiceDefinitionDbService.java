@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -24,6 +26,8 @@ public class ServiceDefinitionDbService {
 
 	@Autowired
 	private ServiceDefinitionRepository repo;
+	
+	private static final Object LOCK = new Object();
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -58,6 +62,21 @@ public class ServiceDefinitionDbService {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Page<ServiceDefinition> getPage(PageRequest pagination) {
+		logger.debug("getServiceDefinitionEntities started...");
+		
+		synchronized (LOCK) {
+			try {
+				return repo.findAll(pagination);
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
 		}
 	}
 
