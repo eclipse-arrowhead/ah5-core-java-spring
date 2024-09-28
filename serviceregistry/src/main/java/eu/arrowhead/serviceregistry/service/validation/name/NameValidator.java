@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 @Component
-public final class NameValidator {
+public class NameValidator {
 
 	//=================================================================================================
 	// members
@@ -22,19 +22,11 @@ public final class NameValidator {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public static void validateName(final String name) {
+	public void validateName(final String name) {
 		logger.debug("Validate name started: {}", name);
 
 		if (!NAME_REGEX_PATTERN.matcher(name).matches()) {
 			throw new InvalidParameterException("The specified name does not match the naming convention: " + name);
 		}
-	}
-
-	//=================================================================================================
-	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private NameValidator() {
-		throw new UnsupportedOperationException();
 	}
 }

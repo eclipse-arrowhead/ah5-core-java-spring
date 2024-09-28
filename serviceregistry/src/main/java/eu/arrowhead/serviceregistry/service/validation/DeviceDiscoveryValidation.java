@@ -26,6 +26,9 @@ public class DeviceDiscoveryValidation {
 	private AddressValidator addressValidator;
 
 	@Autowired
+	private NameValidator nameValidator;
+
+	@Autowired
 	private DeviceDiscoveryNormalization normalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
@@ -122,7 +125,7 @@ public class DeviceDiscoveryValidation {
 
 		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
 		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
-		NameValidator.validateName(normalized.name());
+		nameValidator.validateName(normalized.name());
 
 		return normalized;
 	}

@@ -49,6 +49,9 @@ public class ManagementValidation {
 	private VersionValidator versionValidator;
 
 	@Autowired
+	private NameValidator nameValidator;
+
+	@Autowired
 	private ManagementNormalization normalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
@@ -175,7 +178,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		normalized.forEach(n -> NameValidator.validateName(n.name()));
+		normalized.forEach(n -> nameValidator.validateName(n.name()));
 
 		return normalized;
 	}
@@ -187,7 +190,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		normalized.forEach(n -> NameValidator.validateName(n.name()));
+		normalized.forEach(n -> nameValidator.validateName(n.name()));
 
 		return normalized;
 	}
@@ -286,7 +289,7 @@ public class ManagementValidation {
 		validateCreateServiceDefinitions(dto, origin);
 
 		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
-		normalized.forEach(n -> NameValidator.validateName(n));
+		normalized.forEach(n -> nameValidator.validateName(n));
 
 		return normalized;
 	}
@@ -436,7 +439,7 @@ public class ManagementValidation {
 
 		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
-		normalized.forEach(n -> NameValidator.validateName(n.name()));
+		normalized.forEach(n -> nameValidator.validateName(n.name()));
 
 		return normalized;
 	}

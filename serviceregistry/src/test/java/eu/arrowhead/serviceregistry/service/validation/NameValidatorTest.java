@@ -5,27 +5,42 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 
 public class NameValidatorTest {
-	
+
+	//=================================================================================================
+	// members
+
+	@Autowired
+	private NameValidator nameValidator;
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Disabled
 	@Test
 	public void validateNameTest() {
-		assertThrows(InvalidParameterException.class, () -> { NameValidator.validateName("cont@ins-invalid-character"); });
-		assertThrows(InvalidParameterException.class, () -> { NameValidator.validateName("ends-with-dash-"); });
-		assertThrows(InvalidParameterException.class, () -> { NameValidator.validateName("-starts-with-dash"); });
-		assertThrows(InvalidParameterException.class, () -> { NameValidator.validateName("1-starts-with-number"); });
+		assertThrows(InvalidParameterException.class, () -> {
+			nameValidator.validateName("cont@ins-invalid-character");
+			});
+		assertThrows(InvalidParameterException.class, () -> {
+			nameValidator.validateName("ends-with-dash-");
+		});
+		assertThrows(InvalidParameterException.class, () -> {
+			nameValidator.validateName("-starts-with-dash");
+		});
+		assertThrows(InvalidParameterException.class, () -> {
+			nameValidator.validateName("1-starts-with-number");
+		});
 		assertAll(
-			() -> NameValidator.validateName("correct-123-name"),
-			() -> NameValidator.validateName("Correct-123-Name"),
-			() -> NameValidator.validateName("ends-with-number-88"),
-			() -> NameValidator.validateName("x"));
+			() -> nameValidator.validateName("correct-123-name"),
+			() -> nameValidator.validateName("Correct-123-Name"),
+			() -> nameValidator.validateName("ends-with-number-88"),
+			() -> nameValidator.validateName("x"));
 	}
 }

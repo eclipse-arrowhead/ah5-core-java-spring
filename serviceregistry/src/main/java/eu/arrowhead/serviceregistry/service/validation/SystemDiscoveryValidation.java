@@ -32,6 +32,9 @@ public class SystemDiscoveryValidation {
 	private AddressValidator addressValidator;
 
 	@Autowired
+	private NameValidator nameValidator;
+
+	@Autowired
 	private VersionValidator versionValidator;
 
 	//=================================================================================================
@@ -127,7 +130,7 @@ public class SystemDiscoveryValidation {
 		try {
 			normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
 			versionValidator.validateNormalizedVersion(normalized.version());
-			NameValidator.validateName(normalized.name());
+			nameValidator.validateName(normalized.name());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
