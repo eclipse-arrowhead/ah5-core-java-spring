@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,12 +51,11 @@ public class ConfigService {
 	public KeyValuesDTO getConfig(final List<String> keys, final String origin) {
 		logger.debug("getConfig started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		
-		//TODO: miert lesz minden true??
-		final Map<String, String> configKeyValues = new HashMap<>();
-		configKeyValues.put(ServiceRegistryConstants.ALLOW_SELF_ADDRESSING, String.valueOf(allowSelfAddressing));
-		configKeyValues.put(ServiceRegistryConstants.ALLOW_NON_ROUTABLE_ADDRESSING, String.valueOf(allowNonRoutableAddressing));
-		configKeyValues.put(ServiceRegistryConstants.SERVICE_DISCOVERY_VERBOSE, String.valueOf(serviceDiscoveryVerbose));
+
+		final Map<String, String> configKeyValues = Map.of(
+				ServiceRegistryConstants.ALLOW_SELF_ADDRESSING, String.valueOf(allowSelfAddressing),
+				ServiceRegistryConstants.ALLOW_NON_ROUTABLE_ADDRESSING, String.valueOf(allowNonRoutableAddressing),
+				ServiceRegistryConstants.SERVICE_DISCOVERY_VERBOSE, String.valueOf(serviceDiscoveryVerbose));
 
 		try {
 			final List<String> normalized = validator.validateAndNormalizeConfigKeyList(keys);
@@ -82,7 +80,7 @@ public class ConfigService {
 
 	//-------------------------------------------------------------------------------------------------
 	private void checkKeySetValid(final List<String> keys, final Set<String> existing) {
-		final String notExisting = keys.stream().filter(k -> !existing.contains(k)).collect(Collectors.joining(","));
+		final String notExisting = keys.stream().filter(k -> !existing.contains(k)).collect(Collectors.joining(", "));
 
 		if (!notExisting.isEmpty()) {
 			throw new InvalidParameterException("Invalid key(s): " + notExisting);
