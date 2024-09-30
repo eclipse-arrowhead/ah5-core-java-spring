@@ -79,7 +79,7 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityPageToDTO(final Page<ServiceDefinition> entities) {
-		logger.debug("convertServiceDefinitionEntityListToDTO started...");
+		logger.debug("convertServiceDefinitionEntityPageToDTO started...");
 
 		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))

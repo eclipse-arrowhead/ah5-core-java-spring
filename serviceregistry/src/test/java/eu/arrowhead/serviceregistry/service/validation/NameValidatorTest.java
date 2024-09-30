@@ -2,14 +2,14 @@ package eu.arrowhead.serviceregistry.service.validation;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 
+@SpringBootTest
 public class NameValidatorTest {
 
 	//=================================================================================================
@@ -22,7 +22,6 @@ public class NameValidatorTest {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Disabled
 	@Test
 	public void validateNameTest() {
 		assertThrows(InvalidParameterException.class, () -> {

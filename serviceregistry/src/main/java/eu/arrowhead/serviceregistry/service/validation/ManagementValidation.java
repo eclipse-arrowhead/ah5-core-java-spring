@@ -227,7 +227,7 @@ public class ManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
-		logger.debug("validateGetServiceDefinitions started");
+		logger.debug("validateQueryServiceDefinitions started");
 
 		if (dto != null) {
 			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);

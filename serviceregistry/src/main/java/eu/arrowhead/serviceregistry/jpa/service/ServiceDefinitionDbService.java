@@ -67,16 +67,13 @@ public class ServiceDefinitionDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<ServiceDefinition> getPage(final PageRequest pagination) {
-		logger.debug("getServiceDefinitionEntities started...");
-
-		synchronized (LOCK) {
-			try {
-				return repo.findAll(pagination);
-			} catch (final Exception ex) {
-				logger.error(ex.getMessage());
-				logger.debug(ex);
-				throw new InternalServerError("Database operation error");
-			}
+		logger.debug("getPage started...");
+		try {
+			return repo.findAll(pagination);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
 	}
 
