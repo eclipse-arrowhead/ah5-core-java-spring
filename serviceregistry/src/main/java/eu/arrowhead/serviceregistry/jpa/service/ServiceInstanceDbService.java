@@ -32,7 +32,6 @@ import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
-import eu.arrowhead.serviceregistry.api.http.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
@@ -47,6 +46,7 @@ import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepos
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
+import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 
 @Service
 public class ServiceInstanceDbService {

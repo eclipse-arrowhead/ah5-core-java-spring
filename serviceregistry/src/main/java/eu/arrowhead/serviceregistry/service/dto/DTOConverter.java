@@ -22,6 +22,7 @@ import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
@@ -182,7 +183,15 @@ public class DTOConverter {
 
 		return new ServiceInstanceResponseDTO(
 				instance.getServiceInstanceId(),
-				convertSystemTripletToDTO(systemTripet),
+				systemTripet != null ? convertSystemTripletToDTO(systemTripet)
+									 : new SystemResponseDTO(
+													instance.getSystem().getName(),
+													Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>() { }),
+													instance.getSystem().getVersion(),
+													null,
+													null,
+													Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getCreatedAt()),
+													Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getUpdatedAt())),
 				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
 				instance.getVersion(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
@@ -195,6 +204,29 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt())
 		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO convertServiceInstanceListToDTO(
+																  final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
+																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
+		logger.debug("convertServiceInstanceListToDTO started...");
+
+		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>();
+		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {
+			Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemDeviceEntry = null;
+			if (systemsWithDevices != null) {
+				for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> triplet : systemsWithDevices) {
+					if (triplet.getLeft().getId() == serviceEntry.getKey().getSystem().getId()) {
+						systemDeviceEntry = triplet;
+						break;
+					}
+				}
+			}
+			entries.add(convertServiceInstanceEntityToDTO(serviceEntry, systemDeviceEntry));
+		}
+
+		return new ServiceInstanceListResponseDTO(entries, entries.size());
 	}
 
 	//=================================================================================================

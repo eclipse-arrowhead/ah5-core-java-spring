@@ -1,7 +1,6 @@
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -19,22 +18,23 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
-import eu.arrowhead.serviceregistry.api.http.utils.ServiceInstanceIdUtils;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
-import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInstanceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
+import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.ServiceDiscoveryValidation;
 
 @Service
@@ -51,7 +51,7 @@ public class ServiceDiscoveryService {
 
 	@Autowired
 	private SystemDbService systemDbService;
-	
+
 	@Autowired
 	private DTOConverter dtoConverter;
 
@@ -84,25 +84,32 @@ public class ServiceDiscoveryService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceListResponseDTO lookupServices(final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final String origin) {
+	public ServiceInstanceListResponseDTO lookupServices(final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final boolean restricted, final String origin) {
 		logger.debug("lookupServices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validator.validateAndNormalizeLookupService(dto, origin);
 
+		if (restricted) {
+			for (MetadataRequirementDTO metadataReq : dto.metadataRequirementsList()) {
+				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true); // TODO should be forbidden to use by app systems somehow
+			}
+		}
+
 		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = instanceDbService.getPageByFilters(
 																				PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD),
 																				new ServiceLookupFilterModel(dto));
 
-		if (verbose) {
-			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = systemDbService.getPageByFilters(
-													PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
-													List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
-													null, null, null, null, null);
-
+		if (!verbose) {
+			return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, null);
 		}
 
-		return null;
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = systemDbService.getPageByFilters(
+																PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+																List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
+																null, null, null, null, null);
+
+		return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, systemsWithDevices);
 	}
 
 	//-------------------------------------------------------------------------------------------------

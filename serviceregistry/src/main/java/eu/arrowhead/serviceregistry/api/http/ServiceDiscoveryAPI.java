@@ -25,6 +25,7 @@ import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.api.http.utils.ServiceLookupPreprocessor;
 import eu.arrowhead.serviceregistry.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +49,10 @@ public class ServiceDiscoveryAPI {
 	private ServiceDiscoveryService sdService;
 
 	@Autowired
-	private SystemNamePreprocessor preprocessor;
+	private SystemNamePreprocessor sysNamePreprocessor;
+
+	@Autowired
+	private ServiceLookupPreprocessor  serviceLookupPreprocessor;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -75,7 +79,7 @@ public class ServiceDiscoveryAPI {
 		logger.debug("register started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH;
-		final ServiceInstanceRequestDTO identifiedDTO = preprocessor.process(dto, httpServletRequest, origin);
+		final ServiceInstanceRequestDTO identifiedDTO = sysNamePreprocessor.process(dto, httpServletRequest, origin);
 
 		return sdService.registerService(identifiedDTO, origin);
 	}
@@ -96,6 +100,7 @@ public class ServiceDiscoveryAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInstanceListResponseDTO lookup(
+									final HttpServletRequest httpServletRequest,
 									@RequestBody final  ServiceInstanceLookupRequestDTO dto,
 									@Parameter(
 											name =  "verbose",
@@ -105,8 +110,9 @@ public class ServiceDiscoveryAPI {
 
 		logger.debug("lookup started");
 
+		final boolean restricted = serviceLookupPreprocessor.isRestricted(httpServletRequest);
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
-		return sdService.lookupServices(dto, verbose, origin);
+		return sdService.lookupServices(dto, verbose, restricted, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -128,7 +134,7 @@ public class ServiceDiscoveryAPI {
 		logger.debug("revoke started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH;
-		final String identifiedSystemName = preprocessor.process(httpServletRequest, origin);
+		final String identifiedSystemName = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		final boolean result = sdService.revokeService(identifiedSystemName, instanceId, origin);
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);

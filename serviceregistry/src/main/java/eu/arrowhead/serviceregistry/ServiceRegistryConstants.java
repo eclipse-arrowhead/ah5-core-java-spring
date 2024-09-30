@@ -17,8 +17,7 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_SERVICE_DISCOVERY_PATH = HTTP_API_BASE_PATH + "/service-discovery";
 	public static final String HTTP_API_SYSTEM_DISCOVERY_PATH = HTTP_API_BASE_PATH + "/system-discovery";
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
-
-	// Service related
+	public static final String HTTP_ATTR_RESTRICTED_SERVICE_LOOKUP = "restricted.service.lookup";
 
 	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
 
@@ -42,6 +41,9 @@ public final class ServiceRegistryConstants {
 	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
 	public static final String SERVICE_DISCOVERY_VERBOSE = "service.discovery.verbose";
 	public static final String $SERVICE_DISCOVERY_VERBOSE_WD = "${" + SERVICE_DISCOVERY_VERBOSE + ":false}";
+	public static final String SERVICE_DISCOVERY_POLICY = "service.discovery.policy";
+	public static final String $SERVICE_DISCOVERY_POLICY_WD = "${" + SERVICE_DISCOVERY_POLICY + ":restricted}";
+	public static final String SERVICE_DISCOVERY_DIRECT_ACCESS = "service.discovery.direct.access";
 	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
 	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":restricted}";
 

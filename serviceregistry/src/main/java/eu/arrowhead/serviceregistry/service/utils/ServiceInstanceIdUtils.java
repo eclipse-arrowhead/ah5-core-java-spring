@@ -1,4 +1,4 @@
-package eu.arrowhead.serviceregistry.api.http.utils;
+package eu.arrowhead.serviceregistry.service.utils;
 
 import org.springframework.util.Assert;
 
