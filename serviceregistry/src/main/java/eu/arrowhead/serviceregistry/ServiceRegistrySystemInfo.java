@@ -35,7 +35,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceDiscoveryInterfacePolicy getServiceDisciveryInterfacePolicy() {
+	public ServiceDiscoveryInterfacePolicy getServiceDiscoveryInterfacePolicy() {
 		return this.serviceDisciveryInterfacePolicy;
 	}
 }

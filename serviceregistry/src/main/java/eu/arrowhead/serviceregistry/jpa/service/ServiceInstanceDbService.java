@@ -102,7 +102,7 @@ public class ServiceInstanceDbService {
 				serviceDefinitionRepo.findAllByNameIn(serviceDefinitionNames).forEach(definition -> definitionCache.put(definition.getName(), definition));
 				serviceInterfaceTemplateRepo.findAllByNameIn(serviceInterfaceTemlateNames).forEach(template -> interfaceTemplateCache.put(template.getName(), template));
 
-				if (sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
+				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					serviceInterfaceTemlateNames.forEach(templateName -> {
 						if (!interfaceTemplateCache.containsKey(templateName)) {
 							throw new InvalidParameterException("Interface template not exists: " + templateName);
@@ -155,20 +155,20 @@ public class ServiceInstanceDbService {
 									serviceInterfaceTemplateRepo.saveAndFlush(new ServiceInterfaceTemplate(interfaceCandidate.templateName(), interfaceCandidate.protocol())));
 							templatesCreated.add(interfaceCandidate.templateName());
 
-							if (sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
+							if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
 								final List<ServiceInterfaceTemplateProperty> templateProps = new ArrayList<>();
 								interfaceCandidate.properties().keySet().forEach(propName -> {
 									templateProps.add(new ServiceInterfaceTemplateProperty(
 											interfaceTemplateCache.get(interfaceCandidate.templateName()),
 											propName,
-											false,
+											true,
 											null));
 								});
 							}
 						}
 
 						// Need to validate the properties if the template was created in this bulk operation (only in case of EXTENDABLE policy)
-						if (templatesCreated.contains(interfaceCandidate.templateName()) && sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
+						if (templatesCreated.contains(interfaceCandidate.templateName()) && sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
 							serviceInterfaceTemplatePropsRepo.findByServiceInterfaceTemplate(interfaceTemplateCache.get(interfaceCandidate.templateName())).forEach(templateProp -> {
 								if (templateProp.isMandatory() && !interfaceCandidate.properties().containsKey(templateProp.getPropertyName())) {
 									throw new InvalidParameterException("Mandatory interface property is missing: " + templateProp.getPropertyName());
