@@ -27,8 +27,6 @@ public class ServiceDefinitionDbService {
 	@Autowired
 	private ServiceDefinitionRepository repo;
 
-	private static final Object LOCK = new Object();
-
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
