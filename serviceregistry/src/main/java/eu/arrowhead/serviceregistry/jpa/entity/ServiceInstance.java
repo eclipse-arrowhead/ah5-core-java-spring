@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
@@ -17,6 +18,9 @@ public class ServiceInstance extends ArrowheadEntity {
 
 	//=================================================================================================
 	// members
+
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "serviceInstanceId", "createdAt");
+	public static final String DEFAULT_SORT_FIELD = "createdAt";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

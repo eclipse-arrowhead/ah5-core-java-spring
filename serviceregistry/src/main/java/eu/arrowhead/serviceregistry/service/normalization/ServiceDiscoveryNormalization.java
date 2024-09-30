@@ -10,6 +10,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
@@ -47,6 +48,24 @@ public class ServiceDiscoveryNormalization {
 										i.policy().trim().toUpperCase(),
 										i.properties()))
 								.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceLookupRequestDTO normalizeServiceInstanceLookupRequestDTO(final ServiceInstanceLookupRequestDTO dto) {
+		logger.debug("normalizeServiceInstanceLookupRequestDTO started");
+		Assert.notNull(dto, "ServiceInstanceLookupRequestDTO is null");
+
+		return new ServiceInstanceLookupRequestDTO(
+				Utilities.isEmpty(dto.instanceIds()) ? new ArrayList<>() : dto.instanceIds().stream().map(id -> id.trim()).toList(),
+				Utilities.isEmpty(dto.providerNames()) ? new ArrayList<>() : dto.providerNames().stream().map(n -> n.trim()).toList(),
+				Utilities.isEmpty(dto.serviceDefinitionNames()) ? new ArrayList<>() : dto.serviceDefinitionNames().stream().map(sd -> sd.trim()).toList(),
+				Utilities.isEmpty(dto.versions()) ? new ArrayList<>() : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).toList(),
+				Utilities.isEmpty(dto.alivesAt()) ? "" : dto.alivesAt().trim(),
+				dto.metadataRequirementsList(),
+				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> i.trim().toUpperCase()).toList(),
+				dto.interfacePropertyRequirementsList(),
+				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList()
+		);
 	}
 
 	//-------------------------------------------------------------------------------------------------

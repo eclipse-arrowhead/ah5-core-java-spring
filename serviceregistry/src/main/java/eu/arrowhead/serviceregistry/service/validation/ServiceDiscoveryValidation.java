@@ -16,6 +16,7 @@ import eu.arrowhead.common.intf.properties.IPropertyValidator;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
@@ -100,6 +101,67 @@ public class ServiceDiscoveryValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void validateLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateLookupService started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.instanceIds()) && Utilities.containsNullOrEmpty(dto.instanceIds())) {
+			throw new InvalidParameterException("Instance id list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.providerNames()) && Utilities.containsNullOrEmpty(dto.providerNames())) {
+			throw new InvalidParameterException("Provider name list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+			throw new InvalidParameterException("Version list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.alivesAt())) {
+			try {
+				Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
+			} catch (final DateTimeException ex) {
+				throw new InvalidParameterException("Alive time has an invalide time format", origin);
+			}
+		}
+
+		if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
+			throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
+			throw new InvalidParameterException("Interface template list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList()) && Utilities.containsNull(dto.interfacePropertyRequirementsList())) {
+			throw new InvalidParameterException("Interface property requirements list contains null element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.policies())) {
+			for (final String policy : dto.policies()) {
+				if (Utilities.isEmpty(policy)) {
+					throw new InvalidParameterException("Policy list contains null or empty element", origin);
+				}
+				if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
+					throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
+				}
+			}
+		}
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public void validateRevokeService(final String instanceId, final String origin) {
 		logger.debug("validateRevokeService started");
 
@@ -141,9 +203,8 @@ public class ServiceDiscoveryValidation {
 									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs.get(0)));
 									if (validator != null) {
 										final Object normalizedProp = validator.validateNormalize(
-															instanceProp,
-															validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0])
-										);
+												instanceProp,
+												validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0]));
 										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
 									}
 								}
@@ -156,6 +217,15 @@ public class ServiceDiscoveryValidation {
 		}
 
 		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceLookupRequestDTO validateAndNormalizeLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeLookupService started");
+
+		validateLookupService(dto, origin);
+		return normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
+
 	}
 
 	//-------------------------------------------------------------------------------------------------

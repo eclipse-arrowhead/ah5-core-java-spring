@@ -13,14 +13,21 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
@@ -39,6 +46,7 @@ import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePrope
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
+import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
 @Service
 public class ServiceInstanceDbService {
@@ -134,7 +142,7 @@ public class ServiceInstanceDbService {
 				instanceEntities = serviceInstanceRepo.saveAllAndFlush(instanceEntities);
 
 				// Handle instance interface records
-				Set<String> templatesCreated = new HashSet<>();
+				final Set<String> templatesCreated = new HashSet<>();
 				for (final ServiceInstanceRequestDTO candidate : candidates) {
 					final ServiceInstance serviceInstance = instanceEntities
 							.stream()
@@ -226,6 +234,23 @@ public class ServiceInstanceDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> getPageByFilters(final PageRequest pagination, final ServiceLookupFilterModel filters) {
+		logger.debug("getPageByFilters started");
+		Assert.notNull(pagination, "page is null");
+		try {
+			if (!filters.hasFilters()) {
+				return findAll(pagination);
+			}
+			return findAllByFilters(pagination, filters);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public boolean deleteByInstanceId(final String serviceInstanceId) {
 		logger.debug("deleteByInstanceId started");
@@ -246,5 +271,132 @@ public class ServiceInstanceDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> findAll(final PageRequest pagination) {
+		final Map<ServiceInstance, List<ServiceInstanceInterface>> serviceInterfaceMap = new HashMap<>();
+
+		final Page<ServiceInstance> page = serviceInstanceRepo.findAll(pagination);
+		for (final ServiceInstance serviceInstance : page) {
+			serviceInterfaceMap.putIfAbsent(serviceInstance, new ArrayList<>());
+			serviceInterfaceMap.get(serviceInstance).addAll(serviceInstanceInterfaceRepo.findAllByServiceInstance(serviceInstance));
+		}
+
+		return new PageImpl<>(new ArrayList<>(serviceInterfaceMap.entrySet()), pagination, page.getTotalElements());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> findAllByFilters(final PageRequest pagination, final ServiceLookupFilterModel filters) {
+		final Set<Long> matchingIds = new HashSet<>();
+		final Map<Long, List<ServiceInstanceInterface>> serviceInterfaceMap = new HashMap<>();
+
+		BaseFilter baseFilter = BaseFilter.NONE;
+		synchronized (LOCK) {
+			List<ServiceInstance> toFilter = new ArrayList<>();
+			if (!Utilities.isEmpty(filters.getInstanceIds())) {
+				toFilter = serviceInstanceRepo.findAllByServiceInstanceIdIn(filters.getInstanceIds());
+				baseFilter = BaseFilter.INSTANCE_ID;
+			} else if (!Utilities.isEmpty(filters.getProviderNames())) {
+				toFilter = serviceInstanceRepo.findAllBySystem_NameIn(filters.getProviderNames());
+				baseFilter = BaseFilter.SERVICE_NAME;
+			} else if (!Utilities.isEmpty(filters.getServiceDefinitionNames())) {
+				toFilter = serviceInstanceRepo.findAllByServiceDefinition_NameIn(filters.getServiceDefinitionNames());
+				baseFilter = BaseFilter.SERVICE_NAME;
+			} else {
+				toFilter = serviceInstanceRepo.findAll();
+			}
+
+			for (final ServiceInstance serviceCandidate : toFilter) {
+				boolean matching = true;
+
+				if (baseFilter != BaseFilter.INSTANCE_ID && !Utilities.isEmpty(filters.getInstanceIds()) && !filters.getInstanceIds().contains(serviceCandidate.getServiceInstanceId())) {
+					matching = false;
+				}
+
+				if (matching && baseFilter != BaseFilter.SYSTEM_NAME && !Utilities.isEmpty(filters.getProviderNames()) && !filters.getProviderNames().contains(serviceCandidate.getSystem().getName())) {
+					matching = false;
+				}
+
+				if (matching && baseFilter != BaseFilter.SERVICE_NAME && !Utilities.isEmpty(filters.getServiceDefinitionNames())
+						&& !filters.getServiceDefinitionNames().contains(serviceCandidate.getServiceDefinition().getName())) {
+					matching = false;
+				}
+
+				if (matching && !Utilities.isEmpty(filters.getVersions()) && !filters.getVersions().contains(serviceCandidate.getVersion())) {
+					matching = false;
+				}
+
+				if (matching && filters.getAlivesAt() != null && serviceCandidate.getExpiresAt() != null && filters.getAlivesAt().isBefore(serviceCandidate.getExpiresAt())) {
+					matching = false;
+				}
+
+				if (matching && !Utilities.isEmpty(filters.getMetadataRequirementsList())) {
+					boolean metadataMatch = false;
+					final Map<String, Object> instanceMetadata = Utilities.fromJson(serviceCandidate.getMetadata(), new TypeReference<Map<String, Object>>() { });
+					for (final MetadataRequirementDTO requirement : filters.getMetadataRequirementsList()) {
+						if (MetadataRequirementsMatcher.isMetadataMatch(instanceMetadata, requirement)) {
+							metadataMatch = true;
+							break;
+						}
+					}
+					if (!metadataMatch) {
+						matching = false;
+					}
+				}
+
+				if (matching) {
+					final List<ServiceInstanceInterface> serviceInterfaceList = serviceInstanceInterfaceRepo.findAllByServiceInstance(serviceCandidate);
+					boolean interfacePolicyMatch = false;
+					boolean interfaceTemplateMatch = false;
+					boolean interfacePropertyMatch = false;
+					for (final ServiceInstanceInterface interf : serviceInterfaceList) {
+						if (Utilities.isEmpty(filters.getPolicies()) || filters.getPolicies().contains(interf.getPolicy())) {
+							interfacePolicyMatch = true;
+						}
+						if (Utilities.isEmpty(filters.getInterfaceTemplateNames()) || filters.getInterfaceTemplateNames().contains(interf.getServiceInterfaceTemplate().getName())) {
+							interfaceTemplateMatch = true;
+						}
+						if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList())) {
+							interfacePropertyMatch = true;
+						} else {
+							final Map<String, Object> interfaceProps = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() { });
+							for (final MetadataRequirementDTO requirement : filters.getInterfacePropertyRequirementsList()) {
+								if (MetadataRequirementsMatcher.isMetadataMatch(interfaceProps, requirement)) {
+									interfacePropertyMatch = true;
+									break;
+								}
+							}
+						}
+
+						if (interfacePolicyMatch && interfaceTemplateMatch && interfacePropertyMatch) {
+							serviceInterfaceMap.putIfAbsent(serviceCandidate.getId(), new ArrayList<>());
+							serviceInterfaceMap.get(serviceCandidate.getId()).add(interf);
+						}
+					}
+
+					if (!serviceInterfaceMap.containsKey(serviceCandidate.getId())) {
+						matching = false;
+					}
+				}
+
+				if (matching) {
+					matchingIds.add(serviceCandidate.getId());
+				}
+			}
+
+			final Page<ServiceInstance> page = serviceInstanceRepo.findAllByIdIn(matchingIds, pagination);
+			return new PageImpl<>(page.stream().map(si -> Map.entry(si, serviceInterfaceMap.get(si.getId()))).toList(), pagination, page.getTotalElements());
+		}
+	}
+
+	//=================================================================================================
+	// nested classes
+
+	private enum BaseFilter {
+		NONE, INSTANCE_ID, SYSTEM_NAME, SERVICE_NAME
 	}
 }

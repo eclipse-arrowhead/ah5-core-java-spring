@@ -18,6 +18,10 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_SYSTEM_DISCOVERY_PATH = HTTP_API_BASE_PATH + "/system-discovery";
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
 
+	// Service related
+
+	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
+
 	// Operation related
 
 	public static final String HTTP_API_OP_DEVICE_PATH = "/device";
