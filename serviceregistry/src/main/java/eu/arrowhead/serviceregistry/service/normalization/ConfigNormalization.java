@@ -22,10 +22,6 @@ public class ConfigNormalization {
 	public List<String> normalizeConfigKeyList(final List<String> keys) {
 		logger.debug("normalizeConfigKeyList started");
 
-		if (keys == null) {
-			return List.of();
-		}
-
 		return keys
 			.stream()
 			.distinct()

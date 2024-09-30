@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceregistry;
 
+import java.util.List;
+
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 
 public final class ServiceRegistryConstants {
@@ -39,6 +41,19 @@ public final class ServiceRegistryConstants {
 	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
 	public static final String SERVICE_DISCOVERY_VERBOSE = "service.discovery.verbose";
 	public static final String $SERVICE_DISCOVERY_VERBOSE_WD = "${" + SERVICE_DISCOVERY_VERBOSE + ":false}";
+
+	// Forbidden keys (for config service)
+
+	public static final List<String> FORBIDDEN_KEYS = List.of(
+			// database related
+			"spring.datasource.url",
+			"spring.datasource.username",
+			"spring.datasource.password",
+			"spring.datasource.driver-class-name",
+			"spring.jpa.hibernate.ddl-auto",
+			"spring.jpa.show-sql",
+			// cert related
+			"authenticator.secret.key");
 
 	// Property size related
 
