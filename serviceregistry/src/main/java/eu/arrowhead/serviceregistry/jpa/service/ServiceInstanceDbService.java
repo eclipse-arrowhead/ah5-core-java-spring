@@ -97,7 +97,7 @@ public class ServiceInstanceDbService {
 				serviceDefinitionRepo.findAllByNameIn(serviceDefinitionNames).forEach(definition -> definitionCache.put(definition.getName(), definition));
 				serviceInterfaceTemplateRepo.findAllByNameIn(serviceInterfaceTemlateNames).forEach(template -> interfaceTemplateCache.put(template.getName(), template));
 
-				if (sysInfo.getServiceDisciveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
+				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					serviceInterfaceTemlateNames.forEach(templateName -> {
 						if (!interfaceTemplateCache.containsKey(templateName)) {
 							throw new InvalidParameterException("Interface template not exists: " + templateName);
