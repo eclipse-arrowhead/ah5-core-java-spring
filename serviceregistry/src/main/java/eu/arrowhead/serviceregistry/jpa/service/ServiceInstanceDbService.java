@@ -290,6 +290,8 @@ public class ServiceInstanceDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	// TODO ondemand delete expired service instances
+	// TODO add description
 	private Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> findAllByFilters(final PageRequest pagination, final ServiceLookupFilterModel filters) {
 		final Set<Long> matchingIds = new HashSet<>();
 		final Map<Long, List<ServiceInstanceInterface>> serviceInterfaceMap = new HashMap<>();

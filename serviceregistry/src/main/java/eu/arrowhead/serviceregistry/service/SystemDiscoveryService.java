@@ -3,14 +3,13 @@ package eu.arrowhead.serviceregistry.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
@@ -28,15 +27,15 @@ import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
-import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
-import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
-import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
-import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
+import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
+import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
 
 @Service
 public class SystemDiscoveryService {
@@ -56,8 +55,8 @@ public class SystemDiscoveryService {
 	@Autowired
 	private DTOConverter dtoConverter;
 
-	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_VERBOSE_WD)
-	private boolean serviceDiscoveryVerbose;
+	@Autowired
+	private ServiceRegistrySystemInfo sysInfo;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -120,7 +119,7 @@ public class SystemDiscoveryService {
 			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
 
 			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
-			if (!verbose || !serviceDiscoveryVerbose) {
+			if (!verbose || !sysInfo.isDiscoveryVerbose()) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
 

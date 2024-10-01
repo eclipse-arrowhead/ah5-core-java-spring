@@ -39,8 +39,8 @@ public final class ServiceRegistryConstants {
 	public static final String $ALLOW_SELF_ADDRESSING_WD = "${" + ALLOW_SELF_ADDRESSING + ":true}";
 	public static final String ALLOW_NON_ROUTABLE_ADDRESSING = "allow.non.routable.addressing";
 	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
-	public static final String SERVICE_DISCOVERY_VERBOSE = "service.discovery.verbose";
-	public static final String $SERVICE_DISCOVERY_VERBOSE_WD = "${" + SERVICE_DISCOVERY_VERBOSE + ":false}";
+	public static final String DISCOVERY_VERBOSE = "discovery.verbose";
+	public static final String $DISCOVERY_VERBOSE_WD = "${" + DISCOVERY_VERBOSE + ":false}";
 	public static final String SERVICE_DISCOVERY_POLICY = "service.discovery.policy";
 	public static final String $SERVICE_DISCOVERY_POLICY_WD = "${" + SERVICE_DISCOVERY_POLICY + ":restricted}";
 	public static final String SERVICE_DISCOVERY_DIRECT_ACCESS = "service.discovery.direct.access";

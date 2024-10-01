@@ -24,6 +24,7 @@ import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
@@ -42,6 +43,9 @@ public class ServiceDiscoveryService {
 
 	//=================================================================================================
 	// members
+
+	@Autowired
+	private ServiceRegistrySystemInfo sysInfo;
 
 	@Autowired
 	private ServiceDiscoveryValidation validator;
@@ -84,7 +88,7 @@ public class ServiceDiscoveryService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceListResponseDTO lookupServices(final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final boolean restricted, final String origin) {
+	public ServiceInstanceListResponseDTO lookupServices(final String requesterSystemName, final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final boolean restricted, final String origin) {
 		logger.debug("lookupServices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -92,24 +96,39 @@ public class ServiceDiscoveryService {
 
 		if (restricted) {
 			for (MetadataRequirementDTO metadataReq : dto.metadataRequirementsList()) {
-				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true); // TODO should be forbidden to use by app systems somehow
+				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true);
 			}
 		}
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = instanceDbService.getPageByFilters(
-																				PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD),
-																				new ServiceLookupFilterModel(dto));
+		try {
+			final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = instanceDbService.getPageByFilters(
+					PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD),
+					new ServiceLookupFilterModel(dto));
 
-		if (!verbose) {
+			if (verbose && !sysInfo.isDiscoveryVerbose()) {
+				throw new ForbiddenException("Verbose is not allowed", origin);
+			}
+
+			if (sysInfo.isDiscoveryVerbose() || verbose) {
+				final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = systemDbService.getPageByFilters(
+						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+						List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
+						null, null, null, null, null);
+
+				return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, systemsWithDevices);
+			}
+
 			return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, null);
+
+		} catch (final ForbiddenException ex) {
+			throw ex;
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
-
-		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = systemDbService.getPageByFilters(
-																PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
-																List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
-																null, null, null, null, null);
-
-		return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, systemsWithDevices);
 	}
 
 	//-------------------------------------------------------------------------------------------------

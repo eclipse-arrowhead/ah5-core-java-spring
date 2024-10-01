@@ -110,9 +110,11 @@ public class ServiceDiscoveryAPI {
 
 		logger.debug("lookup started");
 
-		final boolean restricted = serviceLookupPreprocessor.isRestricted(httpServletRequest);
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
-		return sdService.lookupServices(dto, verbose, restricted, origin);
+		final boolean restricted = serviceLookupPreprocessor.isRestricted(httpServletRequest);
+		final String requesterName = sysNamePreprocessor.process(httpServletRequest, origin);
+
+		return sdService.lookupServices(requesterName, dto, verbose, restricted, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
