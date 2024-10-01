@@ -53,7 +53,17 @@ public final class ServiceRegistryConstants {
 			"spring.jpa.hibernate.ddl-auto",
 			"spring.jpa.show-sql",
 			// cert related
-			"authenticator.secret.key");
+			"authenticator.secret.key",
+			"server.ssl.key-store-type",
+			"server.ssl.key-store",
+			"server.ssl.key-store-password",
+			"server.ssl.key-alias",
+			"server.ssl.key-password",
+			"server.ssl.client-auth",
+			"server.ssl.trust-store-type",
+			"server.ssl.trust-store",
+			"server.ssl.trust-store-password",
+			"disable.hostname.verifier");
 
 	// Property size related
 
