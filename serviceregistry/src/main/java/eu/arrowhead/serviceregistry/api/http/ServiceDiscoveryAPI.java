@@ -85,7 +85,7 @@ public class ServiceDiscoveryAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns thr service entries according to the given filters")
+	@Operation(summary = "Returns the service entries according to the given filters")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ServiceInstanceListResponseDTO.class)) }),
@@ -131,11 +131,11 @@ public class ServiceDiscoveryAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@DeleteMapping(path = ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH)
+	@DeleteMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_REVOKE_PATH)
 	public ResponseEntity<Void> revoke(final HttpServletRequest httpServletRequest, @PathVariable(required = true) final String instanceId) {
 		logger.debug("revoke started");
 
-		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_REVOKE_PATH;
 		final String identifiedSystemName = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		final boolean result = sdService.revokeService(identifiedSystemName, instanceId, origin);

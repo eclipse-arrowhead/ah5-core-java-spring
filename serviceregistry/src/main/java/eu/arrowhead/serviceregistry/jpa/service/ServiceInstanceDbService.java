@@ -268,6 +268,7 @@ public class ServiceInstanceDbService {
 									true,
 									null));
 						});
+						serviceInterfaceTemplatePropsRepo.saveAllAndFlush(templateProps);
 					}
 				}
 
@@ -280,7 +281,7 @@ public class ServiceInstanceDbService {
 					});
 				}
 
-				if (!Utilities.isEmpty(interfaceCandidate.protocol()) && interfaceTemplateCache.get(interfaceCandidate.templateName()).getProtocol().equalsIgnoreCase(interfaceCandidate.protocol())) {
+				if (!Utilities.isEmpty(interfaceCandidate.protocol()) && !interfaceTemplateCache.get(interfaceCandidate.templateName()).getProtocol().equalsIgnoreCase(interfaceCandidate.protocol())) {
 					throw new InvalidParameterException("Interface has different protocol than " + interfaceCandidate.templateName() + " template");
 				}
 

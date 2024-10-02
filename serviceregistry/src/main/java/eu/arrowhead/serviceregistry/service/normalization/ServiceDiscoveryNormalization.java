@@ -44,7 +44,7 @@ public class ServiceDiscoveryNormalization {
 								.stream()
 								.map(i -> new ServiceInstanceInterfaceRequestDTO(
 										i.templateName().trim().toUpperCase(),
-										i.protocol().trim().toLowerCase(),
+										Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
 										i.policy().trim().toUpperCase(),
 										i.properties()))
 								.toList());
@@ -61,9 +61,9 @@ public class ServiceDiscoveryNormalization {
 				Utilities.isEmpty(dto.serviceDefinitionNames()) ? new ArrayList<>() : dto.serviceDefinitionNames().stream().map(sd -> sd.trim()).toList(),
 				Utilities.isEmpty(dto.versions()) ? new ArrayList<>() : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).toList(),
 				Utilities.isEmpty(dto.alivesAt()) ? "" : dto.alivesAt().trim(),
-				dto.metadataRequirementsList(),
+				Utilities.isEmpty(dto.metadataRequirementsList()) ? new ArrayList<>() : dto.metadataRequirementsList(),
 				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> i.trim().toUpperCase()).toList(),
-				dto.interfacePropertyRequirementsList(),
+				Utilities.isEmpty(dto.interfacePropertyRequirementsList()) ? new ArrayList<>() : dto.interfacePropertyRequirementsList(),
 				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList()
 		);
 	}

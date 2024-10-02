@@ -26,7 +26,7 @@ public class ServiceInterfaceTemplateProperty extends ArrowheadEntity {
 	@Column(nullable = false)
 	private boolean mandatory = false;
 
-	@Column(nullable = false, length = VARCHAR_LARGE)
+	@Column(nullable = true, length = VARCHAR_LARGE)
 	private String validator;
 
 	//=================================================================================================

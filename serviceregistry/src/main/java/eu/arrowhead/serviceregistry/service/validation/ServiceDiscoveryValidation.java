@@ -185,7 +185,7 @@ public class ServiceDiscoveryValidation {
 
 			normalized.interfaces().forEach(interfaceInstance -> {
 				final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
-				if (templateOpt.isPresent()) {
+				if (templateOpt.isPresent() && !Utilities.isEmpty(interfaceInstance.protocol())) {
 					if (!interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
 						throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
 					}

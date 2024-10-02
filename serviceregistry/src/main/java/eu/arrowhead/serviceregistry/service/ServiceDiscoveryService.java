@@ -92,10 +92,10 @@ public class ServiceDiscoveryService {
 		logger.debug("lookupServices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateAndNormalizeLookupService(dto, origin);
+		final ServiceInstanceLookupRequestDTO normalized = validator.validateAndNormalizeLookupService(dto, origin);
 
 		if (restricted) {
-			for (MetadataRequirementDTO metadataReq : dto.metadataRequirementsList()) {
+			for (MetadataRequirementDTO metadataReq : normalized.metadataRequirementsList()) {
 				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true);
 			}
 		}
@@ -103,13 +103,13 @@ public class ServiceDiscoveryService {
 		try {
 			final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = instanceDbService.getPageByFilters(
 					PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD),
-					new ServiceLookupFilterModel(dto));
+					new ServiceLookupFilterModel(normalized));
 
 			if (verbose && !sysInfo.isDiscoveryVerbose()) {
 				throw new ForbiddenException("Verbose is not allowed", origin);
 			}
 
-			if (sysInfo.isDiscoveryVerbose() || verbose) {
+			if (verbose) {
 				final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = systemDbService.getPageByFilters(
 						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
 						List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
