@@ -10,10 +10,10 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 
 @Repository
 public interface ServiceInterfaceTemplatePropertyRepository extends RefreshableRepository<ServiceInterfaceTemplateProperty, Long> {
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInterfaceTemplateProperty> findByServiceInterfaceTemplate(final ServiceInterfaceTemplate template);
 }
