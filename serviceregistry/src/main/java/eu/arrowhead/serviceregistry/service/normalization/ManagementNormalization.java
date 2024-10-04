@@ -22,6 +22,7 @@ import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 
 @Service
 public class ManagementNormalization {
@@ -134,6 +135,24 @@ public class ManagementNormalization {
 	public List<String> normalizeDeviceNames(final List<String> originalNames) {
 		return originalNames.stream()
 				.filter(n -> !Utilities.isEmpty(n))
+				.map(n -> n.trim())
+				.collect(Collectors.toList());
+	}
+
+	// SERVICE DEFINITIONS
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto) {
+		return dto.serviceDefinitionNames()
+				.stream()
+				.map(n -> n.trim())
+				.collect(Collectors.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeRemoveServiceDefinitions(final List<String> names) {
+		return names
+				.stream()
 				.map(n -> n.trim())
 				.collect(Collectors.toList());
 	}

@@ -2,7 +2,6 @@ package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +30,7 @@ import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
@@ -146,18 +146,54 @@ public class ManagementService {
 	// SERVICES DEFINITIONS
 
 	//-------------------------------------------------------------------------------------------------
+	public ServiceDefinitionListResponseDTO getServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("getServiceDefinitions started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validator.validateQueryServiceDefinitions(dto, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(dto, Direction.DESC, ServiceDefinition.SORTABLE_FIELDS_BY, ServiceDefinition.DEFAULT_SORT_FIELD, origin);
+
+		try {
+			final Page<ServiceDefinition> entities = serviceDefinitionDbService.getPage(pageRequest);
+			return dtoConverter.convertServiceDefinitionEntityPageToDTO(entities);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO createServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("createServiceDefinitions started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateCreateServiceDefinition(dto, origin);
+		final List<String> normalized = validator.validateAndNormalizeCreateServiceDefinitions(dto, origin);
 
-		final List<String> normalizedNames = dto.serviceDefinitionNames()
-				.stream()
-				.map(n -> n.trim())
-				.collect(Collectors.toList());
-		final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
-		return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		try {
+			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalized);
+			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("removeServiceDefinitions started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalized = validator.validateAndNormalizeRemoveServiceDefinitions(names, origin);
+
+		try {
+			serviceDefinitionDbService.removeBulk(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	// SYSTEMS

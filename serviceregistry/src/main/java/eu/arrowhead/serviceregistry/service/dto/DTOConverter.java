@@ -71,12 +71,21 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityListToDTO(final List<ServiceDefinition> entities) {
 		logger.debug("convertServiceDefinitionEntityListToDTO started...");
-		Assert.isTrue(!Utilities.isEmpty(entities), "entity list is empty");
 
 		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))
 				.collect(Collectors.toList());
 		return new ServiceDefinitionListResponseDTO(converted, converted.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityPageToDTO(final Page<ServiceDefinition> entities) {
+		logger.debug("convertServiceDefinitionEntityPageToDTO started...");
+
+		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
+				.map(e -> convertServiceDefinitionEntityToDTO(e))
+				.collect(Collectors.toList());
+		return new ServiceDefinitionListResponseDTO(converted, entities.getTotalElements());
 	}
 
 	//-------------------------------------------------------------------------------------------------

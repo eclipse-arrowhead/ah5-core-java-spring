@@ -29,6 +29,7 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
 	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{name}";
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
+	public static final String HTTP_API_OP_SERVICE_DEFINITION_QUERY_PATH = HTTP_API_OP_SERVICE_DEFINITION_PATH + "/query";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
@@ -72,6 +73,7 @@ public final class ServiceRegistryConstants {
 	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
 	public static final int ADDRESS_TYPE_LENGTH = 30;
 	public static final int ADDRESS_ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
+	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	//=================================================================================================
 	// assistant methods
