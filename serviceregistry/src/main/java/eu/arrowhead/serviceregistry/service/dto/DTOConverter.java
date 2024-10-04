@@ -19,6 +19,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
+import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
@@ -75,12 +76,21 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityListToDTO(final List<ServiceDefinition> entities) {
 		logger.debug("convertServiceDefinitionEntityListToDTO started...");
-		Assert.isTrue(!Utilities.isEmpty(entities), "entity list is empty");
 
 		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))
 				.collect(Collectors.toList());
 		return new ServiceDefinitionListResponseDTO(converted, converted.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityPageToDTO(final Page<ServiceDefinition> entities) {
+		logger.debug("convertServiceDefinitionEntityPageToDTO started...");
+
+		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
+				.map(e -> convertServiceDefinitionEntityToDTO(e))
+				.collect(Collectors.toList());
+		return new ServiceDefinitionListResponseDTO(converted, entities.getTotalElements());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -227,6 +237,12 @@ public class DTOConverter {
 		}
 
 		return new ServiceInstanceListResponseDTO(entries, entries.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public KeyValuesDTO convertConfigMapToDTO(final Map<String, String> map) {
+		return new KeyValuesDTO(map);
+
 	}
 
 	//=================================================================================================
