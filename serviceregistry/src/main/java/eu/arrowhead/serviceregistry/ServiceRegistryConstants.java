@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceregistry;
 
+import java.util.List;
+
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 
 public final class ServiceRegistryConstants {
@@ -29,6 +31,7 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
+	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 
 	// Configuration related
 
@@ -38,6 +41,29 @@ public final class ServiceRegistryConstants {
 	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
 	public static final String SERVICE_DISCOVERY_VERBOSE = "service.discovery.verbose";
 	public static final String $SERVICE_DISCOVERY_VERBOSE_WD = "${" + SERVICE_DISCOVERY_VERBOSE + ":false}";
+
+	// Forbidden keys (for config service)
+
+	public static final List<String> FORBIDDEN_KEYS = List.of(
+			// database related
+			"spring.datasource.url",
+			"spring.datasource.username",
+			"spring.datasource.password",
+			"spring.datasource.driver-class-name",
+			"spring.jpa.hibernate.ddl-auto",
+			"spring.jpa.show-sql",
+			// cert related
+			"authenticator.secret.key",
+			"server.ssl.key-store-type",
+			"server.ssl.key-store",
+			"server.ssl.key-store-password",
+			"server.ssl.key-alias",
+			"server.ssl.key-password",
+			"server.ssl.client-auth",
+			"server.ssl.trust-store-type",
+			"server.ssl.trust-store",
+			"server.ssl.trust-store-password",
+			"disable.hostname.verifier");
 
 	// Property size related
 

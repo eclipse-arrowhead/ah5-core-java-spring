@@ -19,6 +19,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
+import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
@@ -167,6 +168,11 @@ public class DTOConverter {
 
 		return new SystemListResponseDTO(terse, verbose.count());
 
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public KeyValuesDTO convertConfigMapToDTO(final Map<String, String> map) {
+		return new KeyValuesDTO(map);
 	}
 
 	//=================================================================================================
