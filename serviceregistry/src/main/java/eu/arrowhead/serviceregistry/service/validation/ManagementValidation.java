@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
@@ -121,6 +122,10 @@ public class ManagementValidation {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
+			}
+
+			if (!Utilities.isEmpty(device.metadata())) {
+				MetadataValidation.validateMetadataKey(device.metadata());
 			}
 		}
 	}
@@ -370,6 +375,10 @@ public class ManagementValidation {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
+			}
+
+			if (!Utilities.isEmpty(system.metadata())) {
+				MetadataValidation.validateMetadataKey(system.metadata());
 			}
 		}
 	}
