@@ -2,12 +2,11 @@ package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
@@ -18,29 +17,28 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
+import eu.arrowhead.dto.DeviceListRequestDTO;
+import eu.arrowhead.dto.DeviceListResponseDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
+import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
-import eu.arrowhead.dto.DeviceListRequestDTO;
-import eu.arrowhead.dto.DeviceListResponseDTO;
-import eu.arrowhead.dto.DeviceQueryRequestDTO;
-import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.enums.AddressType;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
-import eu.arrowhead.serviceregistry.jpa.entity.Device;
-import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
-import org.apache.commons.lang3.tuple.Triple;
 
 
 @Service
@@ -66,9 +64,6 @@ public class ManagementService {
 
 	@Autowired
 	private DTOConverter dtoConverter;
-
-	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_VERBOSE_WD)
-	private boolean serviceDiscoveryVerbose;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -146,18 +141,54 @@ public class ManagementService {
 	// SERVICES DEFINITIONS
 
 	//-------------------------------------------------------------------------------------------------
+	public ServiceDefinitionListResponseDTO getServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("getServiceDefinitions started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validator.validateQueryServiceDefinitions(dto, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(dto, Direction.DESC, ServiceDefinition.SORTABLE_FIELDS_BY, ServiceDefinition.DEFAULT_SORT_FIELD, origin);
+
+		try {
+			final Page<ServiceDefinition> entities = serviceDefinitionDbService.getPage(pageRequest);
+			return dtoConverter.convertServiceDefinitionEntityPageToDTO(entities);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO createServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("createServiceDefinitions started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateCreateServiceDefinition(dto, origin);
+		final List<String> normalized = validator.validateAndNormalizeCreateServiceDefinitions(dto, origin);
 
-		final List<String> normalizedNames = dto.serviceDefinitionNames()
-				.stream()
-				.map(n -> n.trim())
-				.collect(Collectors.toList());
-		final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalizedNames);
-		return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		try {
+			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalized);
+			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("removeServiceDefinitions started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalized = validator.validateAndNormalizeRemoveServiceDefinitions(names, origin);
+
+		try {
+			serviceDefinitionDbService.removeBulk(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	// SYSTEMS
@@ -206,8 +237,8 @@ public class ManagementService {
 					normalized.deviceNames());
 
 			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
-			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
-			if (!verbose || !serviceDiscoveryVerbose) {
+
+			if (!verbose) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
 

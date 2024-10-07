@@ -4,9 +4,6 @@ import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -19,10 +16,6 @@ public class ServiceInterfaceTemplateProperty extends ArrowheadEntity {
 	//=================================================================================================
 	// members
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private long id;
-
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "serviceInterfaceTemplateId", referencedColumnName = "id", nullable = false)
 	private ServiceInterfaceTemplate serviceInterfaceTemplate;
@@ -33,7 +26,7 @@ public class ServiceInterfaceTemplateProperty extends ArrowheadEntity {
 	@Column(nullable = false)
 	private boolean mandatory = false;
 
-	@Column(nullable = false, length = VARCHAR_LARGE)
+	@Column(nullable = true, length = VARCHAR_LARGE)
 	private String validator;
 
 	//=================================================================================================
@@ -59,16 +52,6 @@ public class ServiceInterfaceTemplateProperty extends ArrowheadEntity {
 
 	//=================================================================================================
 	// boilerplate
-
-	//-------------------------------------------------------------------------------------------------
-	public long getId() {
-		return id;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setId(final long id) {
-		this.id = id;
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInterfaceTemplate getServiceInterfaceTemplate() {

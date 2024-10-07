@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,12 +23,15 @@ import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
+import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 
 @Service
 public class ManagementValidation {
@@ -43,6 +47,9 @@ public class ManagementValidation {
 
 	@Autowired
 	private VersionValidator versionValidator;
+
+	@Autowired
+	private NameValidator nameValidator;
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -84,6 +91,7 @@ public class ManagementValidation {
 			if (names.contains(device.name())) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
 			}
+
 			names.add(device.name());
 
 			if (!Utilities.isEmpty(device.addresses())) {
@@ -170,6 +178,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
+		normalized.forEach(n -> nameValidator.validateName(n.name()));
 
 		return normalized;
 	}
@@ -181,6 +190,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
+		normalized.forEach(n -> nameValidator.validateName(n.name()));
 
 		return normalized;
 	}
@@ -216,7 +226,16 @@ public class ManagementValidation {
 	// SERVICE DEFINITION VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateServiceDefinition(final ServiceDefinitionListRequestDTO dto, final String origin) {
+	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("validateQueryServiceDefinitions started");
+
+		if (dto != null) {
+			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateServiceDefinition started");
 
 		if (dto == null) {
@@ -224,22 +243,69 @@ public class ManagementValidation {
 		}
 
 		if (Utilities.isEmpty(dto.serviceDefinitionNames())) {
-			throw new InvalidParameterException("Request payload is empty", origin);
+			throw new InvalidParameterException("Service definition name list is empty", origin);
 		}
 
-		for (final String definitionName : dto.serviceDefinitionNames()) {
-			if (Utilities.isEmpty(definitionName)) {
-				throw new InvalidParameterException("Service definition name is missing", origin);
+		if (Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+		}
+
+		final List<String> names = new ArrayList<>(dto.serviceDefinitionNames().size());
+
+		for (final String name : dto.serviceDefinitionNames()) {
+
+			if (names.contains(name)) {
+				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
 
-			// verify no duplicates in list
+			if (name.length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
+			}
 
-			// TODO: max 63 chars and naming convention!
+			names.add(name);
+
+		}
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("validateRemoveServiceDefinitions started");
+
+		if (Utilities.isEmpty(names)) {
+			throw new InvalidParameterException("Service definition name list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(names)) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
 		}
 	}
 
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
-	// TODO
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateServiceDefinitions started");
+
+		validateCreateServiceDefinitions(dto, origin);
+
+		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
+		normalized.forEach(n -> nameValidator.validateName(n));
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeRemoveServiceDefinitions started");
+
+		try {
+			validateRemoveServiceDefinitions(names, origin);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalizer.normalizeRemoveServiceDefinitions(names);
+	}
 
 	// SYSTEM VALIDATION
 
@@ -373,6 +439,7 @@ public class ManagementValidation {
 
 		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
+		normalized.forEach(n -> nameValidator.validateName(n.name()));
 
 		return normalized;
 	}

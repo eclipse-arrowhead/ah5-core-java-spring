@@ -1,8 +1,8 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
 import java.time.DateTimeException;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,12 +16,14 @@ import eu.arrowhead.common.intf.properties.IPropertyValidator;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
@@ -38,6 +40,9 @@ public class ServiceDiscoveryValidation {
 
 	@Autowired
 	private PropertyValidators interfacePropertyValidator;
+
+	@Autowired
+	private NameValidator nameValidator;
 
 	@Autowired
 	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
@@ -69,13 +74,17 @@ public class ServiceDiscoveryValidation {
 			throw new InvalidParameterException("Service definition name is too long", origin);
 		}
 
-		// TODO validate service definition naming convention
+		nameValidator.validateName(dto.serviceDefinitionName());
 
 		if (!Utilities.isEmpty(dto.expiresAt())) {
+			ZonedDateTime expiresAt = null;
 			try {
-				Utilities.parseUTCStringToZonedDateTime(dto.expiresAt());
+				expiresAt = Utilities.parseUTCStringToZonedDateTime(dto.expiresAt());
 			} catch (final DateTimeException ex) {
-				throw new InvalidParameterException("Expiration time has an invalide time format", origin);
+				throw new InvalidParameterException("Expiration time has an invalid time format", origin);
+			}
+			if (Utilities.utcNow().isAfter(expiresAt)) {
+				throw new InvalidParameterException("Expiration time is in the past", origin);
 			}
 		}
 
@@ -87,9 +96,7 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.templateName())) {
 				throw new InvalidParameterException("Interface template name is missing", origin);
 			}
-			if (Utilities.isEmpty(interfaceDTO.protocol())) {
-				throw new InvalidParameterException("Interface protocol is missing", origin); // TODO nem kötelező megadni, de ha meg van adva akkor csekkolni kell ha létező a template
-			}
+			nameValidator.validateName(interfaceDTO.templateName());
 			if (Utilities.isEmpty(interfaceDTO.policy())) {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
@@ -100,6 +107,67 @@ public class ServiceDiscoveryValidation {
 				throw new InvalidParameterException("Interface properties are missing", origin);
 			}
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateLookupService started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.instanceIds()) && Utilities.containsNullOrEmpty(dto.instanceIds())) {
+			throw new InvalidParameterException("Instance id list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.providerNames()) && Utilities.containsNullOrEmpty(dto.providerNames())) {
+			throw new InvalidParameterException("Provider name list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+			throw new InvalidParameterException("Version list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.alivesAt())) {
+			try {
+				Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
+			} catch (final DateTimeException ex) {
+				throw new InvalidParameterException("Alive time has an invalid time format", origin);
+			}
+		}
+
+		if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
+			throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
+			throw new InvalidParameterException("Interface template list contains null or empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList()) && Utilities.containsNull(dto.interfacePropertyRequirementsList())) {
+			throw new InvalidParameterException("Interface property requirements list contains null element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.policies())) {
+			for (final String policy : dto.policies()) {
+				if (Utilities.isEmpty(policy)) {
+					throw new InvalidParameterException("Policy list contains null or empty element", origin);
+				}
+				if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
+					throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
+				}
+			}
+		}
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -127,11 +195,11 @@ public class ServiceDiscoveryValidation {
 			normalized.interfaces().forEach(interfaceInstance -> {
 				final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
 				if (templateOpt.isPresent()) {
-					if (!interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
+					if (!Utilities.isEmpty(interfaceInstance.protocol()) && !interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
 						throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
 					}
 
-					interfaceTemplateDbService.getPropertiesByName(interfaceInstance.templateName())
+					interfaceTemplateDbService.getPropertiesByTemplateName(interfaceInstance.templateName())
 							.forEach(templateProp -> {
 								final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
 
@@ -140,12 +208,13 @@ public class ServiceDiscoveryValidation {
 								}
 
 								if (!Utilities.isEmpty(templateProp.getValidator())) {
-									final List<String> validatorWithArgs = Arrays.asList(templateProp.getValidator().split("\\|"));
-									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs.get(0)));
+									final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
+									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
 									if (validator != null) {
 										validator.validateAndNormalize(
 												instanceProp,
-												validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0]));
+												validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
+										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
 									}
 								}
 							});
@@ -157,6 +226,15 @@ public class ServiceDiscoveryValidation {
 		}
 
 		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceLookupRequestDTO validateAndNormalizeLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeLookupService started");
+
+		validateLookupService(dto, origin);
+		return normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
