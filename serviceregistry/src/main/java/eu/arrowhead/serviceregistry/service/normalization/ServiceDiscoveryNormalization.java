@@ -43,7 +43,7 @@ public class ServiceDiscoveryNormalization {
 						: dto.interfaces()
 								.stream()
 								.map(i -> new ServiceInstanceInterfaceRequestDTO(
-										i.templateName().trim().toUpperCase(),
+										i.templateName().trim().toLowerCase(),
 										Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
 										i.policy().trim().toUpperCase(),
 										i.properties()))
@@ -62,7 +62,7 @@ public class ServiceDiscoveryNormalization {
 				Utilities.isEmpty(dto.versions()) ? new ArrayList<>() : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).toList(),
 				Utilities.isEmpty(dto.alivesAt()) ? "" : dto.alivesAt().trim(),
 				Utilities.isEmpty(dto.metadataRequirementsList()) ? new ArrayList<>() : dto.metadataRequirementsList(),
-				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> i.trim().toUpperCase()).toList(),
+				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> i.trim().toLowerCase()).toList(),
 				Utilities.isEmpty(dto.interfacePropertyRequirementsList()) ? new ArrayList<>() : dto.interfacePropertyRequirementsList(),
 				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList()
 		);
@@ -70,7 +70,7 @@ public class ServiceDiscoveryNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public String normalizeServiceInstanceId(final String instanceId) {
-		logger.debug("normalizeServiceInstanceRequestDTO started");
+		logger.debug("normalizeServiceInstanceId started");
 		Assert.isTrue(!Utilities.isEmpty(instanceId), "Service instance id is empty");
 
 		return instanceId.trim().toLowerCase();

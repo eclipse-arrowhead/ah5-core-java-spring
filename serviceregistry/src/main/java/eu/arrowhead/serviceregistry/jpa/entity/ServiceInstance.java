@@ -17,7 +17,7 @@ public class ServiceInstance extends ArrowheadEntity {
 	// members
 
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "serviceInstanceId", "createdAt");
-	public static final String DEFAULT_SORT_FIELD = "createdAt";
+	public static final String DEFAULT_SORT_FIELD = "serviceInstanceId";
 
 	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
 	private String serviceInstanceId;

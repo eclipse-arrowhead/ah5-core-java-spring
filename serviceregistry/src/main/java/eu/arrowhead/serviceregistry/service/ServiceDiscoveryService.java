@@ -70,10 +70,8 @@ public class ServiceDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final ServiceInstanceRequestDTO normalized = validator.validateAndNormalizeRegisterService(dto, origin);
-		final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(normalized.systemName(), normalized.serviceDefinitionName(), normalized.version());
 
 		try {
-			instanceDbService.deleteByInstanceId(instanceId);
 			final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = instanceDbService.createBulk(List.of(normalized)).getFirst();
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = systemDbService.getByName(instanceEntry.getKey().getSystem().getName()).get();
 
@@ -88,14 +86,17 @@ public class ServiceDiscoveryService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceListResponseDTO lookupServices(final String requesterSystemName, final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final boolean restricted, final String origin) {
+	public ServiceInstanceListResponseDTO lookupServices(final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final boolean restricted, final String origin) {
 		logger.debug("lookupServices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final ServiceInstanceLookupRequestDTO normalized = validator.validateAndNormalizeLookupService(dto, origin);
 
 		if (restricted) {
-			for (MetadataRequirementDTO metadataReq : normalized.metadataRequirementsList()) {
+			if (Utilities.isEmpty(normalized.metadataRequirementsList())) {
+				normalized.metadataRequirementsList().add(new MetadataRequirementDTO());
+			}
+			for (final MetadataRequirementDTO metadataReq : normalized.metadataRequirementsList()) {
 				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true);
 			}
 		}
@@ -105,11 +106,11 @@ public class ServiceDiscoveryService {
 					PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD),
 					new ServiceLookupFilterModel(normalized));
 
-			if (verbose && !sysInfo.isDiscoveryVerbose()) {
-				throw new ForbiddenException("Verbose is not allowed", origin);
-			}
-
 			if (verbose) {
+				if (!sysInfo.isDiscoveryVerbose()) {
+					throw new ForbiddenException("Verbose is not allowed");
+				}
+
 				final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = systemDbService.getPageByFilters(
 						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
 						List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
@@ -121,7 +122,7 @@ public class ServiceDiscoveryService {
 			return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, null);
 
 		} catch (final ForbiddenException ex) {
-			throw ex;
+			throw new ForbiddenException(ex.getMessage(), origin);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -140,7 +141,7 @@ public class ServiceDiscoveryService {
 		validator.validateAndNormalizeRevokeService(instanceId, origin);
 
 		try {
-			if (!ServiceInstanceIdUtils.retriveSystemNameFromInstaceId(instanceId).equals(identifiedSystemName)) {
+			if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(instanceId).equals(identifiedSystemName)) {
 				throw new ForbiddenException("Revoking other systems' service is forbidden", origin);
 			}
 

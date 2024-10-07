@@ -9,7 +9,8 @@ public final class ServiceInstanceIdUtils {
 	//=================================================================================================
 	// members
 
-	private static final String delimiter = "-";
+	private static final String delimiter = "::";
+	private static final int parts = 3;
 
 	//=================================================================================================
 	// methods
@@ -24,9 +25,12 @@ public final class ServiceInstanceIdUtils {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public static String retriveSystemNameFromInstaceId(final String instanceId) {
+	public static String retrieveSystemNameFromInstaceId(final String instanceId) {
 		Assert.isTrue(!Utilities.isEmpty(instanceId), "instanceId is empty");
-		return instanceId.split(delimiter)[0];
+
+		final String[] split = instanceId.split(delimiter);
+		Assert.isTrue(split.length == parts, "Invalid instaceId");
+		return split[0];
 	}
 
 	//=================================================================================================

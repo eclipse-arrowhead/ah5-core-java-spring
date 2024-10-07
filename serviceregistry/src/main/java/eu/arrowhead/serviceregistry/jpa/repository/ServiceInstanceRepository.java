@@ -32,4 +32,7 @@ public interface ServiceInstanceRepository extends RefreshableRepository<Service
 
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstance> findAllByServiceDefinition_NameIn(final Collection<String> serviceDefinitionNames);
+
+	//-------------------------------------------------------------------------------------------------
+	public void deleteAllByServiceInstanceIdIn(final Collection<String> serviceInstanceIds);
 }

@@ -1,8 +1,8 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
 import java.time.DateTimeException;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +23,7 @@ import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
@@ -39,6 +40,9 @@ public class ServiceDiscoveryValidation {
 
 	@Autowired
 	private PropertyValidators interfacePropertyValidator;
+
+	@Autowired
+	private NameValidator nameValidator;
 
 	@Autowired
 	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
@@ -70,13 +74,17 @@ public class ServiceDiscoveryValidation {
 			throw new InvalidParameterException("Service definition name is too long", origin);
 		}
 
-		// TODO validate service definition naming convention
+		nameValidator.validateName(dto.serviceDefinitionName());
 
 		if (!Utilities.isEmpty(dto.expiresAt())) {
+			ZonedDateTime expiresAt = null;
 			try {
-				Utilities.parseUTCStringToZonedDateTime(dto.expiresAt());
+				expiresAt = Utilities.parseUTCStringToZonedDateTime(dto.expiresAt());
 			} catch (final DateTimeException ex) {
-				throw new InvalidParameterException("Expiration time has an invalide time format", origin);
+				throw new InvalidParameterException("Expiration time has an invalid time format", origin);
+			}
+			if (Utilities.utcNow().isAfter(expiresAt)) {
+				throw new InvalidParameterException("Expiration time is in the past", origin);
 			}
 		}
 
@@ -88,6 +96,7 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.templateName())) {
 				throw new InvalidParameterException("Interface template name is missing", origin);
 			}
+			nameValidator.validateName(interfaceDTO.templateName());
 			if (Utilities.isEmpty(interfaceDTO.policy())) {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
@@ -132,7 +141,7 @@ public class ServiceDiscoveryValidation {
 			try {
 				Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
 			} catch (final DateTimeException ex) {
-				throw new InvalidParameterException("Alive time has an invalide time format", origin);
+				throw new InvalidParameterException("Alive time has an invalid time format", origin);
 			}
 		}
 
@@ -185,12 +194,12 @@ public class ServiceDiscoveryValidation {
 
 			normalized.interfaces().forEach(interfaceInstance -> {
 				final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
-				if (templateOpt.isPresent() && !Utilities.isEmpty(interfaceInstance.protocol())) {
-					if (!interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
+				if (templateOpt.isPresent()) {
+					if (!Utilities.isEmpty(interfaceInstance.protocol()) && !interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
 						throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
 					}
 
-					interfaceTemplateDbService.getPropertiesByName(interfaceInstance.templateName())
+					interfaceTemplateDbService.getPropertiesByTemplateName(interfaceInstance.templateName())
 							.forEach(templateProp -> {
 								final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
 
@@ -199,12 +208,12 @@ public class ServiceDiscoveryValidation {
 								}
 
 								if (!Utilities.isEmpty(templateProp.getValidator())) {
-									final List<String> validatorWithArgs = Arrays.asList(templateProp.getValidator().split("\\|"));
-									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs.get(0)));
+									final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
+									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
 									if (validator != null) {
 										final Object normalizedProp = validator.validateNormalize(
 												instanceProp,
-												validatorWithArgs.size() <= 1 ? new String[0] : validatorWithArgs.subList(1, validatorWithArgs.size() - 1).toArray(new String[0]));
+												validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
 										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
 									}
 								}

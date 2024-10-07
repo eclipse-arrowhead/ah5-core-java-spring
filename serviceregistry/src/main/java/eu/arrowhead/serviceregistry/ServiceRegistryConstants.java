@@ -84,6 +84,10 @@ public final class ServiceRegistryConstants {
 	public static final int ADDRESS_TYPE_LENGTH = 30;
 	public static final int ADDRESS_ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
 
+	// Others
+
+	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "\\|";
+
 	//=================================================================================================
 	// assistant methods
 

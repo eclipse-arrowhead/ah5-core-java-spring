@@ -98,16 +98,21 @@ public class ServiceInstanceDbService {
 			List<ServiceInstanceInterface> instanceInterfaceEntities = new ArrayList<>();
 
 			synchronized (LOCK) {
-				// Caching necessary entities
+				// Deleting current records & Caching necessary entities
+				final Set<String> instanceIdsToDelete = new HashSet<>(candidates.size());
 				final Set<String> systemNames = new HashSet<>();
 				final Set<String> serviceDefinitionNames = new HashSet<>();
 				final Set<String> serviceInterfaceTemlateNames = new HashSet<>();
 
 				for (final ServiceInstanceRequestDTO candidate : candidates) {
+					instanceIdsToDelete.add(ServiceInstanceIdUtils.calculateInstanceId(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version()));
 					systemNames.add(candidate.systemName());
 					serviceDefinitionNames.add(candidate.serviceDefinitionName());
 					serviceInterfaceTemlateNames.addAll(candidate.interfaces().stream().map(template -> template.templateName()).collect(Collectors.toSet()));
 				}
+
+				serviceInstanceRepo.deleteAllByServiceInstanceIdIn(instanceIdsToDelete);
+				serviceInstanceRepo.flush();
 
 				systemRepo.findAllByNameIn(systemNames).forEach(system -> systemCache.put(system.getName(), system));
 				serviceDefinitionRepo.findAllByNameIn(serviceDefinitionNames).forEach(definition -> definitionCache.put(definition.getName(), definition));
@@ -364,7 +369,7 @@ public class ServiceInstanceDbService {
 				}
 
 				// Match against to alive requirements
-				if (matching && filters.getAlivesAt() != null && serviceCandidate.getExpiresAt() != null && filters.getAlivesAt().isBefore(serviceCandidate.getExpiresAt())) {
+				if (matching && filters.getAlivesAt() != null && serviceCandidate.getExpiresAt() != null && serviceCandidate.getExpiresAt().isBefore(filters.getAlivesAt())) {
 					matching = false;
 				}
 
@@ -429,6 +434,7 @@ public class ServiceInstanceDbService {
 			}
 
 			serviceInstanceRepo.deleteAllById(deleteIds);
+			serviceInstanceRepo.flush();
 			final Page<ServiceInstance> page = serviceInstanceRepo.findAllByIdIn(matchingIds, pagination);
 			return new PageImpl<>(page.stream().map(si -> Map.entry(si, serviceInterfaceMap.get(si.getId()))).toList(), pagination, page.getTotalElements());
 		}

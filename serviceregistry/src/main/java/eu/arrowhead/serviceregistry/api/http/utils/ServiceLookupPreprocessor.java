@@ -20,10 +20,10 @@ public class ServiceLookupPreprocessor {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean isRestricted(final HttpServletRequest request) {
-		logger.debug("process started");
+		logger.debug("isRestricted started");
 
 		if (request == null) {
-			return false;
+			return true;
 		}
 
 		final Object boolObject = request.getAttribute(ServiceRegistryConstants.HTTP_ATTR_RESTRICTED_SERVICE_LOOKUP);

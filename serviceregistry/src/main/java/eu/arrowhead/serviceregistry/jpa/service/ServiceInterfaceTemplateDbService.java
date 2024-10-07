@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
@@ -37,20 +38,34 @@ public class ServiceInterfaceTemplateDbService {
 		logger.debug("getByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "name is empty");
 
-		return templateRepo.findByName(name);
+		try {
+			return templateRepo.findByName(name);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<ServiceInterfaceTemplateProperty> getPropertiesByName(final String name) {
-		logger.debug("getByName started");
+	public List<ServiceInterfaceTemplateProperty> getPropertiesByTemplateName(final String name) {
+		logger.debug("getPropertiesByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "name is empty");
 
-		final Optional<ServiceInterfaceTemplate> templateOpt = templateRepo.findByName(name);
+		try {
+			final Optional<ServiceInterfaceTemplate> templateOpt = templateRepo.findByName(name);
 
-		if (templateOpt.isPresent()) {
-			return templatePropsRepo.findByServiceInterfaceTemplate(templateOpt.get());
+			if (templateOpt.isPresent()) {
+				return templatePropsRepo.findByServiceInterfaceTemplate(templateOpt.get());
+			}
+
+			return List.of();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
-
-		return List.of();
 	}
 }

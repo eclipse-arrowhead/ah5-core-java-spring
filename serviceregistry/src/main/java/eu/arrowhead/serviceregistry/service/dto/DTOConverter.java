@@ -185,7 +185,7 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceResponseDTO convertServiceInstanceEntityToDTO(final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry, final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTripet) {
+	public ServiceInstanceResponseDTO convertServiceInstanceEntityToDTO(final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry, final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet) {
 		logger.debug("convertServiceInstanceEntityToDTO started...");
 
 		final ServiceInstance instance = instanceEntry.getKey();
@@ -193,7 +193,7 @@ public class DTOConverter {
 
 		return new ServiceInstanceResponseDTO(
 				instance.getServiceInstanceId(),
-				systemTripet != null ? convertSystemTripletToDTO(systemTripet)
+				systemTriplet != null ? convertSystemTripletToDTO(systemTriplet)
 									 : new SystemResponseDTO(
 													instance.getSystem().getName(),
 													Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>() { }),
