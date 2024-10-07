@@ -50,7 +50,7 @@ public class ServiceInterfaceTemplateDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInterfaceTemplateProperty> getPropertiesByTemplateName(final String name) {
-		logger.debug("getPropertiesByName started");
+		logger.debug("getPropertiesByTemplateName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "name is empty");
 
 		try {

@@ -29,7 +29,7 @@ public final class ServiceInstanceIdUtils {
 		Assert.isTrue(!Utilities.isEmpty(instanceId), "instanceId is empty");
 
 		final String[] split = instanceId.split(delimiter);
-		Assert.isTrue(split.length == parts, "Invalid instaceId");
+		Assert.isTrue(split.length == parts, "Invalid instanceId");
 		return split[0];
 	}
 
