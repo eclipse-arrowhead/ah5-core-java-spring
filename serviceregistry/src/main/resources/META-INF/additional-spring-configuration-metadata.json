@@ -56,7 +56,7 @@
   },
   {
     "name": "service.discovery.interface.policy",
-    "type": "eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy",
+    "type": "eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy",
     "description": "A description for 'service.discovery.interface.policy'"
   },
   {

@@ -130,7 +130,7 @@ public class SystemDiscoveryAPI {
 	public ResponseEntity<Void> revoke(final HttpServletRequest httpServletRequest) {
 		logger.debug("revoke started");
 
-		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH;
 		final String identifiedName = preprocessor.process(httpServletRequest, origin);
 
 		final boolean result = sdService.revokeSystem(identifiedName, origin);

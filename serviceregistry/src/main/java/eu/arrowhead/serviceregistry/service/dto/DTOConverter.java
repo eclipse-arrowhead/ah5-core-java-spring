@@ -22,13 +22,18 @@ import eu.arrowhead.dto.DeviceResponseDTO;
 import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
-import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 
 @Service
 public class DTOConverter {
@@ -180,8 +185,64 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceResponseDTO convertServiceInstanceEntityToDTO(final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry, final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet) {
+		logger.debug("convertServiceInstanceEntityToDTO started...");
+
+		final ServiceInstance instance = instanceEntry.getKey();
+		final List<ServiceInstanceInterface> interfaceList = instanceEntry.getValue();
+
+		return new ServiceInstanceResponseDTO(
+				instance.getServiceInstanceId(),
+				systemTriplet != null ? convertSystemTripletToDTO(systemTriplet)
+									 : new SystemResponseDTO(
+													instance.getSystem().getName(),
+													Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>() { }),
+													instance.getSystem().getVersion(),
+													null,
+													null,
+													Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getCreatedAt()),
+													Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getUpdatedAt())),
+				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
+				instance.getVersion(),
+				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
+				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				interfaceList.stream().map(interf -> new ServiceInstanceInterfaceResponseDTO(
+						interf.getServiceInterfaceTemplate().getName(),
+						interf.getServiceInterfaceTemplate().getProtocol(),
+						interf.getPolicy().toString(),
+						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() { }))).toList(),
+				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt())
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO convertServiceInstanceListToDTO(
+																  final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
+																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
+		logger.debug("convertServiceInstanceListToDTO started...");
+
+		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>();
+		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {
+			Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemDeviceEntry = null;
+			if (systemsWithDevices != null) {
+				for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> triplet : systemsWithDevices) {
+					if (triplet.getLeft().getId() == serviceEntry.getKey().getSystem().getId()) {
+						systemDeviceEntry = triplet;
+						break;
+					}
+				}
+			}
+			entries.add(convertServiceInstanceEntityToDTO(serviceEntry, systemDeviceEntry));
+		}
+
+		return new ServiceInstanceListResponseDTO(entries, entries.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public KeyValuesDTO convertConfigMapToDTO(final Map<String, String> map) {
 		return new KeyValuesDTO(map);
+
 	}
 
 	//=================================================================================================

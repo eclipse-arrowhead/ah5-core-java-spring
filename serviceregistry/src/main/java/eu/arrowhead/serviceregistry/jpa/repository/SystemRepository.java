@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.jpa.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public interface SystemRepository extends RefreshableRepository<System, Long> {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<System> findAllByNameIn(final List<String> names);
+	public List<System> findAllByNameIn(final Collection<String> names);
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<System> findByName(final String name);

@@ -5,9 +5,6 @@ import java.util.List;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
@@ -18,10 +15,6 @@ public class System extends ArrowheadEntity {
 	// members
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
 	public static final String DEFAULT_SORT_FIELD = "createdAt";
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private long id;
 
 	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
 	private String name;
@@ -54,16 +47,6 @@ public class System extends ArrowheadEntity {
 
 	//=================================================================================================
 	// boilerplate
-
-	//-------------------------------------------------------------------------------------------------
-	public long getId() {
-		return id;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setId(final long id) {
-		this.id = id;
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String getName() {

@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.HttpUtilities;
+import eu.arrowhead.dto.ServiceInstanceCreateRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.SystemRegisterRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +33,18 @@ public class SystemNamePreprocessor {
 		final String name = HttpUtilities.acquireName(request, origin);
 
 		return new SystemRequestDTO(name, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceRequestDTO process(final ServiceInstanceCreateRequestDTO dto, final HttpServletRequest request, final String origin) throws InvalidParameterException {
+		logger.debug("process (ServiceInstanceCreateRequestDTO to ServiceInstanceRequestDTO) started");
+
+		if (dto == null) {
+			return null;
+		}
+		final String name = HttpUtilities.acquireName(request, origin);
+
+		return new ServiceInstanceRequestDTO(name, dto.serviceDefinitionName(), dto.version(), dto.expiresAt(), dto.metadata(), dto.interfaces());
 	}
 
 	//-------------------------------------------------------------------------------------------------
