@@ -211,7 +211,7 @@ public class ServiceDiscoveryValidation {
 									final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
 									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
 									if (validator != null) {
-										validator.validateAndNormalize(
+										final Object normalizedProp = validator.validateAndNormalize(
 												instanceProp,
 												validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
 										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);

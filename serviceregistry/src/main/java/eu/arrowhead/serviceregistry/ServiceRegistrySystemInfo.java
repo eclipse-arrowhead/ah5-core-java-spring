@@ -67,6 +67,8 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		}
 
 		return systemModel;
+	}
+
 	public boolean isDiscoveryVerbose() {
 		return this.discoveryVerbose;
 	}
