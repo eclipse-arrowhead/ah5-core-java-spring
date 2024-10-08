@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -76,6 +77,9 @@ public class SystemDiscoveryValidation {
 					throw new InvalidParameterException("Address value is missing", origin);
 				}
 			}
+		}
+		if (!Utilities.isEmpty(dto.metadata())) {
+			MetadataValidation.validateMetadataKey(dto.metadata());
 		}
 	}
 
@@ -177,7 +181,7 @@ public class SystemDiscoveryValidation {
 
 		validateRevokeSystem(name, origin);
 
-		return normalizer.normalizeSystemName(name);
+		return normalizer.normalizeRevokeSystemName(name);
 	}
 
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -79,6 +80,10 @@ public class DeviceDiscoveryValidation {
 					throw new InvalidParameterException("Address is too long", origin);
 				}
 			}
+		}
+
+		if (!Utilities.isEmpty(dto.metadata())) {
+			MetadataValidation.validateMetadataKey(dto.metadata());
 		}
 	}
 

@@ -138,10 +138,10 @@ public class ServiceDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(identifiedSystemName), "identifiedSystemName is empty");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateAndNormalizeRevokeService(instanceId, origin);
+		final Entry<String, String> normalized = validator.validateAndNormalizeRevokeService(identifiedSystemName, instanceId, origin);
 
 		try {
-			if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(instanceId).equals(identifiedSystemName)) {
+			if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(normalized.getValue()).equals(normalized.getKey())) {
 				throw new ForbiddenException("Revoking other systems' service is forbidden", origin);
 			}
 
