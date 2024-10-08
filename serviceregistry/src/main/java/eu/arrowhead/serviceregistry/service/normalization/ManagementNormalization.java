@@ -13,6 +13,11 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
+import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -20,10 +25,6 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
-import eu.arrowhead.dto.DeviceQueryRequestDTO;
-import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.PageDTO;
-import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 
 @Service
 public class ManagementNormalization {
@@ -155,6 +156,25 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveServiceDefinitions(final List<String> names) {
+		return names
+				.stream()
+				.map(n -> nameNormalizer.normalize(n))
+				.collect(Collectors.toList());
+	}
+
+	// INTERFACE TEMPLATES
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListRequestDTO normalizeServiceInterfaceTemplateListRequestDTO(final ServiceInterfaceTemplateListRequestDTO dto) {
+		logger.debug("normalizeServiceInterfaceTemplateListRequestDTO started");
+		Assert.notNull(dto, "normalizeServiceInterfaceTemplateListRequestDTO list is null");
+
+		//TODO
+		return null;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeRemoveInterfaceTemplates(final List<String> names) {
 		return names
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))

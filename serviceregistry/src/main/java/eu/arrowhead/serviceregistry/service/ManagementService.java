@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.tuple.Triple;
@@ -24,6 +25,8 @@ import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
@@ -32,10 +35,13 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
+import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
@@ -61,6 +67,9 @@ public class ManagementService {
 
 	@Autowired
 	private SystemDbService systemDbService;
+
+	@Autowired
+	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -219,7 +228,6 @@ public class ManagementService {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, final boolean verbose, final String origin) {
-
 		logger.debug("querySystems started, verbose = {}", verbose);
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -250,7 +258,6 @@ public class ManagementService {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO updateSystems(final SystemListRequestDTO dto, final String origin) {
-
 		logger.debug("updateSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -277,6 +284,42 @@ public class ManagementService {
 
 		try {
 			systemDbService.deleteByNameList(normalizedNames);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	// INTERFACE TEMPLATES
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListResponseDTO createInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("createInterfaceTemplates started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final ServiceInterfaceTemplateListRequestDTO normalized = validator.validateAndNormalizeCreateInterfaceTemplates(dto, origin);
+
+		try {
+			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = interfaceTemplateDbService.createBulk(dto.interfaceTemplates());
+			// TODO dtoConvert
+			return null;
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeInterfaceTemplates(final List<String> names, final String origin) {
+		logger.debug("removeInterfaceTemplates started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalizedNames = validator.validateAndNormalizeRemoveInterfaceTemplates(names, origin);
+
+		try {
+			interfaceTemplateDbService.deleteByTemplateNameList(normalizedNames);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

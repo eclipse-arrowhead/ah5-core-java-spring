@@ -20,4 +20,7 @@ public interface ServiceInterfaceTemplateRepository extends RefreshableRepositor
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<ServiceInterfaceTemplate> findByName(final String name);
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean existsByName(final String name);
 }

@@ -17,6 +17,7 @@ import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -486,6 +487,52 @@ public class ManagementValidation {
 		validateRemoveSystems(originalNames, origin);
 
 		return normalizer.normalizeRemoveSystemNames(originalNames);
+	}
+
+	// INTERFACE VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("validateCreateInterfaceTemplates started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		// TODO
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveInterfaceTemplates(final List<String> originalNames, final  String origin) {
+		logger.debug("validateRemoveInterfaceTemplate started");
+
+		if (Utilities.isEmpty(originalNames)) {
+			throw new InvalidParameterException("Interface template name list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(originalNames)) {
+			throw new InvalidParameterException("Interface templpate name list contains null or empty element", origin);
+		}
+	}
+
+	// INTERFACE VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListRequestDTO validateAndNormalizeCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateInterfaceTemplates started");
+
+		validateCreateInterfaceTemplates(dto, origin);
+
+		return normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
+		logger.debug("validateAndNormalizeRemoveInterfaceTemplates started");
+
+		validateRemoveInterfaceTemplates(originalNames, origin);
+
+		return normalizer.normalizeRemoveInterfaceTemplates(originalNames);
 	}
 
 	//=================================================================================================
