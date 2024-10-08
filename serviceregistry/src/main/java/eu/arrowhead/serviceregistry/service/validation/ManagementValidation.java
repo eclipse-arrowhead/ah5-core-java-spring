@@ -549,6 +549,10 @@ public class ManagementValidation {
 			}
 				
 			// interfaces
+			if (Utilities.isEmpty(instance.interfaces())) {
+				throw new InvalidParameterException("Service interface list is empty", origin);
+			}
+			
 			for (final ServiceInstanceInterfaceRequestDTO interfaceDTO : instance.interfaces()) {
 				if (Utilities.isEmpty(interfaceDTO.templateName())) {
 					throw new InvalidParameterException("Interface template name is missing", origin);
@@ -575,7 +579,21 @@ public class ManagementValidation {
 	
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceRequestDTO> validateAndNormalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
-		//TODO
+		logger.debug("validateAndNormalizeCreateServiceInstances started");
+		
+		validateCreateServiceInstances(dto, origin);
+		
+		List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
+		
+		normalized.forEach(n -> { 
+			nameValidator.validateName(n.systemName());
+			nameValidator.validateName(n.serviceDefinitionName());
+			versionValidator.validateNormalizedVersion(n.version());
+			//TODO: validate interfaces
+			}
+		);
+		
+		return normalized;
 	}
 
 	//=================================================================================================

@@ -24,6 +24,9 @@ import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 
 @Service
 public class ManagementNormalization {
@@ -159,5 +162,49 @@ public class ManagementNormalization {
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
+	}
+	
+	// SERVICE INSTANCES
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceRequestDTO> normalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto) {
+		logger.debug("normalizeCreateServiceInstances started");
+		Assert.notNull(dto, "ServiceInstanceCreateListRequestDTO is null");
+		
+		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
+	}
+	
+	//=================================================================================================
+	// assistant methods
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
+		
+		return new ServiceInstanceRequestDTO(
+				// system name
+				nameNormalizer.normalize(dto.systemName()),
+				
+				// service definition name
+				nameNormalizer.normalize(dto.serviceDefinitionName()),
+				
+				// version
+				versionNormalizer.normalize(dto.version()),
+				
+				// expires at
+				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
+				
+				// metadata
+				dto.metadata(),
+				
+				// interfaces
+				dto.interfaces()
+					.stream()
+					.map(i -> new ServiceInstanceInterfaceRequestDTO(
+								nameNormalizer.normalize(i.templateName()),
+								Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
+								i.policy().trim().toUpperCase(),
+								i.properties()))
+					.toList()
+		);
 	}
 }
