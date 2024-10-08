@@ -65,7 +65,6 @@ public class SystemDiscoveryService {
 
 	//-------------------------------------------------------------------------------------------------
 	public Entry<SystemResponseDTO, Boolean> registerSystem(final SystemRequestDTO dto, final String origin) {
-
 		logger.debug("registerSystem started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 

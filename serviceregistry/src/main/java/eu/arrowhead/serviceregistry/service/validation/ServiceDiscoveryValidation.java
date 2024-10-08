@@ -3,6 +3,8 @@ package eu.arrowhead.serviceregistry.service.validation;
 import java.time.DateTimeException;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -178,8 +180,12 @@ public class ServiceDiscoveryValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRevokeService(final String instanceId, final String origin) {
+	public void validateRevokeService(final String systemName, final String instanceId, final String origin) {
 		logger.debug("validateRevokeService started");
+
+		if (Utilities.isEmpty(systemName)) {
+			throw new InvalidParameterException("System name is empty", origin);
+		}
 
 		if (Utilities.isEmpty(instanceId)) {
 			throw new InvalidParameterException("Service instance ID is missing", origin);
@@ -245,10 +251,10 @@ public class ServiceDiscoveryValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String validateAndNormalizeRevokeService(final String instanceId, final String origin) {
+	public Entry<String, String> validateAndNormalizeRevokeService(final String systemName, final String instanceId, final String origin) {
 		logger.debug("validateAndNormalizeRevokeService started");
 
-		validateRevokeService(instanceId, origin);
-		return normalizer.normalizeServiceInstanceId(instanceId);
+		validateRevokeService(systemName, instanceId, origin);
+		return Map.entry(normalizer.normalizeSystemName(systemName), normalizer.normalizeServiceInstanceId(instanceId));
 	}
 }

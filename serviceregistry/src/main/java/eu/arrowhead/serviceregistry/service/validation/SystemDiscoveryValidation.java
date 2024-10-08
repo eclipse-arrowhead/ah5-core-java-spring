@@ -181,7 +181,7 @@ public class SystemDiscoveryValidation {
 
 		validateRevokeSystem(name, origin);
 
-		return normalizer.normalizeSystemName(name);
+		return normalizer.normalizeRevokeSystemName(name);
 	}
 
 }
