@@ -24,6 +24,8 @@ import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
@@ -280,5 +282,12 @@ public class ManagementService {
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
+	}
+	
+	// SERVICE INSTANCES
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO createServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		
 	}
 }

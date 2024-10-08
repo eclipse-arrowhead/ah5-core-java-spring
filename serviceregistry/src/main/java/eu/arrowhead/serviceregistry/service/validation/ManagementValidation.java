@@ -16,6 +16,8 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -477,6 +479,42 @@ public class ManagementValidation {
 		validateRemoveSystems(originalNames, origin);
 
 		return normalizer.normalizeSystemNames(originalNames);
+	}
+	
+	// SERVICE INSTANCE VALIDATION
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		logger.debug("validateCreateServiceInstances started");
+		
+		if (dto != null) {
+			
+			if (Utilities.containsNull(dto.instances())) {
+				throw new InvalidParameterException("The list of service instances contains null element!", origin);
+			}
+			
+			for (ServiceInstanceRequestDTO instance : dto.instances()) {
+				// system name
+				
+				// service definition name
+				
+				// version
+				
+				// expires at
+				
+				// metadata
+				
+				// interfaces
+			}
+		}
+		
+	}
+	
+	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceRequestDTO> validateAndNormalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		
 	}
 
 	//=================================================================================================
