@@ -48,7 +48,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Override
 	public List<ServiceModel> getServices() {
 		// TODO Auto-generated method stub
-		return null;
+		return List.of();
 	}
 
 	//-------------------------------------------------------------------------------------------------
