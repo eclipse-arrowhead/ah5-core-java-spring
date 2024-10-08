@@ -18,6 +18,7 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
+import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -35,6 +36,9 @@ public class ManagementNormalization {
 	@Autowired
 	private VersionNormalizer versionNormalizer;
 
+	@Autowired
+	private NameNormalizer nameNormalizer;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -51,14 +55,14 @@ public class ManagementNormalization {
 		for (final SystemRequestDTO system : dtoList.systems()) {
 
 			normalized.add(new SystemRequestDTO(
-					system.name().trim(),
+					nameNormalizer.normalize(system.name()),
 					system.metadata(),
 					versionNormalizer.normalize(system.version()),
 					Utilities.isEmpty(system.addresses()) ? new ArrayList<>()
 							: system.addresses().stream()
 									.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
 									.collect(Collectors.toList()),
-					Utilities.isEmpty(system.deviceName()) ? null : system.deviceName().trim()));
+					Utilities.isEmpty(system.deviceName()) ? null : nameNormalizer.normalize(system.deviceName())));
 		}
 		return normalized;
 	}
@@ -75,7 +79,7 @@ public class ManagementNormalization {
 		return new SystemQueryRequestDTO(
 				dto.pagination(), //no need to normalize, because it will happen in the getPageRequest method
 				Utilities.isEmpty(dto.systemNames()) ? null
-						: dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
+						: dto.systemNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null
 						: dto.addresses().stream().map(n -> n.trim()).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null
@@ -86,14 +90,14 @@ public class ManagementNormalization {
 								.map(v -> versionNormalizer.normalize(v))
 								.collect(Collectors.toList()),
 				Utilities.isEmpty(dto.deviceNames()) ? null
-						: dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()));
+						: dto.deviceNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeSystemNames(final List<String> originalNames) {
 		return originalNames.stream()
 				.filter(n -> !Utilities.isEmpty(n))
-				.map(n -> n.trim())
+				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -108,7 +112,7 @@ public class ManagementNormalization {
 		for (final DeviceRequestDTO device : dtoList) {
 			Assert.isTrue(!Utilities.isEmpty(device.name()), "Device name is empty");
 			normalized.add(new DeviceRequestDTO(
-					device.name().trim(),
+					nameNormalizer.normalize(device.name()),
 					device.metadata(),
 					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
 							: device.addresses().stream()
@@ -125,7 +129,7 @@ public class ManagementNormalization {
 
 		return new DeviceQueryRequestDTO(
 				dto.pagination(),
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList());
@@ -135,7 +139,7 @@ public class ManagementNormalization {
 	public List<String> normalizeDeviceNames(final List<String> originalNames) {
 		return originalNames.stream()
 				.filter(n -> !Utilities.isEmpty(n))
-				.map(n -> n.trim())
+				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -145,7 +149,7 @@ public class ManagementNormalization {
 	public List<String> normalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto) {
 		return dto.serviceDefinitionNames()
 				.stream()
-				.map(n -> n.trim())
+				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -153,7 +157,7 @@ public class ManagementNormalization {
 	public List<String> normalizeRemoveServiceDefinitions(final List<String> names) {
 		return names
 				.stream()
-				.map(n -> n.trim())
+				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 }

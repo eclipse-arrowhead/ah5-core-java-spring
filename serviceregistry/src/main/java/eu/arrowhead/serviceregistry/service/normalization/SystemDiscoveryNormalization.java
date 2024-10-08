@@ -14,6 +14,7 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
+import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
 @Service
@@ -28,6 +29,9 @@ public class SystemDiscoveryNormalization {
 	@Autowired
 	private VersionNormalizer versionNormalizer;
 
+	@Autowired
+	private NameNormalizer nameNormalizer;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -39,14 +43,14 @@ public class SystemDiscoveryNormalization {
 		Assert.notNull(dto, "SystemRequestDTO is null");
 
 		return new SystemRequestDTO(
-				dto.name().trim(),
+				normalizeSystemName(dto.name()),
 				dto.metadata(),
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
 						: dto.addresses().stream()
 								.map(a -> new AddressDTO(a.type().trim().toUpperCase(), addressNormalizer.normalize(a.address())))
 								.collect(Collectors.toList()),
-				Utilities.isEmpty(dto.deviceName()) ? null : dto.deviceName().trim());
+				Utilities.isEmpty(dto.deviceName()) ? null : nameNormalizer.normalize(dto.deviceName()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -58,12 +62,12 @@ public class SystemDiscoveryNormalization {
 		}
 
 		return new SystemLookupRequestDTO(
-				Utilities.isEmpty(dto.systemNames()) ? null : dto.systemNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.systemNames()) ? null : dto.systemNames().stream().map(n -> normalizeSystemName(n)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList(),
 				Utilities.isEmpty(dto.versions()) ? null : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(dn -> dn.trim()).collect(Collectors.toList()));
+				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(dn -> nameNormalizer.normalize(dn)).collect(Collectors.toList()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -71,6 +75,6 @@ public class SystemDiscoveryNormalization {
 		logger.debug("normalizeSystemName started");
 		Assert.notNull(name, "System name is null");
 
-		return name.trim();
+		return nameNormalizer.normalize(name);
 	}
 }
