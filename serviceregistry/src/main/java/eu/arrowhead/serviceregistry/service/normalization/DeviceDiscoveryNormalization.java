@@ -14,6 +14,7 @@ import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 
 @Service
 public class DeviceDiscoveryNormalization {
@@ -23,6 +24,9 @@ public class DeviceDiscoveryNormalization {
 
 	@Autowired
 	private AddressNormalizer addressNormalizer;
+
+	@Autowired
+	private NameNormalizer nameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -36,7 +40,7 @@ public class DeviceDiscoveryNormalization {
 		Assert.isTrue(!Utilities.isEmpty(dto.name()), "DeviceRequestDTO name is empty");
 
 		return new DeviceRequestDTO(
-				dto.name().trim(),
+				normalizeDeviceName(dto.name()),
 				dto.metadata(),
 				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
 						: dto.addresses().stream()
@@ -61,6 +65,6 @@ public class DeviceDiscoveryNormalization {
 		logger.debug("normalizeDeviceName started");
 		Assert.notNull(name, "Device name is null");
 
-		return name.trim();
+		return nameNormalizer.normalize(name);
 	}
 }

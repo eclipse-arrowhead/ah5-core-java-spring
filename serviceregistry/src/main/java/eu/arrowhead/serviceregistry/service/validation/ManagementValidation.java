@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
@@ -121,6 +122,10 @@ public class ManagementValidation {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
+			}
+
+			if (!Utilities.isEmpty(device.metadata())) {
+				MetadataValidation.validateMetadataKey(device.metadata());
 			}
 		}
 	}
@@ -371,6 +376,10 @@ public class ManagementValidation {
 					}
 				}
 			}
+
+			if (!Utilities.isEmpty(system.metadata())) {
+				MetadataValidation.validateMetadataKey(system.metadata());
+			}
 		}
 	}
 
@@ -476,7 +485,7 @@ public class ManagementValidation {
 
 		validateRemoveSystems(originalNames, origin);
 
-		return normalizer.normalizeSystemNames(originalNames);
+		return normalizer.normalizeRemoveSystemNames(originalNames);
 	}
 
 	//=================================================================================================
