@@ -89,6 +89,10 @@ public class ServiceDiscoveryValidation {
 			}
 		}
 
+		if (!Utilities.isEmpty(dto.metadata())) {
+			MetadataValidation.validateMetadataKey(dto.metadata());
+		}
+
 		if (Utilities.isEmpty(dto.interfaces())) {
 			throw new InvalidParameterException("Service interface list is empty", origin);
 		}
@@ -106,11 +110,9 @@ public class ServiceDiscoveryValidation {
 			}
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
 				throw new InvalidParameterException("Interface properties are missing", origin);
+			} else {
+				MetadataValidation.validateMetadataKey(interfaceDTO.properties());
 			}
-		}
-		
-		if (!Utilities.isEmpty(dto.metadata())) {
-			MetadataValidation.validateMetadataKey(dto.metadata());
 		}
 	}
 
