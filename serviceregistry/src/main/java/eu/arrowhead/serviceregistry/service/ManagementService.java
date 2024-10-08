@@ -288,6 +288,9 @@ public class ManagementService {
 	
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceListResponseDTO createServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		logger.debug("createServiceInstances started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
+		final List<ServiceInstanceRequestDTO> normalized = validator.validateAndNormalizeCreateServiceInstances(dto, origin);
 	}
 }
