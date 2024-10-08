@@ -25,6 +25,7 @@ import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbServic
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
+import eu.arrowhead.common.service.validation.MetadataValidation;
 
 @Service
 public class ServiceDiscoveryValidation {
@@ -106,6 +107,10 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
 				throw new InvalidParameterException("Interface properties are missing", origin);
 			}
+		}
+		
+		if (!Utilities.isEmpty(dto.metadata())) {
+			MetadataValidation.validateMetadataKey(dto.metadata());
 		}
 	}
 
