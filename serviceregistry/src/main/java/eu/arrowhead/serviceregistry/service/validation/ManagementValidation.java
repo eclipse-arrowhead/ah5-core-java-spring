@@ -476,7 +476,7 @@ public class ManagementValidation {
 
 		validateRemoveSystems(originalNames, origin);
 
-		return normalizer.normalizeSystemNames(originalNames);
+		return normalizer.normalizeRemoveSystemNames(originalNames);
 	}
 
 	//=================================================================================================

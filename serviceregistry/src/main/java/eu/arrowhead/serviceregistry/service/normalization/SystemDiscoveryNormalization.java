@@ -43,7 +43,7 @@ public class SystemDiscoveryNormalization {
 		Assert.notNull(dto, "SystemRequestDTO is null");
 
 		return new SystemRequestDTO(
-				normalizeSystemName(dto.name()),
+				nameNormalizer.normalize(dto.name()),
 				dto.metadata(),
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
@@ -62,7 +62,7 @@ public class SystemDiscoveryNormalization {
 		}
 
 		return new SystemLookupRequestDTO(
-				Utilities.isEmpty(dto.systemNames()) ? null : dto.systemNames().stream().map(n -> normalizeSystemName(n)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.systemNames()) ? null : dto.systemNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList(),
@@ -71,8 +71,8 @@ public class SystemDiscoveryNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String normalizeSystemName(final String name) {
-		logger.debug("normalizeSystemName started");
+	public String normalizeRevokeSystemName(final String name) {
+		logger.debug("normalizeRevokeSystemName started");
 		Assert.notNull(name, "System name is null");
 
 		return nameNormalizer.normalize(name);

@@ -94,7 +94,7 @@ public class ManagementNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<String> normalizeSystemNames(final List<String> originalNames) {
+	public List<String> normalizeRemoveSystemNames(final List<String> originalNames) {
 		return originalNames.stream()
 				.filter(n -> !Utilities.isEmpty(n))
 				.map(n -> nameNormalizer.normalize(n))
