@@ -112,7 +112,7 @@ public class ManagementNormalization {
 					device.metadata(),
 					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
 							: device.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
+									.map(a -> new AddressDTO(a.type().trim().toUpperCase(), addressNormalizer.normalize(a.address())))
 									.collect(Collectors.toList())));
 		}
 		return normalized;
@@ -127,7 +127,7 @@ public class ManagementNormalization {
 				dto.pagination(),
 				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> n.trim()).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim(),
+				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList());
 	}
 

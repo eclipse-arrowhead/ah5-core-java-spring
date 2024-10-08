@@ -19,6 +19,9 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_SERVICE_DISCOVERY_PATH = HTTP_API_BASE_PATH + "/service-discovery";
 	public static final String HTTP_API_SYSTEM_DISCOVERY_PATH = HTTP_API_BASE_PATH + "/system-discovery";
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
+	public static final String HTTP_ATTR_RESTRICTED_SERVICE_LOOKUP = "restricted.service.lookup";
+
+	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
 
 	// Operation related
 
@@ -32,6 +35,7 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_QUERY_PATH = HTTP_API_OP_SERVICE_DEFINITION_PATH + "/query";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
+	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{instanceId}";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 
 	// Configuration related
@@ -40,8 +44,13 @@ public final class ServiceRegistryConstants {
 	public static final String $ALLOW_SELF_ADDRESSING_WD = "${" + ALLOW_SELF_ADDRESSING + ":true}";
 	public static final String ALLOW_NON_ROUTABLE_ADDRESSING = "allow.non.routable.addressing";
 	public static final String $ALLOW_NON_ROUTABLE_ADDRESSING_WD = "${" + ALLOW_NON_ROUTABLE_ADDRESSING + ":true}";
-	public static final String SERVICE_DISCOVERY_VERBOSE = "service.discovery.verbose";
-	public static final String $SERVICE_DISCOVERY_VERBOSE_WD = "${" + SERVICE_DISCOVERY_VERBOSE + ":false}";
+	public static final String DISCOVERY_VERBOSE = "discovery.verbose";
+	public static final String $DISCOVERY_VERBOSE_WD = "${" + DISCOVERY_VERBOSE + ":false}";
+	public static final String SERVICE_DISCOVERY_POLICY = "service.discovery.policy";
+	public static final String $SERVICE_DISCOVERY_POLICY_WD = "${" + SERVICE_DISCOVERY_POLICY + ":restricted}";
+	public static final String SERVICE_DISCOVERY_DIRECT_ACCESS = "service.discovery.direct.access";
+	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
+	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":restricted}";
 
 	// Forbidden keys (for config service)
 
@@ -71,9 +80,13 @@ public final class ServiceRegistryConstants {
 	public static final int DEVICE_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
+	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 	public static final int ADDRESS_TYPE_LENGTH = 30;
 	public static final int ADDRESS_ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
-	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+
+	// Others
+
+	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "\\|";
 
 	//=================================================================================================
 	// assistant methods

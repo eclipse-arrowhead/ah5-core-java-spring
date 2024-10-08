@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.jpa.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,5 +19,5 @@ public interface DeviceSystemConnectorRepository extends RefreshableRepository<D
 	public Optional<DeviceSystemConnector> findBySystem(final System system);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<DeviceSystemConnector> findBySystemIn(final List<System> system);
+	public List<DeviceSystemConnector> findBySystemIn(final Collection<System> system);
 }

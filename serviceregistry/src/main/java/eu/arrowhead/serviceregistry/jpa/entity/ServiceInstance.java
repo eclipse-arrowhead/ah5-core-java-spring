@@ -1,14 +1,12 @@
 package eu.arrowhead.serviceregistry.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
@@ -18,9 +16,8 @@ public class ServiceInstance extends ArrowheadEntity {
 	//=================================================================================================
 	// members
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private long id;
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "serviceInstanceId", "createdAt");
+	public static final String DEFAULT_SORT_FIELD = "serviceInstanceId";
 
 	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
 	private String serviceInstanceId;
@@ -68,16 +65,6 @@ public class ServiceInstance extends ArrowheadEntity {
 
 	//=================================================================================================
 	// boilerplate
-
-	//-------------------------------------------------------------------------------------------------
-	public long getId() {
-		return id;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setId(final long id) {
-		this.id = id;
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String getServiceInstanceId() {
