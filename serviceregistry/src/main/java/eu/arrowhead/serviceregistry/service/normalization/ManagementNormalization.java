@@ -23,6 +23,7 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
+import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
@@ -36,6 +37,9 @@ public class ManagementNormalization {
 
 	@Autowired
 	private VersionNormalizer versionNormalizer;
+
+	@Autowired
+	private InterfaceNormalizer interfaceNormalizer;
 
 	@Autowired
 	private NameNormalizer nameNormalizer;
@@ -169,8 +173,10 @@ public class ManagementNormalization {
 		logger.debug("normalizeServiceInterfaceTemplateListRequestDTO started");
 		Assert.notNull(dto, "normalizeServiceInterfaceTemplateListRequestDTO list is null");
 
-		//TODO
-		return null;
+		return new ServiceInterfaceTemplateListRequestDTO(
+				dto.interfaceTemplates().stream()
+						.map(t -> interfaceNormalizer.normalizeTemplateDTO(t))
+						.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------

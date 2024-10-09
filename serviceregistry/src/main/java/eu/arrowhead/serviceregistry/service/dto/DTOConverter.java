@@ -2,6 +2,7 @@ package eu.arrowhead.serviceregistry.service.dto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -247,11 +248,11 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInterfaceTemplateListResponseDTO convertInterfaceTemplateEntriesToDTO(final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries) {
+	public ServiceInterfaceTemplateListResponseDTO convertInterfaceTemplateEntriesToDTO(final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries) {
 		logger.debug("convertInterfaceTemplateEntriesToDTO started...");
 
 		final List<ServiceInterfaceTemplateResponseDTO> dtos = new ArrayList<>(entries.size());
-		for (final Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entry : entries.entrySet()) {
+		for (final Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entry : entries) {
 			final ServiceInterfaceTemplate template = entry.getKey();
 			dtos.add(new ServiceInterfaceTemplateResponseDTO(
 					template.getName(),

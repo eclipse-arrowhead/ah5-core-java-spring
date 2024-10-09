@@ -22,7 +22,7 @@ public class NameValidator {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateName(final String name) {
+	public void validateName(final String name) throws InvalidParameterException {
 		logger.debug("Validate name started: {}", name);
 
 		if (!NAME_REGEX_PATTERN.matcher(name).matches()) {

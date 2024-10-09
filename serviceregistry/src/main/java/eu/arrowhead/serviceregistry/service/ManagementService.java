@@ -300,7 +300,7 @@ public class ManagementService {
 
 		try {
 			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = interfaceTemplateDbService.createBulk(normalized.interfaceTemplates());
-			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries);
+			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.entrySet());
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

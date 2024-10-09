@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +21,7 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
@@ -85,6 +87,8 @@ public class ServiceInterfaceTemplateDbService {
 		Assert.isTrue(!Utilities.isEmpty(candidates), "interface template candidate list is empty");
 
 		try {
+			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> results = new HashMap<>(candidates.size());
+
 			final Map<String, ServiceInterfaceTemplate> templateEntries = new HashMap<>(candidates.size());
 			for (final ServiceInterfaceTemplateRequestDTO candidate : candidates) {
 				if (templateEntries.containsKey(candidate.name())) {
@@ -97,24 +101,26 @@ public class ServiceInterfaceTemplateDbService {
 				templateEntries.put(candidate.name(), new ServiceInterfaceTemplate(candidate.name(), candidate.protocol()));
 			}
 
-			templateRepo.saveAllAndFlush(templateEntries.values()).forEach(template -> templateEntries.put(template.getName(), template));
+			templateRepo.saveAllAndFlush(templateEntries.values()).forEach(template -> {
+				templateEntries.put(template.getName(), template);
+				results.put(template, new ArrayList<>());
+			});
 
-			List<ServiceInterfaceTemplateProperty> properties = new ArrayList<>();
+			final List<ServiceInterfaceTemplateProperty> properties = new ArrayList<>();
 			for (final ServiceInterfaceTemplateRequestDTO candidate : candidates) {
 				final ServiceInterfaceTemplate template = templateEntries.get(candidate.name());
 				for (final ServiceInterfaceTemplatePropertyDTO property : candidate.propertyRequirements()) {
-					properties.add(new ServiceInterfaceTemplateProperty(template, property.name(), property.mandatory(), property.validator()));
+					String validator = Utilities.isEmpty(property.validator()) ? null : property.validator();
+					if (!Utilities.isEmpty(property.validatorParams())) {
+						validator = validator + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER
+								+ property.validatorParams().stream().map(p -> p).collect(Collectors.joining(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER));
+					}
+
+					properties.add(new ServiceInterfaceTemplateProperty(template, property.name(), property.mandatory(), validator));
 				}
 			}
 
-			properties = templatePropsRepo.saveAllAndFlush(properties);
-
-			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> results = new HashMap<>(templateEntries.size());
-			for (final ServiceInterfaceTemplateProperty property : properties) {
-				results.putIfAbsent(property.getServiceInterfaceTemplate(), new ArrayList<>());
-				results.get(property.getServiceInterfaceTemplate()).add(property);
-			}
-
+			templatePropsRepo.saveAllAndFlush(properties).forEach(property -> results.get(property.getServiceInterfaceTemplate()).add(property));
 			return results;
 
 		} catch (final InvalidParameterException ex) {
