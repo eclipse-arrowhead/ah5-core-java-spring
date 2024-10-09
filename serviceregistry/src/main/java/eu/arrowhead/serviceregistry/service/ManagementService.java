@@ -299,9 +299,8 @@ public class ManagementService {
 		final ServiceInterfaceTemplateListRequestDTO normalized = validator.validateAndNormalizeCreateInterfaceTemplates(dto, origin);
 
 		try {
-			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = interfaceTemplateDbService.createBulk(dto.interfaceTemplates());
-			// TODO dtoConvert
-			return null;
+			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = interfaceTemplateDbService.createBulk(normalized.interfaceTemplates());
+			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
