@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.NameValidator;
 
 @SpringBootTest
 public class NameValidatorTest {

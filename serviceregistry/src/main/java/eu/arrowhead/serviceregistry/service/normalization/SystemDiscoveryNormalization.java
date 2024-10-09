@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 

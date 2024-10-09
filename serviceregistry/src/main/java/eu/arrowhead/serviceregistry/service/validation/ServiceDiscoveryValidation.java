@@ -17,6 +17,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.intf.properties.IPropertyValidator;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
@@ -25,7 +26,6 @@ import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
-import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 
@@ -224,7 +224,7 @@ public class ServiceDiscoveryValidation {
 									final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
 									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
 									if (validator != null) {
-										final Object normalizedProp = validator.validateNormalize(
+										final Object normalizedProp = validator.validateAndNormalize(
 												instanceProp,
 												validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
 										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
