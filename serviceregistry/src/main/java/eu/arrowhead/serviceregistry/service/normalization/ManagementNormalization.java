@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -15,13 +14,12 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
-import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
@@ -77,8 +75,7 @@ public class ManagementNormalization {
 		logger.debug("normalizeSystemQueryRequestDTO started");
 
 		if (dto == null) {
-			return new SystemQueryRequestDTO(
-					new PageDTO(0, Integer.MAX_VALUE, Direction.DESC.toString(), System.DEFAULT_SORT_FIELD), null, null, null, null, null, null);
+			return new SystemQueryRequestDTO(null, null, null, null, null, null, null);
 		}
 
 		return new SystemQueryRequestDTO(
@@ -171,7 +168,7 @@ public class ManagementNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInterfaceTemplateListRequestDTO normalizeServiceInterfaceTemplateListRequestDTO(final ServiceInterfaceTemplateListRequestDTO dto) {
 		logger.debug("normalizeServiceInterfaceTemplateListRequestDTO started");
-		Assert.notNull(dto, "normalizeServiceInterfaceTemplateListRequestDTO list is null");
+		Assert.notNull(dto, "normalizeServiceInterfaceTemplateListRequestDTO is null");
 
 		return new ServiceInterfaceTemplateListRequestDTO(
 				dto.interfaceTemplates().stream()
@@ -180,7 +177,24 @@ public class ManagementNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateQueryRequestDTO normalizeServiceInterfaceTemplateQueryRequestDTO(final ServiceInterfaceTemplateQueryRequestDTO dto) {
+		logger.debug("ServiceInterfaceTemplateQueryRequestDTO started");
+
+		if (dto == null) {
+			return new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+		}
+
+		return new ServiceInterfaceTemplateQueryRequestDTO(
+				dto.pagination(), //no need to normalize, because it will happen in the getPageRequest method
+				Utilities.isEmpty(dto.templateNames()) ? new ArrayList<>() : dto.templateNames().stream().map(n -> nameNormalizer.normalize(n)).toList(),
+				Utilities.isEmpty(dto.protocols()) ? new ArrayList<>() : dto.protocols().stream().map(p -> p.trim().toLowerCase()).toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveInterfaceTemplates(final List<String> names) {
+		logger.debug("ServiceInterfaceTemplateQueryRequestDTO started");
+		Assert.notNull(names, "Interface template name list is null");
+
 		return names
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))

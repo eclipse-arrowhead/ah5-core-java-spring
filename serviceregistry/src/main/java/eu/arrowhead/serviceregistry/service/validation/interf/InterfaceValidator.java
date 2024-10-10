@@ -65,7 +65,7 @@ public class InterfaceValidator {
 							}
 
 							if (!Utilities.isEmpty(templateProp.getValidator())) {
-								final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
+								final String[] validatorWithArgs = templateProp.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
 								final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
 								if (validator != null) {
 									final Object normalizedProp = validator.validateNormalize(

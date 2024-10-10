@@ -23,6 +23,7 @@ import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
@@ -31,6 +32,7 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
@@ -564,6 +566,24 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void validateQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryInterfaceTemplates started");
+
+		if (dto != null) {
+
+			pageValidator.validatePageParameter(dto.pagination(), ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, origin);
+
+			if (!Utilities.isEmpty(dto.templateNames()) && Utilities.containsNullOrEmpty(dto.templateNames())) {
+				throw new InvalidParameterException("Interface template name list contains empty element", origin);
+			}
+
+			if (!Utilities.isEmpty(dto.protocols()) && Utilities.containsNullOrEmpty(dto.protocols())) {
+				throw new InvalidParameterException("Interface template protocol list contains empty element", origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public void validateRemoveInterfaceTemplates(final List<String> originalNames, final  String origin) {
 		logger.debug("validateRemoveInterfaceTemplate started");
 
@@ -583,7 +603,6 @@ public class ManagementValidation {
 		logger.debug("validateAndNormalizeCreateInterfaceTemplates started");
 
 		validateCreateInterfaceTemplates(dto, origin);
-
 		final ServiceInterfaceTemplateListRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto);
 
 		try {
@@ -593,6 +612,14 @@ public class ManagementValidation {
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateQueryRequestDTO validateAndNormalizeQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryInterfaceTemplates started");
+
+		validateQueryInterfaceTemplates(dto, origin);
+		return normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
 	}
 
 	//-------------------------------------------------------------------------------------------------

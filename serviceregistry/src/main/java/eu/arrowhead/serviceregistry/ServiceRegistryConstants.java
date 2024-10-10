@@ -38,6 +38,7 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{instanceId}";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_INTERFACE_TEMPLATE_PATH = "/interface-template";
+	public static final String HTTP_API_OP_INTERFACE_TEMPLATE_QUERY_PATH = HTTP_API_OP_INTERFACE_TEMPLATE_PATH + "/query";
 
 	// Configuration related
 
@@ -87,7 +88,7 @@ public final class ServiceRegistryConstants {
 
 	// Others
 
-	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "\\|";
+	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "|";
 
 	//=================================================================================================
 	// assistant methods

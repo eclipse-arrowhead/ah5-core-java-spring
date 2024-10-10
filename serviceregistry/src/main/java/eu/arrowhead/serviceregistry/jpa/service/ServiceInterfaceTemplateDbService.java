@@ -3,14 +3,19 @@ package eu.arrowhead.serviceregistry.jpa.service;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -38,6 +43,8 @@ public class ServiceInterfaceTemplateDbService {
 
 	@Autowired
 	private ServiceInterfaceTemplatePropertyRepository templatePropsRepo;
+
+	private static final Object LOCK = new Object();
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -72,6 +79,64 @@ public class ServiceInterfaceTemplateDbService {
 			}
 
 			return List.of();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> getPageByFilters(final PageRequest pagination, final List<String> templateNames, final List<String> protocols) {
+		logger.debug("getPageByFilters started");
+		Assert.notNull(pagination, "page is null");
+
+		try {
+			synchronized (LOCK) {
+				final boolean hasFilters = !Utilities.isEmpty(templateNames) || !Utilities.isEmpty(protocols);
+
+				List<ServiceInterfaceTemplate> templates;
+				if (!hasFilters) {
+					templates = templateRepo.findAll();
+				} else if (!Utilities.isEmpty(templateNames)) {
+					templates = templateRepo.findAllByNameIn(templateNames);
+				} else {
+					templates = templateRepo.findAllByProtocolIn(protocols);
+				}
+
+				final Map<Long, ServiceInterfaceTemplate> matchings = new HashMap<>();
+				for (final ServiceInterfaceTemplate template : templates) {
+					if (!hasFilters) {
+						matchings.put(template.getId(), template);
+						continue;
+					}
+
+					if (!Utilities.isEmpty(templateNames) && !templateNames.contains(template.getName())) {
+						continue;
+					}
+
+					if (!Utilities.isEmpty(protocols) && !protocols.contains(template.getProtocol())) {
+						continue;
+					}
+
+					matchings.put(template.getId(), template);
+				}
+
+				final List<ServiceInterfaceTemplateProperty> properties = templatePropsRepo.findAllByServiceInterfaceTemplateIn(matchings.values());
+				final Page<ServiceInterfaceTemplate> templatePage = templateRepo.findAllByIdIn(matchings.keySet(), pagination);
+
+				final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> results = new LinkedHashMap<>(templatePage.getSize());
+				for (final ServiceInterfaceTemplate template : templatePage) {
+					results.putIfAbsent(template, new ArrayList<>());
+					results.get(template).addAll(properties.stream().filter(prop -> prop.getServiceInterfaceTemplate().getId() == template.getId()).toList());
+				}
+
+				return new PageImpl<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>>(
+						new ArrayList<>(results.entrySet()),
+						pagination,
+						templatePage.getTotalElements());
+			}
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
