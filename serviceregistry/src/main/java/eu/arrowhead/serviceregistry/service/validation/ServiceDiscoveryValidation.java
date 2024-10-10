@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
+import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
@@ -20,7 +21,6 @@ import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
-import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
@@ -195,6 +195,7 @@ public class ServiceDiscoveryValidation {
 		try {
 			versionValidator.validateNormalizedVersion(normalized.version());
 			interfaceValidator.validateNormalizedInterfaceInstances(normalized.interfaces());
+
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

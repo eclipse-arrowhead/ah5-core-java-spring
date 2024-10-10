@@ -6,9 +6,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.SystemInfo;
+import eu.arrowhead.common.http.filter.authentication.AuthenticationPolicy;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.model.ServiceModel;
+import eu.arrowhead.common.model.SystemModel;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
 
@@ -30,6 +33,8 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_INTERFACE_POLICY_WD)
 	private ServiceDiscoveryInterfacePolicy serviceDiscoveryInterfacePolicy;
 
+	private SystemModel systemModel;
+
 	//=================================================================================================
 	// methods
 
@@ -43,10 +48,27 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Override
 	public List<ServiceModel> getServices() {
 		// TODO Auto-generated method stub
-		return null;
+		return List.of();
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@Override
+	public SystemModel getSystemModel() {
+		if (systemModel == null) {
+			SystemModel.Builder builder = new SystemModel.Builder()
+					.address(getAddressModel())
+					.version(Constants.AH_FRAMEWORK_VERSION);
+
+			if (AuthenticationPolicy.CERTIFICATE == this.getAuthenticationPolicy()) {
+				builder = builder.metadata(Constants.METADATA_KEY_X509_PUBLIC_KEY, getPublicKey());
+			}
+
+			systemModel = builder.build();
+		}
+
+		return systemModel;
+	}
+
 	public boolean isDiscoveryVerbose() {
 		return this.discoveryVerbose;
 	}

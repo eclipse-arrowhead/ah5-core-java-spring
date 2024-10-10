@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.validation.address.AddressNormalizer;
+import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -20,9 +22,7 @@ import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
-import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
 @Service

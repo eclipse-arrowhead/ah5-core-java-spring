@@ -15,6 +15,8 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
+import eu.arrowhead.common.service.validation.address.AddressValidator;
+import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
@@ -35,9 +37,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressValidator;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
-import eu.arrowhead.serviceregistry.service.validation.name.NameValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service

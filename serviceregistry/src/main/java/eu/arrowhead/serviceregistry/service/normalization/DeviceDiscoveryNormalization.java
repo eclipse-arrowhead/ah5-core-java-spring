@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.validation.address.AddressNormalizer;
+import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.serviceregistry.service.validation.address.AddressNormalizer;
-import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 
 @Service
 public class DeviceDiscoveryNormalization {

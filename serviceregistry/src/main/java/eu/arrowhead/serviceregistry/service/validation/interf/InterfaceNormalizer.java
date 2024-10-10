@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
-import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
 
 @Component
 public class InterfaceNormalizer {
