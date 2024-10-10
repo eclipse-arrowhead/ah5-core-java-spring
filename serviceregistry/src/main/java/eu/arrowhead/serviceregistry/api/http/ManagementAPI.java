@@ -388,11 +388,7 @@ public class ManagementAPI {
 
 	// INTERFACE TEMPLATES
 
-	// query-interface-templates POST /interface-templates
-	// * paging: page, size, direction, sort
-	// * filter to: name list, protocol list
-
-	///-------------------------------------------------------------------------------------------------
+	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created interface template entries")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
