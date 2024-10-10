@@ -23,20 +23,29 @@ public final class ServiceRegistryConstants {
 
 	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
 
+	public static final String VERSION_DEVICE_DISCOVERY = "1.0.0";
+	public static final String VERSION_SYSTEM_DISCOVERY = "1.0.0";
+	public static final String VERSION_SERVICE_DISCOVERY = "1.0.0";
+	public static final String VERSION_SERVICE_REGISTRY_MANAGEMENT = "1.0.0";
+
 	// Operation related
 
-	public static final String HTTP_API_OP_DEVICE_PATH = "/device";
+	public static final String HTTP_API_OP_DEVICE_PATH = "/devices";
 	public static final String HTTP_API_OP_DEVICE_QUERY_PATH = HTTP_API_OP_DEVICE_PATH + "/query";
 	public static final String HTTP_API_OP_REGISTER_PATH = "/register";
 	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
 	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{name}";
-	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definition";
+	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definitions";
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_QUERY_PATH = HTTP_API_OP_SERVICE_DEFINITION_PATH + "/query";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
 	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{instanceId}";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
+	public static final String HTTP_API_OP_SERVICE_INSTANCE_PATH = "/service-instances";
+	public static final String HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH = HTTP_API_OP_SERVICE_INSTANCE_PATH + "/query";
+	public static final String HTTP_API_OP_INTERFACE_TEMPLATE_PATH = "/interface-templates";
+	public static final String HTTP_API_OP_INTERFACE_TEMPLATE_QUERY_PATH = HTTP_API_OP_INTERFACE_TEMPLATE_PATH + "/query";
 
 	// Configuration related
 
