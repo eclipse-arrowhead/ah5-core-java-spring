@@ -168,7 +168,7 @@ public class ManagementNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInterfaceTemplateListRequestDTO normalizeServiceInterfaceTemplateListRequestDTO(final ServiceInterfaceTemplateListRequestDTO dto) {
 		logger.debug("normalizeServiceInterfaceTemplateListRequestDTO started");
-		Assert.notNull(dto, "normalizeServiceInterfaceTemplateListRequestDTO is null");
+		Assert.notNull(dto, "ServiceInterfaceTemplateListRequestDTO is null");
 
 		return new ServiceInterfaceTemplateListRequestDTO(
 				dto.interfaceTemplates().stream()
@@ -178,7 +178,7 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInterfaceTemplateQueryRequestDTO normalizeServiceInterfaceTemplateQueryRequestDTO(final ServiceInterfaceTemplateQueryRequestDTO dto) {
-		logger.debug("ServiceInterfaceTemplateQueryRequestDTO started");
+		logger.debug("normalizeServiceInterfaceTemplateQueryRequestDTO started");
 
 		if (dto == null) {
 			return new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
@@ -192,7 +192,7 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveInterfaceTemplates(final List<String> names) {
-		logger.debug("ServiceInterfaceTemplateQueryRequestDTO started");
+		logger.debug("normalizeRemoveInterfaceTemplates started");
 		Assert.notNull(names, "Interface template name list is null");
 
 		return names

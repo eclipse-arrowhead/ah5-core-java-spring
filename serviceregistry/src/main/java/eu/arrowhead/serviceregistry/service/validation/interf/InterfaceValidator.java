@@ -1,7 +1,10 @@
 package eu.arrowhead.serviceregistry.service.validation.interf;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -43,19 +46,24 @@ public class InterfaceValidator {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateNormalizedInterfaceInstances(final List<ServiceInstanceInterfaceRequestDTO> interfaces) throws InvalidParameterException {
+	public List<ServiceInstanceInterfaceRequestDTO> validateNormalizedInterfaceInstancesWithPropsNormalization(final List<ServiceInstanceInterfaceRequestDTO> interfaces) throws InvalidParameterException {
 		logger.debug("validateNormalizedInterfaceInstances started...");
 		Assert.isTrue(!Utilities.isEmpty(interfaces), "Interface instance list is empty");
 
+		final List<ServiceInstanceInterfaceRequestDTO> normalized = new ArrayList<>(interfaces.size());
 		interfaces.forEach(interfaceInstance -> {
 			nameValidator.validateName(interfaceInstance.templateName());
 
 			final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
-			if (templateOpt.isPresent()) {
+			if (templateOpt.isEmpty()) {
+				normalized.add(interfaceInstance);
+
+			} else {
 				if (!Utilities.isEmpty(interfaceInstance.protocol()) && !interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
 					throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
 				}
 
+				final Map<String, Object> normalizedProperties = new HashMap<>(interfaceInstance.properties());
 				interfaceTemplateDbService.getPropertiesByTemplateName(interfaceInstance.templateName())
 						.forEach(templateProp -> {
 							final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
@@ -71,12 +79,14 @@ public class InterfaceValidator {
 									final Object normalizedProp = validator.validateAndNormalize(
 											instanceProp,
 											validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
-									interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
+									normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
 								}
 							}
 						});
+				normalized.add(new ServiceInstanceInterfaceRequestDTO(interfaceInstance.templateName(), interfaceInstance.protocol(), interfaceInstance.policy(), normalizedProperties));
 			}
 		});
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------

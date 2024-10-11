@@ -567,7 +567,7 @@ public class ManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeQueryInterfaceTemplates started");
+		logger.debug("validateQueryInterfaceTemplates started");
 
 		if (dto != null) {
 

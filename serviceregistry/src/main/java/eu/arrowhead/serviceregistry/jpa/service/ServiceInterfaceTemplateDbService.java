@@ -178,7 +178,7 @@ public class ServiceInterfaceTemplateDbService {
 					String validator = Utilities.isEmpty(property.validator()) ? null : property.validator();
 					if (!Utilities.isEmpty(property.validatorParams())) {
 						validator = validator + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER
-								+ property.validatorParams().stream().map(p -> p).collect(Collectors.joining(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER));
+								+ property.validatorParams().stream().collect(Collectors.joining(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER));
 					}
 
 					properties.add(new ServiceInterfaceTemplateProperty(template, property.name(), property.mandatory(), validator));

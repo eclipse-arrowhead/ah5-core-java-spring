@@ -258,16 +258,7 @@ public class DTOConverter {
 					template.getName(),
 					template.getProtocol(),
 					entry.getValue().stream()
-									.map(prop -> {
-										String validator = null;
-										List<String> validatorParams = null;
-										if (!Utilities.isEmpty(prop.getValidator())) {
-											final String[] split = prop.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
-											validator = split[0];
-											validatorParams  = split.length <= 1 ? new ArrayList<>() :  Arrays.asList(Arrays.copyOfRange(split, 1, split.length));
-										}
-										return new ServiceInterfaceTemplatePropertyDTO(prop.getPropertyName(), prop.isMandatory(), validator, validatorParams);
-									})
+									.map(prop -> convertServiceInterfaceTemplatePropertytoDTO(prop))
 									.toList(),
 					Utilities.convertZonedDateTimeToUTCString(template.getCreatedAt()),
 					Utilities.convertZonedDateTimeToUTCString(template.getUpdatedAt()))
@@ -275,6 +266,20 @@ public class DTOConverter {
 		}
 
 		return new ServiceInterfaceTemplateListResponseDTO(dtos, count);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplatePropertyDTO convertServiceInterfaceTemplatePropertytoDTO(final ServiceInterfaceTemplateProperty dto) {
+		logger.debug("convertServiceInterfaceTemplatePropertytoDTO started...");
+
+		String validator = null;
+		List<String> validatorParams = null;
+		if (!Utilities.isEmpty(dto.getValidator())) {
+			final String[] split = dto.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
+			validator = split[0];
+			validatorParams  = split.length <= 1 ? new ArrayList<>() :  Arrays.asList(Arrays.copyOfRange(split, 1, split.length));
+		}
+		return new ServiceInterfaceTemplatePropertyDTO(dto.getPropertyName(), dto.isMandatory(), validator, validatorParams);
 	}
 
 	//-------------------------------------------------------------------------------------------------

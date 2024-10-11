@@ -2,6 +2,7 @@ package eu.arrowhead.serviceregistry.service.validation;
 
 import java.time.DateTimeException;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -190,18 +191,23 @@ public class ServiceDiscoveryValidation {
 
 		validateRegisterService(dto, origin);
 
-		final ServiceInstanceRequestDTO normalized = normalizer.normalizeServiceInstanceRequestDTO(dto);
+		final ServiceInstanceRequestDTO normalizedInstance = normalizer.normalizeServiceInstanceRequestDTO(dto);
 
 		try {
-			versionValidator.validateNormalizedVersion(normalized.version());
-			interfaceValidator.validateNormalizedInterfaceInstances(normalized.interfaces());
+			versionValidator.validateNormalizedVersion(normalizedInstance.version());
+			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
 
+			return new ServiceInstanceRequestDTO(
+					normalizedInstance.systemName(),
+					normalizedInstance.serviceDefinitionName(),
+					normalizedInstance.version(),
+					normalizedInstance.expiresAt(),
+					normalizedInstance.metadata(),
+					normalizedInterfaces);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
-
-		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------

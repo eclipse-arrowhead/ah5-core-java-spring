@@ -427,7 +427,7 @@ public class ManagementAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInterfaceTemplateListResponseDTO queryInterfaceTemplates(@RequestBody(required = false) final ServiceInterfaceTemplateQueryRequestDTO dto) {
-		logger.debug("queryInterfaceTemplates");
+		logger.debug("queryInterfaceTemplates started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_QUERY_PATH;
 		return mgmtService.queryInterfaceTemplates(dto, origin);
