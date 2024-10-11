@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,9 @@ import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
@@ -38,15 +42,17 @@ import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInstanceDbService;
+import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
-
 
 @Service
 public class ManagementService {
@@ -68,6 +74,9 @@ public class ManagementService {
 
 	@Autowired
 	private SystemDbService systemDbService;
+
+	@Autowired
+	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -229,7 +238,6 @@ public class ManagementService {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO querySystems(final SystemQueryRequestDTO dto, final boolean verbose, final String origin) {
-
 		logger.debug("querySystems started, verbose = {}", verbose);
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -260,7 +268,6 @@ public class ManagementService {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO updateSystems(final SystemListRequestDTO dto, final String origin) {
-
 		logger.debug("updateSystems started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -308,9 +315,55 @@ public class ManagementService {
 
 			return dtoConverter.convertServiceInstanceListToDTO(instanceEntry, systemTriplet);
 
+	// INTERFACE TEMPLATES
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListResponseDTO createInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("createInterfaceTemplates started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final ServiceInterfaceTemplateListRequestDTO normalized = validator.validateAndNormalizeCreateInterfaceTemplates(dto, origin);
+
+		try {
+			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = interfaceTemplateDbService.createBulk(normalized.interfaceTemplates());
+			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.entrySet(), entries.size());
+
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListResponseDTO queryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+		logger.debug("queryInterfaceTemplates started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final ServiceInterfaceTemplateQueryRequestDTO normalized = validator.validateAndNormalizeQueryInterfaceTemplates(dto, origin);
+
+		try {
+			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, ServiceInterfaceTemplate.DEFAULT_SORT_FIELD, origin);
+			final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries =
+					interfaceTemplateDbService.getPageByFilters(pageRequest, normalized.templateNames(), normalized.protocols());
+
+			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.toList(), entries.getTotalElements());
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeInterfaceTemplates(final List<String> names, final String origin) {
+		logger.debug("removeInterfaceTemplates started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalizedNames = validator.validateAndNormalizeRemoveInterfaceTemplates(names, origin);
+
+		try {
+			interfaceTemplateDbService.deleteByTemplateNameList(normalizedNames);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

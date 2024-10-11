@@ -1,6 +1,8 @@
 package eu.arrowhead.serviceregistry.service.dto;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -25,13 +27,19 @@ import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 
@@ -237,6 +245,41 @@ public class DTOConverter {
 		}
 
 		return new ServiceInstanceListResponseDTO(entries, entries.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListResponseDTO convertInterfaceTemplateEntriesToDTO(final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries, final long count) {
+		logger.debug("convertInterfaceTemplateEntriesToDTO started...");
+
+		final List<ServiceInterfaceTemplateResponseDTO> dtos = new ArrayList<>(entries.size());
+		for (final Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entry : entries) {
+			final ServiceInterfaceTemplate template = entry.getKey();
+			dtos.add(new ServiceInterfaceTemplateResponseDTO(
+					template.getName(),
+					template.getProtocol(),
+					entry.getValue().stream()
+									.map(prop -> convertServiceInterfaceTemplatePropertytoDTO(prop))
+									.toList(),
+					Utilities.convertZonedDateTimeToUTCString(template.getCreatedAt()),
+					Utilities.convertZonedDateTimeToUTCString(template.getUpdatedAt()))
+			);
+		}
+
+		return new ServiceInterfaceTemplateListResponseDTO(dtos, count);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplatePropertyDTO convertServiceInterfaceTemplatePropertytoDTO(final ServiceInterfaceTemplateProperty dto) {
+		logger.debug("convertServiceInterfaceTemplatePropertytoDTO started...");
+
+		String validator = null;
+		List<String> validatorParams = null;
+		if (!Utilities.isEmpty(dto.getValidator())) {
+			final String[] split = dto.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
+			validator = split[0];
+			validatorParams  = split.length <= 1 ? new ArrayList<>() :  Arrays.asList(Arrays.copyOfRange(split, 1, split.length));
+		}
+		return new ServiceInterfaceTemplatePropertyDTO(dto.getPropertyName(), dto.isMandatory(), validator, validatorParams);
 	}
 
 	//-------------------------------------------------------------------------------------------------
