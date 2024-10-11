@@ -98,7 +98,7 @@ public class InterfaceValidator {
 			nameValidator.validateName(template.name());
 
 			template.propertyRequirements().forEach(prop -> {
-				if (Utilities.isEnumValue(prop.validator(), PropertyValidatorType.class)) {
+				if (!Utilities.isEnumValue(prop.validator(), PropertyValidatorType.class)) {
 					throw new InvalidParameterException("Unknown property validator: " + prop.validator());
 				}
 			});
