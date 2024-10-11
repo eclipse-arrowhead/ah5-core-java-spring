@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
-import eu.arrowhead.serviceregistry.service.validation.name.NameNormalizer;
+import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
 @Service
@@ -26,6 +26,9 @@ public class ServiceDiscoveryNormalization {
 
 	@Autowired
 	private VersionNormalizer versionNormalizer;
+
+	@Autowired
+	private InterfaceNormalizer interfaceNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -46,11 +49,7 @@ public class ServiceDiscoveryNormalization {
 				Utilities.isEmpty(dto.interfaces()) ? new ArrayList<>()
 						: dto.interfaces()
 								.stream()
-								.map(i -> new ServiceInstanceInterfaceRequestDTO(
-										nameNormalizer.normalize(i.templateName()),
-										Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
-										i.policy().trim().toUpperCase(),
-										i.properties()))
+								.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
 								.toList());
 	}
 

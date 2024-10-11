@@ -18,21 +18,27 @@ import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AddressDTO;
-import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
-import eu.arrowhead.dto.SystemListRequestDTO;
-import eu.arrowhead.dto.SystemQueryRequestDTO;
-import eu.arrowhead.dto.SystemRequestDTO;
-import eu.arrowhead.dto.enums.AddressType;
-import eu.arrowhead.serviceregistry.jpa.entity.System;
-import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
+import eu.arrowhead.dto.SystemListRequestDTO;
+import eu.arrowhead.dto.SystemQueryRequestDTO;
+import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
+import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ManagementValidation {
@@ -48,6 +54,9 @@ public class ManagementValidation {
 
 	@Autowired
 	private VersionValidator versionValidator;
+
+	@Autowired
+	private InterfaceValidator interfaceValidator;
 
 	@Autowired
 	private NameValidator nameValidator;
@@ -183,7 +192,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		normalized.forEach(n -> nameValidator.validateName(n.name()));
+		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
 
 		return normalized;
 	}
@@ -195,7 +204,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		normalized.forEach(n -> nameValidator.validateName(n.name()));
+		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
 
 		return normalized;
 	}
@@ -294,7 +303,7 @@ public class ManagementValidation {
 		validateCreateServiceDefinitions(dto, origin);
 
 		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
-		normalized.forEach(n -> nameValidator.validateName(n));
+		normalized.forEach(n -> validateNormalizedName(n, origin));
 
 		return normalized;
 	}
@@ -448,7 +457,7 @@ public class ManagementValidation {
 
 		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
-		normalized.forEach(n -> nameValidator.validateName(n.name()));
+		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
 
 		return normalized;
 	}
@@ -488,8 +497,140 @@ public class ManagementValidation {
 		return normalizer.normalizeRemoveSystemNames(originalNames);
 	}
 
+	// INTERFACE VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("validateCreateInterfaceTemplates started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.interfaceTemplates())) {
+			throw new InvalidParameterException("Request payload is empty", origin);
+		}
+
+		final Set<String> templateNames = new HashSet<>();
+		for (final ServiceInterfaceTemplateRequestDTO templateDTO : dto.interfaceTemplates()) {
+			if (templateDTO == null) {
+				throw new InvalidParameterException("Interface template list contains null element", origin);
+			}
+			if (Utilities.isEmpty(templateDTO.name())) {
+				throw new InvalidParameterException("Interface template name is empty", origin);
+			}
+			if (templateNames.contains(templateDTO.name().trim().toLowerCase())) {
+				throw new InvalidParameterException("Duplicate interface template name: " + templateDTO.name(), origin);
+			}
+			templateNames.add(templateDTO.name().trim().toLowerCase());
+			if (Utilities.isEmpty(templateDTO.protocol())) {
+				throw new InvalidParameterException("Interface template protocol is empty", origin);
+			}
+			if (!Utilities.isEmpty(templateDTO.propertyRequirements())) {
+				final Set<String> propertyNames = new HashSet<>();
+				for (final ServiceInterfaceTemplatePropertyDTO propertyDTO : templateDTO.propertyRequirements()) {
+					if (propertyDTO == null) {
+						throw new InvalidParameterException("Interface template contains null property", origin);
+					}
+					if (Utilities.isEmpty(propertyDTO.name())) {
+						throw new InvalidParameterException("Interface template property name is empty", origin);
+					}
+					if (propertyNames.contains(propertyDTO.name().trim().toLowerCase())) {
+						throw new InvalidParameterException("Duplicate interface template property name: " + templateDTO.name() + "." + propertyDTO.name(), origin);
+					}
+					propertyNames.add(propertyDTO.name().trim().toLowerCase());
+					if (!Utilities.isEmpty(propertyDTO.validatorParams())) {
+						if (Utilities.isEmpty(propertyDTO.validator())) {
+							throw new InvalidParameterException("Interface template property validator is empty while validator params are defined", origin);
+						}
+						if (Utilities.containsNullOrEmpty(propertyDTO.validatorParams())) {
+							throw new InvalidParameterException("Interface template property validator parameter list contains empty element", origin);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryInterfaceTemplates started");
+
+		if (dto != null) {
+
+			pageValidator.validatePageParameter(dto.pagination(), ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, origin);
+
+			if (!Utilities.isEmpty(dto.templateNames()) && Utilities.containsNullOrEmpty(dto.templateNames())) {
+				throw new InvalidParameterException("Interface template name list contains empty element", origin);
+			}
+
+			if (!Utilities.isEmpty(dto.protocols()) && Utilities.containsNullOrEmpty(dto.protocols())) {
+				throw new InvalidParameterException("Interface template protocol list contains empty element", origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveInterfaceTemplates(final List<String> originalNames, final  String origin) {
+		logger.debug("validateRemoveInterfaceTemplate started");
+
+		if (Utilities.isEmpty(originalNames)) {
+			throw new InvalidParameterException("Interface template name list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(originalNames)) {
+			throw new InvalidParameterException("Interface templpate name list contains null or empty element", origin);
+		}
+	}
+
+	// INTERFACE VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListRequestDTO validateAndNormalizeCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateInterfaceTemplates started");
+
+		validateCreateInterfaceTemplates(dto, origin);
+		final ServiceInterfaceTemplateListRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto);
+
+		try {
+			interfaceValidator.validateNormalizedInterfaceTemplates(normalized.interfaceTemplates());
+			return normalized;
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateQueryRequestDTO validateAndNormalizeQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryInterfaceTemplates started");
+
+		validateQueryInterfaceTemplates(dto, origin);
+		return normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
+		logger.debug("validateAndNormalizeRemoveInterfaceTemplates started");
+
+		validateRemoveInterfaceTemplates(originalNames, origin);
+
+		return normalizer.normalizeRemoveInterfaceTemplates(originalNames);
+	}
+
 	//=================================================================================================
 	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateNormalizedName(final String name, final String origin) {
+		logger.debug("validateNormalizedName started");
+
+		try {
+			nameValidator.validateName(name);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void validateNormalizedVersion(final String version, final String origin) {

@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.jpa.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
@@ -16,4 +17,7 @@ public interface ServiceInterfaceTemplatePropertyRepository extends RefreshableR
 
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInterfaceTemplateProperty> findByServiceInterfaceTemplate(final ServiceInterfaceTemplate template);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInterfaceTemplateProperty> findAllByServiceInterfaceTemplateIn(final Collection<ServiceInterfaceTemplate> template);
 }
