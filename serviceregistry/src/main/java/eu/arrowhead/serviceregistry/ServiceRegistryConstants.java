@@ -91,7 +91,7 @@ public final class ServiceRegistryConstants {
 
 	// Others
 
-	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "\\|";
+	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "|";
 
 	//=================================================================================================
 	// assistant methods

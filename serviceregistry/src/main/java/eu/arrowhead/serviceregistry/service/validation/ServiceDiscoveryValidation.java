@@ -2,10 +2,9 @@ package eu.arrowhead.serviceregistry.service.validation;
 
 import java.time.DateTimeException;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,20 +13,16 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.intf.properties.IPropertyValidator;
-import eu.arrowhead.common.intf.properties.PropertyValidatorType;
-import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
-import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
-import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
+import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
-import eu.arrowhead.common.service.validation.MetadataValidation;
 
 @Service
 public class ServiceDiscoveryValidation {
@@ -42,13 +37,10 @@ public class ServiceDiscoveryValidation {
 	private VersionValidator versionValidator;
 
 	@Autowired
-	private PropertyValidators interfacePropertyValidator;
+	private InterfaceValidator interfaceValidator;
 
 	@Autowired
 	private NameValidator nameValidator;
-
-	@Autowired
-	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -103,7 +95,6 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.templateName())) {
 				throw new InvalidParameterException("Interface template name is missing", origin);
 			}
-			nameValidator.validateName(interfaceDTO.templateName());
 			if (Utilities.isEmpty(interfaceDTO.policy())) {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
@@ -200,45 +191,23 @@ public class ServiceDiscoveryValidation {
 
 		validateRegisterService(dto, origin);
 
-		final ServiceInstanceRequestDTO normalized = normalizer.normalizeServiceInstanceRequestDTO(dto);
+		final ServiceInstanceRequestDTO normalizedInstance = normalizer.normalizeServiceInstanceRequestDTO(dto);
 
 		try {
-			versionValidator.validateNormalizedVersion(normalized.version());
+			versionValidator.validateNormalizedVersion(normalizedInstance.version());
+			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
 
-			normalized.interfaces().forEach(interfaceInstance -> {
-				final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
-				if (templateOpt.isPresent()) {
-					if (!Utilities.isEmpty(interfaceInstance.protocol()) && !interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
-						throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
-					}
-
-					interfaceTemplateDbService.getPropertiesByTemplateName(interfaceInstance.templateName())
-							.forEach(templateProp -> {
-								final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
-
-								if (instanceProp == null && templateProp.isMandatory()) {
-									throw new InvalidParameterException(templateProp.getPropertyName() + " interface property is missing for " + templateProp.getServiceInterfaceTemplate().getName());
-								}
-
-								if (!Utilities.isEmpty(templateProp.getValidator())) {
-									final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
-									final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
-									if (validator != null) {
-										final Object normalizedProp = validator.validateAndNormalize(
-												instanceProp,
-												validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
-										interfaceInstance.properties().put(templateProp.getPropertyName(), normalizedProp);
-									}
-								}
-							});
-				}
-			});
+			return new ServiceInstanceRequestDTO(
+					normalizedInstance.systemName(),
+					normalizedInstance.serviceDefinitionName(),
+					normalizedInstance.version(),
+					normalizedInstance.expiresAt(),
+					normalizedInstance.metadata(),
+					normalizedInterfaces);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
-
-		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------

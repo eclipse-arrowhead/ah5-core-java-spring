@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceregistry.jpa.entity;
 
+import java.util.List;
+
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +11,9 @@ public class ServiceInterfaceTemplate extends ArrowheadEntity {
 
 	//=================================================================================================
 	// members
+
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
+	public static final String DEFAULT_SORT_FIELD = "name";
 
 	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
 	private String name;
