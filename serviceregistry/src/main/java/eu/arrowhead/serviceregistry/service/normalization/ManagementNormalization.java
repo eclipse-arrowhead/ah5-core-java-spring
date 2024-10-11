@@ -179,39 +179,6 @@ public class ManagementNormalization {
 		
 		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
 	}
-	
-	//=================================================================================================
-	// assistant methods
-	
-	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
-		
-		return new ServiceInstanceRequestDTO(
-				// system name
-				nameNormalizer.normalize(dto.systemName()),
-				
-				// service definition name
-				nameNormalizer.normalize(dto.serviceDefinitionName()),
-				
-				// version
-				versionNormalizer.normalize(dto.version()),
-				
-				// expires at
-				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
-				
-				// metadata
-				dto.metadata(),
-				
-				// interfaces TODO: change to interfaceNormalization
-				dto.interfaces()
-					.stream()
-					.map(i -> new ServiceInstanceInterfaceRequestDTO(
-								nameNormalizer.normalize(i.templateName()),
-								Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
-								i.policy().trim().toUpperCase(),
-								i.properties()))
-					.toList()
-		);
 
 	// INTERFACE TEMPLATES
 
@@ -249,5 +216,39 @@ public class ManagementNormalization {
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
+	}
+	
+	//=================================================================================================
+	// assistant methods
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
+		
+		return new ServiceInstanceRequestDTO(
+				// system name
+				nameNormalizer.normalize(dto.systemName()),
+				
+				// service definition name
+				nameNormalizer.normalize(dto.serviceDefinitionName()),
+				
+				// version
+				versionNormalizer.normalize(dto.version()),
+				
+				// expires at
+				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
+				
+				// metadata
+				dto.metadata(),
+				
+				// interfaces TODO: change to interfaceNormalization
+				dto.interfaces()
+					.stream()
+					.map(i -> new ServiceInstanceInterfaceRequestDTO(
+								nameNormalizer.normalize(i.templateName()),
+								Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
+								i.policy().trim().toUpperCase(),
+								i.properties()))
+					.toList()
+		);
 	}
 }

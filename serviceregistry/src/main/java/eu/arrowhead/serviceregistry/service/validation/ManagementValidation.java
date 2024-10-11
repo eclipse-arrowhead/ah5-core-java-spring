@@ -553,7 +553,7 @@ public class ManagementValidation {
 				try {
 					expiresAt = Utilities.parseUTCStringToZonedDateTime(instance.expiresAt());
 				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Expiration time has an invalid time format", origin);
+					throw new InvalidParameterException("Expiration time has an invalid time format, UTC string expected (example: 2024-10-11T14:30:00Z)", origin);
 				}
 				if (Utilities.utcNow().isAfter(expiresAt)) {
 					throw new InvalidParameterException("Expiration time is in the past", origin);
@@ -574,7 +574,6 @@ public class ManagementValidation {
 				if (Utilities.isEmpty(interfaceDTO.templateName())) {
 					throw new InvalidParameterException("Interface template name is missing", origin);
 				}
-				//nameValidator.validateName(interfaceDTO.templateName());
 				if (Utilities.isEmpty(interfaceDTO.policy())) {
 					throw new InvalidParameterException("Interface policy is missing", origin);
 				}

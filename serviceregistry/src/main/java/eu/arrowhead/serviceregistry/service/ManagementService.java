@@ -315,6 +315,14 @@ public class ManagementService {
 
 			return dtoConverter.convertServiceInstanceListToDTO(instanceEntry, systemTriplet);
 
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
 	// INTERFACE TEMPLATES
 
 	//-------------------------------------------------------------------------------------------------
