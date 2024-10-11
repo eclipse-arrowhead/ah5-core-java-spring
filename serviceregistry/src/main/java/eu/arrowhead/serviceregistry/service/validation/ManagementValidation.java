@@ -192,7 +192,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-		normalized.forEach(n -> nameValidator.validateName(n.name()));
+		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
 
 		return normalized;
 	}
@@ -204,12 +204,7 @@ public class ManagementValidation {
 
 		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-
-		try {
-			normalized.forEach(n -> nameValidator.validateName(n.name()));
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
+		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
 
 		return normalized;
 	}
@@ -308,13 +303,9 @@ public class ManagementValidation {
 		validateCreateServiceDefinitions(dto, origin);
 
 		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
-		try {
-			normalized.forEach(n -> nameValidator.validateName(n));
-			return normalized;
+		normalized.forEach(n -> validateNormalizedName(n, origin));
 
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -466,11 +457,7 @@ public class ManagementValidation {
 
 		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
-		try {
-			normalized.forEach(n -> nameValidator.validateName(n.name()));
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
+		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
 
 		return normalized;
 	}
@@ -543,7 +530,7 @@ public class ManagementValidation {
 				final Set<String> propertyNames = new HashSet<>();
 				for (final ServiceInterfaceTemplatePropertyDTO propertyDTO : templateDTO.propertyRequirements()) {
 					if (propertyDTO == null) {
-						throw new InvalidParameterException("Interface template cointains null property", origin);
+						throw new InvalidParameterException("Interface template contains null property", origin);
 					}
 					if (Utilities.isEmpty(propertyDTO.name())) {
 						throw new InvalidParameterException("Interface template property name is empty", origin);
@@ -633,6 +620,17 @@ public class ManagementValidation {
 
 	//=================================================================================================
 	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateNormalizedName(final String name, final String origin) {
+		logger.debug("validateNormalizedName started");
+
+		try {
+			nameValidator.validateName(name);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void validateNormalizedVersion(final String version, final String origin) {
