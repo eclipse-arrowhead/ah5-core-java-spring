@@ -2,6 +2,7 @@ package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
@@ -35,10 +36,13 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
+import eu.arrowhead.serviceregistry.jpa.service.ServiceInstanceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
@@ -67,6 +71,9 @@ public class ManagementService {
 
 	@Autowired
 	private DTOConverter dtoConverter;
+	
+	@Autowired
+	private ServiceInstanceDbService instanceDbService;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -293,5 +300,19 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
 		final List<ServiceInstanceRequestDTO> normalized = validator.validateAndNormalizeCreateServiceInstances(dto, origin);
+	
+		try {
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntry = instanceDbService.createBulk(normalized);
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplet = systemDbService.getByNameList(
+					instanceEntry.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+
+			return dtoConverter.convertServiceInstanceListToDTO(instanceEntry, systemTriplet);
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 }

@@ -196,7 +196,7 @@ public class ManagementNormalization {
 				// metadata
 				dto.metadata(),
 				
-				// interfaces
+				// interfaces TODO: change to interfaceNormalization
 				dto.interfaces()
 					.stream()
 					.map(i -> new ServiceInstanceInterfaceRequestDTO(
