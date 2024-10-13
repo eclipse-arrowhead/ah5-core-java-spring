@@ -104,13 +104,13 @@ public class ServiceInstanceDbService {
 				final Set<String> instanceIdsToDelete = new HashSet<>(candidates.size());
 				final Set<String> systemNames = new HashSet<>();
 				final Set<String> serviceDefinitionNames = new HashSet<>();
-				final Set<String> serviceInterfaceTemlateNames = new HashSet<>();
+				final Set<String> serviceInterfaceTemplateNames = new HashSet<>();
 
 				for (final ServiceInstanceRequestDTO candidate : candidates) {
 					instanceIdsToDelete.add(ServiceInstanceIdUtils.calculateInstanceId(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version()));
 					systemNames.add(candidate.systemName());
 					serviceDefinitionNames.add(candidate.serviceDefinitionName());
-					serviceInterfaceTemlateNames.addAll(candidate.interfaces().stream().map(template -> template.templateName()).collect(Collectors.toSet()));
+					serviceInterfaceTemplateNames.addAll(candidate.interfaces().stream().map(template -> template.templateName()).collect(Collectors.toSet()));
 				}
 
 				serviceInstanceRepo.deleteAllByServiceInstanceIdIn(instanceIdsToDelete);
@@ -118,11 +118,11 @@ public class ServiceInstanceDbService {
 
 				systemRepo.findAllByNameIn(systemNames).forEach(system -> systemCache.put(system.getName(), system));
 				serviceDefinitionRepo.findAllByNameIn(serviceDefinitionNames).forEach(definition -> definitionCache.put(definition.getName(), definition));
-				serviceInterfaceTemplateRepo.findAllByNameIn(serviceInterfaceTemlateNames).forEach(template -> interfaceTemplateCache.put(template.getName(), template));
+				serviceInterfaceTemplateRepo.findAllByNameIn(serviceInterfaceTemplateNames).forEach(template -> interfaceTemplateCache.put(template.getName(), template));
 
 				// Validating interface template names in case of restricted interface policy
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
-					serviceInterfaceTemlateNames.forEach(templateName -> {
+					serviceInterfaceTemplateNames.forEach(templateName -> {
 						if (!interfaceTemplateCache.containsKey(templateName)) {
 							throw new InvalidParameterException("Interface template not exists: " + templateName);
 						}
@@ -162,25 +162,42 @@ public class ServiceInstanceDbService {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(dtos), "service instance list is empty");
 		
+		List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> entities = new ArrayList<>(dtos.size());
+		
 		synchronized (LOCK) {
-			List<ServiceInstance> updatedInstances = new ArrayList<>(dtos.size());
 			for (ServiceInstanceUpdateRequestDTO dto : dtos) {
+				
+				// find the instance to update
 				Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
+				// check the existence
 				if (optionalInstance.isEmpty()) {
 					throw new InvalidParameterException("Instance id does not exist: " + dto.instanceId());
+				// modify the properties (only metadata, expiresAt and interface can be changed)
 				} else {
 					ServiceInstance instance = optionalInstance.get();
-					instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
+					// set metadata
 					instance.setMetadata(Utilities.toJson(dto.metadata()));
-					updatedInstances.add(instance);
+					// set expires At
+					instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
+					// delete old interfaces
+					serviceInstanceInterfaceRepo.deleteAllByServiceInstance(instance);
+					// create new interfaces
+					final List<ServiceInstanceInterface> newInterfaces = createAndSaveInterfaces(dto.interfaces(), instance);
+	
+					// save the new instance
+					serviceInstanceRepo.saveAndFlush(instance);
+					
+					// flush everything in the right ordes
+					serviceInterfaceTemplateRepo.flush();
+					serviceInterfaceTemplatePropsRepo.flush();
+					serviceInstanceInterfaceRepo.flush();
+					
+					entities.add(Map.entry(instance, newInterfaces));
 				}
 			}
 			
-			//TODO: use the CreateBulk method, because it deletes the existing records 
-			
+			return entities;
 		}
-		
-		throw new NotImplementedException();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -328,6 +345,66 @@ public class ServiceInstanceDbService {
 		}
 
 		return serviceInstanceInterfaceRepo.saveAllAndFlush(instanceInterfaceEntities);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
+	private List<ServiceInstanceInterface> createAndSaveInterfaces(final List<ServiceInstanceInterfaceRequestDTO> dtos, final ServiceInstance serviceInstance) {
+		List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
+		
+		for (final ServiceInstanceInterfaceRequestDTO dto : dtos) {
+			// template
+			ServiceInterfaceTemplate template; // interface template (maybe not exists yet)
+			final Optional<ServiceInterfaceTemplate> optionalTemplate = serviceInterfaceTemplateRepo.findByName(dto.templateName());
+			if (optionalTemplate.isEmpty()) { 
+			// non-existant template
+				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
+					// we don't create new template in case of restricted interface policy
+					throw new InvalidParameterException("Interface template not exists: " + dto.templateName());
+				} else {
+					// create new template
+					template = new ServiceInterfaceTemplate(dto.templateName(), dto.protocol());
+					// we add all the provided properties as mandatory properties in case of extendable interface policy
+					if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
+						final List<ServiceInterfaceTemplateProperty> templateProps = new ArrayList<>();
+						for (Entry<String, Object> property : (List<Entry<String, Object>>)dto.properties()) {
+							templateProps.add(new ServiceInterfaceTemplateProperty(
+									template,
+									property.getKey(),
+									true,
+									null));
+						}
+						serviceInterfaceTemplatePropsRepo.saveAll(templateProps);
+					}
+					serviceInterfaceTemplateRepo.save(template);
+				}
+			} else {
+			// existing template
+				template = optionalTemplate.get();
+				// modify template protocol if necessary
+				if (template.getProtocol() != dto.protocol()) {
+					template.setProtocol(dto.protocol());
+					serviceInterfaceTemplateRepo.save(template);
+				}
+				
+				// we have to check, if all the mandatory properties are provided
+				final List<ServiceInterfaceTemplateProperty> mandatoryProperties = serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(template)
+						.stream().filter(p -> p.isMandatory()).toList();
+				mandatoryProperties.forEach(p -> {
+					if (!dto.properties().containsKey(p.getPropertyName())) {
+						throw new InvalidParameterException("Mandatory interface property is missing: " + p.getPropertyName());
+					}
+				});
+			}
+			Assert.isTrue(Utilities.isEnumValue(dto.policy(), ServiceInterfacePolicy.class), "Invalid service interface policy");
+			interfaces.add(new ServiceInstanceInterface(
+					serviceInstance,
+					template,
+					Utilities.toJson(dto.properties()),
+					Utilities.fromJson(dto.policy(), ServiceInterfacePolicy.class)));
+		}
+		serviceInstanceInterfaceRepo.saveAll(interfaces);
+		return interfaces;
 	}
 
 	//-------------------------------------------------------------------------------------------------
