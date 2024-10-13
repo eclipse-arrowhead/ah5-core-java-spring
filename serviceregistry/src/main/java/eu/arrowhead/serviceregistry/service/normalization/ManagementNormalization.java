@@ -31,6 +31,8 @@ import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 
 @Service
 public class ManagementNormalization {
@@ -169,15 +171,23 @@ public class ManagementNormalization {
 				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
-	
+
 	// SERVICE INSTANCES
 	
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceRequestDTO> normalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto) {
 		logger.debug("normalizeCreateServiceInstances started");
 		Assert.notNull(dto, "ServiceInstanceCreateListRequestDTO is null");
-		
+
 		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceUpdateRequestDTO> normalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto) {
+		logger.debug("normalizeUpdateServiceInstances started");
+		Assert.notNull(dto, "ServiceInstanceUpdateListRequestDTO is null");
+		
+		return dto.instances().stream().map(i -> normalizeServiceInstanceUpdateRequestDTO(i)).collect(Collectors.toList());
 	}
 
 	// INTERFACE TEMPLATES
@@ -217,37 +227,54 @@ public class ManagementNormalization {
 				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
-		
+
 		return new ServiceInstanceRequestDTO(
 				// system name
 				nameNormalizer.normalize(dto.systemName()),
-				
+
 				// service definition name
 				nameNormalizer.normalize(dto.serviceDefinitionName()),
-				
+
 				// version
 				versionNormalizer.normalize(dto.version()),
-				
+
 				// expires at
 				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
-				
+
 				// metadata
 				dto.metadata(),
-				
-				// interfaces TODO: change to interfaceNormalization
+
+				// interfaces
 				dto.interfaces()
 					.stream()
-					.map(i -> new ServiceInstanceInterfaceRequestDTO(
-								nameNormalizer.normalize(i.templateName()),
-								Utilities.isEmpty(i.protocol()) ? "" : i.protocol().trim().toLowerCase(),
-								i.policy().trim().toUpperCase(),
-								i.properties()))
+					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
+					.toList()
+		);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceUpdateRequestDTO normalizeServiceInstanceUpdateRequestDTO(final ServiceInstanceUpdateRequestDTO dto) {
+
+		return new ServiceInstanceUpdateRequestDTO(
+				// instance id
+				dto.instanceId().trim(),
+
+				// expires at
+				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
+
+				// metadata
+				dto.metadata(),
+
+				// interfaces
+				dto.interfaces()
+					.stream()
+					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
 					.toList()
 		);
 	}

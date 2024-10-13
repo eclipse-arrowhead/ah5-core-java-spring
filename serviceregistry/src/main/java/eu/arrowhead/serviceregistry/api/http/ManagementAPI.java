@@ -33,6 +33,7 @@ import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
@@ -407,7 +408,28 @@ public class ManagementAPI {
 	}
 	
 	// update-service-instances PUT /service-instances(bulk) -> only metadata, expiresAt and interface can be changed
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the updated system entries")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SystemListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PutMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody ServiceInstanceListResponseDTO updateServiceInstances(@RequestBody final ServiceInstanceUpdateListRequestDTO dto) {
+		logger.debug("updateServiceInstances started");
 
+		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+		return mgmtService.updateServiceInstance(dto, origin); //TODO: implement it 
+	}
+	
 	// remove-service-instances DELETE /service-instances(list of service instance ids as query params)
 
 	// INTERFACE TEMPLATES

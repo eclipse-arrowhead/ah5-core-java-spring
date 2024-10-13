@@ -24,6 +24,8 @@ import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -586,28 +588,109 @@ public class ManagementValidation {
 					MetadataValidation.validateMetadataKey(interfaceDTO.properties());
 				}
 			}
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("ServiceInstanceUpdateListRequestDTO started");
+		
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.instances())) {
+			throw new InvalidParameterException("Request payload is empty", origin);
+		}
+			
+		List<String> instanceIds = new ArrayList<>();
+		for (ServiceInstanceUpdateRequestDTO instance : dto.instances()) {
+				
+			// instance id
+			if (Utilities.isEmpty(instance.instanceId())) {
+				throw new InvalidParameterException("Instance id is empty");
+			}
+			
+			if (instanceIds.contains(instance.instanceId())) {
+				throw new InvalidParameterException("Duplicated instance id: " + instance.instanceId());
+			}
+			
+			instanceIds.add(instance.instanceId());
+				
+			// expires at
+			if (!Utilities.isEmpty(instance.expiresAt())) {
+				ZonedDateTime expiresAt = null;
+				try {
+					expiresAt = Utilities.parseUTCStringToZonedDateTime(instance.expiresAt());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Expiration time has an invalid time format, UTC string expected (example: 2024-10-11T14:30:00Z)", origin);
+				}
+				if (Utilities.utcNow().isAfter(expiresAt)) {
+					throw new InvalidParameterException("Expiration time is in the past", origin);
+				}
+			}
+				
+			// metadata
+			if (!Utilities.isEmpty(instance.metadata())) {
+				MetadataValidation.validateMetadataKey(instance.metadata());
+			}
+				
+			// interfaces
+			if (Utilities.isEmpty(instance.interfaces())) {
+				throw new InvalidParameterException("Service interface list is empty", origin);
+			}
+			
+			for (final ServiceInstanceInterfaceRequestDTO interfaceDTO : instance.interfaces()) {
+				if (Utilities.isEmpty(interfaceDTO.templateName())) {
+					throw new InvalidParameterException("Interface template name is missing", origin);
+				}
+				if (Utilities.isEmpty(interfaceDTO.policy())) {
+					throw new InvalidParameterException("Interface policy is missing", origin);
+				}
+				if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
+					throw new InvalidParameterException("Invalid inteface policy", origin);
+				}
+				if (Utilities.isEmpty(interfaceDTO.properties())) {
+					throw new InvalidParameterException("Interface properties are missing", origin);
+				} else {
+					MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				}
+			}
 			
 			
 		}
 	}
-	
+
 	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceRequestDTO> validateAndNormalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateServiceInstances started");
-		
+
 		validateCreateServiceInstances(dto, origin);
-		
+
 		List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
-		
-		normalized.forEach(n -> { 
+
+		normalized.forEach(n -> {
 			nameValidator.validateName(n.systemName());
 			nameValidator.validateName(n.serviceDefinitionName());
 			versionValidator.validateNormalizedVersion(n.version());
-			//TODO: validate interfaces
+			interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
 			}
 		);
+		
+		return normalized;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceUpdateRequestDTO> validateAndNormalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateServiceInstances started");
+		
+		validateUpdateServiceInstances(dto, origin);
+		
+		List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
+		
+		normalized.forEach( n -> interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces()));
 		
 		return normalized;
 	}

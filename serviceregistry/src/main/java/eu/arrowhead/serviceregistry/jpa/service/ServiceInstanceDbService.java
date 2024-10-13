@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
@@ -152,6 +154,33 @@ public class ServiceInstanceDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updateBulk(final List<ServiceInstanceUpdateRequestDTO> dtos) {
+		logger.debug("createBulk started");
+		Assert.isTrue(!Utilities.isEmpty(dtos), "service instance list is empty");
+		
+		synchronized (LOCK) {
+			List<ServiceInstance> updatedInstances = new ArrayList<>(dtos.size());
+			for (ServiceInstanceUpdateRequestDTO dto : dtos) {
+				Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
+				if (optionalInstance.isEmpty()) {
+					throw new InvalidParameterException("Instance id does not exist: " + dto.instanceId());
+				} else {
+					ServiceInstance instance = optionalInstance.get();
+					instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
+					instance.setMetadata(Utilities.toJson(dto.metadata()));
+					updatedInstances.add(instance);
+				}
+			}
+			
+			//TODO: use the CreateBulk method, because it deletes the existing records 
+			
+		}
+		
+		throw new NotImplementedException();
 	}
 
 	//-------------------------------------------------------------------------------------------------

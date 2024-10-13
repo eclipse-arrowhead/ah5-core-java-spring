@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +30,8 @@ import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
@@ -321,6 +324,16 @@ public class ManagementService {
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO updateServiceInstance(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("updateServiceInstance started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final List<ServiceInstanceUpdateRequestDTO> normalized = validator.validateAndNormalizeUpdateServiceInstances(dto, origin);
+	
+		throw new NotImplementedException();
 	}
 
 	// INTERFACE TEMPLATES
