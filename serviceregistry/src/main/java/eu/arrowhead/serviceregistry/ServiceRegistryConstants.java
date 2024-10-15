@@ -21,6 +21,12 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
 	public static final String HTTP_ATTR_RESTRICTED_SERVICE_LOOKUP = "restricted.service.lookup";
 
+	public static final String MQTT_API_BASE_TOPIC = "arrowhead/serviceregistry";
+	public static final String MQTT_API_DEVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/device-discovery";
+	public static final String MQTT_API_SERVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/service-discovery";
+	public static final String MQTT_API_SYSTEM_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/system-discovery";
+
+
 	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
 
 	public static final String VERSION_DEVICE_DISCOVERY = "1.0.0";
