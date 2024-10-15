@@ -58,8 +58,10 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		sysdService.registerSystem(dto, INIT_ORIGIN);
 
 		// register services
-		for (final ServiceModel serviceModel : sysInfo.getServices()) {
-			registerService(serviceModel);
+		if (sysInfo.getServices() != null) {
+			for (final ServiceModel serviceModel : sysInfo.getServices()) {
+				registerService(serviceModel);
+			}
 		}
 
 		logger.info("System {} published {} service(s).", sysInfo.getSystemName(), registeredServices.size());
@@ -75,7 +77,6 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		}
 
 		try {
-
 			for (final String serviceInstanceId : registeredServices) {
 				sdService.revokeService(sysInfo.getSystemName(), serviceInstanceId, INIT_ORIGIN);
 			}
