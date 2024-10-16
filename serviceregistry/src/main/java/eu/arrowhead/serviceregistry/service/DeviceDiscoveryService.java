@@ -14,6 +14,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
@@ -123,6 +124,8 @@ public class DeviceDiscoveryService {
 
 		try {
 			return dbService.deleteByName(name.trim());
+		} catch (final LockedException ex) {
+			throw new LockedException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

@@ -23,14 +23,17 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.DeviceSystemConnectorRepository;
 
 @Service
 public class DeviceDbService {
@@ -43,6 +46,9 @@ public class DeviceDbService {
 
 	@Autowired
 	private DeviceAddressRepository addressRepo;
+
+	@Autowired
+	private DeviceSystemConnectorRepository connectorRepo;
 
 	private static final Object LOCK = new Object();
 
@@ -329,9 +335,16 @@ public class DeviceDbService {
 
 		try {
 			final List<Device> entries = deviceRepo.findAllByNameIn(names);
+
+			final List<DeviceSystemConnector> connections = connectorRepo.findByDeviceIn(entries);
+			if (!connections.isEmpty()) {
+				throw new LockedException("At least one system is assigned to these devices.");
+			}
+
 			deviceRepo.deleteAll(entries);
 			deviceRepo.flush();
-
+		} catch (final LockedException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -348,13 +361,20 @@ public class DeviceDbService {
 		try {
 			final Optional<Device> optional = deviceRepo.findByName(name);
 			if (optional.isPresent()) {
+
+				final List<DeviceSystemConnector> connections = connectorRepo.findByDevice(optional.get());
+				if (!connections.isEmpty()) {
+					throw new LockedException("At least one system is assigned to this device.");
+				}
+
 				deviceRepo.delete(optional.get());
 				deviceRepo.flush();
 				return true;
 			}
 
 			return false;
-
+		} catch (final LockedException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
