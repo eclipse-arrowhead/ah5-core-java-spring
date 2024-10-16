@@ -254,6 +254,22 @@ public class ServiceInstanceDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteByInstanceIds(final List<String> serviceInstanceIds) {
+		logger.debug("deleteByInstanceIds started");
+		Assert.isTrue(!Utilities.isEmpty(serviceInstanceIds), "serviceInstanceId list is empty");
+
+		try {
+			serviceInstanceIds.forEach(id -> deleteByInstanceId(id));
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
 
 	//=================================================================================================
 	// assistant methods

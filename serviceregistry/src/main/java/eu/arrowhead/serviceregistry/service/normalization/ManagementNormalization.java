@@ -189,6 +189,14 @@ public class ManagementNormalization {
 		
 		return dto.instances().stream().map(i -> normalizeServiceInstanceUpdateRequestDTO(i)).collect(Collectors.toList());
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeRemoveServiceInstances(final List<String> instanceIds) {
+		logger.debug("normalizeUpdateServiceInstanceIds started");
+		Assert.notNull(instanceIds, "instanceId list is null");
+		
+		return instanceIds.stream().map(i -> nameNormalizer.normalize(i)).collect(Collectors.toList());
+	}
 
 	// INTERFACE TEMPLATES
 

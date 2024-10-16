@@ -5,7 +5,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -660,6 +662,13 @@ public class ManagementValidation {
 			
 		}
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveServiceInstances(final List<String> instanceIds, final String origin) {
+		if (Utilities.isEmpty(instanceIds)) {
+			throw new InvalidParameterException("Instance id list is empty", origin);
+		}
+	}
 
 	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
 
@@ -690,9 +699,17 @@ public class ManagementValidation {
 		
 		List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
 		
-		normalized.forEach( n -> interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces()));
+		normalized.forEach(n -> interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces()));
 		
 		return normalized;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveServiceInstances(final List<String> instanceIds, final String origin) {
+		logger.debug("validateAndNormalizeRevokeServiceInstances started");
+
+		validateRemoveServiceInstances(instanceIds, origin);
+		return normalizer.normalizeRemoveServiceInstances(instanceIds);
 	}
 
 	// INTERFACE VALIDATION

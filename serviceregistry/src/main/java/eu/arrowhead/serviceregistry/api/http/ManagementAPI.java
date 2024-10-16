@@ -426,11 +426,31 @@ public class ManagementAPI {
 	public @ResponseBody ServiceInstanceListResponseDTO updateServiceInstances(@RequestBody final ServiceInstanceUpdateListRequestDTO dto) {
 		logger.debug("updateServiceInstances started");
 
-		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
-		return mgmtService.updateServiceInstance(dto, origin); 
+		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
+		return mgmtService.updateServiceInstance(dto, origin);
 	}
-	
+
 	// remove-service-instances DELETE /service-instances(list of service instance ids as query params)
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Deletes the defined service instance entries")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@DeleteMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH)
+	public void removeServiceInstances(final @RequestParam List<String> serviceInstances) {
+		logger.debug("removeServiceInstances started");
+
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
+		mgmtService.removeServiceInstances(serviceInstances, origin);
+	}
 
 	// INTERFACE TEMPLATES
 

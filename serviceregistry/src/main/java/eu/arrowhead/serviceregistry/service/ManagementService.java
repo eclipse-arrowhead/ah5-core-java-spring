@@ -88,6 +88,8 @@ public class ManagementService {
 	private ServiceInstanceDbService instanceDbService;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
+	
+	private static final Object LOCK = new Object();
 
 	//=================================================================================================
 	// methods
@@ -310,12 +312,16 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
 		final List<ServiceInstanceRequestDTO> normalized = validator.validateAndNormalizeCreateServiceInstances(dto, origin);
+		
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntries;
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
 	
 		try {
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntries = instanceDbService.createBulk(normalized);
-			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets = systemDbService.getByNameList(
+			synchronized (LOCK) {
+			instanceEntries = instanceDbService.createBulk(normalized);
+			systemTriplets = systemDbService.getByNameList(
 					instanceEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
-
+			}
 			return dtoConverter.convertServiceInstanceListToDTO(instanceEntries, systemTriplets);
 
 		} catch (final InvalidParameterException ex) {
@@ -334,12 +340,34 @@ public class ManagementService {
 		final List<ServiceInstanceUpdateRequestDTO> normalized = validator.validateAndNormalizeUpdateServiceInstances(dto, origin);
 		
 		try {
-			//TODO: ezeket lehet hogy lock-kal kéne lekérdezni
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries = instanceDbService.updateBulk(normalized);
-			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets = systemDbService.getByNameList(
-					updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+			
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries;
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
+			synchronized (LOCK) {
+				updatedEntries = instanceDbService.updateBulk(normalized);
+				systemTriplets = systemDbService.getByNameList(
+						updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+			}
 			
 			return dtoConverter.convertServiceInstanceListToDTO(updatedEntries, systemTriplets);
+			
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void removeServiceInstances(final List<String> serviceInstanceIds, final String origin) {
+		logger.debug("removeServiceInstances started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final List<String> normalized = validator.validateAndNormalizeRemoveServiceInstances(serviceInstanceIds, origin);
+		
+		try {
+			instanceDbService.deleteByInstanceIds(normalized);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 
