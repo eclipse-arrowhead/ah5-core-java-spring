@@ -81,7 +81,7 @@ public class DeviceDiscoveryService {
 						.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
 						.collect(Collectors.toList());
 				if (!addressMatcher.isAddressListMatching(existingAddresses, dto.addresses())) {
-					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided interfaces are not matching");
+					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided addresses are not matching");
 				}
 
 				return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(existing, optional.get().getValue()), false);
