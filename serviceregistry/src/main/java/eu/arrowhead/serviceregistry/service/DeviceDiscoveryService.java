@@ -120,10 +120,10 @@ public class DeviceDiscoveryService {
 		logger.debug("revokeDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateRevokeDevice(name, origin);
+		final String normalized = validator.validateAndNormalizeRevokeDevice(name, origin);
 
 		try {
-			return dbService.deleteByName(name.trim());
+			return dbService.deleteByName(normalized);
 		} catch (final LockedException ex) {
 			throw new LockedException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
