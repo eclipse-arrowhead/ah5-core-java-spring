@@ -50,11 +50,6 @@
     "description": "A description for 'service.discovery.direct.access'"
   },
   {
-    "name": "service.discovery.verbose",
-    "type": "java.lang.Boolean",
-    "description": "A description for 'service.discovery.verbose'"
-  },
-  {
     "name": "service.discovery.interface.policy",
     "type": "eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy",
     "description": "A description for 'service.discovery.interface.policy'"
@@ -68,5 +63,10 @@
     "name": "allow.non.routable.addressing",
     "type": "java.lang.Boolean",
     "description": "A description for 'allow.non.routable.addressing'"
+  },
+  {
+    "name": "discovery.verbose",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'discovery.verbose'"
   }
 ]}
