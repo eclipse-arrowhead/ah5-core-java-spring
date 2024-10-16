@@ -427,7 +427,7 @@ public class ManagementAPI {
 		logger.debug("updateServiceInstances started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
-		return mgmtService.updateServiceInstance(dto, origin); //TODO: implement it 
+		return mgmtService.updateServiceInstance(dto, origin); 
 	}
 	
 	// remove-service-instances DELETE /service-instances(list of service instance ids as query params)

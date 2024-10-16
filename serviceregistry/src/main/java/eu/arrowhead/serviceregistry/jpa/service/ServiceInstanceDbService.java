@@ -354,7 +354,7 @@ public class ServiceInstanceDbService {
 		
 		for (final ServiceInstanceInterfaceRequestDTO dto : dtos) {
 			// template
-			ServiceInterfaceTemplate template; // interface template (maybe not exists yet)
+			ServiceInterfaceTemplate template; // interface template (maybe doesn't exist yet)
 			final Optional<ServiceInterfaceTemplate> optionalTemplate = serviceInterfaceTemplateRepo.findByName(dto.templateName());
 			if (optionalTemplate.isEmpty()) { 
 			// non-existant template
@@ -397,11 +397,7 @@ public class ServiceInstanceDbService {
 				});
 			}
 			Assert.isTrue(Utilities.isEnumValue(dto.policy(), ServiceInterfacePolicy.class), "Invalid service interface policy");
-			interfaces.add(new ServiceInstanceInterface(
-					serviceInstance,
-					template,
-					Utilities.toJson(dto.properties()),
-					Utilities.fromJson(dto.policy(), ServiceInterfacePolicy.class)));
+			interfaces.add(new ServiceInstanceInterface(serviceInstance, template, Utilities.toJson(dto.properties()), ServiceInterfacePolicy.valueOf(dto.policy())));
 		}
 		serviceInstanceInterfaceRepo.saveAll(interfaces);
 		return interfaces;

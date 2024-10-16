@@ -312,11 +312,11 @@ public class ManagementService {
 		final List<ServiceInstanceRequestDTO> normalized = validator.validateAndNormalizeCreateServiceInstances(dto, origin);
 	
 		try {
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntry = instanceDbService.createBulk(normalized);
-			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplet = systemDbService.getByNameList(
-					instanceEntry.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntries = instanceDbService.createBulk(normalized);
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets = systemDbService.getByNameList(
+					instanceEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
 
-			return dtoConverter.convertServiceInstanceListToDTO(instanceEntry, systemTriplet);
+			return dtoConverter.convertServiceInstanceListToDTO(instanceEntries, systemTriplets);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -332,8 +332,20 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
 		final List<ServiceInstanceUpdateRequestDTO> normalized = validator.validateAndNormalizeUpdateServiceInstances(dto, origin);
-	
-		throw new NotImplementedException();
+		
+		try {
+			//TODO: ezeket lehet hogy lock-kal kéne lekérdezni
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries = instanceDbService.updateBulk(normalized);
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets = systemDbService.getByNameList(
+					updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+			
+			return dtoConverter.convertServiceInstanceListToDTO(updatedEntries, systemTriplets);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	// INTERFACE TEMPLATES
