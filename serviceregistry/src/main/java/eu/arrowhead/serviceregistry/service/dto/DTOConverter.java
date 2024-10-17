@@ -26,6 +26,8 @@ import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
@@ -42,6 +44,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
 @Service
 public class DTOConverter {
@@ -225,6 +228,29 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO convertServiceInstancePageToDTO(
+																  final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
+																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
+		logger.debug("convertServiceInstanceListToDTO started...");
+
+		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>();
+		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {
+			Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemDeviceEntry = null;
+			if (systemsWithDevices != null) {
+				for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> triplet : systemsWithDevices) {
+					if (triplet.getLeft().getId() == serviceEntry.getKey().getSystem().getId()) {
+						systemDeviceEntry = triplet;
+						break;
+					}
+				}
+			}
+			entries.add(convertServiceInstanceEntityToDTO(serviceEntry, systemDeviceEntry));
+		}
+
+		return new ServiceInstanceListResponseDTO(entries, servicesWithInterfaces.getTotalElements());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceListResponseDTO convertServiceInstanceListToDTO(
 																  final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
 																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
@@ -286,6 +312,20 @@ public class DTOConverter {
 	public KeyValuesDTO convertConfigMapToDTO(final Map<String, String> map) {
 		return new KeyValuesDTO(map);
 
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceLookupFilterModel convertServiceInstanceQueryRequestDtoToFilterModel(final ServiceInstanceQueryRequestDTO dto) {
+		return new ServiceLookupFilterModel( new ServiceInstanceLookupRequestDTO(
+				dto.instanceIds(),
+				dto.providerNames(),
+				dto.serviceDefinitionNames(),
+				dto.versions(),
+				dto.alivesAt(),
+				dto.metadataRequirementsList(),
+				dto.interfaceTemplateNames(),
+				dto.interfacePropertyRequirementsList(),
+				dto.policies()));
 	}
 
 	//=================================================================================================

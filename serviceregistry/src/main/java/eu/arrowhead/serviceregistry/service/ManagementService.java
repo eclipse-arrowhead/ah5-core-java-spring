@@ -24,11 +24,13 @@ import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
@@ -40,6 +42,7 @@ import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
@@ -368,6 +371,38 @@ public class ManagementService {
 		
 		try {
 			instanceDbService.deleteByInstanceIds(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO queryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final boolean verbose, final String origin) {
+		logger.debug("queryServiceInstances started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final ServiceInstanceQueryRequestDTO normalized = validator.validateAndNormalizeQueryServiceInstances(dto, origin);
+		
+		try {
+			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInstance.SORTABLE_FIELDS_BY, ServiceInstance.DEFAULT_SORT_FIELD, origin);
+			
+			Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces;
+			Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = null;
+			synchronized (LOCK) {
+				servicesWithInterfaces = instanceDbService.getPageByFilters(pageRequest, dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(normalized));
+				if (verbose) {
+					systemsWithDevices = systemDbService.getPageByFilters(
+							PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+							List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
+							null, null, null, null, null);
+				}
+			}
+			
+			return dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices);
+			
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 

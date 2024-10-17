@@ -240,21 +240,21 @@ public class SystemDbService {
 		}
 
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByNameList(final List<String> names) {
 		logger.debug("getByName started");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "system name list contains null or empty");
-		
+
 		List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
-		
+
 		for (String name : names) {
 			Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> optionalTriple = getByName(name);
 			if (optionalTriple.isPresent()) {
 				result.add(optionalTriple.get());
 			}
 		}
-		
+
 		return result;
 	}
 

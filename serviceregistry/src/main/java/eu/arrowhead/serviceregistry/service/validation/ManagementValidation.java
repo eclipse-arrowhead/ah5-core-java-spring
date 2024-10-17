@@ -5,10 +5,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +22,7 @@ import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
@@ -39,6 +37,7 @@ import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
@@ -669,6 +668,77 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Instance id list is empty", origin);
 		}
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryServiceInstances started");
+		
+		if (dto != null) {
+			// pagination
+			pageValidator.validatePageParameter(dto.pagination(), Device.SORTABLE_FIELDS_BY, origin);
+			
+			// check if instanceIds, providerNames and serviceDefinitionNames are all empty
+			if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
+				throw new InvalidParameterException("One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'", origin);
+			}
+
+			// instanceIds
+			if (!Utilities.isEmpty(dto.instanceIds()) && Utilities.containsNullOrEmpty(dto.instanceIds())) {
+				throw new InvalidParameterException("Instance id list contains null or empty element", origin);
+			}
+			
+			// providerNames
+			if (!Utilities.isEmpty(dto.providerNames()) && Utilities.containsNullOrEmpty(dto.providerNames())) {
+				throw new InvalidParameterException("Provider name list contains null or empty element", origin);
+			}
+			
+			// serviceDefinitionNames
+			if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+				throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+			}
+
+			// versions
+			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+				throw new InvalidParameterException("Version list contains null or empty element", origin);
+			}
+			
+			// alivesAt
+			if (!Utilities.isEmpty(dto.alivesAt())) {
+				try {
+					Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Alive time has an invalid time format", origin);
+				}
+			}
+
+			// metadataRequirementsList
+			if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
+				throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+			}
+			
+			// interfaceTemplateNames
+			if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
+				throw new InvalidParameterException("Interface template list contains null or empty element", origin);
+			}
+
+			// interfacePropertyRequirementsList
+			if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList()) && Utilities.containsNull(dto.interfacePropertyRequirementsList())) {
+				throw new InvalidParameterException("Interface property requirements list contains null element", origin);
+			}
+			
+			// policies
+			if (!Utilities.isEmpty(dto.policies())) {
+				for (final String policy : dto.policies()) {
+					if (Utilities.isEmpty(policy)) {
+						throw new InvalidParameterException("Policy list contains null or empty element", origin);
+					}
+					if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
+						throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
+					}
+				}
+			}
+		}
+	}
 
 	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
 
@@ -710,6 +780,15 @@ public class ManagementValidation {
 
 		validateRemoveServiceInstances(instanceIds, origin);
 		return normalizer.normalizeRemoveServiceInstances(instanceIds);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceQueryRequestDTO validateAndNormalizeQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryServiceInstances");
+		
+		validateQueryServiceInstances(dto, origin);
+		
+		return normalizer.normalizeQueryServiceInstances(dto);
 	}
 
 	// INTERFACE VALIDATION
