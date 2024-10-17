@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,18 +154,18 @@ public class ServiceInstanceDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updateBulk(final List<ServiceInstanceUpdateRequestDTO> dtos) {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(dtos), "service instance list is empty");
-		
+
 		List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> entities = new ArrayList<>(dtos.size());
-		
+
 		synchronized (LOCK) {
 			for (ServiceInstanceUpdateRequestDTO dto : dtos) {
-				
+
 				// find the instance to update
 				Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
 				// check the existence
@@ -183,19 +182,19 @@ public class ServiceInstanceDbService {
 					serviceInstanceInterfaceRepo.deleteAllByServiceInstance(instance);
 					// create new interfaces
 					final List<ServiceInstanceInterface> newInterfaces = createAndSaveInterfaces(dto.interfaces(), instance);
-	
+
 					// save the new instance
 					serviceInstanceRepo.saveAndFlush(instance);
-					
+
 					// flush everything in the right ordes
 					serviceInterfaceTemplateRepo.flush();
 					serviceInterfaceTemplatePropsRepo.flush();
 					serviceInstanceInterfaceRepo.flush();
-					
+
 					entities.add(Map.entry(instance, newInterfaces));
 				}
 			}
-			
+
 			return entities;
 		}
 	}
@@ -254,7 +253,7 @@ public class ServiceInstanceDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteByInstanceIds(final List<String> serviceInstanceIds) {
@@ -362,17 +361,17 @@ public class ServiceInstanceDbService {
 
 		return serviceInstanceInterfaceRepo.saveAllAndFlush(instanceInterfaceEntities);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("unchecked")
 	private List<ServiceInstanceInterface> createAndSaveInterfaces(final List<ServiceInstanceInterfaceRequestDTO> dtos, final ServiceInstance serviceInstance) {
 		List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
-		
+
 		for (final ServiceInstanceInterfaceRequestDTO dto : dtos) {
 			// template
 			ServiceInterfaceTemplate template; // interface template (maybe doesn't exist yet)
 			final Optional<ServiceInterfaceTemplate> optionalTemplate = serviceInterfaceTemplateRepo.findByName(dto.templateName());
-			if (optionalTemplate.isEmpty()) { 
+			if (optionalTemplate.isEmpty()) {
 			// non-existant template
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					// we don't create new template in case of restricted interface policy
@@ -383,7 +382,7 @@ public class ServiceInstanceDbService {
 					// we add all the provided properties as mandatory properties in case of extendable interface policy
 					if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
 						final List<ServiceInterfaceTemplateProperty> templateProps = new ArrayList<>();
-						for (Entry<String, Object> property : (List<Entry<String, Object>>)dto.properties()) {
+						for (Entry<String, Object> property : (List<Entry<String, Object>>) dto.properties()) {
 							templateProps.add(new ServiceInterfaceTemplateProperty(
 									template,
 									property.getKey(),
@@ -402,7 +401,7 @@ public class ServiceInstanceDbService {
 					template.setProtocol(dto.protocol());
 					serviceInterfaceTemplateRepo.save(template);
 				}
-				
+
 				// we have to check, if all the mandatory properties are provided
 				final List<ServiceInterfaceTemplateProperty> mandatoryProperties = serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(template)
 						.stream().filter(p -> p.isMandatory()).toList();

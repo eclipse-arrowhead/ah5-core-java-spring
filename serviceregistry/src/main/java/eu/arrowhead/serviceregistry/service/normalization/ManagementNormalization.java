@@ -24,13 +24,7 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
-import eu.arrowhead.dto.DeviceQueryRequestDTO;
-import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.PageDTO;
-import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
-import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
-import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
@@ -175,7 +169,7 @@ public class ManagementNormalization {
 	}
 
 	// SERVICE INSTANCES
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceRequestDTO> normalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto) {
 		logger.debug("normalizeCreateServiceInstances started");
@@ -183,23 +177,23 @@ public class ManagementNormalization {
 
 		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceUpdateRequestDTO> normalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto) {
 		logger.debug("normalizeUpdateServiceInstances started");
 		Assert.notNull(dto, "ServiceInstanceUpdateListRequestDTO is null");
-		
+
 		return dto.instances().stream().map(i -> normalizeServiceInstanceUpdateRequestDTO(i)).collect(Collectors.toList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveServiceInstances(final List<String> instanceIds) {
 		logger.debug("normalizeUpdateServiceInstanceIds started");
 		Assert.notNull(instanceIds, "instanceId list is null");
-		
+
 		return instanceIds.stream().map(i -> nameNormalizer.normalize(i)).collect(Collectors.toList());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceQueryRequestDTO normalizeQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto) {
 		logger.debug("normalizeQueryServiceInstances started");
@@ -286,7 +280,7 @@ public class ManagementNormalization {
 					.toList()
 		);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceUpdateRequestDTO normalizeServiceInstanceUpdateRequestDTO(final ServiceInstanceUpdateRequestDTO dto) {
 
@@ -307,7 +301,7 @@ public class ManagementNormalization {
 					.toList()
 		);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private String normalizeSystemName(final String systemName) {
 		logger.debug("normalizeSystemName started");

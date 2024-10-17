@@ -16,7 +16,7 @@ public interface ServiceInstanceInterfaceRepository extends RefreshableRepositor
 
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceInterface> findAllByServiceInstance(final ServiceInstance serviceInstance);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInstanceInterface> deleteAllByServiceInstance(final ServiceInstance serviceInstance);
 }

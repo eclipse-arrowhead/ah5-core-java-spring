@@ -249,7 +249,7 @@ public class DTOConverter {
 
 		return new ServiceInstanceListResponseDTO(entries, servicesWithInterfaces.getTotalElements());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceListResponseDTO convertServiceInstanceListToDTO(
 																  final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
@@ -313,10 +313,10 @@ public class DTOConverter {
 		return new KeyValuesDTO(map);
 
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public ServiceLookupFilterModel convertServiceInstanceQueryRequestDtoToFilterModel(final ServiceInstanceQueryRequestDTO dto) {
-		return new ServiceLookupFilterModel( new ServiceInstanceLookupRequestDTO(
+		return new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
 				dto.instanceIds(),
 				dto.providerNames(),
 				dto.serviceDefinitionNames(),

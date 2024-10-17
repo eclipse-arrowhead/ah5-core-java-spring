@@ -42,7 +42,6 @@ import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
-import eu.arrowhead.serviceregistry.api.http.utils.ServiceLookupPreprocessor;
 import eu.arrowhead.serviceregistry.service.ConfigService;
 import eu.arrowhead.serviceregistry.service.ManagementService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,7 +51,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping(ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH)
@@ -411,7 +409,7 @@ public class ManagementAPI {
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH;
 		return mgmtService.queryServiceInstances(dto, verbose, origin);
 	}
-	
+
 
 	// create-service-instances POST /service-instances(bulk)
 	//-------------------------------------------------------------------------------------------------
@@ -436,7 +434,7 @@ public class ManagementAPI {
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
 		return mgmtService.createServiceInstances(dto, origin);
 	}
-	
+
 	// update-service-instances PUT /service-instances(bulk) -> only metadata, expiresAt and interface can be changed
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the updated system entries")
