@@ -380,9 +380,6 @@ public class ManagementAPI {
 
 	// SERVICE INSTANCES
 
-	// query-service-instances POST /service-instances (query param verbose)
-	// * paging: page, size, direction, sort
-	// * filter to: instance id list, system name list. service def list, version list, aliveAt, metadata requirement list, interface name list, policy list
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the service instance entries according to the query request")
 	@ApiResponses(value = {
@@ -410,8 +407,6 @@ public class ManagementAPI {
 		return mgmtService.queryServiceInstances(dto, verbose, origin);
 	}
 
-
-	// create-service-instances POST /service-instances(bulk)
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created service instance entries")
 	@ApiResponses(value = {
@@ -435,7 +430,6 @@ public class ManagementAPI {
 		return mgmtService.createServiceInstances(dto, origin);
 	}
 
-	// update-service-instances PUT /service-instances(bulk) -> only metadata, expiresAt and interface can be changed
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the updated system entries")
 	@ApiResponses(value = {
@@ -458,7 +452,6 @@ public class ManagementAPI {
 		return mgmtService.updateServiceInstance(dto, origin);
 	}
 
-	// remove-service-instances DELETE /service-instances(list of service instance ids as query params)
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes the defined service instance entries")
 	@ApiResponses(value = {
