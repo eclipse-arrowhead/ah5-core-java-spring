@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
@@ -30,7 +31,7 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public void handle(final MqttRequestModel request) {
+	public void handle(final MqttRequestModel request) throws ArrowheadException {
 		logger.debug("ManagementMqttHandler.handle started");
 		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
 

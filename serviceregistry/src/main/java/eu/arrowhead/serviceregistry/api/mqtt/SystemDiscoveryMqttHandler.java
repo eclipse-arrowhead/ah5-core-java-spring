@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
@@ -31,21 +32,22 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public void handle(final MqttRequestModel request) {
+	public void handle(final MqttRequestModel request)  throws ArrowheadException {
 		logger.debug("SystemDiscoveryMqttHandler.handle started");
 		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
 
 		switch (request.getOperation()) {
 		case Constants.SERVICE_OP_REGISTER:
 			// TODO
+			System.out.println("Do operation" + request.getOperation());
 			break;
 
 		case Constants.SERVICE_OP_LOOKUP:
-			// TODO
+			System.out.println("Do operation" + request.getOperation());
 			break;
 
 		case Constants.SERVICE_OP_REVOKE:
-			// TODO
+			System.out.println("Do operation " + request.getOperation());
 			break;
 
 		default:
