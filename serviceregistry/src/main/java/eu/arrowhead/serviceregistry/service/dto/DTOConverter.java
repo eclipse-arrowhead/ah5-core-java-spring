@@ -233,7 +233,7 @@ public class DTOConverter {
 																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
 		logger.debug("convertServiceInstanceListToDTO started...");
 
-		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>();
+		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>(servicesWithInterfaces.getNumberOfElements());
 		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {
 			Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemDeviceEntry = null;
 			if (systemsWithDevices != null) {
@@ -316,6 +316,8 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceLookupFilterModel convertServiceInstanceQueryRequestDtoToFilterModel(final ServiceInstanceQueryRequestDTO dto) {
+		logger.debug("convertServiceInstanceQueryRequestDtoToFilterModel started...");
+
 		return new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
 				dto.instanceIds(),
 				dto.providerNames(),

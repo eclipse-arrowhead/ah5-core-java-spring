@@ -158,16 +158,16 @@ public class ServiceInstanceDbService {
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updateBulk(final List<ServiceInstanceUpdateRequestDTO> dtos) {
-		logger.debug("createBulk started");
+		logger.debug("updateBulk started");
 		Assert.isTrue(!Utilities.isEmpty(dtos), "service instance list is empty");
 
-		List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> entities = new ArrayList<>(dtos.size());
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> entities = new ArrayList<>(dtos.size());
 
 		synchronized (LOCK) {
-			for (ServiceInstanceUpdateRequestDTO dto : dtos) {
+			for (final ServiceInstanceUpdateRequestDTO dto : dtos) {
 
 				// find the instance to update
-				Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
+				final Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
 				// check the existence
 				if (optionalInstance.isEmpty()) {
 					throw new InvalidParameterException("Instance id does not exist: " + dto.instanceId());
@@ -184,7 +184,7 @@ public class ServiceInstanceDbService {
 					final List<ServiceInstanceInterface> newInterfaces = createAndSaveInterfaces(dto.interfaces(), instance);
 
 					// save the new instance
-					serviceInstanceRepo.saveAndFlush(instance);
+					instance = serviceInstanceRepo.saveAndFlush(instance);
 
 					// flush everything in the right ordes
 					serviceInterfaceTemplateRepo.flush();
@@ -365,9 +365,11 @@ public class ServiceInstanceDbService {
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("unchecked")
 	private List<ServiceInstanceInterface> createAndSaveInterfaces(final List<ServiceInstanceInterfaceRequestDTO> dtos, final ServiceInstance serviceInstance) {
-		List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
+		final List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
 
 		for (final ServiceInstanceInterfaceRequestDTO dto : dtos) {
+			Assert.isTrue(Utilities.isEnumValue(dto.policy(), ServiceInterfacePolicy.class), "Invalid service interface policy");
+
 			// template
 			ServiceInterfaceTemplate template; // interface template (maybe doesn't exist yet)
 			final Optional<ServiceInterfaceTemplate> optionalTemplate = serviceInterfaceTemplateRepo.findByName(dto.templateName());
@@ -382,7 +384,7 @@ public class ServiceInstanceDbService {
 					// we add all the provided properties as mandatory properties in case of extendable interface policy
 					if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
 						final List<ServiceInterfaceTemplateProperty> templateProps = new ArrayList<>();
-						for (Entry<String, Object> property : (List<Entry<String, Object>>) dto.properties()) {
+						for (final Entry<String, Object> property : dto.properties().entrySet()) {
 							templateProps.add(new ServiceInterfaceTemplateProperty(
 									template,
 									property.getKey(),
@@ -396,22 +398,20 @@ public class ServiceInstanceDbService {
 			} else {
 			// existing template
 				template = optionalTemplate.get();
-				// modify template protocol if necessary
 				if (template.getProtocol() != dto.protocol()) {
-					template.setProtocol(dto.protocol());
-					serviceInterfaceTemplateRepo.save(template);
+					throw new InvalidParameterException("The protocol can not be overwritten");
 				}
 
-				// we have to check, if all the mandatory properties are provided
-				final List<ServiceInterfaceTemplateProperty> mandatoryProperties = serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(template)
-						.stream().filter(p -> p.isMandatory()).toList();
-				mandatoryProperties.forEach(p -> {
-					if (!dto.properties().containsKey(p.getPropertyName())) {
-						throw new InvalidParameterException("Mandatory interface property is missing: " + p.getPropertyName());
-					}
+				serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(template)
+						.stream()
+						.filter(p -> p.isMandatory())
+						.toList()
+						.forEach(p -> {
+							if (!dto.properties().containsKey(p.getPropertyName())) {
+								throw new InvalidParameterException("Mandatory interface property is missing: " + p.getPropertyName());
+							}
 				});
 			}
-			Assert.isTrue(Utilities.isEnumValue(dto.policy(), ServiceInterfacePolicy.class), "Invalid service interface policy");
 			interfaces.add(new ServiceInstanceInterface(serviceInstance, template, Utilities.toJson(dto.properties()), ServiceInterfacePolicy.valueOf(dto.policy())));
 		}
 		serviceInstanceInterfaceRepo.saveAll(interfaces);

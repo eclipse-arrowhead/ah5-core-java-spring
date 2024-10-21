@@ -17,6 +17,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
+import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
@@ -68,6 +69,9 @@ public class ManagementValidation {
 
 	@Autowired
 	private NameValidator nameValidator;
+	
+	@Autowired
+	private NameNormalizer nameNormalizer; //for checking duplications
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -356,7 +360,7 @@ public class ManagementValidation {
 			}
 
 			if (names.contains(system.name())) {
-				throw new InvalidParameterException("Duplicate system name: " + system.name(), origin);
+				throw new InvalidParameterException("Duplicated system name: " + system.name(), origin);
 			}
 
 			if (system.name().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
@@ -519,7 +523,7 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Request payload is empty", origin);
 		}
 
-		for (ServiceInstanceRequestDTO instance : dto.instances()) {
+		for (final ServiceInstanceRequestDTO instance : dto.instances()) {
 
 			// system name
 			if (Utilities.isEmpty(instance.systemName())) {
@@ -595,19 +599,19 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Request payload is empty", origin);
 		}
 
-		List<String> instanceIds = new ArrayList<>();
-		for (ServiceInstanceUpdateRequestDTO instance : dto.instances()) {
+		final Set<String> instanceIds = new HashSet<String>();
+		for (final ServiceInstanceUpdateRequestDTO instance : dto.instances()) {
 
 			// instance id
 			if (Utilities.isEmpty(instance.instanceId())) {
 				throw new InvalidParameterException("Instance id is empty");
 			}
 
-			if (instanceIds.contains(instance.instanceId())) {
+			if (instanceIds.contains(nameNormalizer.normalize(instance.instanceId()))) {
 				throw new InvalidParameterException("Duplicated instance id: " + instance.instanceId());
 			}
 
-			instanceIds.add(instance.instanceId());
+			instanceIds.add(nameNormalizer.normalize(instance.instanceId()));
 
 			// expires at
 			if (!Utilities.isEmpty(instance.expiresAt())) {
@@ -737,7 +741,7 @@ public class ManagementValidation {
 
 		validateCreateServiceInstances(dto, origin);
 
-		List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
+		final List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
 
 		normalized.forEach(n -> {
 			nameValidator.validateName(n.systemName());
@@ -756,7 +760,7 @@ public class ManagementValidation {
 
 		validateUpdateServiceInstances(dto, origin);
 
-		List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
+		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
 
 		normalized.forEach(n -> interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces()));
 

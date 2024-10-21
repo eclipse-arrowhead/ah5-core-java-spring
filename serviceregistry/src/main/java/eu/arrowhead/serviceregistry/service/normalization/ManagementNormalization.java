@@ -188,7 +188,7 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveServiceInstances(final List<String> instanceIds) {
-		logger.debug("normalizeUpdateServiceInstanceIds started");
+		logger.debug("normalizeRemoveServiceInstances started");
 		Assert.notNull(instanceIds, "instanceId list is null");
 
 		return instanceIds.stream().map(i -> nameNormalizer.normalize(i)).collect(Collectors.toList());
@@ -255,7 +255,8 @@ public class ManagementNormalization {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
+	private ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
+		logger.debug("normalizeServiceInstanceRequestDTO started...");
 
 		return new ServiceInstanceRequestDTO(
 				// system name
@@ -282,11 +283,12 @@ public class ManagementNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceUpdateRequestDTO normalizeServiceInstanceUpdateRequestDTO(final ServiceInstanceUpdateRequestDTO dto) {
+	private ServiceInstanceUpdateRequestDTO normalizeServiceInstanceUpdateRequestDTO(final ServiceInstanceUpdateRequestDTO dto) {
+		logger.debug("normalizeServiceInstanceUpdateRequestDTO started...");
 
 		return new ServiceInstanceUpdateRequestDTO(
 				// instance id
-				dto.instanceId().trim(),
+				nameNormalizer.normalize(dto.instanceId()),
 
 				// expires at
 				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),

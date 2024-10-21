@@ -89,8 +89,6 @@ public class ManagementService {
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
-	private static final Object LOCK = new Object();
-
 	//=================================================================================================
 	// methods
 
@@ -317,11 +315,9 @@ public class ManagementService {
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
 
 		try {
-			synchronized (LOCK) {
 			instanceEntries = instanceDbService.createBulk(normalized);
 			systemTriplets = systemDbService.getByNameList(
 					instanceEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
-			}
 			return dtoConverter.convertServiceInstanceListToDTO(instanceEntries, systemTriplets);
 
 		} catch (final InvalidParameterException ex) {
@@ -343,11 +339,9 @@ public class ManagementService {
 
 			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries;
 			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
-			synchronized (LOCK) {
-				updatedEntries = instanceDbService.updateBulk(normalized);
-				systemTriplets = systemDbService.getByNameList(
-						updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
-			}
+			updatedEntries = instanceDbService.updateBulk(normalized);
+			systemTriplets = systemDbService.getByNameList(
+					updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
 
 			return dtoConverter.convertServiceInstanceListToDTO(updatedEntries, systemTriplets);
 
@@ -388,15 +382,15 @@ public class ManagementService {
 
 			Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces;
 			Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = null;
-			synchronized (LOCK) {
-				servicesWithInterfaces = instanceDbService.getPageByFilters(pageRequest, dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(normalized));
-				if (verbose) {
-					systemsWithDevices = systemDbService.getPageByFilters(
-							PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
-							List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
-							null, null, null, null, null);
-				}
+			servicesWithInterfaces = instanceDbService.getPageByFilters(pageRequest, dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(normalized));
+
+			if (verbose) {
+				systemsWithDevices = systemDbService.getPageByFilters(
+						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+						List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
+						null, null, null, null, null);
 			}
+
 
 			return dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices);
 

@@ -399,7 +399,7 @@ public class ManagementAPI {
 			@RequestBody final ServiceInstanceQueryRequestDTO dto,
 			@Parameter(
 					name =  "verbose",
-					description  = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.)",
+					description  = "Set true if you want the response to contain the system and device details.",
 					example = "true")
 			@RequestParam final boolean verbose) {
 		logger.debug("queryServiceInstances started");
@@ -431,10 +431,10 @@ public class ManagementAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the updated system entries")
+	@Operation(summary = "Returns the updated service instance entries")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SystemListResponseDTO.class)) }),
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ServiceInstanceListResponseDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
