@@ -17,6 +17,7 @@ import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
+import eu.arrowhead.dto.SystemRegisterRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
@@ -53,8 +54,8 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 
 		switch (request.getOperation()) {
 		case Constants.SERVICE_OP_REGISTER:
-			final SystemRequestDTO registerDTO = readPayload(request.getPayload(), SystemRequestDTO.class);
-			final Pair<SystemResponseDTO, MqttStatus> registerResult = register(registerDTO);
+			final SystemRegisterRequestDTO registerDTO = readPayload(request.getPayload(), SystemRegisterRequestDTO.class);
+			final Pair<SystemResponseDTO, MqttStatus> registerResult = register(request.getRequester(), registerDTO);
 			responseStatus = registerResult.getRight();
 			responsePayload = registerResult.getLeft();
 			break;
@@ -62,14 +63,11 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_LOOKUP:
 			final SystemLookupRequestDTO lookupDTO = readPayload(request.getPayload(), SystemLookupRequestDTO.class);
 			final Boolean verbose = Boolean.valueOf(request.getParams().get("verbose"));
-			final Pair<SystemListResponseDTO, MqttStatus> lookupResult = lookup(lookupDTO, verbose);
-			responseStatus = lookupResult.getRight();
-			responsePayload = lookupResult.getLeft();
+			responsePayload = lookup(lookupDTO, verbose);
 			break;
 
 		case Constants.SERVICE_OP_REVOKE:
-			final String name = readPayload(request.getPayload(), String.class);
-			responseStatus = revoke(name);
+			responseStatus = revoke(request.getRequester());
 			break;
 
 		default:
@@ -83,26 +81,25 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private Pair<SystemResponseDTO, MqttStatus> register(final SystemRequestDTO dto) {
+	private Pair<SystemResponseDTO, MqttStatus> register(final String identifiedRequester, final SystemRegisterRequestDTO dto) {
 		logger.debug("SystemDiscoveryMqttHandler.register started");
 
-		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(dto, topic());
+		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), topic());
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private Pair<SystemListResponseDTO, MqttStatus> lookup(final SystemLookupRequestDTO dto, final boolean verbose) {
+	private SystemListResponseDTO lookup(final SystemLookupRequestDTO dto, final boolean verbose) {
 		logger.debug("SystemDiscoveryMqttHandler.lookup started");
 
-		final SystemListResponseDTO result = sdService.lookupSystem(dto, verbose, topic());
-		return Pair.of(result, MqttStatus.OK);
+		return sdService.lookupSystem(dto, verbose, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private MqttStatus revoke(final String systemName) {
 		logger.debug("SystemDiscoveryMqttHandler.revoke started");
 
-		boolean result = sdService.revokeSystem(systemName, topic());
+		final boolean result = sdService.revokeSystem(systemName, topic());
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}
 }
