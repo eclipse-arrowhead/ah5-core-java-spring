@@ -56,3 +56,61 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 	0,
 	'HTTP_OPERATIONS'
 ); 
+
+INSERT IGNORE INTO `service_interface_template` (`name`, `protocol`) VALUES ('generic-mqtt', 'tcp');
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
+	'accessAddresses',
+	1,
+	'NOT_EMPTY_ADDRESS_LIST'
+);
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
+	'accessPort',
+	1,
+	'PORT'
+); 
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
+	'topic',
+	1
+); 
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
+	'operations',
+	0,
+	'NOT_EMPTY_SET|NAME'
+);
+
+INSERT IGNORE INTO `service_interface_template` (`name`, `protocol`) VALUES ('generic-mqtts', 'ssl');
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
+	'accessAddresses',
+	1,
+	'NOT_EMPTY_ADDRESS_LIST'
+);
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
+	'accessPort',
+	1,
+	'PORT'
+); 
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
+	'topic',
+	1
+); 
+
+INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
+	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
+	'operations',
+	0,
+	'NOT_EMPTY_SET|NAME'
+);

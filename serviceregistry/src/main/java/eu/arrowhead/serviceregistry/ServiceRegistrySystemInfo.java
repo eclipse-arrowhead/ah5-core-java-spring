@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -317,9 +318,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.topic(topic)
-				.operation(Constants.SERVICE_OP_REGISTER, Constants.SERVICE_OP_REGISTER)
-				.operation(Constants.SERVICE_OP_LOOKUP, Constants.SERVICE_OP_LOOKUP)
-				.operation(Constants.SERVICE_OP_REVOKE, Constants.SERVICE_OP_REVOKE)
+				.operations(Set.of(Constants.SERVICE_OP_REGISTER, Constants.SERVICE_OP_LOOKUP, Constants.SERVICE_OP_REVOKE))
 				.build();
 	}
 }

@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-@Order(35)
+@Order(ServiceRegistryConstants.REQUEST_FILTER_ORDER_SERVICE_LOOKUP)
 public class ServiceLookupFilter extends ArrowheadFilter {
 
 	//=================================================================================================
@@ -42,7 +42,7 @@ public class ServiceLookupFilter extends ArrowheadFilter {
 					final String systemName = request.getAttribute(Constants.HTTP_ATTR_ARROWHEAD_AUTHENTICATED_SYSTEM).toString();
 
 					final boolean isRestricted = !(isSysop || sysInfo.hasClientDirectAccess(systemName));
-					request.setAttribute(ServiceRegistryConstants.HTTP_ATTR_RESTRICTED_SERVICE_LOOKUP, isRestricted);
+					request.setAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP, isRestricted);
 				}
 			}
 
