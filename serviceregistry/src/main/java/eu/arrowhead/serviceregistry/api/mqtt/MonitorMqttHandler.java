@@ -7,7 +7,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
@@ -35,11 +37,27 @@ public class MonitorMqttHandler extends MqttTopicHandler {
 		logger.debug("MonitorMqttHandler.handle started");
 		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
 
+		final MqttStatus responseStatus = MqttStatus.OK;
+		Object responsePayload = null;
+
 		switch (request.getOperation()) {
-		// TODO
+		case Constants.SERVICE_OP_ECHO:
+			responsePayload = echo();
+			break;
 
 		default:
 			throw new InvalidParameterException("Unknown operation: " + request.getOperation());
 		}
+
+		successResponse(request, responseStatus, responsePayload);
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private String echo() {
+		logger.debug("MonitorMqttHandler.echo started");
+		return "Got it";
 	}
 }
