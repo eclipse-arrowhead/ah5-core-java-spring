@@ -7,6 +7,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -23,6 +24,7 @@ import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.DeviceDiscoveryService;
 
 @Service
+@ConditionalOnProperty(name = Constants.MQTT_API_ENABLED, matchIfMissing = false)
 public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 
 	//=================================================================================================

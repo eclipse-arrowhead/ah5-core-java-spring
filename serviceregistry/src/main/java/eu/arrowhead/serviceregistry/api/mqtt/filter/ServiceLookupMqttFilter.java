@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceregistry.api.mqtt.filter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Constants;
@@ -11,6 +12,7 @@ import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
 
 @Service
+@ConditionalOnProperty(name = Constants.MQTT_API_ENABLED, matchIfMissing = false)
 public class ServiceLookupMqttFilter extends ArrowheadMqttFilter {
 
 	//=================================================================================================
