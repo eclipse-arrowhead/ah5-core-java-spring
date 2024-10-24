@@ -17,6 +17,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
@@ -139,11 +140,12 @@ public class ManagementService {
 		try {
 			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
-
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final LockedException ex) {
+			throw new LockedException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
 
