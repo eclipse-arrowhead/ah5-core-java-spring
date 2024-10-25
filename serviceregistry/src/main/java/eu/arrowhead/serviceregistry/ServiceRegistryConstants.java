@@ -86,8 +86,7 @@ public final class ServiceRegistryConstants {
 	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
 	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int ADDRESS_TYPE_LENGTH = 30;
-	public static final int ADDRESS_ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
+	public static final int ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
 
 	// Others
 

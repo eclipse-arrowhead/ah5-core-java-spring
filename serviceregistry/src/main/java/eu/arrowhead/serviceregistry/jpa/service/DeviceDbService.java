@@ -25,7 +25,6 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
-import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
@@ -34,6 +33,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceSystemConnectorRepository;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 
 @Service
 public class DeviceDbService {
@@ -164,7 +164,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Entry<Device, List<DeviceAddress>>> createBulk(final List<DeviceRequestDTO> candidates) {
+	public List<Entry<Device, List<DeviceAddress>>> createBulk(final List<NormalizedDeviceRequestDTO> candidates) {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "device candidate list is empty");
 
@@ -178,18 +178,16 @@ public class DeviceDbService {
 				final String existingNames = existing.stream()
 						.map(e -> e.getName())
 						.collect(Collectors.joining(", "));
-				throw new InvalidParameterException(
-						"Device with names already exists: " + existingNames);
+				throw new InvalidParameterException("Device with names already exists: " + existingNames);
 			}
 
 			List<Device> deviceEntities = candidates.stream()
 					.map(d -> new Device(d.name(), Utilities.toJson(d.metadata())))
 					.collect(Collectors.toList());
-
 			deviceEntities = deviceRepo.saveAllAndFlush(deviceEntities);
 
 			final List<DeviceAddress> deviceAddressEntities = new ArrayList<>();
-			for (final DeviceRequestDTO deviceEntry : candidates) {
+			for (final NormalizedDeviceRequestDTO deviceEntry : candidates) {
 				if (!Utilities.isEmpty(deviceEntry.addresses())) {
 					final Device device = deviceEntities.stream()
 							.filter(d -> d.getName().equals(deviceEntry.name()))
@@ -211,11 +209,10 @@ public class DeviceDbService {
 			for (final Device device : deviceEntities) {
 				results.add(Map.entry(device, addressRepo.findAllByDevice(device)));
 			}
-			return results;
 
+			return results;
 		} catch (final InvalidParameterException ex) {
 			throw ex;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -225,7 +222,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Entry<Device, List<DeviceAddress>> create(final DeviceRequestDTO candidate) {
+	public Entry<Device, List<DeviceAddress>> create(final NormalizedDeviceRequestDTO candidate) {
 		logger.debug("create started");
 		Assert.notNull(candidate, "device candidate is null");
 		Assert.isTrue(!Utilities.isEmpty(candidate.name()), "device candidate name is empty");
@@ -262,7 +259,7 @@ public class DeviceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Entry<Device, List<DeviceAddress>>> updateBulk(final List<DeviceRequestDTO> candidates) {
+	public List<Entry<Device, List<DeviceAddress>>> updateBulk(final List<NormalizedDeviceRequestDTO> candidates) {
 		logger.debug("updateBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "candidate list is missing or empty");
 
@@ -297,7 +294,7 @@ public class DeviceDbService {
 
 			addressRepo.deleteAllByDeviceIn(deviceEntries);
 			final List<DeviceAddress> newAddresses = new ArrayList<>();
-			for (final DeviceRequestDTO candidate : candidates) {
+			for (final NormalizedDeviceRequestDTO candidate : candidates) {
 				if (!Utilities.isEmpty(candidate.addresses())) {
 					final Device device = deviceEntries.stream()
 							.filter(d -> candidate.name().equals(d.getName()))
@@ -315,11 +312,10 @@ public class DeviceDbService {
 			for (final Device device : deviceEntries) {
 				results.add(Map.entry(device, addressRepo.findAllByDevice(device)));
 			}
-			return results;
 
+			return results;
 		} catch (final InvalidParameterException ex) {
 			throw ex;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

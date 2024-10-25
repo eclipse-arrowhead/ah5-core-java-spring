@@ -12,6 +12,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
+import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
@@ -22,6 +23,8 @@ import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
@@ -29,6 +32,9 @@ import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer
 public class ManagementNormalization {
 	//=================================================================================================
 	// members
+
+	@Autowired
+	private AddressValidator addressValidator;
 
 	@Autowired
 	private AddressNormalizer addressNormalizer;
@@ -50,23 +56,24 @@ public class ManagementNormalization {
 	// SYSTEMS
 
 	//-------------------------------------------------------------------------------------------------
-	public List<SystemRequestDTO> normalizeSystemRequestDTOs(final SystemListRequestDTO dtoList) {
+	public List<NormalizedSystemRequestDTO> normalizeSystemRequestDTOs(final SystemListRequestDTO dtoList) {
 		logger.debug("normalizeSystemRequestDTOs started");
 		Assert.notNull(dtoList, "SystemListRequestDTO is null");
 
-		final List<SystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
+		final List<NormalizedSystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
 		for (final SystemRequestDTO system : dtoList.systems()) {
-
-			normalized.add(new SystemRequestDTO(
+			normalized.add(new NormalizedSystemRequestDTO(
 					nameNormalizer.normalize(system.name()),
 					system.metadata(),
 					versionNormalizer.normalize(system.version()),
 					Utilities.isEmpty(system.addresses()) ? new ArrayList<>()
 							: system.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim(), addressNormalizer.normalize(a.address())))
+									.map(a -> addressNormalizer.normalize(a))
+									.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
 									.collect(Collectors.toList()),
 					Utilities.isEmpty(system.deviceName()) ? null : nameNormalizer.normalize(system.deviceName())));
 		}
+
 		return normalized;
 	}
 
@@ -106,21 +113,23 @@ public class ManagementNormalization {
 	// DEVICES
 
 	//-------------------------------------------------------------------------------------------------
-	public List<DeviceRequestDTO> normalizeDeviceRequestDTOList(final List<DeviceRequestDTO> dtoList) {
+	public List<NormalizedDeviceRequestDTO> normalizeDeviceRequestDTOList(final List<DeviceRequestDTO> dtoList) {
 		logger.debug("normalizeDeviceRequestDTOs started");
 		Assert.notNull(dtoList, "DeviceRequestDTO list is null");
 
-		final List<DeviceRequestDTO> normalized = new ArrayList<>(dtoList.size());
+		final List<NormalizedDeviceRequestDTO> normalized = new ArrayList<>(dtoList.size());
 		for (final DeviceRequestDTO device : dtoList) {
 			Assert.isTrue(!Utilities.isEmpty(device.name()), "Device name is empty");
-			normalized.add(new DeviceRequestDTO(
+			normalized.add(new NormalizedDeviceRequestDTO(
 					nameNormalizer.normalize(device.name()),
 					device.metadata(),
 					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
 							: device.addresses().stream()
-									.map(a -> new AddressDTO(a.type().trim().toUpperCase(), addressNormalizer.normalize(a.address())))
+									.map(a -> addressNormalizer.normalize(a))
+									.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
 									.collect(Collectors.toList())));
 		}
+
 		return normalized;
 	}
 

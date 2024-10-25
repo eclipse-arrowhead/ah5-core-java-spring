@@ -34,6 +34,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
 import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
 
@@ -68,7 +69,7 @@ public class SystemDiscoveryService {
 		logger.debug("registerSystem started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final SystemRequestDTO normalized = validator.validateAndNormalizeRegisterSystem(dto, origin);
+		final NormalizedSystemRequestDTO normalized = validator.validateAndNormalizeRegisterSystem(dto, origin);
 
 		try {
 			final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> optional = dbService.getByName(normalized.name());
@@ -81,8 +82,7 @@ public class SystemDiscoveryService {
 				checkSameSystemAttributes(existingSystem, normalized);
 
 				// Convert to response and return
-				final SystemResponseDTO existingSystemAsResponseDTO = dtoConverter.convertSystemTripletToDTO(existingSystem);
-				return Map.entry(existingSystemAsResponseDTO, false);
+				return Map.entry(dtoConverter.convertSystemTripletToDTO(existingSystem), false);
 			}
 
 			// New system
@@ -147,7 +147,7 @@ public class SystemDiscoveryService {
 
 	//-------------------------------------------------------------------------------------------------
 	// throws exception, if the two systems doesn't have the same attributes
-	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final SystemRequestDTO dto) {
+	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final NormalizedSystemRequestDTO dto) {
 		logger.debug("checkSameSystemAttributes started");
 		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical!");
 

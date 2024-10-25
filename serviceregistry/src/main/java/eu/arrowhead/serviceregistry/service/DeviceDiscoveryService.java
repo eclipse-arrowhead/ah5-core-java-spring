@@ -25,6 +25,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
 import eu.arrowhead.serviceregistry.service.validation.DeviceDiscoveryValidation;
 
@@ -56,7 +57,7 @@ public class DeviceDiscoveryService {
 		logger.debug("registerDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final DeviceRequestDTO normalized = validator.validateAndNormalizeRegisterDevice(dto, origin);
+		final NormalizedDeviceRequestDTO normalized = validator.validateAndNormalizeRegisterDevice(dto, origin);
 
 		try {
 			final Optional<Entry<Device, List<DeviceAddress>>> optional = dbService.getByName(normalized.name());
@@ -65,9 +66,9 @@ public class DeviceDiscoveryService {
 			if (optional.isPresent()) {
 				final Device existing = optional.get().getKey();
 
-				if (!Utilities.isEmpty(existing.getMetadata()) || !Utilities.isEmpty(dto.metadata())) {
-					if ((!Utilities.isEmpty(existing.getMetadata()) && Utilities.isEmpty(dto.metadata()))
-							|| (Utilities.isEmpty(existing.getMetadata()) && !Utilities.isEmpty(dto.metadata()))) {
+				if (!Utilities.isEmpty(existing.getMetadata()) || !Utilities.isEmpty(normalized.metadata())) {
+					if ((!Utilities.isEmpty(existing.getMetadata()) && Utilities.isEmpty(normalized.metadata()))
+							|| (Utilities.isEmpty(existing.getMetadata()) && !Utilities.isEmpty(normalized.metadata()))) {
 						throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided metadata is not matching");
 					}
 
@@ -80,7 +81,7 @@ public class DeviceDiscoveryService {
 						.stream()
 						.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
 						.collect(Collectors.toList());
-				if (!addressMatcher.isAddressListMatching(existingAddresses, dto.addresses())) {
+				if (!addressMatcher.isAddressListMatching(existingAddresses, normalized.addresses())) {
 					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided addresses are not matching");
 				}
 

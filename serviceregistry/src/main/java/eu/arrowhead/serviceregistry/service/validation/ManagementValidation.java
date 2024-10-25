@@ -36,6 +36,8 @@ import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
@@ -105,29 +107,12 @@ public class ManagementValidation {
 			names.add(device.name());
 
 			if (!Utilities.isEmpty(device.addresses())) {
-				for (final AddressDTO address : device.addresses()) {
-
-					if (address == null) {
-						throw new InvalidParameterException("Address list contains null element", origin);
+				for (final String address : device.addresses()) {
+					if (Utilities.isEmpty(address)) {
+						throw new InvalidParameterException("Address is missing", origin);
 					}
 
-					if (Utilities.isEmpty(address.type())) {
-						throw new InvalidParameterException("Address type is missing", origin);
-					}
-
-					if (!Utilities.isEnumValue(address.type().toUpperCase(), AddressType.class)) {
-						throw new InvalidParameterException("Invalid address type: " + address.type(), origin);
-					}
-
-					if (Utilities.isEmpty(address.address())) {
-						throw new InvalidParameterException("Address value is missing", origin);
-					}
-
-					if (address.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
-						throw new InvalidParameterException("Address type is too long", origin);
-					}
-
-					if (address.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
+					if (address.length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
@@ -186,25 +171,26 @@ public class ManagementValidation {
 	// DEVICE VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
-	public List<DeviceRequestDTO> validateAndNormalizeCreateDevices(final DeviceListRequestDTO dto, final String origin) {
+	public List<NormalizedDeviceRequestDTO> validateAndNormalizeCreateDevices(final DeviceListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateDevices started");
 
 		validateCreateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
+		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
+		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
 
 		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<DeviceRequestDTO> validateAndNormalizeUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
+	public List<NormalizedDeviceRequestDTO> validateAndNormalizeUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
 
 		validateUpdateDevices(dto, origin);
 
-		final List<DeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
+		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
 		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
+		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
 
 		return normalized;
 	}
@@ -338,7 +324,6 @@ public class ManagementValidation {
 		final Set<String> names = new HashSet<>();
 
 		for (final SystemRequestDTO system : dto.systems()) {
-
 			if (system == null) {
 				throw new InvalidParameterException("System list contains null element", origin);
 			}
@@ -358,29 +343,12 @@ public class ManagementValidation {
 			names.add(system.name());
 
 			if (!Utilities.isEmpty(system.addresses())) {
-				for (final AddressDTO address : system.addresses()) {
-
-					if (address == null) {
-						throw new InvalidParameterException("Address list contains null element", origin);
-					}
-
-					if (Utilities.isEmpty(address.type())) {
-						throw new InvalidParameterException("Address type is missing", origin);
-					}
-
-					if (!Utilities.isEnumValue(address.type(), AddressType.class)) {
-						throw new InvalidParameterException("Invalid address type: " + address.type(), origin);
-					}
-
-					if (Utilities.isEmpty(address.address())) {
+				for (final String address : system.addresses()) {
+					if (Utilities.isEmpty(address)) {
 						throw new InvalidParameterException("Address value is missing", origin);
 					}
 
-					if (address.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
-						throw new InvalidParameterException("Address type is too long", origin);
-					}
-
-					if (address.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
+					if (address.length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
@@ -434,7 +402,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveSystems(final List<String> originalNames, final  String origin) {
+	public void validateRemoveSystems(final List<String> originalNames, final String origin) {
 		logger.debug("validateRemoveSystems started");
 
 		if (Utilities.isEmpty(originalNames)) {
@@ -449,21 +417,22 @@ public class ManagementValidation {
 	// SYSTEM VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
-	public List<SystemRequestDTO> validateAndNormalizeCreateSystems(final SystemListRequestDTO dto, final String origin) {
+	public List<NormalizedSystemRequestDTO> validateAndNormalizeCreateSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateSystems started");
+
 		validateCreateSystems(dto, origin);
 
-		final List<SystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(dto);
+		final List<NormalizedSystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(dto);
 
-		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
-		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
 		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
+		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
+		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
 
 		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<SystemRequestDTO> validateAndNormalizeUpdateSystems(final SystemListRequestDTO dto, final String origin) {
+	public List<NormalizedSystemRequestDTO> validateAndNormalizeUpdateSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeUpdateSystems started");
 
 		return validateAndNormalizeCreateSystems(dto, origin);
@@ -571,7 +540,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveInterfaceTemplates(final List<String> originalNames, final  String origin) {
+	public void validateRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
 		logger.debug("validateRemoveInterfaceTemplate started");
 
 		if (Utilities.isEmpty(originalNames)) {
@@ -648,11 +617,7 @@ public class ManagementValidation {
 		logger.debug("validateNormalizedAddress started");
 		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
 
-		if (dto.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
-			throw new InvalidParameterException("Address type is too long", origin);
-		}
-
-		if (dto.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
+		if (dto.address().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
 			throw new InvalidParameterException("Address is too long", origin);
 		}
 
