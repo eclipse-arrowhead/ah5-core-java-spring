@@ -398,7 +398,7 @@ public class ServiceInstanceDbService {
 			} else {
 			// existing template
 				template = optionalTemplate.get();
-				if (template.getProtocol() != dto.protocol()) {
+				if (!template.getProtocol().equals(dto.protocol())) {
 					throw new InvalidParameterException("The protocol can not be overwritten");
 				}
 
@@ -444,7 +444,7 @@ public class ServiceInstanceDbService {
 				baseFilter = BaseFilter.INSTANCE_ID;
 			} else if (!Utilities.isEmpty(filters.getProviderNames())) {
 				toFilter = serviceInstanceRepo.findAllBySystem_NameIn(filters.getProviderNames());
-				baseFilter = BaseFilter.SERVICE_NAME;
+				baseFilter = BaseFilter.SYSTEM_NAME;
 			} else if (!Utilities.isEmpty(filters.getServiceDefinitionNames())) {
 				toFilter = serviceInstanceRepo.findAllByServiceDefinition_NameIn(filters.getServiceDefinitionNames());
 				baseFilter = BaseFilter.SERVICE_NAME;

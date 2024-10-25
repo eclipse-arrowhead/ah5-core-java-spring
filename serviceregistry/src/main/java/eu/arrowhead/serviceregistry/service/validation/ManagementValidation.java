@@ -110,11 +110,11 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Device name is too long", origin);
 			}
 
-			if (names.contains(device.name())) {
+			if (names.contains(nameNormalizer.normalize(device.name()))) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
 			}
 
-			names.add(device.name());
+			names.add(nameNormalizer.normalize(device.name()));
 
 			if (!Utilities.isEmpty(device.addresses())) {
 				for (final AddressDTO address : device.addresses()) {
@@ -280,7 +280,7 @@ public class ManagementValidation {
 
 		for (final String name : dto.serviceDefinitionNames()) {
 
-			if (names.contains(name)) {
+			if (names.contains(nameNormalizer.normalize(name))) {
 				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
 
@@ -288,7 +288,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 
-			names.add(name);
+			names.add(nameNormalizer.normalize(name));
 
 		}
 
@@ -359,7 +359,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("System name is empty", origin);
 			}
 
-			if (names.contains(system.name())) {
+			if (names.contains(nameNormalizer.normalize(system.name()))) {
 				throw new InvalidParameterException("Duplicated system name: " + system.name(), origin);
 			}
 
@@ -367,7 +367,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("System name is too long: " + system.name(), origin);
 			}
 
-			names.add(system.name());
+			names.add(nameNormalizer.normalize(system.name()));
 
 			if (!Utilities.isEmpty(system.addresses())) {
 				for (final AddressDTO address : system.addresses()) {
