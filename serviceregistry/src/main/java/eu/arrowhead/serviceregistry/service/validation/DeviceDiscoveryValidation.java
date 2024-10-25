@@ -55,15 +55,17 @@ public class DeviceDiscoveryValidation {
 			throw new InvalidParameterException("Device name is too long", origin);
 		}
 
-		if (!Utilities.isEmpty(dto.addresses())) {
-			for (final String address : dto.addresses()) {
-				if (Utilities.isEmpty(address)) {
-					throw new InvalidParameterException("Address is missing", origin);
-				}
+		if (Utilities.isEmpty(dto.addresses())) {
+			throw new InvalidParameterException("At least one device address is needed", origin);
+		}
 
-				if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
-					throw new InvalidParameterException("Address is too long", origin);
-				}
+		for (final String address : dto.addresses()) {
+			if (Utilities.isEmpty(address)) {
+				throw new InvalidParameterException("Address is missing", origin);
+			}
+
+			if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+				throw new InvalidParameterException("Address is too long", origin);
 			}
 		}
 

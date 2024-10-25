@@ -106,15 +106,17 @@ public class ManagementValidation {
 
 			names.add(device.name());
 
-			if (!Utilities.isEmpty(device.addresses())) {
-				for (final String address : device.addresses()) {
-					if (Utilities.isEmpty(address)) {
-						throw new InvalidParameterException("Address is missing", origin);
-					}
+			if (Utilities.isEmpty(device.addresses())) {
+				throw new InvalidParameterException("At least one device address is needed for every device", origin);
+			}
 
-					if (address.length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
-						throw new InvalidParameterException("Address is too long", origin);
-					}
+			for (final String address : device.addresses()) {
+				if (Utilities.isEmpty(address)) {
+					throw new InvalidParameterException("Address is missing", origin);
+				}
+
+				if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+					throw new InvalidParameterException("Address is too long", origin);
 				}
 			}
 
@@ -348,7 +350,7 @@ public class ManagementValidation {
 						throw new InvalidParameterException("Address value is missing", origin);
 					}
 
-					if (address.length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+					if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
@@ -617,7 +619,7 @@ public class ManagementValidation {
 		logger.debug("validateNormalizedAddress started");
 		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
 
-		if (dto.address().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+		if (dto.address().trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
 			throw new InvalidParameterException("Address is too long", origin);
 		}
 
