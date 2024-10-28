@@ -52,7 +52,7 @@ public class ServiceDiscoveryAPI {
 	private SystemNamePreprocessor sysNamePreprocessor;
 
 	@Autowired
-	private ServiceLookupPreprocessor  serviceLookupPreprocessor;
+	private ServiceLookupPreprocessor serviceLookupPreprocessor;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 

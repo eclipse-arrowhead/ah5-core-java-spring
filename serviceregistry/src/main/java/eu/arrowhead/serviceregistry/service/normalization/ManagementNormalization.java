@@ -27,6 +27,11 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 
 @Service
 public class ManagementNormalization {
@@ -172,6 +177,51 @@ public class ManagementNormalization {
 				.collect(Collectors.toList());
 	}
 
+	// SERVICE INSTANCES
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceRequestDTO> normalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto) {
+		logger.debug("normalizeCreateServiceInstances started");
+		Assert.notNull(dto, "ServiceInstanceCreateListRequestDTO is null");
+
+		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceUpdateRequestDTO> normalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto) {
+		logger.debug("normalizeUpdateServiceInstances started");
+		Assert.notNull(dto, "ServiceInstanceUpdateListRequestDTO is null");
+
+		return dto.instances().stream().map(i -> normalizeServiceInstanceUpdateRequestDTO(i)).collect(Collectors.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeRemoveServiceInstances(final List<String> instanceIds) {
+		logger.debug("normalizeRemoveServiceInstances started");
+		Assert.notNull(instanceIds, "instanceId list is null");
+
+		return instanceIds.stream().map(i -> nameNormalizer.normalize(i)).collect(Collectors.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceQueryRequestDTO normalizeQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto) {
+		logger.debug("normalizeQueryServiceInstances started");
+		Assert.notNull(dto, "ServiceInstanceQueryRequestDTO is null");
+
+		return new ServiceInstanceQueryRequestDTO(
+				dto.pagination(),
+				Utilities.isEmpty(dto.instanceIds()) ? new ArrayList<>() : dto.instanceIds().stream().map(id -> normalizeServiceInstanceId(id)).toList(),
+				Utilities.isEmpty(dto.providerNames()) ? new ArrayList<>() : dto.providerNames().stream().map(n -> normalizeSystemName(n)).toList(),
+				Utilities.isEmpty(dto.serviceDefinitionNames()) ? new ArrayList<>() : dto.serviceDefinitionNames().stream().map(sd -> nameNormalizer.normalize(sd)).toList(),
+				Utilities.isEmpty(dto.versions()) ? new ArrayList<>() : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).toList(),
+				Utilities.isEmpty(dto.alivesAt()) ? "" : dto.alivesAt().trim(),
+				Utilities.isEmpty(dto.metadataRequirementsList()) ? new ArrayList<>() : dto.metadataRequirementsList(),
+				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> nameNormalizer.normalize(i)).toList(),
+				Utilities.isEmpty(dto.interfacePropertyRequirementsList()) ? new ArrayList<>() : dto.interfacePropertyRequirementsList(),
+				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList()
+		);
+	}
+
 	// INTERFACE TEMPLATES
 
 	//-------------------------------------------------------------------------------------------------
@@ -208,5 +258,74 @@ public class ManagementNormalization {
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))
 				.collect(Collectors.toList());
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
+		logger.debug("normalizeServiceInstanceRequestDTO started...");
+
+		return new ServiceInstanceRequestDTO(
+				// system name
+				nameNormalizer.normalize(dto.systemName()),
+
+				// service definition name
+				nameNormalizer.normalize(dto.serviceDefinitionName()),
+
+				// version
+				versionNormalizer.normalize(dto.version()),
+
+				// expires at
+				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
+
+				// metadata
+				dto.metadata(),
+
+				// interfaces
+				dto.interfaces()
+					.stream()
+					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
+					.toList()
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private ServiceInstanceUpdateRequestDTO normalizeServiceInstanceUpdateRequestDTO(final ServiceInstanceUpdateRequestDTO dto) {
+		logger.debug("normalizeServiceInstanceUpdateRequestDTO started...");
+
+		return new ServiceInstanceUpdateRequestDTO(
+				// instance id
+				nameNormalizer.normalize(dto.instanceId()),
+
+				// expires at
+				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
+
+				// metadata
+				dto.metadata(),
+
+				// interfaces
+				dto.interfaces()
+					.stream()
+					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
+					.toList()
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private String normalizeSystemName(final String systemName) {
+		logger.debug("normalizeSystemName started");
+		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
+
+		return nameNormalizer.normalize(systemName);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private String normalizeServiceInstanceId(final String instanceId) {
+		logger.debug("normalizeServiceInstanceId started");
+		Assert.isTrue(!Utilities.isEmpty(instanceId), "Service instance id is empty");
+
+		return nameNormalizer.normalize(instanceId);
 	}
 }

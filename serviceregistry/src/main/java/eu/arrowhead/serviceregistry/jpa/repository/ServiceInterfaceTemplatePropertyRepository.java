@@ -20,4 +20,7 @@ public interface ServiceInterfaceTemplatePropertyRepository extends RefreshableR
 
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceInterfaceTemplateProperty> findAllByServiceInterfaceTemplateIn(final Collection<ServiceInterfaceTemplate> template);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInterfaceTemplateProperty> findAllByServiceInterfaceTemplate(final ServiceInterfaceTemplate template);
 }

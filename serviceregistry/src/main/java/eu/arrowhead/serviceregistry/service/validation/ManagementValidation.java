@@ -1,10 +1,11 @@
 package eu.arrowhead.serviceregistry.service.validation;
 
+import java.time.DateTimeException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,21 +17,32 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
+import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AddressDTO;
-import eu.arrowhead.dto.DeviceListRequestDTO;
-import eu.arrowhead.dto.DeviceQueryRequestDTO;
-import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
+import eu.arrowhead.dto.DeviceListRequestDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
+import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
@@ -40,7 +52,6 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ManagementValidation {
@@ -62,6 +73,9 @@ public class ManagementValidation {
 
 	@Autowired
 	private NameValidator nameValidator;
+	
+	@Autowired
+	private NameNormalizer nameNormalizer; //for checking duplications
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -100,11 +114,11 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Device name is too long", origin);
 			}
 
-			if (names.contains(device.name())) {
+			if (names.contains(nameNormalizer.normalize(device.name()))) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
 			}
 
-			names.add(device.name());
+			names.add(nameNormalizer.normalize(device.name()));
 
 			if (Utilities.isEmpty(device.addresses())) {
 				throw new InvalidParameterException("At least one device address is needed for every device", origin);
@@ -256,7 +270,7 @@ public class ManagementValidation {
 
 		for (final String name : dto.serviceDefinitionNames()) {
 
-			if (names.contains(name)) {
+			if (names.contains(nameNormalizer.normalize(name))) {
 				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
 
@@ -264,7 +278,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 
-			names.add(name);
+			names.add(nameNormalizer.normalize(name));
 
 		}
 
@@ -334,15 +348,15 @@ public class ManagementValidation {
 				throw new InvalidParameterException("System name is empty", origin);
 			}
 
-			if (names.contains(system.name())) {
-				throw new InvalidParameterException("Duplicate system name: " + system.name(), origin);
+			if (names.contains(nameNormalizer.normalize(system.name()))) {
+				throw new InvalidParameterException("Duplicated system name: " + system.name(), origin);
 			}
 
 			if (system.name().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
 				throw new InvalidParameterException("System name is too long: " + system.name(), origin);
 			}
 
-			names.add(system.name());
+			names.add(nameNormalizer.normalize(system.name()));
 
 			if (!Utilities.isEmpty(system.addresses())) {
 				for (final String address : system.addresses()) {
@@ -470,6 +484,281 @@ public class ManagementValidation {
 		validateRemoveSystems(originalNames, origin);
 
 		return normalizer.normalizeRemoveSystemNames(originalNames);
+	}
+
+	// SERVICE INSTANCE VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		logger.debug("validateCreateServiceInstances started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.instances())) {
+			throw new InvalidParameterException("Request payload is empty", origin);
+		}
+
+		for (final ServiceInstanceRequestDTO instance : dto.instances()) {
+
+			// system name
+			if (Utilities.isEmpty(instance.systemName())) {
+				throw new InvalidParameterException("System name is empty", origin);
+			}
+
+			if (instance.systemName().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
+				throw new InvalidParameterException("System name is too long: " + instance.systemName(), origin);
+			}
+
+			// service definition name
+			if (Utilities.isEmpty(instance.serviceDefinitionName())) {
+				throw new InvalidParameterException("Service definition name is empty", origin);
+			}
+
+			if (instance.serviceDefinitionName().length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+				throw new InvalidParameterException("Service definition name is too long: " + instance.serviceDefinitionName(), origin);
+			}
+
+			// version -> can be empty (default will be set at normalization)
+
+			// expires at
+			if (!Utilities.isEmpty(instance.expiresAt())) {
+				ZonedDateTime expiresAt = null;
+				try {
+					expiresAt = Utilities.parseUTCStringToZonedDateTime(instance.expiresAt());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Expiration time has an invalid time format, UTC string expected (example: 2024-10-11T14:30:00Z)", origin);
+				}
+				if (Utilities.utcNow().isAfter(expiresAt)) {
+					throw new InvalidParameterException("Expiration time is in the past", origin);
+				}
+			}
+
+			// metadata
+			if (!Utilities.isEmpty(instance.metadata())) {
+				MetadataValidation.validateMetadataKey(instance.metadata());
+			}
+
+			// interfaces
+			if (Utilities.isEmpty(instance.interfaces())) {
+				throw new InvalidParameterException("Service interface list is empty", origin);
+			}
+
+			for (final ServiceInstanceInterfaceRequestDTO interfaceDTO : instance.interfaces()) {
+				if (Utilities.isEmpty(interfaceDTO.templateName())) {
+					throw new InvalidParameterException("Interface template name is missing", origin);
+				}
+				if (Utilities.isEmpty(interfaceDTO.policy())) {
+					throw new InvalidParameterException("Interface policy is missing", origin);
+				}
+				if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
+					throw new InvalidParameterException("Invalid inteface policy", origin);
+				}
+				if (Utilities.isEmpty(interfaceDTO.properties())) {
+					throw new InvalidParameterException("Interface properties are missing", origin);
+				} else {
+					MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				}
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("ServiceInstanceUpdateListRequestDTO started");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.instances())) {
+			throw new InvalidParameterException("Request payload is empty", origin);
+		}
+
+		final Set<String> instanceIds = new HashSet<String>();
+		for (final ServiceInstanceUpdateRequestDTO instance : dto.instances()) {
+
+			// instance id
+			if (Utilities.isEmpty(instance.instanceId())) {
+				throw new InvalidParameterException("Instance id is empty");
+			}
+
+			if (instanceIds.contains(nameNormalizer.normalize(instance.instanceId()))) {
+				throw new InvalidParameterException("Duplicated instance id: " + instance.instanceId());
+			}
+
+			instanceIds.add(nameNormalizer.normalize(instance.instanceId()));
+
+			// expires at
+			if (!Utilities.isEmpty(instance.expiresAt())) {
+				ZonedDateTime expiresAt = null;
+				try {
+					expiresAt = Utilities.parseUTCStringToZonedDateTime(instance.expiresAt());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Expiration time has an invalid time format, UTC string expected (example: 2024-10-11T14:30:00Z)", origin);
+				}
+				if (Utilities.utcNow().isAfter(expiresAt)) {
+					throw new InvalidParameterException("Expiration time is in the past", origin);
+				}
+			}
+
+			// metadata
+			if (!Utilities.isEmpty(instance.metadata())) {
+				MetadataValidation.validateMetadataKey(instance.metadata());
+			}
+
+			// interfaces
+			if (Utilities.isEmpty(instance.interfaces())) {
+				throw new InvalidParameterException("Service interface list is empty", origin);
+			}
+
+			for (final ServiceInstanceInterfaceRequestDTO interfaceDTO : instance.interfaces()) {
+				if (Utilities.isEmpty(interfaceDTO.templateName())) {
+					throw new InvalidParameterException("Interface template name is missing", origin);
+				}
+				if (Utilities.isEmpty(interfaceDTO.policy())) {
+					throw new InvalidParameterException("Interface policy is missing", origin);
+				}
+				if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
+					throw new InvalidParameterException("Invalid inteface policy", origin);
+				}
+				if (Utilities.isEmpty(interfaceDTO.properties())) {
+					throw new InvalidParameterException("Interface properties are missing", origin);
+				} else {
+					MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				}
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveServiceInstances(final List<String> instanceIds, final String origin) {
+		if (Utilities.isEmpty(instanceIds)) {
+			throw new InvalidParameterException("Instance id list is empty", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryServiceInstances started");
+
+		if (dto != null) {
+			// pagination
+			pageValidator.validatePageParameter(dto.pagination(), Device.SORTABLE_FIELDS_BY, origin);
+
+			// check if instanceIds, providerNames and serviceDefinitionNames are all empty
+			if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
+				throw new InvalidParameterException("One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'", origin);
+			}
+
+			// instanceIds
+			if (!Utilities.isEmpty(dto.instanceIds()) && Utilities.containsNullOrEmpty(dto.instanceIds())) {
+				throw new InvalidParameterException("Instance id list contains null or empty element", origin);
+			}
+
+			// providerNames
+			if (!Utilities.isEmpty(dto.providerNames()) && Utilities.containsNullOrEmpty(dto.providerNames())) {
+				throw new InvalidParameterException("Provider name list contains null or empty element", origin);
+			}
+
+			// serviceDefinitionNames
+			if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+				throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+			}
+
+			// versions
+			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+				throw new InvalidParameterException("Version list contains null or empty element", origin);
+			}
+
+			// alivesAt
+			if (!Utilities.isEmpty(dto.alivesAt())) {
+				try {
+					Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Alive time has an invalid time format", origin);
+				}
+			}
+
+			// metadataRequirementsList
+			if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
+				throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+			}
+
+			// interfaceTemplateNames
+			if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
+				throw new InvalidParameterException("Interface template list contains null or empty element", origin);
+			}
+
+			// interfacePropertyRequirementsList
+			if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList()) && Utilities.containsNull(dto.interfacePropertyRequirementsList())) {
+				throw new InvalidParameterException("Interface property requirements list contains null element", origin);
+			}
+
+			// policies
+			if (!Utilities.isEmpty(dto.policies())) {
+				for (final String policy : dto.policies()) {
+					if (Utilities.isEmpty(policy)) {
+						throw new InvalidParameterException("Policy list contains null or empty element", origin);
+					}
+					if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
+						throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
+					}
+				}
+			}
+		}
+	}
+
+	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceRequestDTO> validateAndNormalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateServiceInstances started");
+
+		validateCreateServiceInstances(dto, origin);
+
+		final List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
+
+		normalized.forEach(n -> {
+			nameValidator.validateName(n.systemName());
+			nameValidator.validateName(n.serviceDefinitionName());
+			versionValidator.validateNormalizedVersion(n.version());
+			interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
+			}
+		);
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceUpdateRequestDTO> validateAndNormalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateServiceInstances started");
+
+		validateUpdateServiceInstances(dto, origin);
+
+		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
+
+		normalized.forEach(n -> interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces()));
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveServiceInstances(final List<String> instanceIds, final String origin) {
+		logger.debug("validateAndNormalizeRevokeServiceInstances started");
+
+		validateRemoveServiceInstances(instanceIds, origin);
+		return normalizer.normalizeRemoveServiceInstances(instanceIds);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceQueryRequestDTO validateAndNormalizeQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryServiceInstances");
+
+		validateQueryServiceInstances(dto, origin);
+
+		return normalizer.normalizeQueryServiceInstances(dto);
 	}
 
 	// INTERFACE VALIDATION
