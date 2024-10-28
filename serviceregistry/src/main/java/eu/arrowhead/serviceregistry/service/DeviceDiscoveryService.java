@@ -14,6 +14,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
@@ -80,7 +81,7 @@ public class DeviceDiscoveryService {
 						.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
 						.collect(Collectors.toList());
 				if (!addressMatcher.isAddressListMatching(existingAddresses, dto.addresses())) {
-					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided interfaces are not matching");
+					throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided addresses are not matching");
 				}
 
 				return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(existing, optional.get().getValue()), false);
@@ -119,10 +120,12 @@ public class DeviceDiscoveryService {
 		logger.debug("revokeDevice started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validator.validateRevokeDevice(name, origin);
+		final String normalized = validator.validateAndNormalizeRevokeDevice(name, origin);
 
 		try {
-			return dbService.deleteByName(name.trim());
+			return dbService.deleteByName(normalized);
+		} catch (final LockedException ex) {
+			throw new LockedException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

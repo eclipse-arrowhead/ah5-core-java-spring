@@ -242,6 +242,23 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByNameList(final List<String> names) {
+		logger.debug("getByName started");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "system name list contains null or empty");
+
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
+
+		for (final String name : names) {
+			final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> optionalTriple = getByName(name);
+			if (optionalTriple.isPresent()) {
+				result.add(optionalTriple.get());
+			}
+		}
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getPageByFilters(
 			final PageRequest pagination, final List<String> systemNames, final List<String> addresses, final AddressType addressType,
 			final List<MetadataRequirementDTO> metadataRequirementList, final List<String> versions, final List<String> deviceNames) {

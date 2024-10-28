@@ -3,6 +3,7 @@ package eu.arrowhead.serviceregistry.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
@@ -17,6 +18,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
@@ -25,6 +27,12 @@ import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
@@ -36,12 +44,15 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceDefinitionDbService;
+import eu.arrowhead.serviceregistry.jpa.service.ServiceInstanceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
@@ -73,6 +84,9 @@ public class ManagementService {
 
 	@Autowired
 	private DTOConverter dtoConverter;
+
+	@Autowired
+	private ServiceInstanceDbService instanceDbService;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -139,11 +153,12 @@ public class ManagementService {
 		try {
 			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
-
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final LockedException ex) {
+			throw new LockedException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
 
@@ -284,6 +299,106 @@ public class ManagementService {
 
 		try {
 			systemDbService.deleteByNameList(normalizedNames);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	// SERVICE INSTANCES
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO createServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		logger.debug("createServiceInstances started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<ServiceInstanceRequestDTO> normalized = validator.validateAndNormalizeCreateServiceInstances(dto, origin);
+
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntries;
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
+
+		try {
+			instanceEntries = instanceDbService.createBulk(normalized);
+			systemTriplets = systemDbService.getByNameList(
+					instanceEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+			return dtoConverter.convertServiceInstanceListToDTO(instanceEntries, systemTriplets);
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO updateServiceInstance(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("updateServiceInstance started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<ServiceInstanceUpdateRequestDTO> normalized = validator.validateAndNormalizeUpdateServiceInstances(dto, origin);
+
+		try {
+
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries;
+			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
+			updatedEntries = instanceDbService.updateBulk(normalized);
+			systemTriplets = systemDbService.getByNameList(
+					updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
+
+			return dtoConverter.convertServiceInstanceListToDTO(updatedEntries, systemTriplets);
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeServiceInstances(final List<String> serviceInstanceIds, final String origin) {
+		logger.debug("removeServiceInstances started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalized = validator.validateAndNormalizeRemoveServiceInstances(serviceInstanceIds, origin);
+
+		try {
+			instanceDbService.deleteByInstanceIds(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceListResponseDTO queryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final boolean verbose, final String origin) {
+		logger.debug("queryServiceInstances started");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final ServiceInstanceQueryRequestDTO normalized = validator.validateAndNormalizeQueryServiceInstances(dto, origin);
+
+		try {
+			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInstance.SORTABLE_FIELDS_BY, ServiceInstance.DEFAULT_SORT_FIELD, origin);
+
+			Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces;
+			Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = null;
+			servicesWithInterfaces = instanceDbService.getPageByFilters(pageRequest, dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(normalized));
+
+			if (verbose) {
+				systemsWithDevices = systemDbService.getPageByFilters(
+						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+						List.copyOf(servicesWithInterfaces.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toSet())),
+						null, null, null, null, null);
+			}
+
+
+			return dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices);
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
