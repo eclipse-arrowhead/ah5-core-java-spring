@@ -27,6 +27,10 @@ import eu.arrowhead.dto.LogRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
@@ -92,6 +96,7 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_DEVICE_CREATE:
 			final DeviceListRequestDTO deviceCreateDTO = readPayload(request.getPayload(), DeviceListRequestDTO.class);
 			responsePayload = deviceCreate(deviceCreateDTO);
+			responseStatus = MqttStatus.CREATED;
 			break;
 
 		case Constants.SERVICE_OP_DEVICE_UPDATE:
@@ -113,6 +118,7 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_SYSTEM_CREATE:
 			final SystemListRequestDTO systemCreateDTO = readPayload(request.getPayload(), SystemListRequestDTO.class);
 			responsePayload = systemCreate(systemCreateDTO);
+			responseStatus = MqttStatus.CREATED;
 			break;
 
 		case Constants.SERVICE_OP_SYSTEM_UPDATE:
@@ -133,6 +139,7 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_SERVICE_DEF_CREATE:
 			final ServiceDefinitionListRequestDTO serviceDefCreateDTO = readPayload(request.getPayload(), ServiceDefinitionListRequestDTO.class);
 			responsePayload = serviceDefinitionCreate(serviceDefCreateDTO);
+			responseStatus = MqttStatus.CREATED;
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_DEF_REMOVE:
@@ -141,19 +148,25 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_QUERY:
-			// TODO
+			 final ServiceInstanceQueryRequestDTO serviceInstanceQueryDTO = readPayload(request.getPayload(), ServiceInstanceQueryRequestDTO.class);
+			 final Boolean verbose2 = Boolean.valueOf(request.getParams().get("verbose"));
+			 responsePayload = serviceInstanceQuery(serviceInstanceQueryDTO, verbose2);
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_CREATE:
-			// TODO
+			final ServiceInstanceCreateListRequestDTO serviceInstanceCreateDTO = readPayload(request.getPayload(), ServiceInstanceCreateListRequestDTO.class);
+			responsePayload = serviceInstanceCreate(serviceInstanceCreateDTO);
+			responseStatus = MqttStatus.CREATED;
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_UPDATE:
-			// TODO
+			final ServiceInstanceUpdateListRequestDTO serviceInstanceUpdateDTO = readPayload(request.getPayload(), ServiceInstanceUpdateListRequestDTO.class);
+			responsePayload = serviceInstanceUpdate(serviceInstanceUpdateDTO);
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_REMOVE:
-			// TODO
+			final List<String> serviceInstanceRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			serviceInstanceRemove(serviceInstanceRemoveDTO);
 			break;
 
 		case Constants.SERVICE_OP_INTERFACE_TEMPLATE_QUERY:
@@ -164,6 +177,7 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_INTERFACE_TEMPLATE_CREATE:
 			final ServiceInterfaceTemplateListRequestDTO interfTemplateCreateDTO = readPayload(request.getPayload(), ServiceInterfaceTemplateListRequestDTO.class);
 			responsePayload = interfaceTemplateCreate(interfTemplateCreateDTO);
+			responseStatus = MqttStatus.CREATED;
 			break;
 
 		case Constants.SERVICE_OP_INTERFACE_TEMPLATE_REMOVE:
@@ -260,7 +274,28 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	// TODO service instance opertations
+	private ServiceInstanceListResponseDTO serviceInstanceQuery(final ServiceInstanceQueryRequestDTO dto, final boolean verbose) {
+		logger.debug("ManagementMqttHandler.serviceInstanceQuery started");
+		return mgmtService.queryServiceInstances(dto, verbose, topic());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private ServiceInstanceListResponseDTO serviceInstanceCreate(final ServiceInstanceCreateListRequestDTO dto) {
+		logger.debug("ManagementMqttHandler.serviceInstanceCreate started");
+		return mgmtService.createServiceInstances(dto, topic());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private ServiceInstanceListResponseDTO serviceInstanceUpdate(final ServiceInstanceUpdateListRequestDTO dto) {
+		logger.debug("ManagementMqttHandler.serviceInstanceUpdate started");
+		return mgmtService.updateServiceInstance(dto, topic());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void serviceInstanceRemove(final List<String> serviceInstances) {
+		logger.debug("ManagementMqttHandler.serviceInstanceRemove started");
+		mgmtService.removeServiceInstances(serviceInstances, topic());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInterfaceTemplateListResponseDTO interfaceTemplateQuery(final ServiceInterfaceTemplateQueryRequestDTO dto) {
