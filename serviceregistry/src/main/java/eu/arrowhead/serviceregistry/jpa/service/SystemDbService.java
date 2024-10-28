@@ -45,6 +45,8 @@ public class SystemDbService {
 	//=================================================================================================
 	// members
 
+	public static final List<AddressType> INHERITABLE_ADDRESS_TYPES = List.of(AddressType.IPV4, AddressType.IPV6, AddressType.HOSTNAME);
+
 	@Autowired
 	private SystemRepository systemRepo;
 
@@ -100,7 +102,6 @@ public class SystemDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -447,11 +448,13 @@ public class SystemDbService {
 
 		final List<SystemAddress> systemAddressEntities = new ArrayList<>();
 		for (final NormalizedSystemRequestDTO candidate : candidates) {
-			if (!Utilities.isEmpty(candidate.addresses())) {
-				final System system = systemEntities.stream()
-						.filter(s -> s.getName().equals(candidate.name()))
-						.findFirst()
-						.get();
+			Assert.isTrue(!Utilities.isEmpty(candidate.addresses()) || !Utilities.isEmpty(candidate.deviceName()), "At least one system address is needed for every system");
+
+			final System system = systemEntities.stream()
+					.filter(s -> s.getName().equals(candidate.name()))
+					.findFirst()
+					.get();
+			if (!Utilities.isEmpty(candidate.addresses())) { // specified addresses
 
 				final List<SystemAddress> systemAddresses = candidate.addresses().stream()
 						.map(a -> new SystemAddress(
@@ -461,6 +464,14 @@ public class SystemDbService {
 						.collect(Collectors.toList());
 
 				systemAddressEntities.addAll(systemAddresses);
+			} else { // inherited addresses
+				final Device device = deviceRepo.findByName(candidate.deviceName()).get();
+				final List<DeviceAddress> addresses = deviceAddressRepo.findAllByDeviceAndAddressTypeIn(device, INHERITABLE_ADDRESS_TYPES);
+				if (Utilities.isEmpty(addresses)) {
+					throw new InvalidParameterException("At least one system address is needed for every system");
+				}
+
+				addresses.forEach(da -> systemAddressEntities.add(new SystemAddress(system, da.getAddressType(), da.getAddress())));
 			}
 		}
 

@@ -67,6 +67,10 @@ public class SystemDiscoveryValidation {
 			}
 		}
 
+		if (Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(dto.deviceName())) {
+			throw new InvalidParameterException("At least one system address is needed for every system");
+		}
+
 		if (!Utilities.isEmpty(dto.metadata())) {
 			MetadataValidation.validateMetadataKey(dto.metadata());
 		}

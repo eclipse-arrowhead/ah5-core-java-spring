@@ -356,6 +356,10 @@ public class ManagementValidation {
 				}
 			}
 
+			if (Utilities.isEmpty(system.addresses()) && Utilities.isEmpty(system.deviceName())) {
+				throw new InvalidParameterException("At least one system address is needed for every system");
+			}
+
 			if (!Utilities.isEmpty(system.metadata())) {
 				MetadataValidation.validateMetadataKey(system.metadata());
 			}
@@ -364,7 +368,7 @@ public class ManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateUpdateSystems(final SystemListRequestDTO dto, final String origin) {
-		logger.debug("validateCreateSystems started");
+		logger.debug("validateUpdateSystems started");
 
 		validateCreateSystems(dto, origin);
 	}
