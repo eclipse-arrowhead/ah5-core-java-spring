@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,10 @@ import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceListRequestDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
+import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
@@ -27,22 +32,15 @@ import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
-import eu.arrowhead.serviceregistry.jpa.entity.System;
-import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
-import eu.arrowhead.dto.DeviceListRequestDTO;
-import eu.arrowhead.dto.DeviceQueryRequestDTO;
-import eu.arrowhead.dto.DeviceRequestDTO;
-import eu.arrowhead.dto.PageDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
-import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
@@ -52,6 +50,7 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ManagementValidation {
@@ -73,7 +72,7 @@ public class ManagementValidation {
 
 	@Autowired
 	private NameValidator nameValidator;
-	
+
 	@Autowired
 	private NameNormalizer nameNormalizer; //for checking duplications
 
@@ -725,8 +724,7 @@ public class ManagementValidation {
 			nameValidator.validateName(n.serviceDefinitionName());
 			versionValidator.validateNormalizedVersion(n.version());
 			interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
-			}
-		);
+		});
 
 		return normalized;
 	}

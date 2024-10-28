@@ -363,7 +363,6 @@ public class ServiceInstanceDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("unchecked")
 	private List<ServiceInstanceInterface> createAndSaveInterfaces(final List<ServiceInstanceInterfaceRequestDTO> dtos, final ServiceInstance serviceInstance) {
 		final List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
 
