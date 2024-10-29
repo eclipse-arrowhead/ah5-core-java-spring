@@ -5,3 +5,4 @@
 /serviceregistry/.factorypath
 /serviceregistry/*.log
 .checkstyle
+*.lck

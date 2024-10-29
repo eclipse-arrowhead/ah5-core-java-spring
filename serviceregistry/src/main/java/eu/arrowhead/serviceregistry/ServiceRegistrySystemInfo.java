@@ -13,11 +13,11 @@ import eu.arrowhead.common.SystemInfo;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.filter.authentication.AuthenticationPolicy;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
-import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
+import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
 
@@ -81,7 +81,8 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_REGISTRY_MANAGEMENT)
 				.version(ServiceRegistryConstants.VERSION_SERVICE_REGISTRY_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForServiceRegistryManagement())
-				.build(); // TODO add MQTT mgmt interfaces
+				.serviceInterface(getMqttServiceInterfaceForServiceRegistryManagement())
+				.build();
 
 		// TODO: add monitor service when it is specified and implemented
 
@@ -319,6 +320,26 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.topic(topic)
 				.operations(Set.of(Constants.SERVICE_OP_REGISTER, Constants.SERVICE_OP_LOOKUP, Constants.SERVICE_OP_REVOKE))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForServiceRegistryManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.topic(ServiceRegistryConstants.MQTT_API_MANAGEMENT_TOPIC)
+				.operations(Set.of(
+						Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG,
+						Constants.SERVICE_OP_DEVICE_QUERY, Constants.SERVICE_OP_DEVICE_CREATE, Constants.SERVICE_OP_DEVICE_UPDATE, Constants.SERVICE_OP_DEVICE_REMOVE,
+						Constants.SERVICE_OP_SYSTEM_QUERY, Constants.SERVICE_OP_SYSTEM_CREATE, Constants.SERVICE_OP_SYSTEM_UPDATE, Constants.SERVICE_OP_SYSTEM_REMOVE,
+						Constants.SERVICE_OP_SERVICE_DEF_QUERY, Constants.SERVICE_OP_SERVICE_DEF_CREATE, Constants.SERVICE_OP_SERVICE_DEF_REMOVE,
+						Constants.SERVICE_OP_SERVICE_QUERY, Constants.SERVICE_OP_SERVICE_CREATE, Constants.SERVICE_OP_SERVICE_UPDATE, Constants.SERVICE_OP_SERVICE_REMOVE,
+						Constants.SERVICE_OP_INTERFACE_TEMPLATE_QUERY, Constants.SERVICE_OP_INTERFACE_TEMPLATE_CREATE, Constants.SERVICE_OP_INTERFACE_TEMPLATE_REMOVE
+				))
 				.build();
 	}
 }
