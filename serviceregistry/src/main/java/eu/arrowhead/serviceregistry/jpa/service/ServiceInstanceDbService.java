@@ -398,14 +398,13 @@ public class ServiceInstanceDbService {
 			} else {
 			// existing template
 				template = optionalTemplate.get();
-				if (!template.getProtocol().equals(dto.protocol())) {
-					throw new InvalidParameterException("The protocol can not be overwritten");
+				if (!Utilities.isEmpty(dto.protocol())) {
+					throw new InvalidParameterException("The protocol for template with name " + dto.templateName()  + " already exists: " + template.getProtocol());
 				}
 
 				serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(template)
 						.stream()
 						.filter(p -> p.isMandatory())
-						.toList()
 						.forEach(p -> {
 							if (!dto.properties().containsKey(p.getPropertyName())) {
 								throw new InvalidParameterException("Mandatory interface property is missing: " + p.getPropertyName());
