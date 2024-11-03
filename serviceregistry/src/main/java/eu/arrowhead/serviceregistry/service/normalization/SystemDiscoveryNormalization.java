@@ -11,10 +11,12 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
+import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 
 @Service
@@ -22,6 +24,9 @@ public class SystemDiscoveryNormalization {
 
 	//=================================================================================================
 	// members
+
+	@Autowired
+	private AddressValidator addressValidator;
 
 	@Autowired
 	private AddressNormalizer addressNormalizer;
@@ -38,17 +43,18 @@ public class SystemDiscoveryNormalization {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemRequestDTO normalizeSystemRequestDTO(final SystemRequestDTO dto) {
+	public NormalizedSystemRequestDTO normalizeSystemRequestDTO(final SystemRequestDTO dto) {
 		logger.debug("normalizeSystemRequestDTO started");
 		Assert.notNull(dto, "SystemRequestDTO is null");
 
-		return new SystemRequestDTO(
+		return new NormalizedSystemRequestDTO(
 				nameNormalizer.normalize(dto.name()),
 				dto.metadata(),
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
 						: dto.addresses().stream()
-								.map(a -> new AddressDTO(a.type().trim().toUpperCase(), addressNormalizer.normalize(a.address())))
+								.map(a -> addressNormalizer.normalize(a))
+								.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
 								.collect(Collectors.toList()),
 				Utilities.isEmpty(dto.deviceName()) ? null : nameNormalizer.normalize(dto.deviceName()));
 	}

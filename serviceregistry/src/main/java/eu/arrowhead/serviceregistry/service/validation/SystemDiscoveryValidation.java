@@ -10,11 +10,11 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
-import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
@@ -60,24 +60,17 @@ public class SystemDiscoveryValidation {
 		}
 
 		if (!Utilities.isEmpty(dto.addresses())) {
-			for (final AddressDTO address : dto.addresses()) {
-				if (address == null) {
-					throw new InvalidParameterException("Address list contains null element", origin);
-				}
-
-				if (Utilities.isEmpty(address.type())) {
-					throw new InvalidParameterException("Address type is missing", origin);
-				}
-
-				if (!Utilities.isEnumValue(address.type().toUpperCase(), AddressType.class)) {
-					throw new InvalidParameterException("Invalid address type: " + address.type(), origin);
-				}
-
-				if (Utilities.isEmpty(address.address())) {
-					throw new InvalidParameterException("Address value is missing", origin);
+			for (final String address : dto.addresses()) {
+				if (Utilities.isEmpty(address)) {
+					throw new InvalidParameterException("Address is missing", origin);
 				}
 			}
 		}
+
+		if (Utilities.isEmpty(dto.addresses()) && Utilities.isEmpty(dto.deviceName())) {
+			throw new InvalidParameterException("At least one system address is needed for every system");
+		}
+
 		if (!Utilities.isEmpty(dto.metadata())) {
 			MetadataValidation.validateMetadataKey(dto.metadata());
 		}
@@ -124,17 +117,17 @@ public class SystemDiscoveryValidation {
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
-	public SystemRequestDTO validateAndNormalizeRegisterSystem(final SystemRequestDTO dto, final String origin) {
+	public NormalizedSystemRequestDTO validateAndNormalizeRegisterSystem(final SystemRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeRegisterSystem started");
 
 		validateRegisterSystem(dto, origin);
 
-		final SystemRequestDTO normalized = normalizer.normalizeSystemRequestDTO(dto);
+		final NormalizedSystemRequestDTO normalized = normalizer.normalizeSystemRequestDTO(dto);
 
 		try {
-			normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
-			versionValidator.validateNormalizedVersion(normalized.version());
 			nameValidator.validateName(normalized.name());
+			versionValidator.validateNormalizedVersion(normalized.version());
+			normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
