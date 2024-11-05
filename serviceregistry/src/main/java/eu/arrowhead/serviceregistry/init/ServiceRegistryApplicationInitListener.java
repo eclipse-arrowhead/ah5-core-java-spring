@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import eu.arrowhead.common.init.ApplicationInitListener;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
-import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
@@ -50,11 +49,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 
 		// register system
 		final SystemModel model = sysInfo.getSystemModel();
-		final List<AddressDTO> addresses = model.addresses()
-				.stream()
-				.map(a -> new AddressDTO(a.type().name(), a.address()))
-				.collect(Collectors.toList());
-		final SystemRequestDTO dto = new SystemRequestDTO(sysInfo.getSystemName(), model.metadata(), model.version(), addresses, model.deviceName());
+		final SystemRequestDTO dto = new SystemRequestDTO(sysInfo.getSystemName(), model.metadata(), model.version(), model.addresses(), model.deviceName());
 		sysdService.registerSystem(dto, INIT_ORIGIN);
 
 		// register services

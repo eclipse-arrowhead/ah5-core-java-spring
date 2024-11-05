@@ -3,8 +3,8 @@ package eu.arrowhead.serviceregistry.jpa.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Triple;
@@ -26,24 +26,26 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
-import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceSystemConnectorRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
-import eu.arrowhead.serviceregistry.jpa.entity.Device;
-import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
-import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
-import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 
 @Service
 public class SystemDbService {
 
 	//=================================================================================================
 	// members
+
+	public static final List<AddressType> INHERITABLE_ADDRESS_TYPES = List.of(AddressType.IPV4, AddressType.IPV6, AddressType.HOSTNAME);
 
 	@Autowired
 	private SystemRepository systemRepo;
@@ -69,32 +71,30 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createBulk(final List<SystemRequestDTO> candidates) {
-
+	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createBulk(final List<NormalizedSystemRequestDTO> candidates) {
 		logger.debug("createBulk started");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "system candidate list is empty");
 
 		try {
-			checkSystemNamesNotExist(candidates); //checks if none of the system names exist (system name has to be unique)
+			checkSystemNamesNotExist(candidates); // checks if none of the system names exist (system name has to be unique)
 
-			checkDeviceNamesExist(candidates); //checks if device names already exist
+			checkDeviceNamesExist(candidates); // checks if device names already exist
 
-			//writing the system entities to the database
+			// writing the system entities to the database
 			List<System> systemEntities = createSystemEntities(candidates);
 			systemEntities = systemRepo.saveAllAndFlush(systemEntities);
 
-			//writing the system address entities to the database
+			// writing the system address entities to the database
 			final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(candidates, systemEntities);
 			systemAddressRepo.saveAllAndFlush(systemAddressEntities);
 
-			//writing the device-system connections to the database
+			// writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
 			if (deviceSystemConnectorEntities != null) {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
-			return createTriples(systemEntities, systemAddressEntities, deviceSystemConnectorEntities);
-
+			return createTriplets(systemEntities, systemAddressEntities, deviceSystemConnectorEntities);
 		} catch (final InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
@@ -102,52 +102,47 @@ public class SystemDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updateBulk(final List<SystemRequestDTO> toUpdate) {
+	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updateBulk(final List<NormalizedSystemRequestDTO> toUpdate) {
 		logger.debug("updateBulk started");
 		Assert.isTrue(!Utilities.isEmpty(toUpdate), "The list of systems to update is empty or missing.");
 
 		try {
-
 			synchronized (LOCK) {
-
 				checkSystemNamesExist(toUpdate); // system name can't be changed
 
 				checkDeviceNamesExist(toUpdate); // checks if device names already exist
 
-				//writing the updated system entities to the database
+				// writing the updated system entities to the database
 				List<System> systemEntities = systemRepo.findAllByNameIn(toUpdate.stream().map(s -> s.name()).collect(Collectors.toList()));
 
 				for (final System systemEntity : systemEntities) {
-
-					final SystemRequestDTO dto = toUpdate.stream()
+					final NormalizedSystemRequestDTO dto = toUpdate.stream()
 							.filter(s -> s.name().equals(systemEntity.getName()))
 							.findFirst()
 							.get();
 
 					systemEntity.setMetadata(Utilities.toJson(dto.metadata()));
-
 					systemEntity.setVersion(dto.version());
 				}
 
 				systemEntities = systemRepo.saveAllAndFlush(systemEntities);
 
-				//removing the old system addresses from the database
+				// removing the old system addresses from the database
 				systemAddressRepo.deleteAllBySystemIn(systemEntities);
 
-				//writing the new system address entities to the database
+				// writing the new system address entities to the database
 				final List<SystemAddress> systemAddressEntities = createSystemAddressEntities(toUpdate, systemEntities);
 				systemAddressRepo.saveAllAndFlush(systemAddressEntities);
 
-				//updating the old device-system connections
+				// updating the old device-system connections
 				final List<DeviceSystemConnector> connectionsToUpdate = new ArrayList<>();
 				final List<DeviceSystemConnector> connectionsToDelete = new ArrayList<>();
 
-				for (final SystemRequestDTO dto : toUpdate) {
+				for (final NormalizedSystemRequestDTO dto : toUpdate) {
 					final System system = systemEntities.stream().filter(s -> s.getName().equals(dto.name())).findFirst().get();
 					final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
 					if (connection.isPresent()) {
@@ -171,18 +166,16 @@ public class SystemDbService {
 							.get()
 							.deviceName();
 					final Device device = deviceRepo.findByName(deviceName).get();
-
 					connection.setDevice(device);
 				}
 
-				//writing the changes into the database
+				// writing the changes into the database
 				deviceSystemConnectorRepo.deleteAll(connectionsToDelete);
 				deviceSystemConnectorRepo.saveAll(connectionsToUpdate);
 				deviceSystemConnectorRepo.flush();
 
-				return createTriples(systemEntities, systemAddressEntities, connectionsToUpdate);
+				return createTriplets(systemEntities, systemAddressEntities, connectionsToUpdate);
 			}
-
 		} catch (final InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
@@ -242,6 +235,23 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByNameList(final List<String> names) {
+		logger.debug("getByName started");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "system name list contains null or empty");
+
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
+
+		for (final String name : names) {
+			final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> optionalTriple = getByName(name);
+			if (optionalTriple.isPresent()) {
+				result.add(optionalTriple.get());
+			}
+		}
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getPageByFilters(
 			final PageRequest pagination, final List<String> systemNames, final List<String> addresses, final AddressType addressType,
 			final List<MetadataRequirementDTO> metadataRequirementList, final List<String> versions, final List<String> deviceNames) {
@@ -261,59 +271,60 @@ public class SystemDbService {
 						&& Utilities.isEmpty(deviceNames)) {
 
 					systemEntries = systemRepo.findAll(pagination);
-				// with filter
+					// with filter
 				} else {
 
 					final List<String> matchings = new ArrayList<>();
 
-						final List<System> toFilter = Utilities.isEmpty(systemNames) ? systemRepo.findAll() : systemRepo.findAllByNameIn(systemNames);
+					final List<System> toFilter = Utilities.isEmpty(systemNames) ? systemRepo.findAll() : systemRepo.findAllByNameIn(systemNames);
 
-						for (final System system : toFilter) {
+					for (final System system : toFilter) {
 
-							// address type
-							if (addressType != null && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, addressType))) {
-								continue;
-							}
-
-							// addresses
-							if (!Utilities.isEmpty(addresses) && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, addresses))) {
-								continue;
-							}
-
-							// version
-							if (!Utilities.isEmpty(versions) && systemRepo.findAllByVersionIn(versions).stream().filter(s -> s.getName().equals(system.getName())).findAny().isEmpty()) {
-								continue;
-							}
-
-							// device names
-							if (!Utilities.isEmpty(deviceNames) && deviceSystemConnectorRepo.findBySystem(system).isPresent()
-									&& !deviceNames.contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
-								continue;
-							}
-
-							if (!Utilities.isEmpty(deviceNames)) {
-								final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
-								if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
-									continue;
-								}
-							}
-
-							// metadata
-							if (!Utilities.isEmpty(metadataRequirementList)) {
-								boolean metadataMatch = false;
-								final Map<String, Object> systemMetadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { });
-								for (final MetadataRequirementDTO requirement : metadataRequirementList) {
-									if (MetadataRequirementsMatcher.isMetadataMatch(systemMetadata, requirement)) {
-										metadataMatch = true;
-										break;
-									}
-								}
-								if (!metadataMatch) {
-									continue;
-								}
-							}
-							matchings.add(system.getName());
+						// address type
+						if (addressType != null && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, addressType))) {
+							continue;
 						}
+
+						// addresses
+						if (!Utilities.isEmpty(addresses) && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressIn(system, addresses))) {
+							continue;
+						}
+
+						// version
+						if (!Utilities.isEmpty(versions) && systemRepo.findAllByVersionIn(versions).stream().filter(s -> s.getName().equals(system.getName())).findAny().isEmpty()) {
+							continue;
+						}
+
+						// device names
+						if (!Utilities.isEmpty(deviceNames) && deviceSystemConnectorRepo.findBySystem(system).isPresent()
+								&& !deviceNames.contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
+							continue;
+						}
+
+						if (!Utilities.isEmpty(deviceNames)) {
+							final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
+							if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
+								continue;
+							}
+						}
+
+						// metadata
+						if (!Utilities.isEmpty(metadataRequirementList)) {
+							boolean metadataMatch = false;
+							final Map<String, Object> systemMetadata = Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {
+							});
+							for (final MetadataRequirementDTO requirement : metadataRequirementList) {
+								if (MetadataRequirementsMatcher.isMetadataMatch(systemMetadata, requirement)) {
+									metadataMatch = true;
+									break;
+								}
+							}
+							if (!metadataMatch) {
+								continue;
+							}
+						}
+						matchings.add(system.getName());
+					}
 
 					systemEntries = systemRepo.findAllByNameIn(matchings, pagination);
 				}
@@ -324,12 +335,12 @@ public class SystemDbService {
 				// device-system connections
 				final List<DeviceSystemConnector> deviceSystemConnections = deviceSystemConnectorRepo.findBySystemIn(systemEntries.getContent());
 
-				final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriples(systemEntries.getContent(), systemAddresses, deviceSystemConnections);
+				final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = createTriplets(systemEntries.getContent(), systemAddresses, deviceSystemConnections);
 
 				return new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
-					result,
-					pagination,
-					systemEntries.getTotalElements());
+						result,
+						pagination,
+						systemEntries.getTotalElements());
 
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
@@ -366,8 +377,9 @@ public class SystemDbService {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	//checks if system name already exists, throws exception if it does
-	private void checkSystemNamesNotExist(final List<SystemRequestDTO> candidates) {
+	// checks if system name already exists, throws exception if it does
+	private void checkSystemNamesNotExist(final List<NormalizedSystemRequestDTO> candidates) {
+		logger.debug("checkSystemNamesNotExist started");
 
 		final List<String> candidateNames = candidates.stream()
 				.map(c -> c.name())
@@ -384,8 +396,9 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	//checks if system name already exists, throws exception if it does not
-	private void checkSystemNamesExist(final List<SystemRequestDTO> requested) {
+	// checks if system name already exists, throws exception if it does not
+	private void checkSystemNamesExist(final List<NormalizedSystemRequestDTO> requested) {
+		logger.debug("checkSystemNamesExist started");
 
 		final List<String> requestedNames = requested.stream()
 				.map(s -> s.name())
@@ -394,29 +407,31 @@ public class SystemDbService {
 		final List<System> givenSystems = systemRepo.findAllByNameIn(requestedNames);
 
 		if (requestedNames.size() > givenSystems.size()) {
-
 			final List<String> existingNames = givenSystems.stream()
 					.map(s -> s.getName())
 					.collect(Collectors.toList());
+
 			final List<String> notExistingNames = new ArrayList<String>(requestedNames.size() - existingNames.size());
 			for (final String name : requestedNames) {
 				if (!existingNames.contains(name)) {
 					notExistingNames.add(name);
 				}
 			}
+
 			throw new InvalidParameterException("System(s) not exists: " + notExistingNames.stream().collect(Collectors.joining(", ")));
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	//checks if device name already exists, throws exception if it does not
-	private void checkDeviceNamesExist(final List<SystemRequestDTO> candidates) {
+	// checks if device name already exists, throws exception if it does not
+	private void checkDeviceNamesExist(final List<NormalizedSystemRequestDTO> candidates) {
+		logger.debug("checkDeviceNamesExist started");
 
 		final List<String> candidateDeviceNames = candidates.stream()
-                .filter(c -> c.deviceName() != null)
-                .map(c -> c.deviceName())
-                .distinct()
-                .collect(Collectors.toList());
+				.filter(c -> c.deviceName() != null)
+				.map(c -> c.deviceName())
+				.distinct()
+				.collect(Collectors.toList());
 
 		final List<String> existingDeviceNames = deviceRepo.findAllByNameIn(candidateDeviceNames).stream()
 				.map(e -> e.getName())
@@ -430,26 +445,33 @@ public class SystemDbService {
 		}
 		if (!notExistingDeviceNames.isEmpty()) {
 			throw new InvalidParameterException("Device names do not exist: " + notExistingDeviceNames.stream()
-				.collect(Collectors.joining(", ")));
+					.collect(Collectors.joining(", ")));
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<System> createSystemEntities(final List<SystemRequestDTO> candidates) {
+	private List<System> createSystemEntities(final List<NormalizedSystemRequestDTO> candidates) {
+		logger.debug("createSystemEntities started");
+
 		return candidates.stream()
-		.map(c -> new System(c.name(), Utilities.toJson(c.metadata()), c.version()))
-		.collect(Collectors.toList());
+				.map(c -> new System(c.name(), Utilities.toJson(c.metadata()), c.version()))
+				.collect(Collectors.toList());
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private final List<SystemAddress> createSystemAddressEntities(final List<SystemRequestDTO> candidates, final List<System> systemEntities) {
+	private final List<SystemAddress> createSystemAddressEntities(final List<NormalizedSystemRequestDTO> candidates, final List<System> systemEntities) {
+		logger.debug("createSystemAddressEntities started");
+
 		final List<SystemAddress> systemAddressEntities = new ArrayList<>();
-		for (final SystemRequestDTO candidate : candidates) {
-			if (!Utilities.isEmpty(candidate.addresses())) {
-				final System system = systemEntities.stream()
-						.filter(s -> s.getName().equals(candidate.name()))
-						.findFirst()
-						.get();
+		for (final NormalizedSystemRequestDTO candidate : candidates) {
+			Assert.isTrue(!Utilities.isEmpty(candidate.addresses()) || !Utilities.isEmpty(candidate.deviceName()), "At least one system address is needed for every system");
+
+			final System system = systemEntities.stream()
+					.filter(s -> s.getName().equals(candidate.name()))
+					.findFirst()
+					.get();
+			if (!Utilities.isEmpty(candidate.addresses())) { // specified addresses
 
 				final List<SystemAddress> systemAddresses = candidate.addresses().stream()
 						.map(a -> new SystemAddress(
@@ -459,6 +481,14 @@ public class SystemDbService {
 						.collect(Collectors.toList());
 
 				systemAddressEntities.addAll(systemAddresses);
+			} else { // inherited addresses
+				final Device device = deviceRepo.findByName(candidate.deviceName()).get();
+				final List<DeviceAddress> addresses = deviceAddressRepo.findAllByDeviceAndAddressTypeIn(device, INHERITABLE_ADDRESS_TYPES);
+				if (Utilities.isEmpty(addresses)) {
+					throw new InvalidParameterException("At least one system address is needed for every system");
+				}
+
+				addresses.forEach(da -> systemAddressEntities.add(new SystemAddress(system, da.getAddressType(), da.getAddress())));
 			}
 		}
 
@@ -466,12 +496,13 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private final List<DeviceSystemConnector> createDeviceSystemConnectorEntities(final List<SystemRequestDTO> candidates) {
-		synchronized (LOCK) {
+	private final List<DeviceSystemConnector> createDeviceSystemConnectorEntities(final List<NormalizedSystemRequestDTO> candidates) {
+		logger.debug("createDeviceSystemConnectorEntities started");
 
+		synchronized (LOCK) {
 			final List<DeviceSystemConnector> connections = new ArrayList<>();
 
-			for (final SystemRequestDTO candidate : candidates) {
+			for (final NormalizedSystemRequestDTO candidate : candidates) {
 				if (candidate.deviceName() != null) {
 					final Device device = deviceRepo.findByName(candidate.deviceName()).get();
 					final System system = systemRepo.findByName(candidate.name()).get();
@@ -484,9 +515,9 @@ public class SystemDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createTriples(
+	private List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createTriplets(
 			final List<System> systems, final List<SystemAddress> addresses, final List<DeviceSystemConnector> deviceConnections) {
-
+		logger.debug("createTriples started");
 		Assert.notNull(systems, "systems are null");
 
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
