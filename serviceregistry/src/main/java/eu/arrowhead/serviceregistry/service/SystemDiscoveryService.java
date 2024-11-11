@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,6 +35,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.matching.AddressMatching;
 import eu.arrowhead.serviceregistry.service.validation.SystemDiscoveryValidation;
 
@@ -68,7 +70,7 @@ public class SystemDiscoveryService {
 		logger.debug("registerSystem started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final SystemRequestDTO normalized = validator.validateAndNormalizeRegisterSystem(dto, origin);
+		final NormalizedSystemRequestDTO normalized = validator.validateAndNormalizeRegisterSystem(dto, origin);
 
 		try {
 			final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> optional = dbService.getByName(normalized.name());
@@ -81,17 +83,15 @@ public class SystemDiscoveryService {
 				checkSameSystemAttributes(existingSystem, normalized);
 
 				// Convert to response and return
-				final SystemResponseDTO existingSystemAsResponseDTO = dtoConverter.convertSystemTripletToDTO(existingSystem);
-				return Map.entry(existingSystemAsResponseDTO, false);
+				return Map.entry(dtoConverter.convertSystemTripletToDTO(existingSystem), false);
 			}
 
 			// New system
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> response = dbService.createBulk(List.of(normalized)).getFirst();
-			return Map.entry(dtoConverter.convertSystemTripletToDTO(response), true);
 
+			return Map.entry(dtoConverter.convertSystemTripletToDTO(response), true);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -147,14 +147,15 @@ public class SystemDiscoveryService {
 
 	//-------------------------------------------------------------------------------------------------
 	// throws exception, if the two systems doesn't have the same attributes
-	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final SystemRequestDTO dto) {
+	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final NormalizedSystemRequestDTO dto) {
 		logger.debug("checkSameSystemAttributes started");
 		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical!");
 
 		final System existingSystem = existing.getLeft();
 
 		// metadata
-		if (!Utilities.fromJson(existingSystem.getMetadata(), new TypeReference<Map<String, Object>>() { }).equals(dto.metadata())) {
+		if (!Utilities.fromJson(existingSystem.getMetadata(), new TypeReference<Map<String, Object>>() {
+		}).equals(dto.metadata())) {
 			throw new InvalidParameterException("System with name: " + existingSystem.getName() + " already exists, but provided metadata is not matching");
 		}
 
@@ -164,11 +165,18 @@ public class SystemDiscoveryService {
 		}
 
 		// addresses
+		final List<AddressDTO> newAddresses = new ArrayList<>(dto.addresses());
+		if (Utilities.isEmpty(newAddresses) && existing.getRight() != null) { // new addresses are inherited from the device
+			existing.getRight().getValue().stream()
+					.filter(a -> SystemDbService.INHERITABLE_ADDRESS_TYPES.contains(a.getAddressType()))
+					.forEach(a -> newAddresses.add(new AddressDTO(a.getAddressType().name(), a.getAddress())));
+		}
+
 		final List<AddressDTO> existingAddresses = existing.getMiddle()
 				.stream()
 				.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
 				.collect(Collectors.toList());
-		if (!addressMatcher.isAddressListMatching(existingAddresses, dto.addresses())) {
+		if (!addressMatcher.isAddressListMatching(existingAddresses, newAddresses)) {
 			throw new InvalidParameterException("System with name: " + existingSystem.getName() + " already exists, but provided address list is not matching");
 		}
 

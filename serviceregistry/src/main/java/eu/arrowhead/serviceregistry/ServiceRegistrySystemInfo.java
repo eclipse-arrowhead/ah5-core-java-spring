@@ -94,7 +94,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	public SystemModel getSystemModel() {
 		if (systemModel == null) {
 			SystemModel.Builder builder = new SystemModel.Builder()
-					.address(getAddressModel())
+					.address(getAddress())
 					.version(Constants.AH_FRAMEWORK_VERSION);
 
 			if (AuthenticationPolicy.CERTIFICATE == this.getAuthenticationPolicy()) {
@@ -107,6 +107,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		return systemModel;
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	public boolean isDiscoveryVerbose() {
 		return this.discoveryVerbose;
 	}

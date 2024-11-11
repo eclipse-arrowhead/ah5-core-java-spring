@@ -10,11 +10,11 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
-import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
 
 @Service
@@ -55,30 +55,17 @@ public class DeviceDiscoveryValidation {
 			throw new InvalidParameterException("Device name is too long", origin);
 		}
 
-		if (!Utilities.isEmpty(dto.addresses())) {
-			for (final AddressDTO address : dto.addresses()) {
-				if (address == null) {
-					throw new InvalidParameterException("Address list contains null element", origin);
-				}
+		if (Utilities.isEmpty(dto.addresses())) {
+			throw new InvalidParameterException("At least one device address is needed", origin);
+		}
 
-				if (Utilities.isEmpty(address.type())) {
-					throw new InvalidParameterException("Address type is missing", origin);
-				}
+		for (final String address : dto.addresses()) {
+			if (Utilities.isEmpty(address)) {
+				throw new InvalidParameterException("Address is missing", origin);
+			}
 
-				if (!Utilities.isEnumValue(address.type().toUpperCase(), AddressType.class)) {
-					throw new InvalidParameterException("Invalid address type: " + address.type(), origin);
-				}
-
-				if (Utilities.isEmpty(address.address())) {
-					throw new InvalidParameterException("Address value is missing", origin);
-				}
-				if (address.type().length() > ServiceRegistryConstants.ADDRESS_TYPE_LENGTH) {
-					throw new InvalidParameterException("Address type is too long", origin);
-				}
-
-				if (address.address().length() > ServiceRegistryConstants.ADDRESS_ADDRESS_LENGTH) {
-					throw new InvalidParameterException("Address is too long", origin);
-				}
+			if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+				throw new InvalidParameterException("Address is too long", origin);
 			}
 		}
 
@@ -123,14 +110,14 @@ public class DeviceDiscoveryValidation {
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
-	public DeviceRequestDTO validateAndNormalizeRegisterDevice(final DeviceRequestDTO dto, final String origin) {
+	public NormalizedDeviceRequestDTO validateAndNormalizeRegisterDevice(final DeviceRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeRegisterDevice started");
 
 		validateRegisterDevice(dto, origin);
 
-		final DeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
-		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+		final NormalizedDeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
 		nameValidator.validateName(normalized.name());
+		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
 
 		return normalized;
 	}

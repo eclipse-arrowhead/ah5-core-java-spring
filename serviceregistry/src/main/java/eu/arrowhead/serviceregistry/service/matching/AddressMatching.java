@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 import eu.arrowhead.dto.AddressDTO;
 
- @Component
+@Component
 public class AddressMatching {
 
 	//=================================================================================================
@@ -28,7 +28,7 @@ public class AddressMatching {
 			for (final AddressDTO address2 : addresses2) {
 				temp1.remove(address2);
 
-				//if the size did not change, there was no match
+				// if the size did not change, there was no match
 				if (temp1.size() == temp1Size) {
 					return false;
 				}

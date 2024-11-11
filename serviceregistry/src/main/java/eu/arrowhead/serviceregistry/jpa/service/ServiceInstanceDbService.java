@@ -186,7 +186,7 @@ public class ServiceInstanceDbService {
 					// save the new instance
 					instance = serviceInstanceRepo.saveAndFlush(instance);
 
-					// flush everything in the right ordes
+					// flush everything in the right order
 					serviceInterfaceTemplateRepo.flush();
 					serviceInterfaceTemplatePropsRepo.flush();
 					serviceInstanceInterfaceRepo.flush();
@@ -363,7 +363,6 @@ public class ServiceInstanceDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("unchecked")
 	private List<ServiceInstanceInterface> createAndSaveInterfaces(final List<ServiceInstanceInterfaceRequestDTO> dtos, final ServiceInstance serviceInstance) {
 		final List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
 
@@ -398,14 +397,13 @@ public class ServiceInstanceDbService {
 			} else {
 			// existing template
 				template = optionalTemplate.get();
-				if (!template.getProtocol().equals(dto.protocol())) {
-					throw new InvalidParameterException("The protocol can not be overwritten");
+				if (!Utilities.isEmpty(dto.protocol()) && !template.getProtocol().equalsIgnoreCase(dto.protocol())) {
+					throw new InvalidParameterException("Interface has different protocol than " + dto.templateName() + " template");
 				}
 
 				serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(template)
 						.stream()
 						.filter(p -> p.isMandatory())
-						.toList()
 						.forEach(p -> {
 							if (!dto.properties().containsKey(p.getPropertyName())) {
 								throw new InvalidParameterException("Mandatory interface property is missing: " + p.getPropertyName());
