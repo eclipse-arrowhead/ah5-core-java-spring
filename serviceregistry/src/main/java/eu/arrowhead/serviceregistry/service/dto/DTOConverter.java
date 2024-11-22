@@ -231,7 +231,7 @@ public class DTOConverter {
 	public ServiceInstanceListResponseDTO convertServiceInstancePageToDTO(
 																  final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
 																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
-		logger.debug("convertServiceInstanceListToDTO started...");
+		logger.debug("convertServiceInstancePageToDTO started...");
 
 		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>(servicesWithInterfaces.getNumberOfElements());
 		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {

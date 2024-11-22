@@ -6,7 +6,7 @@
         </Property>
 		<Property name="SYSTEM_NAME">SERVICEREGISTRY</Property>
 		<Property name="JDBC_LEVEL">INFO</Property>
-		<Property name="CONSOLE_FILE_LEVEL">DEBUG</Property>
+		<Property name="CONSOLE_FILE_LEVEL">INFO</Property>
 		<Property name="LOG_DIR">.</Property>
     </Properties>
 	<Appenders>

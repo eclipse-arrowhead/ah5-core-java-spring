@@ -26,7 +26,7 @@ public class ServiceLookupPreprocessor {
 			return true;
 		}
 
-		final Object boolObject = request.getAttribute(ServiceRegistryConstants.HTTP_ATTR_RESTRICTED_SERVICE_LOOKUP);
+		final Object boolObject = request.getAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP);
 		return boolObject != null && Boolean.valueOf(boolObject.toString());
 	}
 }
