@@ -111,8 +111,8 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 
 		case Constants.SERVICE_OP_SYSTEM_QUERY:
 			final SystemQueryRequestDTO systemQueryDTO = readPayload(request.getPayload(), SystemQueryRequestDTO.class);
-			final Boolean verbose = Boolean.valueOf(request.getParams().get("verbose"));
-			responsePayload = systemQuery(systemQueryDTO, verbose);
+			final Boolean systemQueryVerbose = Boolean.valueOf(request.getParams().get(Constants.VERBOSE));
+			responsePayload = systemQuery(systemQueryDTO, systemQueryVerbose);
 			break;
 
 		case Constants.SERVICE_OP_SYSTEM_CREATE:
@@ -149,8 +149,8 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 
 		case Constants.SERVICE_OP_SERVICE_QUERY:
 			 final ServiceInstanceQueryRequestDTO serviceInstanceQueryDTO = readPayload(request.getPayload(), ServiceInstanceQueryRequestDTO.class);
-			 final Boolean verbose2 = Boolean.valueOf(request.getParams().get("verbose"));
-			 responsePayload = serviceInstanceQuery(serviceInstanceQueryDTO, verbose2);
+			 final Boolean serviceQueryVerbose = Boolean.valueOf(request.getParams().get(Constants.VERBOSE));
+			 responsePayload = serviceInstanceQuery(serviceInstanceQueryDTO, serviceQueryVerbose);
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_CREATE:

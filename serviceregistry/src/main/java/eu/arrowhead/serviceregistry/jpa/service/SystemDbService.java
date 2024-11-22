@@ -236,7 +236,7 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByNameList(final List<String> names) {
-		logger.debug("getByName started");
+		logger.debug("getByNameList started");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "system name list contains null or empty");
 
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();

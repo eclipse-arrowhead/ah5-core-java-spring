@@ -13,7 +13,7 @@ import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
 
 @Service
 @ConditionalOnProperty(name = Constants.MQTT_API_ENABLED, matchIfMissing = false)
-public class ServiceLookupMqttFilter extends ArrowheadMqttFilter {
+public class ServiceLookupMqttFilter implements ArrowheadMqttFilter {
 
 	//=================================================================================================
 	// members

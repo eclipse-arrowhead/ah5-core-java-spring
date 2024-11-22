@@ -83,7 +83,7 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
 	'operations',
 	0,
-	'NOT_EMPTY_SET|NAME'
+	'NOT_EMPTY_STRING_SET|NAME'
 );
 
 INSERT IGNORE INTO `service_interface_template` (`name`, `protocol`) VALUES ('generic-mqtts', 'ssl');
@@ -112,5 +112,5 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
 	'operations',
 	0,
-	'NOT_EMPTY_SET|NAME'
+	'NOT_EMPTY_STRING_SET|NAME'
 );
