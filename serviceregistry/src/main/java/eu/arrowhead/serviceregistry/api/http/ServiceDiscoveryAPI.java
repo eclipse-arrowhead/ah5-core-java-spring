@@ -134,7 +134,8 @@ public class ServiceDiscoveryAPI {
 	public ResponseEntity<Void> revoke(final HttpServletRequest httpServletRequest, @PathVariable(required = true) final String instanceId) {
 		logger.debug("revoke started");
 
-		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_REVOKE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH
+							  + ServiceRegistryConstants.HTTP_API_OP_SERVICE_REVOKE_PATH.replace(ServiceRegistryConstants.HTTP_PARAM_INSTANCE_ID, instanceId);
 		final String identifiedSystemName = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		final boolean result = sdService.revokeService(identifiedSystemName, instanceId, origin);

@@ -46,12 +46,14 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_REGISTER_PATH = "/register";
 	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
-	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{name}";
+	public static final String HTTP_PARAM_NAME = "{name}";
+	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_NAME;
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definitions";
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_QUERY_PATH = HTTP_API_OP_SERVICE_DEFINITION_PATH + "/query";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
-	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{instanceId}";
+	public static final String HTTP_PARAM_INSTANCE_ID = "{instanceId}";
+	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_INSTANCE_ID;
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_SERVICE_INSTANCE_PATH = "/service-instances";
 	public static final String HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH = HTTP_API_OP_SERVICE_INSTANCE_PATH + "/query";

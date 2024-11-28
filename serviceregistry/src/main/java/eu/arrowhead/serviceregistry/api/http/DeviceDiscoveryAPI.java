@@ -116,7 +116,8 @@ public class DeviceDiscoveryAPI {
 	public ResponseEntity<Void> revoke(final @PathVariable String name) {
 		logger.debug("revoke started");
 
-		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_REVOKE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH
+							  + ServiceRegistryConstants.HTTP_API_OP_DEVICE_REVOKE_PATH.replace(ServiceRegistryConstants.HTTP_PARAM_NAME, name);
 
 		final boolean result = ddService.revokeDevice(name, origin);
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
