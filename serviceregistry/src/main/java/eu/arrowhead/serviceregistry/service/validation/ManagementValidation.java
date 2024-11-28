@@ -49,7 +49,9 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
+import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
+import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
@@ -74,7 +76,10 @@ public class ManagementValidation {
 	private NameValidator nameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer; //for checking duplications
+	private NameNormalizer nameNormalizer; // for checking duplications
+
+	@Autowired
+	private VersionNormalizer versionNormalizer; // for checking duplications
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -499,6 +504,8 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Request payload is empty", origin);
 		}
 
+		final Set<String> instanceIds = new HashSet<>();
+
 		for (final ServiceInstanceRequestDTO instance : dto.instances()) {
 
 			// system name
@@ -520,6 +527,15 @@ public class ManagementValidation {
 			}
 
 			// version -> can be empty (default will be set at normalization)
+
+			// check for duplication
+			final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(nameNormalizer.normalize(instance.systemName()),
+					nameNormalizer.normalize(instance.serviceDefinitionName()),
+					versionNormalizer.normalize(instance.version()));
+			if (instanceIds.contains(instanceId)) {
+				throw new InvalidParameterException("Duplicated instance: " + instanceId, origin);
+			}
+			instanceIds.add(instanceId);
 
 			// expires at
 			if (!Utilities.isEmpty(instance.expiresAt())) {
