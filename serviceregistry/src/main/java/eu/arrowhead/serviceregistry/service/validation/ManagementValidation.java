@@ -794,33 +794,45 @@ public class ManagementValidation {
 			if (templateDTO == null) {
 				throw new InvalidParameterException("Interface template list contains null element", origin);
 			}
+
 			if (Utilities.isEmpty(templateDTO.name())) {
 				throw new InvalidParameterException("Interface template name is empty", origin);
 			}
+
 			if (templateNames.contains(templateDTO.name().trim().toLowerCase())) {
 				throw new InvalidParameterException("Duplicate interface template name: " + templateDTO.name(), origin);
 			}
 			templateNames.add(templateDTO.name().trim().toLowerCase());
+
 			if (Utilities.isEmpty(templateDTO.protocol())) {
 				throw new InvalidParameterException("Interface template protocol is empty", origin);
 			}
+
 			if (!Utilities.isEmpty(templateDTO.propertyRequirements())) {
 				final Set<String> propertyNames = new HashSet<>();
 				for (final ServiceInterfaceTemplatePropertyDTO propertyDTO : templateDTO.propertyRequirements()) {
 					if (propertyDTO == null) {
 						throw new InvalidParameterException("Interface template contains null property", origin);
 					}
+
 					if (Utilities.isEmpty(propertyDTO.name())) {
 						throw new InvalidParameterException("Interface template property name is empty", origin);
 					}
-					if (propertyNames.contains(propertyDTO.name().trim().toLowerCase())) {
-						throw new InvalidParameterException("Duplicate interface template property name: " + templateDTO.name() + "." + propertyDTO.name(), origin);
+
+					if (propertyDTO.name().contains(MetadataValidation.DOT)) {
+						throw new InvalidParameterException("Invalid interface template property name: " + propertyDTO.name() + ", it should not contain " + MetadataValidation.DOT + " character", origin);
 					}
-					propertyNames.add(propertyDTO.name().trim().toLowerCase());
+
+					if (propertyNames.contains(propertyDTO.name().trim())) {
+						throw new InvalidParameterException("Duplicate interface template property name: " + templateDTO.name() + "::" + propertyDTO.name(), origin);
+					}
+					propertyNames.add(propertyDTO.name().trim());
+
 					if (!Utilities.isEmpty(propertyDTO.validatorParams())) {
 						if (Utilities.isEmpty(propertyDTO.validator())) {
 							throw new InvalidParameterException("Interface template property validator is empty while validator params are defined", origin);
 						}
+
 						if (Utilities.containsNullOrEmpty(propertyDTO.validatorParams())) {
 							throw new InvalidParameterException("Interface template property validator parameter list contains empty element", origin);
 						}
@@ -873,7 +885,6 @@ public class ManagementValidation {
 		try {
 			interfaceValidator.validateNormalizedInterfaceTemplates(normalized.interfaceTemplates());
 			return normalized;
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}

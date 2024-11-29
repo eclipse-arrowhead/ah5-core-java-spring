@@ -99,7 +99,7 @@ public class ServiceDiscoveryValidation {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
 			if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
-				throw new InvalidParameterException("Invalid inteface policy", origin);
+				throw new InvalidParameterException("Invalid interface policy", origin);
 			}
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
 				throw new InvalidParameterException("Interface properties are missing", origin);

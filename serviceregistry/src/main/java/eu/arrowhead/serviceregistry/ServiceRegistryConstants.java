@@ -100,6 +100,9 @@ public final class ServiceRegistryConstants {
 	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
 	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 	public static final int ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
+	public static final int INTERFACE_TEMPLATE_NAME_LENGTH = ArrowheadEntity.VARCHAR_MEDIUM;
+	public static final int INTERFACE_TEMPLATE_PROTOCOL_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+	public static final int INTERFACE_PROPERTY_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	// Others
 
