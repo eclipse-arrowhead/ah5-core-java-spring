@@ -64,6 +64,7 @@ public class ManagementNormalization {
 	public List<NormalizedSystemRequestDTO> normalizeSystemRequestDTOs(final SystemListRequestDTO dtoList) {
 		logger.debug("normalizeSystemRequestDTOs started");
 		Assert.notNull(dtoList, "SystemListRequestDTO is null");
+		Assert.notNull(dtoList.systems(), "system list is null");
 
 		final List<NormalizedSystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
 		for (final SystemRequestDTO system : dtoList.systems()) {
@@ -91,7 +92,7 @@ public class ManagementNormalization {
 		}
 
 		return new SystemQueryRequestDTO(
-				dto.pagination(), //no need to normalize, because it will happen in the getPageRequest method
+				dto.pagination(), // no need to normalize, because it will happen in the getPageRequest method
 				Utilities.isEmpty(dto.systemNames()) ? null
 						: dto.systemNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null
@@ -109,6 +110,9 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveSystemNames(final List<String> originalNames) {
+		logger.debug("normalizeRemoveSystemNames started");
+		Assert.notNull(originalNames, "name list is null");
+
 		return originalNames.stream()
 				.filter(n -> !Utilities.isEmpty(n))
 				.map(n -> nameNormalizer.normalize(n))
@@ -153,6 +157,9 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeDeviceNames(final List<String> originalNames) {
+		logger.debug("normalizeDeviceNames started");
+		Assert.notNull(originalNames, "name list is null");
+
 		return originalNames.stream()
 				.filter(n -> !Utilities.isEmpty(n))
 				.map(n -> nameNormalizer.normalize(n))
@@ -163,6 +170,10 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto) {
+		logger.debug("normalizeCreateServiceDefinitions started");
+		Assert.notNull(dto, "dto is null");
+		Assert.notNull(dto.serviceDefinitionNames(), "service definition name list is null");
+
 		return dto.serviceDefinitionNames()
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))
@@ -171,6 +182,9 @@ public class ManagementNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> normalizeRemoveServiceDefinitions(final List<String> names) {
+		logger.debug("normalizeRemoveServiceDefinitions started");
+		Assert.notNull(names, "name list is null");
+
 		return names
 				.stream()
 				.map(n -> nameNormalizer.normalize(n))
@@ -183,6 +197,7 @@ public class ManagementNormalization {
 	public List<ServiceInstanceRequestDTO> normalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto) {
 		logger.debug("normalizeCreateServiceInstances started");
 		Assert.notNull(dto, "ServiceInstanceCreateListRequestDTO is null");
+		Assert.notNull(dto.instances(), "instance list is null");
 
 		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
 	}
@@ -191,6 +206,7 @@ public class ManagementNormalization {
 	public List<ServiceInstanceUpdateRequestDTO> normalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto) {
 		logger.debug("normalizeUpdateServiceInstances started");
 		Assert.notNull(dto, "ServiceInstanceUpdateListRequestDTO is null");
+		Assert.notNull(dto.instances(), "instance list is null");
 
 		return dto.instances().stream().map(i -> normalizeServiceInstanceUpdateRequestDTO(i)).collect(Collectors.toList());
 	}
@@ -218,8 +234,7 @@ public class ManagementNormalization {
 				Utilities.isEmpty(dto.metadataRequirementsList()) ? new ArrayList<>() : dto.metadataRequirementsList(),
 				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> nameNormalizer.normalize(i)).toList(),
 				Utilities.isEmpty(dto.interfacePropertyRequirementsList()) ? new ArrayList<>() : dto.interfacePropertyRequirementsList(),
-				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList()
-		);
+				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList());
 	}
 
 	// INTERFACE TEMPLATES
@@ -228,6 +243,7 @@ public class ManagementNormalization {
 	public ServiceInterfaceTemplateListRequestDTO normalizeServiceInterfaceTemplateListRequestDTO(final ServiceInterfaceTemplateListRequestDTO dto) {
 		logger.debug("normalizeServiceInterfaceTemplateListRequestDTO started");
 		Assert.notNull(dto, "ServiceInterfaceTemplateListRequestDTO is null");
+		Assert.notNull(dto.interfaceTemplates(), "interface template list is null");
 
 		return new ServiceInterfaceTemplateListRequestDTO(
 				dto.interfaceTemplates().stream()
@@ -244,7 +260,7 @@ public class ManagementNormalization {
 		}
 
 		return new ServiceInterfaceTemplateQueryRequestDTO(
-				dto.pagination(), //no need to normalize, because it will happen in the getPageRequest method
+				dto.pagination(), // no need to normalize, because it will happen in the getPageRequest method
 				Utilities.isEmpty(dto.templateNames()) ? new ArrayList<>() : dto.templateNames().stream().map(n -> nameNormalizer.normalize(n)).toList(),
 				Utilities.isEmpty(dto.protocols()) ? new ArrayList<>() : dto.protocols().stream().map(p -> p.trim().toLowerCase()).toList());
 	}
@@ -285,10 +301,9 @@ public class ManagementNormalization {
 
 				// interfaces
 				dto.interfaces()
-					.stream()
-					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
-					.toList()
-		);
+						.stream()
+						.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
+						.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -307,10 +322,9 @@ public class ManagementNormalization {
 
 				// interfaces
 				dto.interfaces()
-					.stream()
-					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
-					.toList()
-		);
+						.stream()
+						.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
+						.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------

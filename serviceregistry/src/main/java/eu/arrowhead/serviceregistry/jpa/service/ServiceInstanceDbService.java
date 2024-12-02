@@ -144,10 +144,8 @@ public class ServiceInstanceDbService {
 			}
 
 			return results;
-
 		} catch (final InvalidParameterException ex) {
 			throw ex;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -161,41 +159,49 @@ public class ServiceInstanceDbService {
 		logger.debug("updateBulk started");
 		Assert.isTrue(!Utilities.isEmpty(dtos), "service instance list is empty");
 
-		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> entities = new ArrayList<>(dtos.size());
+		try {
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> entities = new ArrayList<>(dtos.size());
 
-		synchronized (LOCK) {
-			for (final ServiceInstanceUpdateRequestDTO dto : dtos) {
+			synchronized (LOCK) {
+				for (final ServiceInstanceUpdateRequestDTO dto : dtos) {
+					// find the instance to update
+					final Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
+					// check the existence
+					if (optionalInstance.isEmpty()) {
+						throw new InvalidParameterException("Instance id does not exist: " + dto.instanceId());
+					} else {
+						// modify the properties (only metadata, expiresAt and interface can be changed)
+						ServiceInstance instance = optionalInstance.get();
+						// set metadata
+						instance.setMetadata(Utilities.toJson(dto.metadata()));
+						// set expires At
+						instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
 
-				// find the instance to update
-				final Optional<ServiceInstance> optionalInstance = getByInstanceId(dto.instanceId());
-				// check the existence
-				if (optionalInstance.isEmpty()) {
-					throw new InvalidParameterException("Instance id does not exist: " + dto.instanceId());
-				// modify the properties (only metadata, expiresAt and interface can be changed)
-				} else {
-					ServiceInstance instance = optionalInstance.get();
-					// set metadata
-					instance.setMetadata(Utilities.toJson(dto.metadata()));
-					// set expires At
-					instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
-					// delete old interfaces
-					serviceInstanceInterfaceRepo.deleteAllByServiceInstance(instance);
-					// create new interfaces
-					final List<ServiceInstanceInterface> newInterfaces = createAndSaveInterfaces(dto.interfaces(), instance);
+						// delete old interfaces
+						serviceInstanceInterfaceRepo.deleteAllByServiceInstance(instance);
+						// create new interfaces
+						final List<ServiceInstanceInterface> newInterfaces = createAndSaveInterfaces(dto.interfaces(), instance);
 
-					// save the new instance
-					instance = serviceInstanceRepo.saveAndFlush(instance);
+						// save the new instance
+						instance = serviceInstanceRepo.saveAndFlush(instance);
 
-					// flush everything in the right order
-					serviceInterfaceTemplateRepo.flush();
-					serviceInterfaceTemplatePropsRepo.flush();
-					serviceInstanceInterfaceRepo.flush();
+						// flush everything in the right order
+						serviceInterfaceTemplateRepo.flush();
+						serviceInterfaceTemplatePropsRepo.flush();
+						serviceInstanceInterfaceRepo.flush();
 
-					entities.add(Map.entry(instance, newInterfaces));
+						entities.add(Map.entry(instance, newInterfaces));
+					}
 				}
-			}
 
-			return entities;
+				return entities;
+			}
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
 	}
 
@@ -206,7 +212,6 @@ public class ServiceInstanceDbService {
 
 		try {
 			return serviceInstanceRepo.findByServiceInstanceId(serviceInstanceId);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -218,12 +223,13 @@ public class ServiceInstanceDbService {
 	public Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> getPageByFilters(final PageRequest pagination, final ServiceLookupFilterModel filters) {
 		logger.debug("getPageByFilters started");
 		Assert.notNull(pagination, "page is null");
+
 		try {
 			if (!filters.hasFilters()) {
 				return findAll(pagination);
 			}
-			return findAllByFilters(pagination, filters);
 
+			return findAllByFilters(pagination, filters);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -242,11 +248,11 @@ public class ServiceInstanceDbService {
 			if (optional.isPresent()) {
 				serviceInstanceRepo.delete(optional.get());
 				serviceInstanceRepo.flush();
+
 				return true;
 			}
 
 			return false;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -262,7 +268,8 @@ public class ServiceInstanceDbService {
 
 		try {
 			serviceInstanceIds.forEach(id -> deleteByInstanceId(id));
-
+		} catch (final InternalServerError ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -275,19 +282,22 @@ public class ServiceInstanceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	private List<ServiceInstance> createInstances(final List<ServiceInstanceRequestDTO> candidates, final Map<String, System> systemCache, final Map<String, ServiceDefinition> definitionCache) {
+		logger.debug("createInstances started");
+
 		final List<ServiceInstance> instanceEntities = new ArrayList<>(candidates.size());
 
 		for (final ServiceInstanceRequestDTO candidate : candidates) {
 			if (!systemCache.containsKey(candidate.systemName())) {
 				throw new InvalidParameterException("System not exists: " + candidate.systemName());
 			}
+
 			if (!definitionCache.containsKey(candidate.serviceDefinitionName())) {
 				definitionCache.put(
 						candidate.serviceDefinitionName(),
 						serviceDefinitionRepo.saveAndFlush(new ServiceDefinition(candidate.serviceDefinitionName())));
 			}
-			final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version());
 
+			final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(candidate.systemName(), candidate.serviceDefinitionName(), candidate.version());
 			instanceEntities.add(new ServiceInstance(
 					instanceId,
 					systemCache.get(candidate.systemName()),
@@ -301,7 +311,12 @@ public class ServiceInstanceDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<ServiceInstanceInterface> createInstanceInterfaces(final List<ServiceInstanceRequestDTO> candidates, final List<ServiceInstance> instanceEntities, final Map<String, ServiceInterfaceTemplate> interfaceTemplateCache) {
+	private List<ServiceInstanceInterface> createInstanceInterfaces(
+			final List<ServiceInstanceRequestDTO> candidates,
+			final List<ServiceInstance> instanceEntities,
+			final Map<String, ServiceInterfaceTemplate> interfaceTemplateCache) {
+		logger.debug("createInstanceInterfaces started");
+
 		final List<ServiceInstanceInterface> instanceInterfaceEntities = new ArrayList<>();
 		final Set<String> templatesCreated = new HashSet<>();
 
@@ -364,6 +379,8 @@ public class ServiceInstanceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	private List<ServiceInstanceInterface> createAndSaveInterfaces(final List<ServiceInstanceInterfaceRequestDTO> dtos, final ServiceInstance serviceInstance) {
+		logger.debug("createAndSaveInterfaces started");
+
 		final List<ServiceInstanceInterface> interfaces = new ArrayList<>(dtos.size());
 
 		for (final ServiceInstanceInterfaceRequestDTO dto : dtos) {
@@ -373,7 +390,7 @@ public class ServiceInstanceDbService {
 			ServiceInterfaceTemplate template; // interface template (maybe doesn't exist yet)
 			final Optional<ServiceInterfaceTemplate> optionalTemplate = serviceInterfaceTemplateRepo.findByName(dto.templateName());
 			if (optionalTemplate.isEmpty()) {
-			// non-existant template
+				// non-existant template
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					// we don't create new template in case of restricted interface policy
 					throw new InvalidParameterException("Interface template not exists: " + dto.templateName());
@@ -390,12 +407,14 @@ public class ServiceInstanceDbService {
 									true,
 									null));
 						}
+
 						serviceInterfaceTemplatePropsRepo.saveAll(templateProps);
 					}
+
 					serviceInterfaceTemplateRepo.save(template);
 				}
 			} else {
-			// existing template
+				// existing template
 				template = optionalTemplate.get();
 				if (!Utilities.isEmpty(dto.protocol()) && !template.getProtocol().equalsIgnoreCase(dto.protocol())) {
 					throw new InvalidParameterException("Interface has different protocol than " + dto.templateName() + " template");
@@ -408,16 +427,19 @@ public class ServiceInstanceDbService {
 							if (!dto.properties().containsKey(p.getPropertyName())) {
 								throw new InvalidParameterException("Mandatory interface property is missing: " + p.getPropertyName());
 							}
-				});
+						});
 			}
+
 			interfaces.add(new ServiceInstanceInterface(serviceInstance, template, Utilities.toJson(dto.properties()), ServiceInterfacePolicy.valueOf(dto.policy())));
 		}
-		serviceInstanceInterfaceRepo.saveAll(interfaces);
-		return interfaces;
+
+		return serviceInstanceInterfaceRepo.saveAll(interfaces);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> findAll(final PageRequest pagination) {
+		logger.debug("findAll started");
+
 		final Map<ServiceInstance, List<ServiceInstanceInterface>> serviceInterfaceMap = new HashMap<>();
 
 		final Page<ServiceInstance> page = serviceInstanceRepo.findAll(pagination);
@@ -431,6 +453,8 @@ public class ServiceInstanceDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	private Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> findAllByFilters(final PageRequest pagination, final ServiceLookupFilterModel filters) {
+		logger.debug("findAllByFilters started");
+
 		final Set<Long> matchingIds = new HashSet<>();
 		final Map<Long, List<ServiceInstanceInterface>> serviceInterfaceMap = new HashMap<>();
 
@@ -491,13 +515,15 @@ public class ServiceInstanceDbService {
 				// Match against to metadata requirements
 				if (matching && !Utilities.isEmpty(filters.getMetadataRequirementsList())) {
 					boolean metadataMatch = false;
-					final Map<String, Object> instanceMetadata = Utilities.fromJson(serviceCandidate.getMetadata(), new TypeReference<Map<String, Object>>() { });
+					final Map<String, Object> instanceMetadata = Utilities.fromJson(serviceCandidate.getMetadata(), new TypeReference<Map<String, Object>>() {
+					});
 					for (final MetadataRequirementDTO requirement : filters.getMetadataRequirementsList()) {
 						if (MetadataRequirementsMatcher.isMetadataMatch(instanceMetadata, requirement)) {
 							metadataMatch = true;
 							break;
 						}
 					}
+
 					if (!metadataMatch) {
 						matching = false;
 					}
@@ -514,15 +540,18 @@ public class ServiceInstanceDbService {
 						if (Utilities.isEmpty(filters.getPolicies()) || filters.getPolicies().contains(interf.getPolicy())) {
 							interfacePolicyMatch = true;
 						}
+
 						// Interface template
 						if (Utilities.isEmpty(filters.getInterfaceTemplateNames()) || filters.getInterfaceTemplateNames().contains(interf.getServiceInterfaceTemplate().getName())) {
 							interfaceTemplateMatch = true;
 						}
+
 						// Interface properties
 						if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList())) {
 							interfacePropertyMatch = true;
 						} else {
-							final Map<String, Object> interfaceProps = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() { });
+							final Map<String, Object> interfaceProps = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
+							});
 							for (final MetadataRequirementDTO requirement : filters.getInterfacePropertyRequirementsList()) {
 								if (MetadataRequirementsMatcher.isMetadataMatch(interfaceProps, requirement)) {
 									interfacePropertyMatch = true;
@@ -551,6 +580,7 @@ public class ServiceInstanceDbService {
 			serviceInstanceRepo.deleteAllById(deleteIds);
 			serviceInstanceRepo.flush();
 			final Page<ServiceInstance> page = serviceInstanceRepo.findAllByIdIn(matchingIds, pagination);
+
 			return new PageImpl<>(page.stream().map(si -> Map.entry(si, serviceInterfaceMap.get(si.getId()))).toList(), pagination, page.getTotalElements());
 		}
 	}

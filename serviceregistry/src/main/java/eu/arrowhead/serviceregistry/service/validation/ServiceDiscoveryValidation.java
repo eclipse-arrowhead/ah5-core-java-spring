@@ -78,6 +78,7 @@ public class ServiceDiscoveryValidation {
 			} catch (final DateTimeException ex) {
 				throw new InvalidParameterException("Expiration time has an invalid time format", origin);
 			}
+
 			if (Utilities.utcNow().isAfter(expiresAt)) {
 				throw new InvalidParameterException("Expiration time is in the past", origin);
 			}
@@ -95,12 +96,15 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.templateName())) {
 				throw new InvalidParameterException("Interface template name is missing", origin);
 			}
+
 			if (Utilities.isEmpty(interfaceDTO.policy())) {
 				throw new InvalidParameterException("Interface policy is missing", origin);
 			}
+
 			if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
 				throw new InvalidParameterException("Invalid interface policy", origin);
 			}
+
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
 				throw new InvalidParameterException("Interface properties are missing", origin);
 			} else {
@@ -162,6 +166,7 @@ public class ServiceDiscoveryValidation {
 				if (Utilities.isEmpty(policy)) {
 					throw new InvalidParameterException("Policy list contains null or empty element", origin);
 				}
+
 				if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
 					throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
 				}
@@ -204,7 +209,6 @@ public class ServiceDiscoveryValidation {
 					normalizedInstance.expiresAt(),
 					normalizedInstance.metadata(),
 					normalizedInterfaces);
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -215,8 +219,8 @@ public class ServiceDiscoveryValidation {
 		logger.debug("validateAndNormalizeLookupService started");
 
 		validateLookupService(dto, origin);
-		return normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
 
+		return normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -224,6 +228,7 @@ public class ServiceDiscoveryValidation {
 		logger.debug("validateAndNormalizeRevokeService started");
 
 		validateRevokeService(systemName, instanceId, origin);
+
 		return Map.entry(normalizer.normalizeSystemName(systemName), normalizer.normalizeServiceInstanceId(instanceId));
 	}
 }

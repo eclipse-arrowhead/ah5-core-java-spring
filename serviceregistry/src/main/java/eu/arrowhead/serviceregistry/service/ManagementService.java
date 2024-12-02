@@ -108,7 +108,6 @@ public class ManagementService {
 			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(entities, entities.size());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -123,10 +122,10 @@ public class ManagementService {
 
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entities = deviceDbService.updateBulk(normalized);
+
 			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(entities, entities.size());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -136,19 +135,28 @@ public class ManagementService {
 	public DeviceListResponseDTO queryDevices(final DeviceQueryRequestDTO dto, final String origin) {
 		logger.debug("queryDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		final DeviceQueryRequestDTO normalized = validator.validateAndNormalizeQueryDevices(dto, origin);
 
+		final DeviceQueryRequestDTO normalized = validator.validateAndNormalizeQueryDevices(dto, origin);
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, Device.SORTABLE_FIELDS_BY, Device.DEFAULT_SORT_FIELD, origin);
 
-		final Page<Entry<Device, List<DeviceAddress>>> page = deviceDbService.getPage(pageRequest, normalized.deviceNames(), normalized.addresses(),
-				Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
-		return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(page, page.getTotalElements());
+		try {
+			final Page<Entry<Device, List<DeviceAddress>>> page = deviceDbService.getPage(
+					pageRequest,
+					normalized.deviceNames(),
+					normalized.addresses(),
+					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
+
+			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(page, page.getTotalElements());
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void removeDevices(final List<String> names, final String origin) {
 		logger.debug("removeDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
 		try {
 			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
@@ -161,7 +169,7 @@ public class ManagementService {
 		}
 	}
 
-	// SERVICES DEFINITIONS
+	// SERVICE DEFINITIONS
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO getServiceDefinitions(final PageDTO dto, final String origin) {
@@ -173,6 +181,7 @@ public class ManagementService {
 
 		try {
 			final Page<ServiceDefinition> entities = serviceDefinitionDbService.getPage(pageRequest);
+
 			return dtoConverter.convertServiceDefinitionEntityPageToDTO(entities);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
@@ -188,10 +197,10 @@ public class ManagementService {
 
 		try {
 			final List<ServiceDefinition> entities = serviceDefinitionDbService.createBulk(normalized);
+
 			return dtoConverter.convertServiceDefinitionEntityListToDTO(entities);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -206,9 +215,6 @@ public class ManagementService {
 
 		try {
 			serviceDefinitionDbService.removeBulk(normalized);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -240,9 +246,9 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SystemQueryRequestDTO normalized = validator.validateAndNormalizeQuerySystems(dto, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
 
 		try {
-			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, origin);
 			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> page = systemDbService.getPageByFilters(
 					pageRequest,
 					normalized.systemNames(),
@@ -253,7 +259,6 @@ public class ManagementService {
 					normalized.deviceNames());
 
 			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
-
 			if (!verbose) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
@@ -312,36 +317,33 @@ public class ManagementService {
 			instanceEntries = instanceDbService.createBulk(normalized);
 			systemTriplets = systemDbService.getByNameList(
 					instanceEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
-			return dtoConverter.convertServiceInstanceListToDTO(instanceEntries, systemTriplets);
 
+			return dtoConverter.convertServiceInstanceListToDTO(instanceEntries, systemTriplets);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceListResponseDTO updateServiceInstance(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
-		logger.debug("updateServiceInstance started");
+	public ServiceInstanceListResponseDTO updateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("updateServiceInstances started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final List<ServiceInstanceUpdateRequestDTO> normalized = validator.validateAndNormalizeUpdateServiceInstances(dto, origin);
 
-		try {
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries;
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
 
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> updatedEntries;
-			final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTriplets;
+		try {
 			updatedEntries = instanceDbService.updateBulk(normalized);
 			systemTriplets = systemDbService.getByNameList(
 					updatedEntries.stream().map(e -> e.getKey().getSystem().getName()).collect(Collectors.toList()));
 
 			return dtoConverter.convertServiceInstanceListToDTO(updatedEntries, systemTriplets);
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -356,9 +358,6 @@ public class ManagementService {
 
 		try {
 			instanceDbService.deleteByInstanceIds(normalized);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -370,12 +369,12 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final ServiceInstanceQueryRequestDTO normalized = validator.validateAndNormalizeQueryServiceInstances(dto, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInstance.SORTABLE_FIELDS_BY, ServiceInstance.DEFAULT_SORT_FIELD, origin);
+
+		Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces;
+		Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = null;
 
 		try {
-			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInstance.SORTABLE_FIELDS_BY, ServiceInstance.DEFAULT_SORT_FIELD, origin);
-
-			Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces;
-			Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = null;
 			servicesWithInterfaces = instanceDbService.getPageByFilters(pageRequest, dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(normalized));
 
 			if (verbose) {
@@ -385,12 +384,7 @@ public class ManagementService {
 						null, null, null, null, null);
 			}
 
-
 			return dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices);
-
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -407,8 +401,8 @@ public class ManagementService {
 
 		try {
 			final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = interfaceTemplateDbService.createBulk(normalized.interfaceTemplates());
-			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.entrySet(), entries.size());
 
+			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.entrySet(), entries.size());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 
@@ -423,13 +417,15 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final ServiceInterfaceTemplateQueryRequestDTO normalized = validator.validateAndNormalizeQueryInterfaceTemplates(dto, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, ServiceInterfaceTemplate.DEFAULT_SORT_FIELD, origin);
 
 		try {
-			final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, ServiceInterfaceTemplate.DEFAULT_SORT_FIELD, origin);
-			final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = interfaceTemplateDbService.getPageByFilters(pageRequest, normalized.templateNames(), normalized.protocols());
+			final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = interfaceTemplateDbService.getPageByFilters(
+					pageRequest,
+					normalized.templateNames(),
+					normalized.protocols());
 
 			return dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.toList(), entries.getTotalElements());
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

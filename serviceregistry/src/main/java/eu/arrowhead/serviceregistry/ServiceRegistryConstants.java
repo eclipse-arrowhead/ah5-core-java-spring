@@ -31,7 +31,6 @@ public final class ServiceRegistryConstants {
 	public static final String MQTT_API_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/management";
 	public static final String MQTT_API_MONITOR_TOPIC = MQTT_API_BASE_TOPIC + "/monitor";
 
-
 	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
 
 	public static final String VERSION_DEVICE_DISCOVERY = "1.0.0";
@@ -80,6 +79,7 @@ public final class ServiceRegistryConstants {
 			"spring.datasource.driver-class-name",
 			"spring.jpa.hibernate.ddl-auto",
 			"spring.jpa.show-sql",
+
 			// cert related
 			"authenticator.secret.key",
 			"server.ssl.key-store-type",
@@ -115,5 +115,4 @@ public final class ServiceRegistryConstants {
 	private ServiceRegistryConstants() {
 		throw new UnsupportedOperationException();
 	}
-
 }

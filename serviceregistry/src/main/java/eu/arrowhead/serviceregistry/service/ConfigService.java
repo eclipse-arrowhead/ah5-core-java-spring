@@ -47,14 +47,13 @@ public class ConfigService {
 			final List<String> normalized = validator.validateAndNormalizeConfigKeyList(keys);
 
 			final Map<String, String> result = new HashMap<>();
-
 			for (final String key : normalized) {
 				if (!ServiceRegistryConstants.FORBIDDEN_KEYS.contains(key) && environment.getProperty(key) != null) {
 					result.put(key, environment.getProperty(key));
 				}
 			}
-			return dtoConverter.convertConfigMapToDTO(result);
 
+			return dtoConverter.convertConfigMapToDTO(result);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}

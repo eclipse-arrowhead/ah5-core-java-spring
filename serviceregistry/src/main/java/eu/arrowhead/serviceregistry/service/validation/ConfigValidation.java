@@ -30,7 +30,7 @@ public class ConfigValidation {
 		logger.debug("validateConfigKeyList started");
 
 		if (Utilities.isEmpty(keys)) {
-			throw new InvalidParameterException("The list of the requested configuration keys is null or empty!");
+			throw new InvalidParameterException("The list of the requested configuration keys is null or empty");
 		}
 	}
 

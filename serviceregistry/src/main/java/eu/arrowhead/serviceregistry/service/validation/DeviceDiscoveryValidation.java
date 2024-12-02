@@ -79,7 +79,6 @@ public class DeviceDiscoveryValidation {
 		logger.debug("validateLookupDevice started");
 
 		if (dto != null) {
-
 			if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
 				throw new InvalidParameterException("Device name list contains null or empty element", origin);
 			}
@@ -143,6 +142,5 @@ public class DeviceDiscoveryValidation {
 		validateRevokeDevice(name, origin);
 
 		return normalizer.normalizeDeviceName(name);
-
 	}
 }

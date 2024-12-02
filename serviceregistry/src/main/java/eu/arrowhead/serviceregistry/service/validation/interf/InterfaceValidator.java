@@ -103,6 +103,7 @@ public class InterfaceValidator {
 				normalized.add(new ServiceInstanceInterfaceRequestDTO(interfaceInstance.templateName(), interfaceInstance.protocol(), interfaceInstance.policy(), normalizedProperties));
 			}
 		});
+
 		return normalized;
 	}
 

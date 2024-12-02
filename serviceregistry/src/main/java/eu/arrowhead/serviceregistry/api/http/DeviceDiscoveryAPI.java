@@ -69,8 +69,8 @@ public class DeviceDiscoveryAPI {
 		logger.debug("register started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH;
-
 		final Entry<DeviceResponseDTO, Boolean> result = ddService.registerDevice(dto, origin);
+
 		return new ResponseEntity<DeviceResponseDTO>(result.getKey(), result.getValue() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
@@ -93,6 +93,7 @@ public class DeviceDiscoveryAPI {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
+
 		return ddService.lookupDevice(dto, origin);
 	}
 
@@ -117,9 +118,9 @@ public class DeviceDiscoveryAPI {
 		logger.debug("revoke started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_DEVICE_DISCOVERY_PATH
-							  + ServiceRegistryConstants.HTTP_API_OP_DEVICE_REVOKE_PATH.replace(ServiceRegistryConstants.HTTP_PARAM_NAME, name);
-
+				+ ServiceRegistryConstants.HTTP_API_OP_DEVICE_REVOKE_PATH.replace(ServiceRegistryConstants.HTTP_PARAM_NAME, name);
 		final boolean result = ddService.revokeDevice(name, origin);
+
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }
