@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
@@ -21,7 +22,8 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-@SpringBootTest
+@SpringJUnitConfig
+@ContextConfiguration(classes = { DeviceDiscoveryNormalization.class })
 public class DeviceDiscoveryNormalizationTest {
 	
 	//=================================================================================================
