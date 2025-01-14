@@ -11,5 +11,4 @@ public record NormalizedSystemRequestDTO(
 		String version,
 		List<AddressDTO> addresses,
 		String deviceName) {
-
 }

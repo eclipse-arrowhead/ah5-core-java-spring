@@ -86,6 +86,7 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 		logger.debug("DeviceDiscoveryMqttHandler.register started");
 
 		final Entry<DeviceResponseDTO, Boolean> result = ddService.registerDevice(dto, topic());
+
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
 
@@ -101,6 +102,7 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 		logger.debug("DeviceDiscoveryMqttHandler.revoke started");
 
 		final boolean result = ddService.revokeDevice(deviceName, topic());
+
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}
 }

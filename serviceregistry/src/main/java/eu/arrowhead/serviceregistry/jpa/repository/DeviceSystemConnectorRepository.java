@@ -13,6 +13,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 
 @Repository
 public interface DeviceSystemConnectorRepository extends RefreshableRepository<DeviceSystemConnector, Long> {
+
 	//=================================================================================================
 	// methods
 

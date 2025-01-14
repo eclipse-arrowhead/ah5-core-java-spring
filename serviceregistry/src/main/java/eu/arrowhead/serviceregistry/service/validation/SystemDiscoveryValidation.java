@@ -81,33 +81,32 @@ public class SystemDiscoveryValidation {
 		logger.debug("validateLookupSystem started");
 
 		if (dto != null) {
-
-			//system name list
+			// system name list
 			if (!Utilities.isEmpty(dto.systemNames()) && Utilities.containsNullOrEmpty(dto.systemNames())) {
 				throw new InvalidParameterException("System name list contains null or empty element", origin);
 			}
 
-			//address list
+			// address list
 			if (!Utilities.isEmpty(dto.addresses()) && Utilities.containsNullOrEmpty(dto.addresses())) {
 				throw new InvalidParameterException("Address list contains null or empty element", origin);
 			}
 
-			//address type
+			// address type
 			if (!Utilities.isEmpty(dto.addressType()) && !Utilities.isEnumValue(dto.addressType().toUpperCase(), AddressType.class)) {
 				throw new InvalidParameterException("Invalid address type: " + dto.addressType(), origin);
 			}
 
-			//metadata
+			// metadata
 			if (!Utilities.isEmpty(dto.metadataRequirementList()) && Utilities.containsNull(dto.metadataRequirementList())) {
 				throw new InvalidParameterException("Metadata requirement list contains null element", origin);
 			}
 
-			//version list
+			// version list
 			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNull(dto.versions())) {
 				throw new InvalidParameterException("Version list contains null element", origin);
 			}
 
-			//device name list
+			// device name list
 			if (!Utilities.isEmpty(dto.deviceNames()) && Utilities.containsNullOrEmpty(dto.deviceNames())) {
 				throw new InvalidParameterException("Device name list contains null or empty element", origin);
 			}
@@ -151,7 +150,6 @@ public class SystemDiscoveryValidation {
 			if (!Utilities.isEmpty(normalized.versions())) {
 				normalized.versions().forEach(v -> versionValidator.validateNormalizedVersion(v));
 			}
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -176,5 +174,4 @@ public class SystemDiscoveryValidation {
 
 		return normalizer.normalizeRevokeSystemName(name);
 	}
-
 }

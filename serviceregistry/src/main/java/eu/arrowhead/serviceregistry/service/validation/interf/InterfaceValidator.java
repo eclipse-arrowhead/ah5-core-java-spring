@@ -54,10 +54,27 @@ public class InterfaceValidator {
 		interfaces.forEach(interfaceInstance -> {
 			nameValidator.validateName(interfaceInstance.templateName());
 
-			final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
-			if (templateOpt.isEmpty()) {
-				normalized.add(interfaceInstance);
+			if (interfaceInstance.templateName().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_NAME_LENGTH) {
+				throw new InvalidParameterException("Interface template name is too long");
+			}
 
+			final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
+			if (templateOpt.isEmpty()) { // no existing template
+				if (Utilities.isEmpty(interfaceInstance.protocol())) {
+					throw new InvalidParameterException("Interface protocol is missing");
+				}
+
+				if (interfaceInstance.protocol().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_PROTOCOL_LENGTH) {
+					throw new InvalidParameterException("Interface protocol is too long");
+				}
+
+				interfaceInstance.properties().keySet().forEach(propName -> {
+					if (propName.length() > ServiceRegistryConstants.INTERFACE_PROPERTY_NAME_LENGTH) {
+						throw new InvalidParameterException("Interface property name is too long");
+					}
+				});
+
+				normalized.add(interfaceInstance);
 			} else {
 				if (!Utilities.isEmpty(interfaceInstance.protocol()) && !interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
 					throw new InvalidParameterException(interfaceInstance.protocol() + " protocol is invalid for " + interfaceInstance.templateName());
@@ -86,6 +103,7 @@ public class InterfaceValidator {
 				normalized.add(new ServiceInstanceInterfaceRequestDTO(interfaceInstance.templateName(), interfaceInstance.protocol(), interfaceInstance.policy(), normalizedProperties));
 			}
 		});
+
 		return normalized;
 	}
 
@@ -97,7 +115,19 @@ public class InterfaceValidator {
 		templates.forEach(template -> {
 			nameValidator.validateName(template.name());
 
+			if (template.name().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_NAME_LENGTH) {
+				throw new InvalidParameterException("Interface template name is too long");
+			}
+
+			if (template.protocol().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_PROTOCOL_LENGTH) {
+				throw new InvalidParameterException("Interface protocol is too long");
+			}
+
 			template.propertyRequirements().forEach(prop -> {
+				if (prop.name().length() > ServiceRegistryConstants.INTERFACE_PROPERTY_NAME_LENGTH) {
+					throw new InvalidParameterException("Interface property name is too long");
+				}
+
 				if (!Utilities.isEmpty(prop.validator()) && !Utilities.isEnumValue(prop.validator(), PropertyValidatorType.class)) {
 					throw new InvalidParameterException("Unknown property validator: " + prop.validator());
 				}

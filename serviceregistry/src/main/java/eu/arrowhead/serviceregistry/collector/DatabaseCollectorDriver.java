@@ -32,5 +32,4 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }

@@ -12,11 +12,11 @@ public class ServiceDefinition extends ArrowheadEntity {
 	//=================================================================================================
 	// members
 
-	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
-	private String name;
-
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
 	public static final String DEFAULT_SORT_FIELD = "name";
+
+	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
+	private String name;
 
 	//=================================================================================================
 	// methods

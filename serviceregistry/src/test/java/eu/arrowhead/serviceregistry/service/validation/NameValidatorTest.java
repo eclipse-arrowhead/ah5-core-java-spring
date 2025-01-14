@@ -2,14 +2,17 @@ package eu.arrowhead.serviceregistry.service.validation;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 
-@SpringBootTest
+@SpringJUnitConfig
+@ContextConfiguration(classes = { NameValidator.class })
 public class NameValidatorTest {
 
 	//=================================================================================================

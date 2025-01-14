@@ -58,7 +58,6 @@ public class ServiceInterfaceTemplateDbService {
 
 		try {
 			return templateRepo.findByName(name);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -79,7 +78,6 @@ public class ServiceInterfaceTemplateDbService {
 			}
 
 			return List.of();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -137,7 +135,6 @@ public class ServiceInterfaceTemplateDbService {
 						pagination,
 						templatePage.getTotalElements());
 			}
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -159,6 +156,7 @@ public class ServiceInterfaceTemplateDbService {
 				if (templateEntries.containsKey(candidate.name())) {
 					throw new InvalidParameterException("Duplicate interface template name: " + candidate.name());
 				}
+
 				if (templateRepo.existsByName(candidate.name())) {
 					throw new InvalidParameterException("Interface template already exists: " + candidate.name());
 				}
@@ -186,11 +184,10 @@ public class ServiceInterfaceTemplateDbService {
 			}
 
 			templatePropsRepo.saveAllAndFlush(properties).forEach(property -> results.get(property.getServiceInterfaceTemplate()).add(property));
-			return results;
 
+			return results;
 		} catch (final InvalidParameterException ex) {
 			throw ex;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -208,7 +205,6 @@ public class ServiceInterfaceTemplateDbService {
 			final List<ServiceInterfaceTemplate> entities = templateRepo.findAllByNameIn(templateNames);
 			templateRepo.deleteAll(entities);
 			templateRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
