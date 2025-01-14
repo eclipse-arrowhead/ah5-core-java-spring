@@ -32,6 +32,7 @@ public class ServiceInstanceInterface extends ArrowheadEntity {
 	private ServiceInterfacePolicy policy;
 
 	//=================================================================================================
+	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceInterface() {
@@ -48,7 +49,8 @@ public class ServiceInstanceInterface extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceInstanceInterface [id = " + id + ", serviceInstance = " + serviceInstance + ", serviceInterfaceTemplate = " + serviceInterfaceTemplate + ", properties = " + properties + ", policy = " + policy + "]";
+		return "ServiceInstanceInterface [id = " + id + ", serviceInstance = " + serviceInstance + ", serviceInterfaceTemplate = " + serviceInterfaceTemplate + ", properties = " + properties
+				+ ", policy = " + policy + "]";
 	}
 
 	//=================================================================================================

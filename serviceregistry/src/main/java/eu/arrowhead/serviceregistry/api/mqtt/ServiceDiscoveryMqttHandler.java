@@ -99,6 +99,7 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 		logger.debug("ServiceDiscoveryMqttHandler.revoke started");
 
 		final boolean result = sdService.revokeService(identifiedRequester, instanceId, topic());
+
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}
 }

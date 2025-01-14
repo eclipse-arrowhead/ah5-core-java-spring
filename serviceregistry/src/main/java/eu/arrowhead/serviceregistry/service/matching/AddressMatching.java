@@ -16,7 +16,6 @@ public class AddressMatching {
 	//-------------------------------------------------------------------------------------------------
 	// checks if the two list contain exactly the same addresses (the order does not matter)
 	public boolean isAddressListMatching(final List<AddressDTO> addresses1, final List<AddressDTO> addresses2) {
-
 		if (addresses1.size() != addresses2.size()) {
 			return false;
 		}

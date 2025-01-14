@@ -60,6 +60,7 @@ public class MonitorMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private String echo() {
 		logger.debug("MonitorMqttHandler.echo started");
+
 		return "Got it";
 	}
 }

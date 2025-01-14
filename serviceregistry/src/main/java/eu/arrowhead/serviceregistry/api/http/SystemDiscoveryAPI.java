@@ -80,8 +80,8 @@ public class SystemDiscoveryAPI {
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REGISTER_PATH;
 		final SystemRequestDTO identifiedDto = preprocessor.process(dto, httpServletRequest, origin);
-
 		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(identifiedDto, origin);
+
 		return new ResponseEntity<SystemResponseDTO>(result.getKey(), result.getValue() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
@@ -101,14 +101,13 @@ public class SystemDiscoveryAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO lookup(@RequestBody(required = false) final SystemLookupRequestDTO dto,
-			@Parameter(
-					name =  "verbose",
-					description  = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
-					example = "true")
-			@RequestParam final boolean verbose) {
+			@Parameter(name = "verbose",
+					   description = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
+					   example = "true") @RequestParam final boolean verbose) {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
+
 		return sdService.lookupSystem(dto, verbose, origin);
 	}
 
@@ -132,8 +131,8 @@ public class SystemDiscoveryAPI {
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_REVOKE_PATH;
 		final String identifiedName = preprocessor.process(httpServletRequest, origin);
-
 		final boolean result = sdService.revokeSystem(identifiedName, origin);
+
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }

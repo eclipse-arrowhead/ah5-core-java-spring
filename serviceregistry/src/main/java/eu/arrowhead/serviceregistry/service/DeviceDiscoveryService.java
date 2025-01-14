@@ -90,11 +90,10 @@ public class DeviceDiscoveryService {
 
 			// New device
 			final Entry<Device, List<DeviceAddress>> entities = dbService.create(normalized);
-			return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(entities.getKey(), entities.getValue()), true);
 
+			return Map.entry(dtoConverter.convertDeviceEntityToDeviceResponseDTO(entities.getKey(), entities.getValue()), true);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -110,6 +109,7 @@ public class DeviceDiscoveryService {
 		try {
 			final List<Entry<Device, List<DeviceAddress>>> entries = dbService.getByFilters(normalized.deviceNames(), normalized.addresses(),
 					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
+
 			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(entries, entries.size());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

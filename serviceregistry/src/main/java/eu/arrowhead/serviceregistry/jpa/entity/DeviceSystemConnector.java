@@ -65,5 +65,4 @@ public class DeviceSystemConnector extends ArrowheadEntity {
 	public void setSystem(final System system) {
 		this.system = system;
 	}
-
 }

@@ -40,5 +40,4 @@ public final class ServiceInstanceIdUtils {
 	private ServiceInstanceIdUtils() {
 		throw new UnsupportedOperationException();
 	}
-
 }

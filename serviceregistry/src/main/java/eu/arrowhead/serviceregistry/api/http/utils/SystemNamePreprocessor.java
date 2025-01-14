@@ -30,6 +30,7 @@ public class SystemNamePreprocessor {
 		if (dto == null) {
 			return null;
 		}
+
 		final String name = HttpUtilities.acquireName(request, origin);
 
 		return new SystemRequestDTO(name, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName());
@@ -42,9 +43,16 @@ public class SystemNamePreprocessor {
 		if (dto == null) {
 			return null;
 		}
+
 		final String name = HttpUtilities.acquireName(request, origin);
 
-		return new ServiceInstanceRequestDTO(name, dto.serviceDefinitionName(), dto.version(), dto.expiresAt(), dto.metadata(), dto.interfaces());
+		return new ServiceInstanceRequestDTO(
+				name,
+				dto.serviceDefinitionName(),
+				dto.version(),
+				dto.expiresAt(),
+				dto.metadata(),
+				dto.interfaces());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -55,5 +63,4 @@ public class SystemNamePreprocessor {
 
 		return name;
 	}
-
 }

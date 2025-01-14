@@ -85,8 +85,8 @@
     "description": "A description for 'mqtt.broker.port'"
   },
   {
-    "name": "mqtt.broker.password",
+    "name": "mqtt.client.password",
     "type": "java.lang.String",
-    "description": "A description for 'mqtt.broker.password'"
+    "description": "A description for 'mqtt.client.password'"
   }
 ]}

@@ -53,7 +53,6 @@ public class ServiceDefinitionDbService {
 					.collect(Collectors.toList());
 
 			return repo.saveAllAndFlush(entities);
-
 		} catch (final InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
@@ -66,6 +65,7 @@ public class ServiceDefinitionDbService {
 	//-------------------------------------------------------------------------------------------------
 	public Page<ServiceDefinition> getPage(final PageRequest pagination) {
 		logger.debug("getPage started...");
+
 		try {
 			return repo.findAll(pagination);
 		} catch (final Exception ex) {
@@ -84,12 +84,10 @@ public class ServiceDefinitionDbService {
 			final List<ServiceDefinition> entries = repo.findAllByNameIn(names);
 			repo.deleteAll(entries);
 			repo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
 	}
-
 }
