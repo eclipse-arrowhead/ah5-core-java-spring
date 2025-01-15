@@ -1,81 +1,81 @@
-package eu.arrowhead.serviceregistry.jpa.entity;
-
-import java.util.List;
+package eu.arrowhead.authentication.jpa.entity;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 @Entity
-@Table(name = "system_")
-public class System extends ArrowheadEntity {
+public class PasswordAuthentication {
 
 	//=================================================================================================
 	// members
 
-	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
-	public static final String DEFAULT_SORT_FIELD = "createdAt";
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	protected long id;
 
-	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
-	private String name;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false)
+	private System system;
 
-	@Column(nullable = true)
-	private String metadata;
-
-	@Column(nullable = false, length = VARCHAR_TINY)
-	private String version = "1.0.0";
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	private String password;
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public System() {
+	public PasswordAuthentication() {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public System(final String name, final String metadata, final String version) {
-		this.name = name;
-		this.metadata = metadata;
-		this.version = version;
+	public PasswordAuthentication(final System system, final String password) {
+		this.system = system;
+		this.password = password;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "System [id = " + id + ", name = " + name + ", metadata = " + metadata + ", version = " + version + "]";
+		return "PasswordAuthentication [id=" + id + ", system=" + system + "]";
 	}
 
 	//=================================================================================================
 	// boilerplate
 
 	//-------------------------------------------------------------------------------------------------
-	public String getName() {
-		return name;
+	public long getId() {
+		return id;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setName(final String name) {
-		this.name = name;
+	public void setId(final long id) {
+		this.id = id;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getMetadata() {
-		return metadata;
+	public System getSystem() {
+		return system;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setMetadata(final String metadata) {
-		this.metadata = metadata;
+	public void setSystem(final System system) {
+		this.system = system;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getVersion() {
-		return version;
+	public String getPassword() {
+		return password;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setVersion(final String version) {
-		this.version = version;
+	public void setPassword(final String password) {
+		this.password = password;
 	}
 }

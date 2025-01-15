@@ -9,6 +9,7 @@ public final class AuthenticationConstants {
 
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.authentication.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.authentication.jpa.repository";
+	public static final int ENCODER_STRENGTH = 10;
 
 	public static final String HTTP_API_BASE_PATH = "/authentication";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";

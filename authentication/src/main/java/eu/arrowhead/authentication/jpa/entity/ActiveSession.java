@@ -1,0 +1,118 @@
+package eu.arrowhead.authentication.jpa.entity;
+
+import java.time.ZonedDateTime;
+
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.jpa.ArrowheadEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+
+@Entity
+public class ActiveSession {
+
+	//=================================================================================================
+	// members
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	protected long id;
+
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false)
+	private System system;
+
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	private String token;
+
+	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	private ZonedDateTime loginTime;
+
+	@Column(nullable = false, updatable = false)
+	private ZonedDateTime expirationTime;
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public ActiveSession() {
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ActiveSession(final System system, final String token, final ZonedDateTime expirationTime) {
+		this.system = system;
+		this.token = token;
+		this.expirationTime = expirationTime;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@PrePersist
+	public void onCreate() {
+		this.loginTime = Utilities.utcNow();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "ActiveSession [id=" + id + ", system=" + system + ", token=" + token + ", loginTime=" + loginTime + ", expirationTime=" + expirationTime + "]";
+	}
+
+	//=================================================================================================
+	// boilerplate
+
+	//-------------------------------------------------------------------------------------------------
+	public long getId() {
+		return id;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setId(final long id) {
+		this.id = id;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public System getSystem() {
+		return system;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setSystem(final System system) {
+		this.system = system;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String getToken() {
+		return token;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setToken(final String token) {
+		this.token = token;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getLoginTime() {
+		return loginTime;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setLoginTime(final ZonedDateTime loginTime) {
+		this.loginTime = loginTime;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getExpirationTime() {
+		return expirationTime;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setExpirationTime(final ZonedDateTime expirationTime) {
+		this.expirationTime = expirationTime;
+	}
+}
