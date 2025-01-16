@@ -13,6 +13,11 @@ public final class AuthenticationConstants {
 
 	public static final String HTTP_API_BASE_PATH = "/authentication";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
+	public static final String HTTP_API_IDENTITY_PATH = HTTP_API_BASE_PATH + "/identity";
+
+	// operation related
+
+	public static final String HTTP_API_OP_LOGIN_PATH = "/login";
 
 	// configuration related
 
