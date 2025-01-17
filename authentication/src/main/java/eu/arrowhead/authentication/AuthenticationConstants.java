@@ -23,6 +23,9 @@ public final class AuthenticationConstants {
 
 	public static final String AUTHENTICATION_SECRET_KEY = "authentication.secret.key";
 	public static final String $AUTHENTICATION_SECRET_KEY = "${" + AUTHENTICATION_SECRET_KEY + "}";
+	public static final String IDENTITY_TOKEN_DURATION = "identity.token.duration"; // in seconds
+	public static final String $IDENTITY_TOKEN_DURATION = "${" + IDENTITY_TOKEN_DURATION + ":600}";
+	public static final int INFINITE_TOKEN_DURATION = 100; // in years
 
 	//=================================================================================================
 	// assistant methods

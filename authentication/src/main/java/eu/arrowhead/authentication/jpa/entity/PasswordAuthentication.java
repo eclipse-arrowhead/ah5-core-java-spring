@@ -21,7 +21,7 @@ public class PasswordAuthentication {
 	protected long id;
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false)
+	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false, unique = true)
 	private System system;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)

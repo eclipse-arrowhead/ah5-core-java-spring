@@ -2,7 +2,6 @@ package eu.arrowhead.authentication.jpa.entity;
 
 import java.time.ZonedDateTime;
 
-import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 
 @Entity
 public class ActiveSession {
@@ -25,7 +23,7 @@ public class ActiveSession {
 	protected long id;
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false)
+	@JoinColumn(name = "systemId", referencedColumnName = "id", nullable = false, unique = true)
 	private System system;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
@@ -45,16 +43,11 @@ public class ActiveSession {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ActiveSession(final System system, final String token, final ZonedDateTime expirationTime) {
+	public ActiveSession(final System system, final String token, final ZonedDateTime loginTime, final ZonedDateTime expirationTime) {
 		this.system = system;
 		this.token = token;
+		this.loginTime = loginTime;
 		this.expirationTime = expirationTime;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@PrePersist
-	public void onCreate() {
-		this.loginTime = Utilities.utcNow();
 	}
 
 	//-------------------------------------------------------------------------------------------------

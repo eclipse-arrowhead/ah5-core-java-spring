@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `system_` (
 	`name` varchar(63) NOT NULL,
 	`authentication_method` varchar(63) NOT NULL,
 	`sysop` int(1) NOT NULL DEFAULT 0,
+	`extra` varchar(1024),
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	`created_by` varchar(63) NOT NULL,
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `password_authentication` (
 	`system_id` bigint(20) NOT NULL,
 	`password` varchar(63) NOT NULL,
 	PRIMARY KEY (`id`),
+	UNIQUE KEY `system_id_password` (`system_id`),
 	CONSTRAINT `fk_system_password` FOREIGN KEY (`system_id`) REFERENCES `system_` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -47,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `active_session` (
 	`login_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `expiration_time` timestamp NOT NULL,
 	PRIMARY KEY (`id`),
+	UNIQUE KEY `system_id_session` (`system_id`),
 	CONSTRAINT `fk_system_session` FOREIGN KEY (`system_id`) REFERENCES `system_` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

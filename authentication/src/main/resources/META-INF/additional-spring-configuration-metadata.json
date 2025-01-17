@@ -48,5 +48,10 @@
     "name": "authentication.policy",
     "type": "eu.arrowhead.common.http.filter.authentication.AuthenticationPolicy",
     "description": "A description for 'authentication.policy'"
+  },
+  {
+    "name": "identity.token.duration",
+    "type": "java.lang.Integer",
+    "description": "A description for 'identity.token.duration'"
   }
 ]}

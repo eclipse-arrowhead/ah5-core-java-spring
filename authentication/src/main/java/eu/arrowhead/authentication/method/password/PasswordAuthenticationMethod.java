@@ -23,6 +23,9 @@ public class PasswordAuthenticationMethod implements IAuthenticationMethod {
 	@Autowired
 	private PasswordAuthenticationMethodInputNormalizer normalizer;
 
+	@Autowired
+	private PasswordAuthenticationMethodService service;
+
 	//=================================================================================================
 	// methods
 
@@ -41,8 +44,7 @@ public class PasswordAuthenticationMethod implements IAuthenticationMethod {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public IAuthenticationMethodService service() {
-		// TODO Auto-generated method stub
-		return null;
+		return service;
 	}
 
 	//-------------------------------------------------------------------------------------------------

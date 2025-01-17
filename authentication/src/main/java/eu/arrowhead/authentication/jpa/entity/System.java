@@ -30,6 +30,9 @@ public class System extends ArrowheadEntity {
 	@Column(nullable = false)
 	private boolean sysop = false;
 
+	@Column(length = VARCHAR_LARGE)
+	private String extra;
+
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String createdBy;
 
@@ -55,7 +58,7 @@ public class System extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "System [name=" + name + ", authenticationMethod=" + authenticationMethod + ", sysop=" + sysop + ", createdBy=" + createdBy + ", updatedBy=" + updatedBy + "]";
+		return "System [name=" + name + ", authenticationMethod=" + authenticationMethod + ", sysop=" + sysop + ",extra=" + extra + ", createdBy=" + createdBy + ", updatedBy=" + updatedBy + "]";
 	}
 
 	//=================================================================================================
@@ -109,5 +112,15 @@ public class System extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	public void setUpdatedBy(final String updatedBy) {
 		this.updatedBy = updatedBy;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String getExtra() {
+		return extra;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setExtra(final String extra) {
+		this.extra = extra;
 	}
 }
