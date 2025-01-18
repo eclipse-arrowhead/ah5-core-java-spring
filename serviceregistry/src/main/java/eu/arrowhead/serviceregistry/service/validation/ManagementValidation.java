@@ -177,7 +177,6 @@ public class ManagementValidation {
 		if (Utilities.isEmpty(names)) {
 			throw new InvalidParameterException("Device name list is missing or empty", origin);
 		}
-
 		if (Utilities.containsNullOrEmpty(names)) {
 			throw new InvalidParameterException("Device name list contains null or empty element", origin);
 		}

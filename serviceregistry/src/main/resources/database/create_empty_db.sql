@@ -2,7 +2,7 @@ DROP DATABASE IF EXISTS `ah_serviceregistry`;
 CREATE DATABASE `ah_serviceregistry`;
 USE `ah_serviceregistry`;
 
--- create tables
+-- Create tables
 source create_tables.sql
 
 -- Set up privileges
