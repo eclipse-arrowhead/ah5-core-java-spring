@@ -67,7 +67,7 @@ public class GeneralManagementAPI {
 	public @ResponseBody LogEntryListResponseDTO getLogEntries(@RequestBody(required = false) final LogRequestDTO dto) {
 		logger.debug("getLogEntries started...");
 
-		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
+		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
 		return logService.getLogEntries(dto, origin);
 	}
 
@@ -89,7 +89,7 @@ public class GeneralManagementAPI {
 	@ResponseBody public KeyValuesDTO getConfig(final @RequestParam(required = false) List<String> keys) {
 		logger.debug("getConfig started ...");
 
-		final String origin = HttpMethod.GET.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH;
+		final String origin = HttpMethod.GET.name() + " " + ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH;
 		return configService.getConfig(keys, ServiceRegistryConstants.FORBIDDEN_KEYS, origin);
 	}
 }
