@@ -21,7 +21,6 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
-import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
@@ -75,7 +74,8 @@ public class DTOConverter {
 
 		return new DeviceResponseDTO(
 				deviceEntity.getName(),
-				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>() {
+				}),
 				Utilities.isEmpty(addressEntities) ? null
 						: addressEntities.stream()
 								.map(address -> new AddressDTO(address.getAddressType().name(), address.getAddress()))
@@ -144,7 +144,6 @@ public class DTOConverter {
 		Assert.notNull(entity.getLeft(), "the System in the triple is null");
 		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
 
-
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
 		final Device device = entity.getRight() == null ? null : entity.getRight().getKey();
@@ -152,18 +151,21 @@ public class DTOConverter {
 
 		return new SystemResponseDTO(
 				system.getName(),
-				Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {
+				}),
 				system.getVersion(),
 				systemAddressList
-					.stream()
-					.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
-					.collect(Collectors.toList()),
-				device == null ? null : new DeviceResponseDTO(
-						device.getName(),
-						Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() { }),
-						deviceAddresses.stream().map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress())).collect(Collectors.toList()),
-						Utilities.convertZonedDateTimeToUTCString(device.getCreatedAt()),
-						Utilities.convertZonedDateTimeToUTCString(device.getUpdatedAt())),
+						.stream()
+						.map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress()))
+						.collect(Collectors.toList()),
+				device == null ? null
+						: new DeviceResponseDTO(
+								device.getName(),
+								Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
+								}),
+								deviceAddresses.stream().map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress())).collect(Collectors.toList()),
+								Utilities.convertZonedDateTimeToUTCString(device.getCreatedAt()),
+								Utilities.convertZonedDateTimeToUTCString(device.getUpdatedAt())),
 				Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(system.getUpdatedAt()));
 	}
@@ -187,8 +189,7 @@ public class DTOConverter {
 					systemResponseDTO.addresses(),
 					device,
 					systemResponseDTO.createdAt(),
-					systemResponseDTO.updatedAt()
-					));
+					systemResponseDTO.updatedAt()));
 		}
 
 		return new SystemListResponseDTO(terse, verbose.count());
@@ -205,32 +206,34 @@ public class DTOConverter {
 		return new ServiceInstanceResponseDTO(
 				instance.getServiceInstanceId(),
 				systemTriplet != null ? convertSystemTripletToDTO(systemTriplet)
-									 : new SystemResponseDTO(
-													instance.getSystem().getName(),
-													Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>() { }),
-													instance.getSystem().getVersion(),
-													null,
-													null,
-													Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getCreatedAt()),
-													Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getUpdatedAt())),
+						: new SystemResponseDTO(
+								instance.getSystem().getName(),
+								Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>() {
+								}),
+								instance.getSystem().getVersion(),
+								null,
+								null,
+								Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getCreatedAt()),
+								Utilities.convertZonedDateTimeToUTCString(instance.getSystem().getUpdatedAt())),
 				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
 				instance.getVersion(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
-				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() { }),
+				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
+				}),
 				interfaceList.stream().map(interf -> new ServiceInstanceInterfaceResponseDTO(
 						interf.getServiceInterfaceTemplate().getName(),
 						interf.getServiceInterfaceTemplate().getProtocol(),
 						interf.getPolicy().toString(),
-						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() { }))).toList(),
+						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
+						}))).toList(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
-				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt())
-		);
+				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceListResponseDTO convertServiceInstancePageToDTO(
-																  final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
-																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
+			final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
+			final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
 		logger.debug("convertServiceInstancePageToDTO started...");
 
 		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>(servicesWithInterfaces.getNumberOfElements());
@@ -252,8 +255,8 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceListResponseDTO convertServiceInstanceListToDTO(
-																  final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
-																  final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
+			final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
+			final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
 		logger.debug("convertServiceInstanceListToDTO started...");
 
 		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>();
@@ -284,11 +287,10 @@ public class DTOConverter {
 					template.getName(),
 					template.getProtocol(),
 					entry.getValue().stream()
-									.map(prop -> convertServiceInterfaceTemplatePropertytoDTO(prop))
-									.toList(),
+							.map(prop -> convertServiceInterfaceTemplatePropertytoDTO(prop))
+							.toList(),
 					Utilities.convertZonedDateTimeToUTCString(template.getCreatedAt()),
-					Utilities.convertZonedDateTimeToUTCString(template.getUpdatedAt()))
-			);
+					Utilities.convertZonedDateTimeToUTCString(template.getUpdatedAt())));
 		}
 
 		return new ServiceInterfaceTemplateListResponseDTO(dtos, count);
@@ -303,15 +305,9 @@ public class DTOConverter {
 		if (!Utilities.isEmpty(dto.getValidator())) {
 			final String[] split = dto.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
 			validator = split[0];
-			validatorParams  = split.length <= 1 ? new ArrayList<>() :  Arrays.asList(Arrays.copyOfRange(split, 1, split.length));
+			validatorParams = split.length <= 1 ? new ArrayList<>() : Arrays.asList(Arrays.copyOfRange(split, 1, split.length));
 		}
 		return new ServiceInterfaceTemplatePropertyDTO(dto.getPropertyName(), dto.isMandatory(), validator, validatorParams);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public KeyValuesDTO convertConfigMapToDTO(final Map<String, String> map) {
-		return new KeyValuesDTO(map);
-
 	}
 
 	//-------------------------------------------------------------------------------------------------

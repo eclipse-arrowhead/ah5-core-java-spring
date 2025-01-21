@@ -17,13 +17,9 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
-import eu.arrowhead.common.service.LogService;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
-import eu.arrowhead.dto.KeyValuesDTO;
-import eu.arrowhead.dto.LogEntryListResponseDTO;
-import eu.arrowhead.dto.LogRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
@@ -38,7 +34,6 @@ import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
-import eu.arrowhead.serviceregistry.service.ConfigService;
 import eu.arrowhead.serviceregistry.service.ManagementService;
 
 @Service
@@ -50,12 +45,6 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 
 	@Autowired
 	private ManagementService mgmtService;
-
-	@Autowired
-	private LogService logService;
-
-	@Autowired
-	private ConfigService configService;
 
 	private final Logger logger = LogManager.getLogger(getClass());
 
@@ -78,16 +67,6 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		Object responsePayload = null;
 
 		switch (request.getOperation()) {
-		case Constants.SERVICE_OP_GET_LOG:
-			final LogRequestDTO getLogDTO = readPayload(request.getPayload(), LogRequestDTO.class);
-			responsePayload = getLog(getLogDTO);
-			break;
-
-		case Constants.SERVICE_OP_GET_CONFIG:
-			final List<String> getConfigDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
-			responsePayload = getConfig(getConfigDTO);
-			break;
-
 		case Constants.SERVICE_OP_DEVICE_QUERY:
 			final DeviceQueryRequestDTO deviceQueryDTO = readPayload(request.getPayload(), DeviceQueryRequestDTO.class);
 			responsePayload = deviceQuery(deviceQueryDTO);
@@ -105,7 +84,8 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_DEVICE_REMOVE:
-			final List<String> deviceRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			final List<String> deviceRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+			});
 			deviceRemove(deviceRemoveDTO);
 			break;
 
@@ -127,7 +107,8 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_SYSTEM_REMOVE:
-			final List<String> systemRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			final List<String> systemRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+			});
 			systemRemove(systemRemoveDTO);
 			break;
 
@@ -143,14 +124,15 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_DEF_REMOVE:
-			final List<String> serviceDefRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			final List<String> serviceDefRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+			});
 			serviceDefinitionRemove(serviceDefRemoveDTO);
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_QUERY:
-			 final ServiceInstanceQueryRequestDTO serviceInstanceQueryDTO = readPayload(request.getPayload(), ServiceInstanceQueryRequestDTO.class);
-			 final Boolean serviceQueryVerbose = Boolean.valueOf(request.getParams().get(Constants.VERBOSE));
-			 responsePayload = serviceInstanceQuery(serviceInstanceQueryDTO, serviceQueryVerbose);
+			final ServiceInstanceQueryRequestDTO serviceInstanceQueryDTO = readPayload(request.getPayload(), ServiceInstanceQueryRequestDTO.class);
+			final Boolean serviceQueryVerbose = Boolean.valueOf(request.getParams().get(Constants.VERBOSE));
+			responsePayload = serviceInstanceQuery(serviceInstanceQueryDTO, serviceQueryVerbose);
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_CREATE:
@@ -165,7 +147,8 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_REMOVE:
-			final List<String> serviceInstanceRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			final List<String> serviceInstanceRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+			});
 			serviceInstanceRemove(serviceInstanceRemoveDTO);
 			break;
 
@@ -181,7 +164,8 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_INTERFACE_TEMPLATE_REMOVE:
-			final List<String> interfTemplateRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			final List<String> interfTemplateRemoveDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+			});
 			interfaceTemplateRemove(interfTemplateRemoveDTO);
 			break;
 
@@ -194,18 +178,6 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 
 	//=================================================================================================
 	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private LogEntryListResponseDTO getLog(final LogRequestDTO dto) {
-		logger.debug("ManagementMqttHandler.getLog started");
-		return logService.getLogEntries(dto, topic());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private KeyValuesDTO getConfig(final List<String> dto) {
-		logger.debug("ManagementMqttHandler.getConfig started");
-		return configService.getConfig(dto, topic());
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	private DeviceListResponseDTO deviceQuery(final DeviceQueryRequestDTO dto) {
