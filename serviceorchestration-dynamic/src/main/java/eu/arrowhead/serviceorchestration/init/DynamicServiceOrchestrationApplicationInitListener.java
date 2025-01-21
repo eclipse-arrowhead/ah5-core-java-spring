@@ -22,7 +22,6 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 
 		// TODO implement
 
-		logger.info("System {} published {} service(s).", sysInfo.getSystemName(), registeredServices.size());
 	}
 
 	//-------------------------------------------------------------------------------------------------
