@@ -87,6 +87,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 		logger.debug("SystemDiscoveryMqttHandler.register started");
 
 		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), topic());
+
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
 
@@ -102,6 +103,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 		logger.debug("SystemDiscoveryMqttHandler.revoke started");
 
 		final boolean result = sdService.revokeSystem(systemName, topic());
+
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}
 }

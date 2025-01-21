@@ -100,14 +100,11 @@ public class ServiceDiscoveryAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInstanceListResponseDTO lookup(
-									final HttpServletRequest httpServletRequest,
-									@RequestBody final  ServiceInstanceLookupRequestDTO dto,
-									@Parameter(
-											name =  "verbose",
-											description  = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.)",
-											example = "true")
-									@RequestParam final boolean verbose) {
-
+			final HttpServletRequest httpServletRequest,
+			@RequestBody final ServiceInstanceLookupRequestDTO dto,
+			@Parameter(name = "verbose",
+					   description = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.)",
+					   example = "true") @RequestParam final boolean verbose) {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;
@@ -134,10 +131,11 @@ public class ServiceDiscoveryAPI {
 	public ResponseEntity<Void> revoke(final HttpServletRequest httpServletRequest, @PathVariable(required = true) final String instanceId) {
 		logger.debug("revoke started");
 
-		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_REVOKE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH
+				+ ServiceRegistryConstants.HTTP_API_OP_SERVICE_REVOKE_PATH.replace(ServiceRegistryConstants.HTTP_PARAM_INSTANCE_ID, instanceId);
 		final String identifiedSystemName = sysNamePreprocessor.process(httpServletRequest, origin);
-
 		final boolean result = sdService.revokeService(identifiedSystemName, instanceId, origin);
+
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }

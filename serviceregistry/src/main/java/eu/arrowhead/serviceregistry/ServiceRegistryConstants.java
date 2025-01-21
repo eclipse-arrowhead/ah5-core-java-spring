@@ -48,12 +48,14 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_REGISTER_PATH = "/register";
 	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
-	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{name}";
+	public static final String HTTP_PARAM_NAME = "{name}";
+	public static final String HTTP_API_OP_DEVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_NAME;
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_PATH = "/service-definitions";
 	public static final String HTTP_API_OP_SERVICE_DEFINITION_QUERY_PATH = HTTP_API_OP_SERVICE_DEFINITION_PATH + "/query";
 	public static final String HTTP_API_OP_SYSTEM_PATH = "/systems";
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
-	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/{instanceId}";
+	public static final String HTTP_PARAM_INSTANCE_ID = "{instanceId}";
+	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_INSTANCE_ID;
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_SERVICE_INSTANCE_PATH = "/service-instances";
 	public static final String HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH = HTTP_API_OP_SERVICE_INSTANCE_PATH + "/query";
@@ -80,6 +82,7 @@ public final class ServiceRegistryConstants {
 			"spring.datasource.driver-class-name",
 			"spring.jpa.hibernate.ddl-auto",
 			"spring.jpa.show-sql",
+
 			// cert related
 			"authenticator.secret.key",
 			"server.ssl.key-store-type",
@@ -100,6 +103,9 @@ public final class ServiceRegistryConstants {
 	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
 	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 	public static final int ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
+	public static final int INTERFACE_TEMPLATE_NAME_LENGTH = ArrowheadEntity.VARCHAR_MEDIUM;
+	public static final int INTERFACE_TEMPLATE_PROTOCOL_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+	public static final int INTERFACE_PROPERTY_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	// Others
 
@@ -112,5 +118,4 @@ public final class ServiceRegistryConstants {
 	private ServiceRegistryConstants() {
 		throw new UnsupportedOperationException();
 	}
-
 }

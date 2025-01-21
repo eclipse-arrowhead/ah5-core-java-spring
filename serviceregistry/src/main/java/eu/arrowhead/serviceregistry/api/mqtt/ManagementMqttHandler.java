@@ -182,108 +182,126 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private DeviceListResponseDTO deviceQuery(final DeviceQueryRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.deviceQuery started");
+
 		return mgmtService.queryDevices(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private DeviceListResponseDTO deviceCreate(final DeviceListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.deviceCreate started");
+
 		return mgmtService.createDevices(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private DeviceListResponseDTO deviceUpdate(final DeviceListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.deviceUpdate started");
+
 		return mgmtService.updateDevices(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void deviceRemove(final List<String> names) {
 		logger.debug("ManagementMqttHandler.deviceRemove started");
+
 		mgmtService.removeDevices(names, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private SystemListResponseDTO systemQuery(final SystemQueryRequestDTO dto, final boolean verbose) {
 		logger.debug("ManagementMqttHandler.systemQuery started");
+
 		return mgmtService.querySystems(dto, verbose, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private SystemListResponseDTO systemCreate(final SystemListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.systemCreate started");
+
 		return mgmtService.createSystems(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private SystemListResponseDTO systemUpdate(final SystemListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.systemUpdate started");
+
 		return mgmtService.updateSystems(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void systemRemove(final List<String> names) {
 		logger.debug("ManagementMqttHandler.systemRemove started");
+
 		mgmtService.removeSystems(names, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceDefinitionListResponseDTO serviceDefinitionQuery(final PageDTO dto) {
 		logger.debug("ManagementMqttHandler.serviceDefinitionQuery started");
+
 		return mgmtService.getServiceDefinitions(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceDefinitionListResponseDTO serviceDefinitionCreate(final ServiceDefinitionListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.serviceDefinitionCreate started");
+
 		return mgmtService.createServiceDefinitions(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void serviceDefinitionRemove(final List<String> names) {
 		logger.debug("ManagementMqttHandler.serviceDefinitionRemove started");
+
 		mgmtService.removeServiceDefinitions(names, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInstanceListResponseDTO serviceInstanceQuery(final ServiceInstanceQueryRequestDTO dto, final boolean verbose) {
 		logger.debug("ManagementMqttHandler.serviceInstanceQuery started");
+
 		return mgmtService.queryServiceInstances(dto, verbose, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInstanceListResponseDTO serviceInstanceCreate(final ServiceInstanceCreateListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.serviceInstanceCreate started");
+
 		return mgmtService.createServiceInstances(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInstanceListResponseDTO serviceInstanceUpdate(final ServiceInstanceUpdateListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.serviceInstanceUpdate started");
-		return mgmtService.updateServiceInstance(dto, topic());
+
+		return mgmtService.updateServiceInstances(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void serviceInstanceRemove(final List<String> serviceInstances) {
 		logger.debug("ManagementMqttHandler.serviceInstanceRemove started");
+
 		mgmtService.removeServiceInstances(serviceInstances, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInterfaceTemplateListResponseDTO interfaceTemplateQuery(final ServiceInterfaceTemplateQueryRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.interfaceTemplateQuery started");
+
 		return mgmtService.queryInterfaceTemplates(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInterfaceTemplateListResponseDTO interfaceTemplateCreate(final ServiceInterfaceTemplateListRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.interfaceTemplateCreate started");
+
 		return mgmtService.createInterfaceTemplates(dto, topic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void interfaceTemplateRemove(final List<String> names) {
 		logger.debug("ManagementMqttHandler.interfaceTemplateRemove started");
+
 		mgmtService.removeInterfaceTemplates(names, topic());
 	}
 }

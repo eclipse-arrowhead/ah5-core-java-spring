@@ -85,6 +85,7 @@ public class ManagementAPI {
 		logger.debug("queryDevices started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_QUERY_PATH;
+
 		return mgmtService.queryDevices(dto, origin);
 	}
 
@@ -108,6 +109,7 @@ public class ManagementAPI {
 		logger.debug("createDevices started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+
 		return mgmtService.createDevices(dto, origin);
 	}
 
@@ -130,6 +132,7 @@ public class ManagementAPI {
 		logger.debug("updateDevices started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+
 		return mgmtService.updateDevices(dto, origin);
 	}
 
@@ -153,6 +156,7 @@ public class ManagementAPI {
 		logger.debug("removeDevices started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+
 		mgmtService.removeDevices(names, origin);
 	}
 
@@ -175,11 +179,7 @@ public class ManagementAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO querySystems(@RequestBody(required = false) final SystemQueryRequestDTO dto,
-			@Parameter(
-					name =  "verbose",
-					description  = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
-					example = "true")
-			@RequestParam final boolean verbose) {
+			@Parameter(name = "verbose", description = "Set true if you want the response to contain device details.", example = "true") @RequestParam final boolean verbose) {
 		logger.debug("querySystems started, verbose = {}", verbose);
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH;
@@ -207,6 +207,7 @@ public class ManagementAPI {
 		logger.debug("createSystems started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+
 		return mgmtService.createSystems(dto, origin);
 	}
 
@@ -229,6 +230,7 @@ public class ManagementAPI {
 		logger.debug("updateSystems started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+
 		return mgmtService.updateSystems(dto, origin);
 	}
 
@@ -250,6 +252,7 @@ public class ManagementAPI {
 		logger.debug("removeSystems started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+
 		mgmtService.removeSystems(names, origin);
 	}
 
@@ -276,9 +279,9 @@ public class ManagementAPI {
 		logger.debug("getServiceDefinitions started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+
 		return mgmtService.getServiceDefinitions(dto, origin);
 	}
-
 
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created service definition entries")
@@ -300,6 +303,7 @@ public class ManagementAPI {
 		logger.debug("createServiceDefinitions started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+
 		return mgmtService.createServiceDefinitions(dto, origin);
 	}
 
@@ -321,6 +325,7 @@ public class ManagementAPI {
 		logger.debug("removeServiceDefinitions started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+
 		mgmtService.removeServiceDefinitions(names, origin);
 	}
 
@@ -344,13 +349,11 @@ public class ManagementAPI {
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInstanceListResponseDTO queryServiceInstances(
 			@RequestBody final ServiceInstanceQueryRequestDTO dto,
-			@Parameter(
-					name =  "verbose",
-					description  = "Set true if you want the response to contain the system and device details.",
-					example = "true")
-			@RequestParam final boolean verbose) {
+			@Parameter(name = "verbose", description = "Set true if you want the response to contain the system and device details.", example = "true") @RequestParam final boolean verbose) {
 		logger.debug("queryServiceInstances started");
+
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH;
+
 		return mgmtService.queryServiceInstances(dto, verbose, origin);
 	}
 
@@ -374,6 +377,7 @@ public class ManagementAPI {
 		logger.debug("createServiceInstances started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
+
 		return mgmtService.createServiceInstances(dto, origin);
 	}
 
@@ -396,7 +400,8 @@ public class ManagementAPI {
 		logger.debug("updateServiceInstances started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
-		return mgmtService.updateServiceInstance(dto, origin);
+
+		return mgmtService.updateServiceInstances(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -417,6 +422,7 @@ public class ManagementAPI {
 		logger.debug("removeServiceInstances started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
+
 		mgmtService.removeServiceInstances(serviceInstances, origin);
 	}
 
@@ -443,6 +449,7 @@ public class ManagementAPI {
 		logger.debug("createInterfaceTemplates started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_PATH;
+
 		return mgmtService.createInterfaceTemplates(dto, origin);
 	}
 
@@ -465,6 +472,7 @@ public class ManagementAPI {
 		logger.debug("queryInterfaceTemplates started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_QUERY_PATH;
+
 		return mgmtService.queryInterfaceTemplates(dto, origin);
 	}
 
@@ -486,6 +494,7 @@ public class ManagementAPI {
 		logger.debug("removeInterfaceTemplates started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_PATH;
+
 		mgmtService.removeInterfaceTemplates(names, origin);
 	}
 }

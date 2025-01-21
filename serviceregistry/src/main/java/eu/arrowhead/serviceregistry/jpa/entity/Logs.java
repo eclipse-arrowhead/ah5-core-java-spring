@@ -5,6 +5,4 @@ import jakarta.persistence.Entity;
 
 @Entity
 public class Logs extends LogEntity {
-
-
 }

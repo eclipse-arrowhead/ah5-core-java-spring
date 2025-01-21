@@ -76,10 +76,8 @@ public class ServiceDiscoveryService {
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = systemDbService.getByName(instanceEntry.getKey().getSystem().getName()).get();
 
 			return dtoConverter.convertServiceInstanceEntityToDTO(instanceEntry, systemTriplet);
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -96,6 +94,7 @@ public class ServiceDiscoveryService {
 			if (Utilities.isEmpty(normalized.metadataRequirementsList())) {
 				normalized.metadataRequirementsList().add(new MetadataRequirementDTO());
 			}
+
 			for (final MetadataRequirementDTO metadataReq : normalized.metadataRequirementsList()) {
 				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true);
 			}
@@ -120,13 +119,8 @@ public class ServiceDiscoveryService {
 			}
 
 			return dtoConverter.convertServiceInstanceListToDTO(servicesWithInterfaces, null);
-
 		} catch (final ForbiddenException ex) {
 			throw new ForbiddenException(ex.getMessage(), origin);
-
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -140,13 +134,12 @@ public class ServiceDiscoveryService {
 
 		final Entry<String, String> normalized = validator.validateAndNormalizeRevokeService(identifiedSystemName, instanceId, origin);
 
+		if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(normalized.getValue()).equals(normalized.getKey())) {
+			throw new ForbiddenException("Revoking other systems' service is forbidden", origin);
+		}
+
 		try {
-			if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(normalized.getValue()).equals(normalized.getKey())) {
-				throw new ForbiddenException("Revoking other systems' service is forbidden", origin);
-			}
-
 			return instanceDbService.deleteByInstanceId(instanceId);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

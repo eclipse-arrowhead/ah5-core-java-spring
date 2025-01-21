@@ -122,6 +122,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasClientDirectAccess(final String systemName) {
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
+
 		return serviceDiscoveryDirectAccess.contains(systemName);
 	}
 
@@ -313,6 +314,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		if (!isMqttApiEnabled()) {
 			return null;
 		}
+
 		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_TOPIC);
 	}
 
@@ -321,6 +323,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		if (!isMqttApiEnabled()) {
 			return null;
 		}
+
 		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_SYSTEM_DISCOVERY_TOPIC);
 	}
 
@@ -329,6 +332,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		if (!isMqttApiEnabled()) {
 			return null;
 		}
+
 		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_TOPIC);
 	}
 

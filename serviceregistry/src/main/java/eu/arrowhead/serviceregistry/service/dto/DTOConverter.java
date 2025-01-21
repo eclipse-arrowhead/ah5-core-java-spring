@@ -87,6 +87,7 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityListToDTO(final List<ServiceDefinition> entities) {
 		logger.debug("convertServiceDefinitionEntityListToDTO started...");
+		Assert.notNull(entities, "entity list is null");
 
 		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))
@@ -97,6 +98,7 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDefinitionListResponseDTO convertServiceDefinitionEntityPageToDTO(final Page<ServiceDefinition> entities) {
 		logger.debug("convertServiceDefinitionEntityPageToDTO started...");
+		Assert.notNull(entities, "entity page is null");
 
 		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))
@@ -116,9 +118,9 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemTripletPageToDTO(final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
 		logger.debug("convertSystemTripletPageToDTO started...");
+		Assert.notNull(entities, "entity page is null");
 
 		final List<SystemResponseDTO> result = new ArrayList<>(entities.getNumberOfElements());
-
 		for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity : entities) {
 			result.add(convertSystemTripletToDTO(entity));
 		}
@@ -129,9 +131,9 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemTripletListToDTO(final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> entities) {
 		logger.debug("convertSystemTripletListToDTO started...");
+		Assert.notNull(entities, "entity list is null");
 
 		final List<SystemResponseDTO> result = new ArrayList<>(entities.size());
-
 		for (final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity : entities) {
 			result.add(convertSystemTripletToDTO(entity));
 		}
@@ -141,6 +143,8 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemResponseDTO convertSystemTripletToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
+		logger.debug("convertSystemTripletToDTO started...");
+		Assert.notNull(entity, "entity is null");
 		Assert.notNull(entity.getLeft(), "the System in the triple is null");
 		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
 
@@ -172,11 +176,11 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public SystemListResponseDTO convertSystemListResponseDtoToTerse(final SystemListResponseDTO verbose) {
+		logger.debug("convertSystemListResponseDtoToTerse started...");
+		Assert.notNull(verbose, "response is null");
 
 		final List<SystemResponseDTO> terse = new ArrayList<SystemResponseDTO>(verbose.entries().size());
-
 		for (final SystemResponseDTO systemResponseDTO : verbose.entries()) {
-
 			DeviceResponseDTO device = null;
 			if (systemResponseDTO.device() != null) {
 				device = new DeviceResponseDTO(systemResponseDTO.device().name(), null, null, null, null);
@@ -193,12 +197,14 @@ public class DTOConverter {
 		}
 
 		return new SystemListResponseDTO(terse, verbose.count());
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceResponseDTO convertServiceInstanceEntityToDTO(final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry, final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet) {
+	public ServiceInstanceResponseDTO convertServiceInstanceEntityToDTO(
+			final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry,
+			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet) {
 		logger.debug("convertServiceInstanceEntityToDTO started...");
+		Assert.notNull(instanceEntry, "instance is null");
 
 		final ServiceInstance instance = instanceEntry.getKey();
 		final List<ServiceInstanceInterface> interfaceList = instanceEntry.getValue();
@@ -218,13 +224,13 @@ public class DTOConverter {
 				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
 				instance.getVersion(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
-				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
+				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>()	{
 				}),
 				interfaceList.stream().map(interf -> new ServiceInstanceInterfaceResponseDTO(
 						interf.getServiceInterfaceTemplate().getName(),
 						interf.getServiceInterfaceTemplate().getProtocol(),
 						interf.getPolicy().toString(),
-						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
+						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>()	{
 						}))).toList(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt()));
@@ -235,6 +241,7 @@ public class DTOConverter {
 			final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
 			final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
 		logger.debug("convertServiceInstancePageToDTO started...");
+		Assert.notNull(servicesWithInterfaces, "page is null");
 
 		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>(servicesWithInterfaces.getNumberOfElements());
 		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {
@@ -258,6 +265,7 @@ public class DTOConverter {
 			final Iterable<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces,
 			final Iterable<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices) {
 		logger.debug("convertServiceInstanceListToDTO started...");
+		Assert.notNull(servicesWithInterfaces, "collection is null");
 
 		final List<ServiceInstanceResponseDTO> entries = new ArrayList<>();
 		for (final Entry<ServiceInstance, List<ServiceInstanceInterface>> serviceEntry : servicesWithInterfaces) {
@@ -277,8 +285,11 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInterfaceTemplateListResponseDTO convertInterfaceTemplateEntriesToDTO(final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries, final long count) {
+	public ServiceInterfaceTemplateListResponseDTO convertInterfaceTemplateEntriesToDTO(
+			final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries,
+			final long count) {
 		logger.debug("convertInterfaceTemplateEntriesToDTO started...");
+		Assert.notNull(entries, "entry collection is null");
 
 		final List<ServiceInterfaceTemplateResponseDTO> dtos = new ArrayList<>(entries.size());
 		for (final Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entry : entries) {
@@ -299,6 +310,7 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInterfaceTemplatePropertyDTO convertServiceInterfaceTemplatePropertytoDTO(final ServiceInterfaceTemplateProperty dto) {
 		logger.debug("convertServiceInterfaceTemplatePropertytoDTO started...");
+		Assert.notNull(dto, "dto is null");
 
 		String validator = null;
 		List<String> validatorParams = null;
@@ -307,12 +319,14 @@ public class DTOConverter {
 			validator = split[0];
 			validatorParams = split.length <= 1 ? new ArrayList<>() : Arrays.asList(Arrays.copyOfRange(split, 1, split.length));
 		}
+
 		return new ServiceInterfaceTemplatePropertyDTO(dto.getPropertyName(), dto.isMandatory(), validator, validatorParams);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceLookupFilterModel convertServiceInstanceQueryRequestDtoToFilterModel(final ServiceInstanceQueryRequestDTO dto) {
 		logger.debug("convertServiceInstanceQueryRequestDtoToFilterModel started...");
+		Assert.notNull(dto, "dto is null");
 
 		return new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
 				dto.instanceIds(),
