@@ -14,7 +14,7 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
-import eu.arrowhead.dto.IdentityLoginRequestDTO;
+import eu.arrowhead.dto.IdentityRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
@@ -40,7 +40,7 @@ public class IdentityValidation {
 	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateLoginServicePhase1(final IdentityLoginRequestDTO dto, final String origin) {
+	public void validateLoginServicePhase1(final IdentityRequestDTO dto, final String origin) {
 		logger.debug("validateLoginServicePhase1 started...");
 
 		if (dto == null) {
@@ -57,17 +57,17 @@ public class IdentityValidation {
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
-	public IdentityLoginRequestDTO validateAndNormalizeLoginServicePhase1(final IdentityLoginRequestDTO dto, final String origin) {
+	public IdentityRequestDTO validateAndNormalizeLoginServicePhase1(final IdentityRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeLoginServicePhase1 started...");
 
 		validateLoginServicePhase1(dto, origin);
 		final String normalized = nameNormalizer.normalize(dto.systemName());
 
-		return new IdentityLoginRequestDTO(normalized, dto.credentials());
+		return new IdentityRequestDTO(normalized, dto.credentials());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public IdentityLoginRequestDTO validateAndNormalizeLoginServicePhase2(final IdentityLoginRequestDTO dto, final AuthenticationMethod authenticationMethod, final String origin) {
+	public IdentityRequestDTO validateAndNormalizeLoginServicePhase2(final IdentityRequestDTO dto, final AuthenticationMethod authenticationMethod, final String origin) {
 		logger.debug("validateAndNormalizeLoginServicePhase2 started...");
 
 		final IAuthenticationMethod method = methods.method(authenticationMethod);
@@ -79,7 +79,7 @@ public class IdentityValidation {
 			method.validator().validateCredentials(dto.credentials());
 			final Map<String, String> normalizeCredentials = method.normalizer().normalizeCredentials(dto.credentials());
 
-			return new IdentityLoginRequestDTO(dto.systemName(), normalizeCredentials);
+			return new IdentityRequestDTO(dto.systemName(), normalizeCredentials);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {

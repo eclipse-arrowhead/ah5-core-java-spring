@@ -18,6 +18,7 @@ public final class AuthenticationConstants {
 	// operation related
 
 	public static final String HTTP_API_OP_LOGIN_PATH = "/login";
+	public static final String HTTP_API_OP_LOGOUT_PATH = "/logout";
 
 	// configuration related
 

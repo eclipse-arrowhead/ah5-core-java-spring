@@ -99,4 +99,23 @@ public class IdentityDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public System removeSession(final String systemName) {
+		logger.debug("removeSession started...");
+		Assert.isTrue(!Utilities.isEmpty(systemName), "System name is missing or empty");
+
+		try {
+			final Optional<ActiveSession> sessionOpt = asRepository.deleteBySystem_Name(systemName);
+			final System result = sessionOpt.isPresent() ? sessionOpt.get().getSystem() : null;
+			asRepository.flush();
+
+			return result;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
 }
