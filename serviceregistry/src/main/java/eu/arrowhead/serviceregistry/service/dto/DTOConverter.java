@@ -21,7 +21,6 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
-import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
@@ -322,14 +321,6 @@ public class DTOConverter {
 		}
 
 		return new ServiceInterfaceTemplatePropertyDTO(dto.getPropertyName(), dto.isMandatory(), validator, validatorParams);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public KeyValuesDTO convertConfigMapToDTO(final Map<String, String> map) {
-		logger.debug("convertConfigMapToDTO started...");
-
-		return new KeyValuesDTO(map);
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
