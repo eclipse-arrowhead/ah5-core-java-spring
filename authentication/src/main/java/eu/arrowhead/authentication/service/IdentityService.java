@@ -24,6 +24,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.IdentityChangeRequestDTO;
 import eu.arrowhead.dto.IdentityLoginResponseDTO;
 import eu.arrowhead.dto.IdentityRequestDTO;
+import eu.arrowhead.dto.IdentityVerifyResponseDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
@@ -157,6 +158,13 @@ public class IdentityService {
 				throw new ArrowheadException(ex.getMessage(), origin);
 			}
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public IdentityVerifyResponseDTO verify(final String token, final String origin) {
+		// TODO: continue
+
+		return null;
 	}
 
 	//=================================================================================================

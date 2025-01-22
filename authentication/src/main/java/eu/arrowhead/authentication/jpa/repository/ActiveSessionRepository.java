@@ -18,6 +18,9 @@ public interface ActiveSessionRepository extends RefreshableRepository<ActiveSes
 	public Optional<ActiveSession> findBySystem(final System system);
 
 	//-------------------------------------------------------------------------------------------------
+	public Optional<ActiveSession> findByToken(final String token);
+
+	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:MethodNameCheck")
 	public void deleteBySystem_Name(final String systemName);
 }

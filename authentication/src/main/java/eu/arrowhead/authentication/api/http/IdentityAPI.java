@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -15,8 +17,9 @@ import eu.arrowhead.authentication.service.IdentityService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.IdentityChangeRequestDTO;
-import eu.arrowhead.dto.IdentityRequestDTO;
 import eu.arrowhead.dto.IdentityLoginResponseDTO;
+import eu.arrowhead.dto.IdentityRequestDTO;
+import eu.arrowhead.dto.IdentityVerifyResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -104,5 +107,27 @@ public class IdentityAPI {
 
 		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH + AuthenticationConstants.HTTP_API_OP_CHANGE_PATH;
 		identityService.changeService(dto, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns information about a system (if verified) based on token")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = IdentityVerifyResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@GetMapping(path = AuthenticationConstants.HTTP_API_OP_VERIFY_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody IdentityVerifyResponseDTO verify(@PathVariable final String token) {
+		logger.debug("verify started...");
+
+		final String origin = HttpMethod.GET.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH
+				+ AuthenticationConstants.HTTP_API_OP_VERIFY_PATH.replace(AuthenticationConstants.HTTP_PARAM_TOKEN, token);
+
+		return identityService.verify(token, origin);
 	}
 }

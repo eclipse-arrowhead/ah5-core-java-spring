@@ -98,6 +98,20 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public Optional<ActiveSession> getSessionByToken(final String token) {
+		logger.debug("getSessionByToken started...");
+		Assert.isTrue(!Utilities.isEmpty(token), "Token is missing or empty");
+
+		try {
+			return asRepository.findByToken(token);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public ActiveSession createOrUpdateSession(final System system, final String token) {
 		logger.debug("getPasswordAuthenticationBySystem started...");
