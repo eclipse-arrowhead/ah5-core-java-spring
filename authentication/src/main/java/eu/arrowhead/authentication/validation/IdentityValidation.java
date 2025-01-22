@@ -14,6 +14,8 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.dto.ISystemName;
+import eu.arrowhead.dto.IdentityChangeRequestDTO;
 import eu.arrowhead.dto.IdentityRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
@@ -43,15 +45,7 @@ public class IdentityValidation {
 	public void validateLoginServicePhase1(final IdentityRequestDTO dto, final String origin) {
 		logger.debug("validateLoginServicePhase1 started...");
 
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-
-		if (Utilities.isEmpty(dto.systemName())) {
-			throw new InvalidParameterException("System name is empty", origin);
-		}
-
-		nameValidator.validateName(dto.systemName());
+		validateSystemName(dto, origin);
 	}
 
 	// VALIDATION AND NORMALIZATION
@@ -77,13 +71,53 @@ public class IdentityValidation {
 
 		try {
 			method.validator().validateCredentials(dto.credentials());
-			final Map<String, String> normalizeCredentials = method.normalizer().normalizeCredentials(dto.credentials());
+			final Map<String, String> normalizedCredentials = method.normalizer().normalizeCredentials(dto.credentials());
 
-			return new IdentityRequestDTO(dto.systemName(), normalizeCredentials);
+			return new IdentityRequestDTO(dto.systemName(), normalizedCredentials);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public IdentityChangeRequestDTO validateAndNormalizeChangeServicePhase2(final IdentityChangeRequestDTO dto, final AuthenticationMethod authenticationMethod, final String origin) {
+		logger.debug("validateAndNormalizeChangeServicePhase2 started...");
+
+		// at this point only new credential are not validated or normalized
+		final IAuthenticationMethod method = methods.method(authenticationMethod);
+		if (method == null) {
+			throw new InternalServerError("Unsupported authentication method: " + authenticationMethod.name(), origin);
+		}
+
+		try {
+			method.validator().validateCredentials(dto.newCredentials());
+			final Map<String, String> normalizedNewCredentials = method.normalizer().normalizeCredentials(dto.newCredentials());
+
+			return new IdentityChangeRequestDTO(dto.systemName(), dto.credentials(), normalizedNewCredentials);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateSystemName(final ISystemName dto, final String origin) {
+		logger.debug("validateSystemName started...");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.systemName())) {
+			throw new InvalidParameterException("System name is empty", origin);
+		}
+
+		nameValidator.validateName(dto.systemName());
 	}
 }

@@ -16,11 +16,15 @@ import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.validation.IdentityValidation;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.ExternalServerError;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.IdentityChangeRequestDTO;
 import eu.arrowhead.dto.IdentityLoginResponseDTO;
 import eu.arrowhead.dto.IdentityRequestDTO;
+import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
 public class IdentityService {
@@ -80,14 +84,14 @@ public class IdentityService {
 
 		if (noSession) {
 			// no need to create session, we just want to check credentials
-			return new IdentityLoginData(normalized, null);
+			return new IdentityLoginData(normalized, system, null);
 		}
 
 		final String token = UUID.randomUUID().toString();
 		try {
 			final ActiveSession session = dbService.createOrUpdateSession(system, token);
 
-			return new IdentityLoginData(normalized, new IdentityLoginResponseDTO(token, Utilities.convertZonedDateTimeToUTCString(session.getExpirationTime())));
+			return new IdentityLoginData(normalized, system, new IdentityLoginResponseDTO(token, Utilities.convertZonedDateTimeToUTCString(session.getExpirationTime())));
 		} catch (final InternalServerError ex) {
 			method.service().rollbackCredentialsVerification(system, normalized.credentials(), ex.getMessage());
 			throw new InternalServerError(ex.getMessage(), origin);
@@ -102,15 +106,56 @@ public class IdentityService {
 		// check if request is coming from a verified system
 		final IdentityLoginData data = loginService(dto, true, origin);
 
+		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
+		final IAuthenticationMethod method = methods.method(methodType);
+		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
+
 		try {
-			final System system = dbService.removeSession(data.normalizedRequest().systemName());
-			if (system != null) {
-				final IAuthenticationMethod method = methods.method(system.getAuthenticationMethod());
-				Assert.notNull(method, "Authentication method implementation not found: " + system.getAuthenticationMethod().name());
-				method.service().logout(system, data.normalizedRequest().credentials());
-			}
+			dbService.removeSession(data.normalizedRequest().systemName());
+			method.service().logout(data.system(), data.normalizedRequest().credentials());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void changeService(final IdentityChangeRequestDTO dto, final String origin) {
+		logger.debug("change service started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		// check if request is coming from a verified system
+		final IdentityLoginData data = loginService(new IdentityRequestDTO(dto.systemName(), dto.credentials()), true, origin);
+
+		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
+		final IAuthenticationMethod method = methods.method(methodType);
+		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
+
+		// further validation & normalization
+		IdentityChangeRequestDTO normalized = new IdentityChangeRequestDTO(data.normalizedRequest().systemName(), data.normalizedRequest().credentials(), dto.newCredentials());
+
+		try {
+			normalized = validator.validateAndNormalizeChangeServicePhase2(normalized, methodType, origin);
+		} catch (final ArrowheadException ex) {
+			method.service().rollbackCredentialsVerification(data.system(), normalized.credentials(), ex.getMessage());
+		}
+
+		// changing credentials
+		try {
+			method.service().changeCredentials(data.system(), normalized.credentials(), normalized.newCredentials());
+			method.service().rollbackCredentialsVerification(data.system(), normalized.newCredentials(), "Credentials changed");
+		} catch (final ArrowheadException ex) {
+			method.service().rollbackCredentialsVerification(data.system(), normalized.credentials(), ex.getMessage());
+
+			if (ex instanceof InvalidParameterException) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			} else if (ex instanceof InternalServerError) {
+				throw new InternalServerError(ex.getMessage(), origin);
+			} else if (ex instanceof ExternalServerError) {
+				throw new ExternalServerError(ex.getMessage(), origin);
+			} else {
+				// should never happen
+				throw new ArrowheadException(ex.getMessage(), origin);
+			}
 		}
 	}
 

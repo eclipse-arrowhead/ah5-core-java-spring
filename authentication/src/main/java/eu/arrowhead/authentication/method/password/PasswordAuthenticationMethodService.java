@@ -17,6 +17,7 @@ import eu.arrowhead.authentication.method.IAuthenticationMethodService;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ExternalServerError;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 
 @Service
 public class PasswordAuthenticationMethodService implements IAuthenticationMethodService {
@@ -54,4 +55,16 @@ public class PasswordAuthenticationMethodService implements IAuthenticationMetho
 		return encoder.matches(rawPassword, passwordOpt.get().getPassword());
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public void changeCredentials(final System system, final Map<String, String> oldCredentials, final Map<String, String> newCredentials)
+			throws InvalidParameterException, InternalServerError, ExternalServerError {
+		logger.debug("PasswordAuthenticationMethodService.changeCredentials started...");
+		Assert.notNull(system, "system is null");
+		Assert.notNull(newCredentials, "newCredentials is null");
+		Assert.isTrue(!Utilities.isEmpty(newCredentials.get(PasswordAuthenticationMethod.KEY_PASSWORD)), "password field is missing or empty");
+
+		final String encodedPassword = encoder.encode(newCredentials.get(PasswordAuthenticationMethod.KEY_PASSWORD));
+		identityDbService.changePassword(system, encodedPassword);
+	}
 }

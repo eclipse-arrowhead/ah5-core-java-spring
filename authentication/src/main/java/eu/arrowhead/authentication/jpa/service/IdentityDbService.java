@@ -1,5 +1,6 @@
 package eu.arrowhead.authentication.jpa.service;
 
+import java.security.InvalidParameterException;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -75,6 +76,29 @@ public class IdentityDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
+	public void changePassword(final System system, final String newPassword) {
+		logger.debug("changePassword started...");
+		Assert.notNull(system, "system is null");
+		Assert.isTrue(!Utilities.isEmpty(newPassword), "newPassword is null or empty");
+
+		try {
+			final Optional<PasswordAuthentication> authOpt = paRepository.findBySystem(system);
+			if (authOpt.isEmpty()) {
+				throw new InvalidParameterException("Entry for system " + system.getName() + " not found");
+			}
+
+			final PasswordAuthentication auth = authOpt.get();
+			auth.setPassword(newPassword);
+			paRepository.saveAndFlush(auth);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
 	public ActiveSession createOrUpdateSession(final System system, final String token) {
 		logger.debug("getPasswordAuthenticationBySystem started...");
 		Assert.notNull(system, "system is null");
@@ -87,6 +111,11 @@ public class IdentityDbService {
 
 			final ActiveSession session = sessionOpt.isPresent() ? sessionOpt.get() : new ActiveSession(system, token, now, expirationTime);
 			if (sessionOpt.isPresent()) {
+				if (now.isAfter(session.getExpirationTime())) {
+					// session is already expired, just the record is not removed => re-using it
+					session.setLoginTime(now);
+				}
+
 				// update
 				session.setToken(token);
 				session.setExpirationTime(expirationTime);
@@ -102,16 +131,13 @@ public class IdentityDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public System removeSession(final String systemName) {
+	public void removeSession(final String systemName) {
 		logger.debug("removeSession started...");
 		Assert.isTrue(!Utilities.isEmpty(systemName), "System name is missing or empty");
 
 		try {
-			final Optional<ActiveSession> sessionOpt = asRepository.deleteBySystem_Name(systemName);
-			final System result = sessionOpt.isPresent() ? sessionOpt.get().getSystem() : null;
+			asRepository.deleteBySystem_Name(systemName);
 			asRepository.flush();
-
-			return result;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
