@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ public class OrchestrationFrom {
 
 	private String requesterSystemName;
 	private String targetSystemName;
-	private List<String> orchestrationFlags;
+	private List<String> orchestrationFlags = new ArrayList<String>();
 	private Map<String, String> qosRequirements;
 	private Integer exclusivityDuration;
 
@@ -39,7 +40,7 @@ public class OrchestrationFrom {
 		this.targetSystemName = targetSystemName;
 
 		if (dto != null) {
-			this.orchestrationFlags = dto.orchestrationFlags();
+			this.orchestrationFlags.addAll(dto.orchestrationFlags());
 			this.qosRequirements = dto.qosRequirements();
 			this.exclusivityDuration = dto.exclusivityDuration();
 
@@ -59,7 +60,7 @@ public class OrchestrationFrom {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean hasOrchestrationFlag(final OrchestrationFlag flag) {
+	public boolean hasFlag(final OrchestrationFlag flag) {
 		for (final String rawFlag : orchestrationFlags) {
 			if (rawFlag.equalsIgnoreCase(flag.name())) {
 				return true;
@@ -68,7 +69,14 @@ public class OrchestrationFrom {
 
 		return false;
 	}
-	
+
+	//-------------------------------------------------------------------------------------------------
+	public void addFlag(final OrchestrationFlag flag) {
+		if (!hasFlag(flag)) {
+			orchestrationFlags.add(flag.name());
+		}
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public Integer getExclusivityDuration() {
 		return exclusivityDuration;

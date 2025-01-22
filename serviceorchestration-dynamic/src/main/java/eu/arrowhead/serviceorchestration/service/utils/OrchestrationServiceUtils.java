@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationFrom;
 
@@ -68,6 +69,18 @@ public class OrchestrationServiceUtils {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void markIfTranslationIsNeeded(final List<OrchestrationCandidate> candidates) {
+		// TODO
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
+		// TODO
+		// here comes the translation discovery
+		return List.of();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationCandidate> filterOutUnauthorizedOnes(final List<OrchestrationCandidate> candidates) {
 		// TODO
 		return List.of();
@@ -76,12 +89,29 @@ public class OrchestrationServiceUtils {
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationCandidate matchmaking(final List<OrchestrationCandidate> candidates) {
 		// TODO
+		// those that are not to be translated have priority
 		return null;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void buildTranslationBridge(final OrchestrationCandidate candidate) {
+		// TODO set new connection details in the candidate object
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void buildInterCloudBridge(final OrchestrationCandidate candidate) {
+		// TODO set new connection details in the candidate object
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void obtainAuthorizationTokensIfRequired(final List<OrchestrationCandidate> candidates) {
 		// TODO where ServiceInterfacePolicy is TOKEN_AUTH
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationResponseDTO convertToOrchestrationResponse(final List<OrchestrationCandidate> candidates) {
+		// TODO
+		return null;
 	}
 
 	//=================================================================================================
