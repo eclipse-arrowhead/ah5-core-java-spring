@@ -20,7 +20,7 @@ public class OrchestrationServiceUtils {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> localCloudServiceDiscovery(final OrchestrationFrom form) {
+	public List<OrchestrationCandidate> localCloudServiceDiscovery(final OrchestrationFrom form, final boolean withoutInterace) {
 		// use provider filter if only preferred providers flag
 		return List.of();
 	}
@@ -80,7 +80,7 @@ public class OrchestrationServiceUtils {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void obtainAuthorizationTokens(final List<OrchestrationCandidate> candidates) {
+	public void obtainAuthorizationTokensIfRequired(final List<OrchestrationCandidate> candidates) {
 		// TODO where ServiceInterfacePolicy is TOKEN_AUTH
 	}
 

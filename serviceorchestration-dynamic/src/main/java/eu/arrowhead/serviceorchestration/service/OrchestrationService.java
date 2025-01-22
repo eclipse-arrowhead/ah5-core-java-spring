@@ -45,13 +45,21 @@ public class OrchestrationService {
 		if (form.hasOrchestrationFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
 			candidates.addAll(orchServiceUtils.interCloudServiceDiscovery(form));
 		} else {
-			candidates.addAll(orchServiceUtils.localCloudServiceDiscovery(form));
+			candidates.addAll(orchServiceUtils.localCloudServiceDiscovery(form, false));
 			if (Utilities.isEmpty(candidates)
 					&& sysInfo.isInterCloudEnabled()
 					&& form.hasOrchestrationFlag(OrchestrationFlag.ALLOW_INTERCLOUD)
-					&& form.getExclusivityDuration() == null) { // no reservation is supported in intercloud
+					&& form.getExclusivityDuration() == null) { // reservation is not supported in inter-cloud
 				candidates.addAll(orchServiceUtils.interCloudServiceDiscovery(form));
 			}
+		}
+
+		if (Utilities.isEmpty(candidates) && form.hasOrchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION)) {
+			candidates.addAll(orchServiceUtils.localCloudServiceDiscovery(form, true));
+			if (Utilities.isEmpty(candidates)) {
+				return emptyResult;
+			}
+			candidates.forEach(c -> c.setTranslationNeeded(true));
 		}
 
 		// Dealing with reservations
@@ -67,6 +75,14 @@ public class OrchestrationService {
 			return emptyResult;
 		}
 
+		// Drop out those what cannot be reserved if required
+		if (form.hasOrchestrationFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
+			candidates = orchServiceUtils.filterOutNotReservableOnes(candidates);
+			if (Utilities.isEmpty(candidates)) {
+				return emptyResult;
+			}
+		}
+
 		// Authorization cross-check
 		if (sysInfo.isAuthorizationEnabled()) {
 			candidates = orchServiceUtils.filterOutUnauthorizedOnes(candidates);
@@ -78,14 +94,6 @@ public class OrchestrationService {
 		// Check reservations again if candidates were not locked
 		if (!temporaryLock) {
 			candidates = orchServiceUtils.filterOutReservedOnes(candidates);
-			if (Utilities.isEmpty(candidates)) {
-				return emptyResult;
-			}
-		}
-
-		// Drop out those what cannot be reserved if required
-		if (form.hasOrchestrationFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-			candidates = orchServiceUtils.filterOutNotReservableOnes(candidates);
 			if (Utilities.isEmpty(candidates)) {
 				return emptyResult;
 			}
@@ -115,7 +123,7 @@ public class OrchestrationService {
 
 		// Obtain Authorization tokens when required
 		if (sysInfo.isAuthorizationEnabled()) {
-			orchServiceUtils.obtainAuthorizationTokens(candidates);
+			orchServiceUtils.obtainAuthorizationTokensIfRequired(candidates);
 		}
 
 		// Check reservations again if candidates were not locked

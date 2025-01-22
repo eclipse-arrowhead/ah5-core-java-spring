@@ -15,6 +15,7 @@ public class OrchestrationCandidate {
 	// private Cloud cloud; not supported yet
 	private boolean isLocked;
 	private boolean canBeExclusive;
+	private boolean translationNeeded;
 	private Map<String, String> authorizationTokens;
 
 	//=================================================================================================
@@ -54,6 +55,16 @@ public class OrchestrationCandidate {
 	//-------------------------------------------------------------------------------------------------
 	public void setCanBeExclusive(final boolean canBeExclusive) {
 		this.canBeExclusive = canBeExclusive;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isTranslationNeeded() {
+		return translationNeeded;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setTranslationNeeded(final boolean translationNeeded) {
+		this.translationNeeded = translationNeeded;
 	}
 
 	//-------------------------------------------------------------------------------------------------

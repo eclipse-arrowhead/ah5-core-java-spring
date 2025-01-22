@@ -24,6 +24,9 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_AUTHORIZATION_WD)
 	private boolean enableAuthorization;
 
+	@Value(DynamicServiceOrchestrationConstants.$ENABLE_TRANSLATION_WD)
+	private boolean enableTranslation;
+
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_INTERCLOUD_WD)
 	private boolean enableIntercloud;
 
@@ -73,6 +76,11 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public boolean isAuthorizationEnabled() {
 		return enableAuthorization;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isTranslationEnabled() {
+		return enableTranslation;
 	}
 
 	//-------------------------------------------------------------------------------------------------

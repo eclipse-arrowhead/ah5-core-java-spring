@@ -70,6 +70,11 @@
     "description": "A description for 'enable.authorization'"
   },
   {
+    "name": "enable.translation",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'enable.translation'"
+  },
+  {
     "name": "enable.intercloud",
     "type": "java.lang.Boolean",
     "description": "A description for 'enable.intercloud'"
