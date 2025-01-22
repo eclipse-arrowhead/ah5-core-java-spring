@@ -2,6 +2,7 @@ package eu.arrowhead.serviceorchestration;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,12 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// members
+
+	@Value(DynamicServiceOrchestrationConstants.$ENABLE_AUTHORIZATION_WD)
+	private boolean enableAuthorization;
+
+	@Value(DynamicServiceOrchestrationConstants.$ENABLE_INTERCLOUD_WD)
+	private boolean enableIntercloud;
 
 	private SystemModel systemModel;
 
@@ -61,6 +68,16 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 		// TODO add the rest
 		return List.of(orchestration);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isAuthorizationEnabled() {
+		return enableAuthorization;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isInterCloudEnabled() {
+		return enableIntercloud;
 	}
 
 	//=================================================================================================

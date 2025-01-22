@@ -63,5 +63,15 @@
     "name": "mqtt.client.password",
     "type": "java.lang.String",
     "description": "A description for 'mqtt.client.password'"
+  },
+  {
+    "name": "enable.authorization",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'enable.authorization'"
+  },
+  {
+    "name": "enable.intercloud",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'enable.intercloud'"
   }
 ]}
