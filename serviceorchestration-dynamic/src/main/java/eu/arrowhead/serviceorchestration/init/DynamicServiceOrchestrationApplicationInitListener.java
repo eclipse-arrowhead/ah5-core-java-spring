@@ -23,23 +23,4 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 		// TODO implement
 
 	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	protected void customDestroy() {
-		logger.debug("customDestroy started...");
-
-		if (standaloneMode) {
-			return;
-		}
-
-		try {
-			// TODO implement
-
-			logger.info("Core system {} revoked {} service(s).", sysInfo, registeredServices.size());
-		} catch (final Throwable t) {
-			logger.error(t.getMessage());
-			logger.debug(t);
-		}
-	}
 }
