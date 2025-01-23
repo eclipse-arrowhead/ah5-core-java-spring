@@ -79,6 +79,12 @@ public class OrchestrationServiceUtils {
 		// here comes the translation discovery
 		return List.of();
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationCandidate> doQoSCompliance(final List<OrchestrationCandidate> candidates) {
+		// TODO
+		return List.of();
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationCandidate> filterOutUnauthorizedOnes(final List<OrchestrationCandidate> candidates) {

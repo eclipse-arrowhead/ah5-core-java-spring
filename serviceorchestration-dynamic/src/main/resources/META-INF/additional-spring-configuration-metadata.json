@@ -75,6 +75,11 @@
     "description": "A description for 'enable.translation'"
   },
   {
+    "name": "enable.qos",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'enable.qos'"
+  },
+  {
     "name": "enable.intercloud",
     "type": "java.lang.Boolean",
     "description": "A description for 'enable.intercloud'"

@@ -34,7 +34,8 @@ public class OrchestrationService {
 		//TODO
 		// from syntax validation
 		// form syntax normalization
-		// from context validation (ONLY_Intercloud, but it is not enabled | no reservation in intercloud | ONLY_EXCLUSIVE and ONLY_INTERCLOUD cannot be together | ONLY_INTERCLOUD can't be with ALLOW_TRANSLATION)
+		// from context validation (ONLY_Intercloud, but it is not enabled | no reservation in intercloud | ONLY_EXCLUSIVE and ONLY_INTERCLOUD cannot be together | ONLY_INTERCLOUD can't be with ALLOW_TRANSLATION |
+		//                          Has QoS requirements but it is not enabled)
 
 		final OrchestrationResponseDTO emptyResult = new OrchestrationResponseDTO();
 
@@ -149,6 +150,11 @@ public class OrchestrationService {
 			}
 			resultsAreInterCloud = true;
 			form.addFlag(OrchestrationFlag.MATCHMAKING);
+		}
+
+		// Deal with QoS requirements
+		if (sysInfo.isQoSEnabled()) {
+			candidates = orchServiceUtils.doQoSCompliance(candidates);
 		}
 
 		// Matchmaking

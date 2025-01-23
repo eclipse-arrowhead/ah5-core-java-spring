@@ -27,6 +27,9 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_TRANSLATION_WD)
 	private boolean enableTranslation;
 
+	@Value(DynamicServiceOrchestrationConstants.$ENABLE_QOS_WD)
+	private boolean enableQoS;
+
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_INTERCLOUD_WD)
 	private boolean enableIntercloud;
 
@@ -81,6 +84,11 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public boolean isTranslationEnabled() {
 		return enableTranslation;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isQoSEnabled() {
+		return enableQoS;
 	}
 
 	//-------------------------------------------------------------------------------------------------

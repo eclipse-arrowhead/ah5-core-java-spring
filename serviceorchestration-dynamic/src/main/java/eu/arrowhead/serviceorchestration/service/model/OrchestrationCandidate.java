@@ -16,6 +16,7 @@ public class OrchestrationCandidate {
 	private boolean isLocked;
 	private boolean canBeExclusive;
 	private boolean translationNeeded;
+	private boolean properQoS;
 	private Map<String, String> authorizationTokens;
 
 	//=================================================================================================
@@ -65,6 +66,16 @@ public class OrchestrationCandidate {
 	//-------------------------------------------------------------------------------------------------
 	public void setTranslationNeeded(final boolean translationNeeded) {
 		this.translationNeeded = translationNeeded;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasProperQoS() {
+		return properQoS;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setQoSCompliance(final boolean properQoS) {
+		this.properQoS = properQoS;
 	}
 
 	//-------------------------------------------------------------------------------------------------
