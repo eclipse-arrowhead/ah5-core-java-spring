@@ -48,8 +48,8 @@ public class IdentityService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public IdentityLoginData loginService(final IdentityRequestDTO dto, final boolean noSession, final String origin) {
-		logger.debug("login service started...");
+	public IdentityLoginData loginOperation(final IdentityRequestDTO dto, final boolean noSession, final String origin) {
+		logger.debug("login operation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		// Phase 1: authentication method independent steps
@@ -100,12 +100,12 @@ public class IdentityService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void logoutService(final IdentityRequestDTO dto, final String origin) {
-		logger.debug("logout service started...");
+	public void logoutOperation(final IdentityRequestDTO dto, final String origin) {
+		logger.debug("logout operation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		// check if request is coming from a verified system
-		final IdentityLoginData data = loginService(dto, true, origin);
+		final IdentityLoginData data = loginOperation(dto, true, origin);
 
 		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
 		final IAuthenticationMethod method = methods.method(methodType);
@@ -120,12 +120,12 @@ public class IdentityService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void changeService(final IdentityChangeRequestDTO dto, final String origin) {
-		logger.debug("change service started...");
+	public void changeOperation(final IdentityChangeRequestDTO dto, final String origin) {
+		logger.debug("change operation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		// check if request is coming from a verified system
-		final IdentityLoginData data = loginService(new IdentityRequestDTO(dto.systemName(), dto.credentials()), true, origin);
+		final IdentityLoginData data = loginOperation(new IdentityRequestDTO(dto.systemName(), dto.credentials()), true, origin);
 
 		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
 		final IAuthenticationMethod method = methods.method(methodType);
@@ -161,12 +161,28 @@ public class IdentityService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public IdentityVerifyResponseDTO verify(final String token, final String origin) {
-		// TODO: continue
+	public IdentityVerifyResponseDTO verifyOperation(final String token, final String origin) {
+		logger.debug("verify operation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		return null;
+		final String normalizedToken = validator.validateAndNormalizeIdentityToken(token, origin);
+
+		try {
+			final Optional<ActiveSession> sessionOpt = dbService.getSessionByToken(normalizedToken);
+			if (sessionOpt.isEmpty()) {
+				return new IdentityVerifyResponseDTO(false, null, null, null, null);
+			}
+
+			final ActiveSession session = sessionOpt.get();
+
+			return new IdentityVerifyResponseDTO(
+					true,
+					session.getSystem().getName(),
+					session.getSystem().isSysop(),
+					Utilities.convertZonedDateTimeToUTCString(session.getLoginTime()),
+					Utilities.convertZonedDateTimeToUTCString(session.getExpirationTime()));
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
-
-	//=================================================================================================
-	// assistant methods
 }

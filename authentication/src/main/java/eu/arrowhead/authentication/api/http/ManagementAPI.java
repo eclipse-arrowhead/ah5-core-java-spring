@@ -1,0 +1,75 @@
+package eu.arrowhead.authentication.api.http;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import eu.arrowhead.authentication.AuthenticationConstants;
+import eu.arrowhead.authentication.api.http.utils.SystemNamePreprocessor;
+import eu.arrowhead.authentication.service.ManagementService;
+import eu.arrowhead.common.Constants;
+import eu.arrowhead.dto.ErrorMessageDTO;
+import eu.arrowhead.dto.IdentityListMgmtRequestDTO;
+import eu.arrowhead.dto.IdentityListMgmtResponseDTO;
+import eu.arrowhead.dto.SystemListResponseDTO;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
+
+@RestController
+@RequestMapping(AuthenticationConstants.HTTP_API_MANAGEMENT_PATH)
+public class ManagementAPI {
+
+	//=================================================================================================
+	// members
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
+	
+	@Autowired
+	private SystemNamePreprocessor preprocessor;
+
+	@Autowired
+	private ManagementService mgmtService;
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the created system identities (without sensitive information)")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = SystemListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_SERVICE_UNAVAILABLE, description = Constants.SWAGGER_HTTP_503_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@ResponseStatus(code = HttpStatus.CREATED)
+	@PostMapping(path = AuthenticationConstants.HTTP_API_OP_IDENTITIES_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody IdentityListMgmtResponseDTO createIdentities(final HttpServletRequest httpServletRequest, @RequestBody final IdentityListMgmtRequestDTO dto) {
+		logger.debug("createIdentities started");
+
+		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_MANAGEMENT_PATH + AuthenticationConstants.HTTP_API_OP_IDENTITIES_PATH;
+		final String requesterName = preprocessor.process(httpServletRequest, origin);
+		
+		return mgmtService.createIdentitiesOperation(requesterName, dto, origin);
+	}
+}

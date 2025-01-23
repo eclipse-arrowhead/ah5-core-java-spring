@@ -62,7 +62,7 @@ public class IdentityAPI {
 
 		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH + AuthenticationConstants.HTTP_API_OP_LOGIN_PATH;
 
-		return identityService.loginService(dto, false, origin).response();
+		return identityService.loginOperation(dto, false, origin).response();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ public class IdentityAPI {
 		logger.debug("logout started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH + AuthenticationConstants.HTTP_API_OP_LOGOUT_PATH;
-		identityService.logoutService(dto, origin);
+		identityService.logoutOperation(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ public class IdentityAPI {
 		logger.debug("logout started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH + AuthenticationConstants.HTTP_API_OP_CHANGE_PATH;
-		identityService.changeService(dto, origin);
+		identityService.changeOperation(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -128,6 +128,6 @@ public class IdentityAPI {
 		final String origin = HttpMethod.GET.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH
 				+ AuthenticationConstants.HTTP_API_OP_VERIFY_PATH.replace(AuthenticationConstants.HTTP_PARAM_TOKEN, token);
 
-		return identityService.verify(token, origin);
+		return identityService.verifyOperation(token, origin);
 	}
 }

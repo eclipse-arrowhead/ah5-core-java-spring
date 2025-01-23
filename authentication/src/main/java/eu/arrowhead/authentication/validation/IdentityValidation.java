@@ -103,6 +103,17 @@ public class IdentityValidation {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public String validateAndNormalizeIdentityToken(final String token, final String origin) {
+		logger.debug("validateAndNormalizeChangeServicePhase2 started...");
+
+		if (Utilities.isEmpty(token)) {
+			throw new InvalidParameterException("Token is missing or empty", origin);
+		}
+
+		return token.trim();
+	}
+
 	//=================================================================================================
 	// assistant methods
 
@@ -118,6 +129,10 @@ public class IdentityValidation {
 			throw new InvalidParameterException("System name is empty", origin);
 		}
 
-		nameValidator.validateName(dto.systemName());
+		try {
+			nameValidator.validateName(dto.systemName());
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
 	}
 }

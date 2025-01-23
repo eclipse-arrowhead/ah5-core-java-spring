@@ -1,4 +1,4 @@
-package eu.arrowhead.serviceregistry.api.http;
+package eu.arrowhead.authentication.api.http;
 
 import java.util.List;
 
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.service.ConfigService;
 import eu.arrowhead.common.service.LogService;
@@ -22,7 +23,6 @@ import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.LogEntryListResponseDTO;
 import eu.arrowhead.dto.LogRequestDTO;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping(ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
+@RequestMapping(AuthenticationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class GeneralManagementAPI {
 
@@ -67,7 +67,7 @@ public class GeneralManagementAPI {
 	public @ResponseBody LogEntryListResponseDTO getLogEntries(@RequestBody(required = false) final LogRequestDTO dto) {
 		logger.debug("getLogEntries started...");
 
-		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
+		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
 		return logService.getLogEntries(dto, origin);
 	}
 
@@ -89,7 +89,7 @@ public class GeneralManagementAPI {
 	@ResponseBody public KeyValuesDTO getConfig(final @RequestParam(required = false) List<String> keys) {
 		logger.debug("getConfig started ...");
 
-		final String origin = HttpMethod.GET.name() + " " + ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
-		return configService.getConfig(keys, ServiceRegistryConstants.FORBIDDEN_KEYS, origin);
+		final String origin = HttpMethod.GET.name() + " " + AuthenticationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
+		return configService.getConfig(keys, AuthenticationConstants.FORBIDDEN_KEYS, origin);
 	}
 }

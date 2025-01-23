@@ -56,7 +56,6 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_OP_SYSTEM_QUERY_PATH = HTTP_API_OP_SYSTEM_PATH + "/query";
 	public static final String HTTP_PARAM_INSTANCE_ID = "{instanceId}";
 	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_INSTANCE_ID;
-	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_SERVICE_INSTANCE_PATH = "/service-instances";
 	public static final String HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH = HTTP_API_OP_SERVICE_INSTANCE_PATH + "/query";
 	public static final String HTTP_API_OP_INTERFACE_TEMPLATE_PATH = "/interface-templates";
@@ -82,6 +81,9 @@ public final class ServiceRegistryConstants {
 			"spring.datasource.driver-class-name",
 			"spring.jpa.hibernate.ddl-auto",
 			"spring.jpa.show-sql",
+
+			// MQTT related
+			"mqtt.client.password",
 
 			// cert related
 			"authenticator.secret.key",
