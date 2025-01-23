@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
-import eu.arrowhead.serviceorchestration.service.model.OrchestrationFrom;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 @Service
 public class OrchestrationServiceUtils {
@@ -21,13 +21,14 @@ public class OrchestrationServiceUtils {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> localCloudServiceDiscovery(final OrchestrationFrom form, final boolean withoutInterace) {
+	public List<OrchestrationCandidate> localCloudServiceDiscovery(final OrchestrationForm form, final boolean withoutInterace) {
 		// use provider filter if only preferred providers flag
 		return List.of();
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> interCloudServiceDiscovery(final OrchestrationFrom form) {
+	public List<OrchestrationCandidate> interCloudServiceDiscovery(final OrchestrationForm form) {
+		// Itt végső soron már cloud-ot is választani kell (Cloud matchmaking)
 		throw new ArrowheadException("Inter-cloud orchestration is not implemented");
 	}
 

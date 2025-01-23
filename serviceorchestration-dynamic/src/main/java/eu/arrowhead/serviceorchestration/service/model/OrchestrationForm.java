@@ -8,7 +8,7 @@ import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 
-public class OrchestrationFrom {
+public class OrchestrationForm {
 
 	//=================================================================================================
 	// members
@@ -35,7 +35,7 @@ public class OrchestrationFrom {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationFrom(final String requesterSystemName, final String targetSystemName, final OrchestrationRequestDTO dto) {
+	public OrchestrationForm(final String requesterSystemName, final String targetSystemName, final OrchestrationRequestDTO dto) {
 		this.requesterSystemName = requesterSystemName;
 		this.targetSystemName = targetSystemName;
 
@@ -75,6 +75,11 @@ public class OrchestrationFrom {
 		if (!hasFlag(flag)) {
 			orchestrationFlags.add(flag.name());
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean needExclusivity() {
+		return exclusivityDuration != null;
 	}
 
 	//-------------------------------------------------------------------------------------------------
