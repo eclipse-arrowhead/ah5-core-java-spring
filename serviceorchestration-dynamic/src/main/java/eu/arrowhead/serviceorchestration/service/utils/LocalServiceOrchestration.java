@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceorchestration.service.utils;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,8 +38,8 @@ public class LocalServiceOrchestration {
 		final Set<String> warnings = new HashSet<>();
 
 		// Service Discovery
-		final boolean discoveyrWithoutInterface = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
-		List<OrchestrationCandidate> candidates = serviceDiscovery(form, discoveyrWithoutInterface, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
+		final boolean translationAllowed = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
+		List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
 		filterOutReservedOnes(candidates);
 
 		if (Utilities.isEmpty(candidates)) {
@@ -53,7 +52,7 @@ public class LocalServiceOrchestration {
 		}
 
 		if (form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-			candidates = filterOutNotReservableOnes(candidates);
+			candidates = filterOutNotWhereExclusivityIsNotPossible(candidates);
 			if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
 				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 			}
@@ -76,7 +75,7 @@ public class LocalServiceOrchestration {
 		}
 
 		// Check if translation is necessary
-		if (discoveyrWithoutInterface) {
+		if (translationAllowed) {
 			markIfTranslationIsNeeded(candidates);
 		}
 
@@ -84,20 +83,23 @@ public class LocalServiceOrchestration {
 		if (form.hasQoSRequirements()) {
 			if (!sysInfo.isQoSEnabled()) {
 				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
+				releaseTemporaryLockIfItWasLocked(candidates);
 				return convertToOrchestrationResponse(List.of(), warnings);
 			}
 			candidates = doQoSCompliance(candidates);
 		}
 
 		if (Utilities.isEmpty(candidates)) {
-			releaseTemporaryLockIfItWasLocked(candidates);
 			return doInterCloudOrReturn(form);
 		}
 
 		// Deal with translations
-		if (discoveyrWithoutInterface) {
-			candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
-			if (checkIfOnlyWithTranslation(candidates)) {
+		if (translationAllowed) {
+			if (checkIfHasNativeOnes(candidates)) {
+				// van e native, mert ha igen akkor csak azokat hagyjuk meg és a nem natívakat kidobjuk
+				// TODO kidobálni a nem natívakat
+			} else {
+				candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
@@ -105,77 +107,48 @@ public class LocalServiceOrchestration {
 		}
 
 		if (Utilities.isEmpty(candidates)) {
-			releaseTemporaryLockIfItWasLocked(candidates);
 			return doInterCloudOrReturn(form);
-		}
-
-		// Check again reservations before possible matchmaking, preferences and authorization tokens
-		if (!form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) { // otherwise all of them were already locked
-			candidates = filterOutReservedOnes(candidates);
-			if (Utilities.isEmpty(candidates)) {
-				releaseTemporaryLockIfItWasLocked(candidates);
-				return doInterCloudOrReturn(form);
-			}
 		}
 
 		// Dealing with preferences
 		if (form.exclusivityIsPreferred() && !form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-			if (conatinsReservable(candidates)) {
-				candidates = filterOutNotReservableOnes(candidates);
+			if (containsReservable(candidates)) {
+				candidates = filterOutNotWhereExclusivityIsNotPossible(candidates);
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
+			} else {
+				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE);
 			}
 		}
 
 		if (form.hasPreferredProviders() && !form.hasFlag(OrchestrationFlag.ONLY_PREFERRED)) {
-			if (conatinsPreferredProviders(candidates)) {
+			if (containsPreferredProviders(candidates)) {
 				candidates = filterOutNonPreferredProviders(candidates);
 			}
 		}
 
 		// Matchmaking if required
-		if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
-			List<OrchestrationCandidate> couldNotReserve = new ArrayList<>();
-			OrchestrationCandidate match = null;
-			while (match == null && couldNotReserve.size() <= candidates.size()) {
-				match = matchmaking(candidates, getQoSEvaulationType(form), couldNotReserve);
-				if (form.exclusivityIsPreferred() && !reserveIfFreeAndAllowed(match, form.getExclusivityDuration())) {
-					couldNotReserve.add(match);
-					match = null;
-				}
-			}
+		if (Utilities.isEmpty(candidates)) {
+			return doInterCloudOrReturn(form);
+		}
 
-			if (!form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-				match = matchmaking(couldNotReserve, getQoSEvaulationType(form), List.of());
-				final String matchInstanceId = match.getServiceInstance().instanceId();
-				couldNotReserve = couldNotReserve.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList();
-				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE);
+		if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
+			final OrchestrationCandidate match = matchmaking(candidates, getQoSEvaulationType(form));
+			if (form.exclusivityIsPreferred()) {
+				reserve(match, form.getExclusivityDuration());
+				String matchInstanceId = match.getServiceInstance().instanceId();
+				releaseTemporaryLockIfItWasLocked(candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList());
+				//  TODO warning if PART_TIME_EXCLUSIVITY
 			}
 
 			candidates.clear();
-			if (match != null) {
-				candidates.add(match);
-			}
-			releaseTemporaryLockIfItWasLocked(couldNotReserve);
-		}
-
-		if (Utilities.isEmpty(candidates)) {
-			releaseTemporaryLockIfItWasLocked(candidates);
-			return doInterCloudOrReturn(form);
+			candidates.add(match);
 		}
 
 		// Obtain Authorization tokens when required
 		if (sysInfo.isAuthorizationEnabled()) {
 			obtainAuthorizationTokensIfRequired(candidates);
-		}
-
-		// Check again reservations before finish
-		if (!form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) { // otherwise all of them were already locked
-			candidates = filterOutReservedOnes(candidates);
-			if (Utilities.isEmpty(candidates)) {
-				return doInterCloudOrReturn(form);
-			}
 		}
 
 		// Create translation bridge if necessary
@@ -209,7 +182,8 @@ public class LocalServiceOrchestration {
 	public List<OrchestrationCandidate> filterOutReservedOnesAndTemporaryLockIfCanBeExclusive(final List<OrchestrationCandidate> candidates) {
 		synchronized (LOCK) {
 			// filter out those what already locked or currently exclusive for someone other
-			// set locked where it can be exclusive
+			// set locked where it can be exclusive even if the duration is lower
+			// do not lock where the reservation is denied
 			return List.of();
 		}
 	}
@@ -220,13 +194,13 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotReservableOnes(final List<OrchestrationCandidate> candidates) {
+	private List<OrchestrationCandidate> filterOutNotWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
 		// TODO
 		return null;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean conatinsReservable(final List<OrchestrationCandidate> candidates) {
+	private boolean containsReservable(final List<OrchestrationCandidate> candidates) {
 		// TODO
 		return false;
 	}
@@ -251,7 +225,7 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> doQoSCompliance(final List<OrchestrationCandidate> candidates) {
 		// TODO
-		// let QoS elevator know that translation is necessary or not
+		// let QoS evaluator know that translation is necessary or not
 		return List.of();
 	}
 
@@ -263,17 +237,13 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean checkIfOnlyWithTranslation(final List<OrchestrationCandidate> candidates) {
-		for (OrchestrationCandidate candidate : candidates) {
-			if (!candidate.isTranslationNeeded()) {
-				return false;
-			}
-		}
+	private boolean checkIfHasNativeOnes(final List<OrchestrationCandidate> candidates) {
+		// TODO
 		return true;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean conatinsPreferredProviders(final List<OrchestrationCandidate> candidates) {
+	private boolean containsPreferredProviders(final List<OrchestrationCandidate> candidates) {
 		// TODO
 		return false;
 	}
@@ -285,16 +255,9 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private OrchestrationCandidate matchmaking(final List<OrchestrationCandidate> candidates, final QoSEvaulationType qosType, final List<OrchestrationCandidate> excludes) {
+	private OrchestrationCandidate matchmaking(final List<OrchestrationCandidate> candidates, final QoSEvaulationType qosType) {
 		if (qosType == QoSEvaulationType.RANKING) {
-			for (final OrchestrationCandidate candidate : candidates) {
-				for (OrchestrationCandidate exclude : excludes) {
-					if (candidate.getServiceInstance().instanceId().equals(exclude.getServiceInstance().instanceId())) {
-						return candidate;
-					}
-				}
-			}
-			return null;
+			return candidates.getFirst();
 		}
 
 		// TODO
@@ -304,10 +267,9 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean reserveIfFreeAndAllowed(final OrchestrationCandidate candidate, final int duration) {
+	private void reserve(final OrchestrationCandidate candidate, final int duration) {
 		synchronized (LOCK) {
-			// TODO
-			return true;
+			// TODO if reserve is not allowed just return
 		}
 	}
 

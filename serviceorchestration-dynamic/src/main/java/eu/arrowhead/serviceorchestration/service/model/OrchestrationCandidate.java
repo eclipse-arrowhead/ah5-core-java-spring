@@ -15,6 +15,7 @@ public class OrchestrationCandidate {
 	// private Cloud cloud; not supported yet
 	private boolean isLocked;
 	private boolean canBeExclusive;
+	// TODO store exclusivityDuration -> can be considered in matchmaking and warning can be set if not fully fulfilled (PART_TIME_EXCLUSIVITY)
 	private boolean translationNeeded;
 	private boolean properQoS;
 	private Map<String, String> authorizationTokens;
