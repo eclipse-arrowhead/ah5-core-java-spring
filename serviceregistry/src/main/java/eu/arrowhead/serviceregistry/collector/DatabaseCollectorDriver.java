@@ -19,6 +19,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.collector.ICollectorDriver;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
@@ -45,9 +46,6 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	@Autowired
 	private NameNormalizer nameNormalizer;
 	
-	private static final String PATH_KEY = "path";
-	private static final String METHOD_KEY = "method";
-	
 	@Autowired
 	private ServiceInstanceDbService instanceDbService;
 
@@ -66,11 +64,19 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName) throws ArrowheadException {
+		logger.debug("DatabaseCollectorDriver.acquireService started...");
+		
+		// only http and https are supported
+		if (!Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME.equals(interfaceTemplateName)
+				&& !Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME.equals(interfaceTemplateName)) {
+			throw new InvalidParameterException("This collector only supports the following interfaces: "
+					+ String.join(", ", Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME, Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME));
+		}
 		
 		// get the service instance entries from the database
 		final Page<Map.Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntries = getInstanceEntries(serviceDefinitionName, interfaceTemplateName);
 		if (instanceEntries.isEmpty()) {
-			throw new ArrowheadException("the acquired service definition/operation is not found");
+			return null;
 		}
 		
 		// only the first instance entry will be returned
@@ -78,25 +84,14 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final List<ServiceInstanceInterface> interfaces = instanceEntries.getContent().getFirst().getValue();
 		
 		// create the list of interface models 
-		List<InterfaceModel> interfaceModelList = new ArrayList<>(interfaces.size());
-		for (ServiceInstanceInterface interface_ : interfaces) {
+		final List<InterfaceModel> interfaceModelList = new ArrayList<>(interfaces.size());
+		for (final ServiceInstanceInterface interf : interfaces) {
 			
-			final String templateName = interface_.getServiceInterfaceTemplate().getName();
-			final Map<String, Object> properties = Utilities.fromJson(interface_.getProperties(), new TypeReference<Map<String, Object>>() {
+			final String templateName = interf.getServiceInterfaceTemplate().getName();
+			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 			}); 
 			
-			// http or https
-			if (templateName.contains(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME)) {
-				interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
-			}
-				
-			
-			// mqtt or mqtts
-			if (templateName.contains(Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME)) {
-				interfaceModelList.add(creatMqttInterfaceModel(templateName, properties));
-			}
-			
-			// (add new interface templates here...)
+			interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
 		}
 		
 		final ServiceModel serviceModel = new ServiceModel
@@ -120,17 +115,17 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		// validate and normalize
 		nameValidator.validateName(serviceDefinitionName);
 		nameValidator.validateName(interfaceTemplateName);
-		nameNormalizer.normalize(serviceDefinitionName);
-		nameNormalizer.normalize(interfaceTemplateName);
+		final String nServiceDefinitionName = nameNormalizer.normalize(serviceDefinitionName);
+		final String nInterfaceTemplateName = nameNormalizer.normalize(interfaceTemplateName);
 		
 		
-		final PageRequest pagination = PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
+		final PageRequest pagination = PageRequest.of(0, 1, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
 		
 		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(
 				new ServiceInstanceLookupRequestDTO
 				.Builder()
-				.serviceDefinitionName(serviceDefinitionName)
-				.interfaceTemplateName(interfaceTemplateName)
+				.serviceDefinitionName(nServiceDefinitionName)
+				.interfaceTemplateName(nInterfaceTemplateName)
 				.build());
 		
 		// get the instances from the database
@@ -145,28 +140,31 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final List<String> accessAddresses = (List<String>) properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_ADDRESSES); 
 		
 		// access port
-		final int accessPort = (int)properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_PORT); 
+		final int accessPort = (int) properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_PORT); 
 		
 		// base path
 		final String basePath = (String) properties.get(HttpInterfaceModel.PROP_NAME_BASE_PATH);
 		
 		// operations
-		final Map<String, Object> operations = (Map<String, Object>) properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS);
+		Map<String, Object> operations = (Map<String, Object>) properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS);
+		if (operations == null) {
+			operations = Map.of();
+		}
 		
 		// create the operation model map
 		final Map<String, HttpOperationModel> operationModelMap = new HashMap<>(operations.size()); // expected type
-		for (Map.Entry<String, Object> operation : operations.entrySet()) {
+		for (final Map.Entry<String, Object> operation : operations.entrySet()) {
 			final String operationName = operation.getKey();
 			final Map<String, Object> operationProps = (Map<String, Object>) operation.getValue();
 			operationModelMap.put(operationName, new HttpOperationModel
 														.Builder()
-														.method((String)operationProps.get(METHOD_KEY))
-														.path((String)operationProps.get(PATH_KEY))
+														.method((String) operationProps.get(HttpOperationModel.PROP_NAME_METHOD))
+														.path((String) operationProps.get(HttpOperationModel.PROP_NAME_PATH))
 														.build());
 		}
 		
 		// create the interface model
-		HttpInterfaceModel model = new HttpInterfaceModel
+		final HttpInterfaceModel model = new HttpInterfaceModel
 				.Builder(templateName)
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
@@ -176,33 +174,4 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		
 		return model;
 	}
-	
-	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("unchecked")
-	private MqttInterfaceModel creatMqttInterfaceModel(final String templateName, final Map<String, Object> properties) {
-		
-		// access addresses
-		final List<String> accessAddresses = (List<String>) properties.get(MqttInterfaceModel.PROP_NAME_ACCESS_ADDRESSES); 
-		
-		// access port
-		final int accessPort = (int)properties.get(MqttInterfaceModel.PROP_NAME_ACCESS_PORT); 
-		
-		// topic
-		final String topic = (String) properties.get(MqttInterfaceModel.PROP_NAME_TOPIC);
-		
-		// operations
-		final Set<String> operations = (Set<String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS);
-		
-		// create the interface model
-		MqttInterfaceModel model = new MqttInterfaceModel
-				.Builder(templateName)
-				.accessAddresses(accessAddresses)
-				.accessPort(accessPort)
-				.topic(topic)
-				.operations(operations)
-				.build();
-		
-		return model;
-	}
-	
 }
