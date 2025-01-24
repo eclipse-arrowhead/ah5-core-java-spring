@@ -2,6 +2,8 @@ package eu.arrowhead.authentication;
 
 import java.util.List;
 
+import eu.arrowhead.common.jpa.ArrowheadEntity;
+
 public final class AuthenticationConstants {
 
 	//=================================================================================================
@@ -37,6 +39,9 @@ public final class AuthenticationConstants {
 	public static final String $IDENTITY_TOKEN_DURATION = "${" + IDENTITY_TOKEN_DURATION + ":600}";
 	public static final int INFINITE_TOKEN_DURATION = 100; // in years
 
+	// property size related
+	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+
 	// Forbidden keys (for config service)
 
 	public static final List<String> FORBIDDEN_KEYS = List.of(
@@ -64,8 +69,7 @@ public final class AuthenticationConstants {
 			"disable.hostname.verifier",
 
 			// other
-			"authentication.secret.key"
-	);
+			"authentication.secret.key");
 
 	//=================================================================================================
 	// assistant methods

@@ -1,4 +1,4 @@
-package eu.arrowhead.authentication.service;
+package eu.arrowhead.authentication.service.dto;
 
 import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.dto.IdentityLoginResponseDTO;

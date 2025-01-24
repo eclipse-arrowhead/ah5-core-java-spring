@@ -1,4 +1,4 @@
-package eu.arrowhead.authentication.validation;
+package eu.arrowhead.authentication.service.validation;
 
 import java.util.Map;
 

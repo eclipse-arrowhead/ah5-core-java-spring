@@ -1,5 +1,6 @@
 package eu.arrowhead.authentication.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,5 @@ public interface SystemRepository extends RefreshableRepository<System, Long> {
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<System> findBySystemName(final String systemName);
+	public List<System> findAllBySystemNameIn(final List<String> names);
 }

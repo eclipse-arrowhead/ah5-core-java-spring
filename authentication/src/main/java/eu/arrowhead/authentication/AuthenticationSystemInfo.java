@@ -72,7 +72,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 	@Override
 	protected void customInit() {
 		if (Utilities.isEmpty(authenticationSecretKey)) {
-			throw new InvalidParameterException("'authenticationSecreyKey' is missing or empty");
+			throw new InvalidParameterException("'authenticationSecretKey' is missing or empty");
 		}
 
 		if (this.getAuthenticationPolicy() != AuthenticationPolicy.INTERNAL) {
