@@ -72,10 +72,12 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void addFlag(final OrchestrationFlag flag) {
+	public boolean addFlag(final OrchestrationFlag flag) {
 		if (!hasFlag(flag)) {
 			orchestrationFlags.add(flag.name());
+			return true;
 		}
+		return false;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -91,5 +93,10 @@ public class OrchestrationForm {
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasPreferredProviders() {
 		return !Utilities.isEmpty(prefferedProviders);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasQoSRequirements() {
+		return !Utilities.isEmpty(qosRequirements);
 	}
 }

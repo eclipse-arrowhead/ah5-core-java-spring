@@ -1,7 +1,9 @@
 package eu.arrowhead.serviceorchestration.service.utils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,6 +12,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.QoSEvaulationType;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
@@ -33,6 +36,7 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationResponseDTO doLocalServiceOrchestration(final OrchestrationForm form) {
+		final Set<String> warnings = new HashSet<>();
 
 		// Service Discovery
 		final boolean discoveyrWithoutInterface = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
@@ -50,7 +54,9 @@ public class LocalServiceOrchestration {
 
 		if (form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
 			candidates = filterOutNotReservableOnes(candidates);
-			form.addFlag(OrchestrationFlag.MATCHMAKING);
+			if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
+			}
 		}
 
 		// Authorization cross-check
@@ -75,11 +81,16 @@ public class LocalServiceOrchestration {
 		}
 
 		// QoS cross-check
-		if (sysInfo.isQoSEnabled()) {
+		if (form.hasQoSRequirements()) {
+			if (!sysInfo.isQoSEnabled()) {
+				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
+				return convertToOrchestrationResponse(List.of(), warnings);
+			}
 			candidates = doQoSCompliance(candidates);
 		}
 
 		if (Utilities.isEmpty(candidates)) {
+			releaseTemporaryLockIfItWasLocked(candidates);
 			return doInterCloudOrReturn(form);
 		}
 
@@ -87,11 +98,14 @@ public class LocalServiceOrchestration {
 		if (discoveyrWithoutInterface) {
 			candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
 			if (checkIfOnlyWithTranslation(candidates)) {
-				form.addFlag(OrchestrationFlag.MATCHMAKING);
+				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
+				}
 			}
 		}
 
 		if (Utilities.isEmpty(candidates)) {
+			releaseTemporaryLockIfItWasLocked(candidates);
 			return doInterCloudOrReturn(form);
 		}
 
@@ -99,6 +113,7 @@ public class LocalServiceOrchestration {
 		if (!form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) { // otherwise all of them were already locked
 			candidates = filterOutReservedOnes(candidates);
 			if (Utilities.isEmpty(candidates)) {
+				releaseTemporaryLockIfItWasLocked(candidates);
 				return doInterCloudOrReturn(form);
 			}
 		}
@@ -107,7 +122,9 @@ public class LocalServiceOrchestration {
 		if (form.exclusivityIsPreferred() && !form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
 			if (conatinsReservable(candidates)) {
 				candidates = filterOutNotReservableOnes(candidates);
-				form.addFlag(OrchestrationFlag.MATCHMAKING);
+				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
+				}
 			}
 		}
 
@@ -119,15 +136,33 @@ public class LocalServiceOrchestration {
 
 		// Matchmaking if required
 		if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
-			final List<OrchestrationCandidate> notMatchingList = new ArrayList<>();
+			List<OrchestrationCandidate> couldNotReserve = new ArrayList<>();
 			OrchestrationCandidate match = null;
-			while (match == null && notMatchingList.size() <= candidates.size()) {
-				match = matchmaking(candidates, getQoSEvaulationType(form), notMatchingList);
-				if (form.exclusivityIsPreferred() && !reserveIfFree(match, form.getExclusivityDuration())) {
-					notMatchingList.add(match);
+			while (match == null && couldNotReserve.size() <= candidates.size()) {
+				match = matchmaking(candidates, getQoSEvaulationType(form), couldNotReserve);
+				if (form.exclusivityIsPreferred() && !reserveIfFreeAndAllowed(match, form.getExclusivityDuration())) {
+					couldNotReserve.add(match);
 					match = null;
 				}
 			}
+
+			if (!form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
+				match = matchmaking(couldNotReserve, getQoSEvaulationType(form), List.of());
+				final String matchInstanceId = match.getServiceInstance().instanceId();
+				couldNotReserve = couldNotReserve.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList();
+				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE);
+			}
+
+			candidates.clear();
+			if (match != null) {
+				candidates.add(match);
+			}
+			releaseTemporaryLockIfItWasLocked(couldNotReserve);
+		}
+
+		if (Utilities.isEmpty(candidates)) {
+			releaseTemporaryLockIfItWasLocked(candidates);
+			return doInterCloudOrReturn(form);
 		}
 
 		// Obtain Authorization tokens when required
@@ -148,7 +183,7 @@ public class LocalServiceOrchestration {
 			buildTranslationBridge(candidates.get(0));
 		}
 
-		return convertToOrchestrationResponse(candidates);
+		return convertToOrchestrationResponse(candidates, warnings);
 	}
 
 	//=================================================================================================
@@ -263,14 +298,23 @@ public class LocalServiceOrchestration {
 		}
 
 		// TODO
+		// without translation has priority
+		// canBeExclusive has priority
 		return null;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean reserveIfFree(final OrchestrationCandidate candidate, final int duration) {
+	private boolean reserveIfFreeAndAllowed(final OrchestrationCandidate candidate, final int duration) {
 		synchronized (LOCK) {
 			// TODO
 			return true;
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void releaseTemporaryLockIfItWasLocked(final List<OrchestrationCandidate> candidates) {
+		synchronized (LOCK) {
+			// TODO
 		}
 	}
 
@@ -294,7 +338,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private OrchestrationResponseDTO convertToOrchestrationResponse(final List<OrchestrationCandidate> candidates) {
+	private OrchestrationResponseDTO convertToOrchestrationResponse(final List<OrchestrationCandidate> candidates, final Set<String> warnings) {
 		// TODO
 		return null;
 	}
