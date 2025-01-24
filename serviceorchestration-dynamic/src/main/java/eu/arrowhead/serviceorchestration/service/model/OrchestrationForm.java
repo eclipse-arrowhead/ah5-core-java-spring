@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
@@ -78,12 +79,17 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean needExclusivity() {
+	public boolean exclusivityIsPreferred() {
 		return exclusivityDuration != null;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public Integer getExclusivityDuration() {
 		return exclusivityDuration;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasPreferredProviders() {
+		return !Utilities.isEmpty(prefferedProviders);
 	}
 }
