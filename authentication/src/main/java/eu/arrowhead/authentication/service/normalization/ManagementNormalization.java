@@ -12,9 +12,11 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.dto.IdentityListMgmtRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
@@ -36,31 +38,29 @@ public class ManagementNormalization {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedIdentityMgmtRequestDTO> normalizeIdentityList(final List<IdentityMgmtRequestDTO> identities) {
+	public NormalizedIdentityListMgmtRequestDTO normalizeIdentityList(final IdentityListMgmtRequestDTO dto) {
 		logger.debug("normalizeIdentityList started...");
-		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
+		Assert.notNull(dto, "Payload is missing");
+		Assert.isTrue(!Utilities.isEmpty(dto.identities()), "Identities list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(dto.identities()), "Identities list contains null element");
 
-		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(identities.size());
-		for (final IdentityMgmtRequestDTO identity : identities) {
+		final AuthenticationMethod normalizedAuthenticationMethod = authenticationMethodFromString(dto.authenticationMethod());
+		final IAuthenticationMethod method = methods.method(normalizedAuthenticationMethod);
+		Assert.notNull(method, "Authentication method is unsupported");
+
+		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(dto.identities().size());
+		for (final IdentityMgmtRequestDTO identity : dto.identities()) {
 			final String normalizedSystem = nameNormalizer.normalize(identity.systemName());
-
-			final AuthenticationMethod normalizedAuthenticationMethod = authenticationMethodFromString(identity.authenticationMethod());
-			final IAuthenticationMethod method = methods.method(normalizedAuthenticationMethod);
-			Assert.notNull(method, "Authentication method is unsupported");
-
 			final Map<String, String> normalizedCredentials = method.normalizer().normalizeCredentials(identity.credentials());
-
 			final boolean normalizedSysop = identity.sysop() == null ? false : identity.sysop().booleanValue();
 
 			result.add(new NormalizedIdentityMgmtRequestDTO(
 					normalizedSystem,
-					normalizedAuthenticationMethod,
 					normalizedCredentials,
 					normalizedSysop));
 		}
 
-		return result;
+		return new NormalizedIdentityListMgmtRequestDTO(normalizedAuthenticationMethod, result);
 	}
 
 	//=================================================================================================

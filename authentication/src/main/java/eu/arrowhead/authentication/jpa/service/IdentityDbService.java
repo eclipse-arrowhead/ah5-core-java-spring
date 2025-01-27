@@ -22,12 +22,15 @@ import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.repository.ActiveSessionRepository;
 import eu.arrowhead.authentication.jpa.repository.PasswordAuthenticationRepository;
 import eu.arrowhead.authentication.jpa.repository.SystemRepository;
+import eu.arrowhead.authentication.method.AuthenticationMethods;
+import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.IdentityData;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
-import eu.arrowhead.common.exception.ExternalServerError;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
 public class IdentityDbService {
@@ -46,6 +49,9 @@ public class IdentityDbService {
 
 	@Autowired
 	private ActiveSessionRepository asRepository;
+
+	@Autowired
+	private AuthenticationMethods methods;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -91,38 +97,58 @@ public class IdentityDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<System> createIdentifiableSystemsInBulk(final String requester, final List<NormalizedIdentityMgmtRequestDTO> identities) {
+	public List<System> createIdentifiableSystemsInBulk(final String requester, final NormalizedIdentityListMgmtRequestDTO dto) {
 		logger.debug("createIdentifiableSystemsInBulk started...");
 		Assert.isTrue(!Utilities.isEmpty(requester), "Requester is missing or empty");
-		Assert.isTrue(!Utilities.isEmpty(identities), "Identities is missing or empty");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities contains null");
+		Assert.notNull(dto, "Payload is missing");
+		Assert.notNull(dto.authenticationMethod(), "Authentication method is missing");
+		Assert.isTrue(!Utilities.isEmpty(dto.identities()), "Identities is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(dto.identities()), "Identities contains null");
 
+		List<IdentityData> identityList;
+		List<System> systems;
 		try {
-			checkSystemNamesNotExist(identities); // checks if none of the system names exist (system name has to be unique)
+			checkSystemNamesNotExist(dto.identities()); // checks if none of the system names exist (system name has to be unique)
 
 			// writing the system entities to the database
-			List<IdentityData> identityList = createSystemEntitiesAndIdentityList(requester, identities); // TODO: this should return a Map<AuthenticationMethod,List<IdentityData>> instead
-
-			// TODO: store every system referenced by this structure in the database
-			// TODO: update system records in the structure
-			// TODO: for every method we need to call a method specific operation to store the credentials
-			// TODO: these operation can modify the system entities => store system entities again
-			// TODO: return final system entities
-
-			// TODO
-
-			return null;
-		} catch (final InvalidParameterException | InternalServerError | ExternalServerError ex) {
-			// TODO method specific rollback
+			identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
+			systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
+			identityList = updateSystemEntitiesInIdentityList(identityList, systems);
+		} catch (final InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
-			// TODO method specific rollback
-
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
 
+		// storing authentication method specific credentials
+		final IAuthenticationMethod method = methods.method(dto.authenticationMethod());
+		Assert.notNull(method, "Authentication method is unsupported");
+
+		final List<String> extras = method.dbService().createIdentifiableSystemsInBulk(identityList);
+
+		// handling the extra fields
+		if (extras != null) {
+			// check if extras list size is correct
+			if (extras.size() != identityList.size()) {
+				// something not right => roll back everything
+				logger.error("Extra list's size is incorrect.");
+				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+				throw new InternalServerError("Database operation error");
+			}
+
+			try {
+				systems = systemRepository.saveAllAndFlush(updateSystemListWithExtras(systems, extras));
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+				throw new InternalServerError("Database operation error");
+			}
+		}
+
+		return systems;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -226,14 +252,44 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<IdentityData> createSystemEntitiesAndIdentityList(final String requester, final List<NormalizedIdentityMgmtRequestDTO> candidates) {
+	private List<IdentityData> createSystemEntitiesAndIdentityList(final String requester, final AuthenticationMethod method, final List<NormalizedIdentityMgmtRequestDTO> candidates) {
 		logger.debug("createSystemEntities started");
 
 		return candidates
 				.stream()
 				.map(c -> new IdentityData(
-						new System(c.systemName(), c.authenticationMethod(), c.sysop(), requester),
+						new System(c.systemName(), method, c.sysop(), requester),
 						c.credentials()))
 				.collect(Collectors.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	// expects the same order in the two list
+	private List<IdentityData> updateSystemEntitiesInIdentityList(final List<IdentityData> identityList, final List<System> systems) {
+		logger.debug("updateSystemEntitiesInIdentityList started");
+		Assert.isTrue(identityList.size() == systems.size(), "The two list has different size");
+
+		final List<IdentityData> result = new ArrayList<>(identityList.size());
+		for (int i = 0; i < identityList.size(); ++i) {
+			result.add(new IdentityData(systems.get(i), identityList.get(i).credentials()));
+		}
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	// expects the same order in the two list
+	private List<System> updateSystemListWithExtras(final List<System> systems, final List<String> extras) {
+		logger.debug("updateSystemListWithExtras started");
+		Assert.isTrue(extras.size() == systems.size(), "The two list has different size");
+
+		final List<System> result = new ArrayList<>(systems.size());
+		for (int i = 0; i < systems.size(); ++i) {
+			final System system = systems.get(i);
+			system.setExtra(extras.get(i));
+			result.add(system);
+		}
+
+		return result;
 	}
 }

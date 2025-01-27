@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
-import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -76,7 +76,23 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
-		final List<IdentityMgmtRequestDTO> list = dto.identites();
+		if (Utilities.isEmpty(dto.authenticationMethod())) {
+			throw new InvalidParameterException("Authentication method is missing", origin);
+		}
+
+		final String authMethodName = dto.authenticationMethod().trim().toUpperCase();
+
+		if (!Utilities.isEnumValue(authMethodName, AuthenticationMethod.class)) {
+			throw new InvalidParameterException("Authentication method is invalid: " + authMethodName, origin);
+		}
+
+		final AuthenticationMethod methodType = AuthenticationMethod.valueOf(authMethodName);
+		final IAuthenticationMethod method = methods.method(methodType);
+		if (method == null) {
+			throw new InvalidParameterException("Authentication method is unsupported: " + authMethodName, origin);
+		}
+
+		final List<IdentityMgmtRequestDTO> list = dto.identities();
 		if (Utilities.isEmpty(list)) {
 			throw new InvalidParameterException("Identity list is missing or empty", origin);
 		}
@@ -86,7 +102,7 @@ public class ManagementValidation {
 		}
 
 		for (final IdentityMgmtRequestDTO identity : list) {
-			validateIdentity(identity, origin);
+			validateIdentity(method, identity, origin);
 		}
 	}
 
@@ -103,14 +119,14 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeIdentityList(final IdentityListMgmtRequestDTO dto, final String origin) {
+	public NormalizedIdentityListMgmtRequestDTO validateAndNormalizeIdentityList(final IdentityListMgmtRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeIdentityListPhase1 started...");
 
 		validateIdentityList(dto, origin);
 
 		try {
-			final List<NormalizedIdentityMgmtRequestDTO> result = normalizer.normalizeIdentityList(dto.identites());
-			checkNameDuplications(result.stream().map(ni -> ni.systemName()).toList(), origin);
+			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeIdentityList(dto);
+			checkNameDuplications(result.identities().stream().map(ni -> ni.systemName()).toList(), origin);
 
 			return result;
 		} catch (final InternalServerError ex) {
@@ -122,7 +138,7 @@ public class ManagementValidation {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private void validateIdentity(final IdentityMgmtRequestDTO identity, final String origin) {
+	private void validateIdentity(final IAuthenticationMethod method, final IdentityMgmtRequestDTO identity, final String origin) {
 		logger.debug("validateIdentity started...");
 
 		if (Utilities.isEmpty(identity.systemName())) {
@@ -137,22 +153,6 @@ public class ManagementValidation {
 			nameValidator.validateName(identity.systemName());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-
-		if (Utilities.isEmpty(identity.authenticationMethod())) {
-			throw new InvalidParameterException("Authentication method is missing", origin);
-		}
-
-		final String authMethodName = identity.authenticationMethod().trim().toUpperCase();
-
-		if (!Utilities.isEnumValue(authMethodName, AuthenticationMethod.class)) {
-			throw new InvalidParameterException("Authentication method is invalid: " + authMethodName, origin);
-		}
-
-		final AuthenticationMethod methodType = AuthenticationMethod.valueOf(authMethodName);
-		final IAuthenticationMethod method = methods.method(methodType);
-		if (method == null) {
-			throw new InvalidParameterException("Authentication method is unsupported: " + authMethodName, origin);
 		}
 
 		try {

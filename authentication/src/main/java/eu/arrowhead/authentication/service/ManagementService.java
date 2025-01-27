@@ -11,7 +11,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.service.IdentityDbService;
 import eu.arrowhead.authentication.service.dto.DTOConverter;
-import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.validation.ManagementValidation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ExternalServerError;
@@ -30,10 +30,10 @@ public class ManagementService {
 
 	@Autowired
 	private ManagementValidation validator;
-	
+
 	@Autowired
 	private IdentityDbService dbService;
-	
+
 	@Autowired
 	private DTOConverter converter;
 
@@ -46,11 +46,11 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeRequester(requesterName, origin);
-		final List<NormalizedIdentityMgmtRequestDTO> normalizedIdentities = validator.validateAndNormalizeIdentityList(dto, origin);
-		
+		final NormalizedIdentityListMgmtRequestDTO normalizedDto = validator.validateAndNormalizeIdentityList(dto, origin);
+
 		try {
-			final List<System> systems = dbService.createIdentifiableSystemsInBulk(normalizedRequester, normalizedIdentities);
-			
+			final List<System> systems = dbService.createIdentifiableSystemsInBulk(normalizedRequester, normalizedDto);
+
 			return converter.convertIdentifiableSystemListToDTO(systems);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

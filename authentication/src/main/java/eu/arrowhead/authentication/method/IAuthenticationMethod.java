@@ -6,14 +6,14 @@ public interface IAuthenticationMethod {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public IAuthenticationMethodInputValidator validator();
+	public IAuthenticationMethodInputValidator validator(); // to validate input
 
 	//-------------------------------------------------------------------------------------------------
-	public IAuthenticationMethodInputNormalizer normalizer();
+	public IAuthenticationMethodInputNormalizer normalizer(); // to normalize input
+
+	//----------------------------------------------------------------------------- --------------------
+	public IAuthenticationMethodService service(); // calling from the service layer
 
 	//-------------------------------------------------------------------------------------------------
-	public IAuthenticationMethodService service();
-
-	//-------------------------------------------------------------------------------------------------
-	public IAuthenticationMethodDbService dbService();
+	public IAuthenticationMethodDbService dbService(); // calling from the database service layer
 }

@@ -26,6 +26,9 @@ public class PasswordAuthenticationMethod implements IAuthenticationMethod {
 	@Autowired
 	private PasswordAuthenticationMethodService service;
 
+	@Autowired
+	private PasswordAuthenticationMethodDbService dbService;
+
 	//=================================================================================================
 	// methods
 
@@ -50,7 +53,6 @@ public class PasswordAuthenticationMethod implements IAuthenticationMethod {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public IAuthenticationMethodDbService dbService() {
-		// TODO Auto-generated method stub
-		return null;
+		return dbService;
 	}
 }
