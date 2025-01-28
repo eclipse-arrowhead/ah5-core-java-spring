@@ -64,6 +64,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";
 	public static final String ORCH_WARN_NOT_EXCLUSIVE = "not_exclusive";
+	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "part_time_exclusivity";
 
 	//=================================================================================================
 	// assistant methods

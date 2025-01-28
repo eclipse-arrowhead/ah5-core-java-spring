@@ -15,7 +15,7 @@ public class OrchestrationCandidate {
 	// private Cloud cloud; not supported yet
 	private boolean isLocked;
 	private boolean canBeExclusive;
-	// TODO store exclusivityDuration -> can be considered in matchmaking and warning can be set if not fully fulfilled (PART_TIME_EXCLUSIVITY)
+	private int  exclusivityDuration = -1; // -1 means can't be exclusive
 	private boolean translationNeeded;
 	private boolean properQoS;
 	private Map<String, String> authorizationTokens;
@@ -57,6 +57,16 @@ public class OrchestrationCandidate {
 	//-------------------------------------------------------------------------------------------------
 	public void setCanBeExclusive(final boolean canBeExclusive) {
 		this.canBeExclusive = canBeExclusive;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public int getExclusivityDuration() {
+		return exclusivityDuration;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setExclusivityDuration(final int exclusivityDuration) {
+		this.exclusivityDuration = exclusivityDuration;
 	}
 
 	//-------------------------------------------------------------------------------------------------

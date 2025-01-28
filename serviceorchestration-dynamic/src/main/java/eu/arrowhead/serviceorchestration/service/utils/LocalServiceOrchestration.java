@@ -52,7 +52,7 @@ public class LocalServiceOrchestration {
 		}
 
 		if (form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-			candidates = filterOutNotWhereExclusivityIsNotPossible(candidates);
+			candidates = filterOutWhereExclusivityIsNotPossible(candidates);
 			if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
 				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 			}
@@ -96,8 +96,7 @@ public class LocalServiceOrchestration {
 		// Deal with translations
 		if (translationAllowed) {
 			if (checkIfHasNativeOnes(candidates)) {
-				// van e native, mert ha igen akkor csak azokat hagyjuk meg és a nem natívakat kidobjuk
-				// TODO kidobálni a nem natívakat
+				candidates = filterOutNonNativeOnes(candidates);
 			} else {
 				candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
@@ -113,7 +112,7 @@ public class LocalServiceOrchestration {
 		// Dealing with preferences
 		if (form.exclusivityIsPreferred() && !form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
 			if (containsReservable(candidates)) {
-				candidates = filterOutNotWhereExclusivityIsNotPossible(candidates);
+				candidates = filterOutWhereExclusivityIsNotPossible(candidates);
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
@@ -139,7 +138,9 @@ public class LocalServiceOrchestration {
 				reserve(match, form.getExclusivityDuration());
 				String matchInstanceId = match.getServiceInstance().instanceId();
 				releaseTemporaryLockIfItWasLocked(candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList());
-				//  TODO warning if PART_TIME_EXCLUSIVITY
+				if (form.getExclusivityDuration() < match.getExclusivityDuration()) {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY);
+				}
 			}
 
 			candidates.clear();
@@ -194,7 +195,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
+	private List<OrchestrationCandidate> filterOutWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
 		// TODO
 		return null;
 	}
@@ -230,16 +231,22 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
+	private boolean checkIfHasNativeOnes(final List<OrchestrationCandidate> candidates) {
 		// TODO
-		// here comes the translation discovery
+		return true;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<OrchestrationCandidate> filterOutNonNativeOnes(final List<OrchestrationCandidate> candidates) {
+		// TODO
 		return List.of();
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean checkIfHasNativeOnes(final List<OrchestrationCandidate> candidates) {
+	private List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
 		// TODO
-		return true;
+		// here comes the translation discovery
+		return List.of();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -261,8 +268,7 @@ public class LocalServiceOrchestration {
 		}
 
 		// TODO
-		// without translation has priority
-		// canBeExclusive has priority
+		// canBeExclusive and full-time exclusivity has priority
 		return null;
 	}
 
