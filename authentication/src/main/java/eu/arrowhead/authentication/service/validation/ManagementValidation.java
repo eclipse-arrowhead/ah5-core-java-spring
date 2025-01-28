@@ -8,18 +8,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
-import eu.arrowhead.dto.IdentityListMgmtRequestDTO;
+import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
+import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
@@ -69,8 +72,8 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateIdentityList(final IdentityListMgmtRequestDTO dto, final String origin) {
-		logger.debug("validateIdentityListPhase1 started...");
+	public void validateCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
+		logger.debug("validateCreateIdentityList started...");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -107,6 +110,46 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void validateUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
+		logger.debug("validateUpdateIdentityListPhase1 started...");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		final List<IdentityMgmtRequestDTO> list = dto.identities();
+		if (Utilities.isEmpty(list)) {
+			throw new InvalidParameterException("Identity list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNull(list)) {
+			throw new InvalidParameterException("Identity list contains null element", origin);
+		}
+
+		for (final IdentityMgmtRequestDTO identity : list) {
+			validateIdentityWithoutCredentials(identity, origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateUpdateIdentityListPhase2(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities, final String origin) {
+		logger.debug("validateUpdateIdentityListPhase2 started...");
+		Assert.notNull(authenticationMethod, "Authentication method is null");
+		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
+
+		for (final NormalizedIdentityMgmtRequestDTO identity : identities) {
+			try {
+				authenticationMethod.validator().validateCredentials(identity.credentials());
+			} catch (final InvalidParameterException ex) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			} catch (final InternalServerError ex) {
+				throw new InternalServerError(ex.getMessage(), origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -119,16 +162,44 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public NormalizedIdentityListMgmtRequestDTO validateAndNormalizeIdentityList(final IdentityListMgmtRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeIdentityListPhase1 started...");
+	public NormalizedIdentityListMgmtRequestDTO validateAndNormalizeCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateIdentityList started...");
 
-		validateIdentityList(dto, origin);
+		validateCreateIdentityList(dto, origin);
 
 		try {
-			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeIdentityList(dto);
+			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeCreateIdentityList(dto);
 			checkNameDuplications(result.identities().stream().map(ni -> ni.systemName()).toList(), origin);
 
 			return result;
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateIdentityListPhase1 started...");
+
+		validateUpdateIdentityListPhase1(dto, origin);
+
+		final List<NormalizedIdentityMgmtRequestDTO> result = normalizer.normalizeUpdateIdentityListWithoutCredentials(dto);
+		checkNameDuplications(result.stream().map(ni -> ni.systemName()).toList(), origin);
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase2(
+			final IAuthenticationMethod authenticationMethod,
+			final List<NormalizedIdentityMgmtRequestDTO> identities,
+			final String origin) {
+		logger.debug("validateAndNormalizeUpdateIdentityListPhase2 started...");
+
+		validateUpdateIdentityListPhase2(authenticationMethod, identities, origin);
+
+		try {
+			return normalizer.normalizeCredentials(authenticationMethod, identities);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -140,6 +211,21 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateIdentity(final IAuthenticationMethod method, final IdentityMgmtRequestDTO identity, final String origin) {
 		logger.debug("validateIdentity started...");
+
+		validateIdentityWithoutCredentials(identity, origin);
+
+		try {
+			method.validator().validateCredentials(identity.credentials());
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateIdentityWithoutCredentials(final IdentityMgmtRequestDTO identity, final String origin) {
+		logger.debug("validateIdentityWithoutCredentials started...");
 
 		if (Utilities.isEmpty(identity.systemName())) {
 			throw new InvalidParameterException("System name is missing or empty", origin);
@@ -153,14 +239,6 @@ public class ManagementValidation {
 			nameValidator.validateName(identity.systemName());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-
-		try {
-			method.validator().validateCredentials(identity.credentials());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
 

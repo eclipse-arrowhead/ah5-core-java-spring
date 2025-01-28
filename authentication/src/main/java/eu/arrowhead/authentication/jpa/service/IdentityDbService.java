@@ -73,6 +73,31 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public List<System> getSystemsByNamesBeforeUpdate(final List<String> names) {
+		logger.debug("getSystemsByNamesBeforeUpdate started...");
+		Assert.isTrue(!Utilities.isEmpty(names), "names is missing or empty");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "names contains null or empty element");
+
+		try {
+			final List<System> result = systemRepository.findAllBySystemNameIn(names);
+			if (result.size() != names.size()) {
+				final List<String> missing = new ArrayList<>(names);
+				missing.removeAll(result.stream().map(s -> s.getName()).toList());
+
+				throw new InvalidParameterException("The following systems are not found: " + String.join(", ", missing));
+			}
+
+			return result;
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void changePassword(final System system, final String newPassword) {
 		logger.debug("changePassword started...");
@@ -132,7 +157,7 @@ public class IdentityDbService {
 		if (extras != null) {
 			// check if extras list size is correct
 			if (extras.size() != identityList.size()) {
-				// something not right => roll back everything
+				// something is not right => roll back everything
 				logger.error("Extra list's size is incorrect.");
 				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 				throw new InternalServerError("Database operation error");
@@ -149,6 +174,64 @@ public class IdentityDbService {
 		}
 
 		return systems;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<System> updateIdentifiableSystemsInBulk(final String requester, final List<NormalizedIdentityMgmtRequestDTO> identities) {
+		logger.debug("updateIdentifiableSystemsInBulk started...");
+		Assert.isTrue(!Utilities.isEmpty(requester), "Requester is missing or empty");
+		Assert.isTrue(!Utilities.isEmpty(identities), "Identities is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identities contains null");
+
+		// TODO: continue from here
+
+		return null;
+
+		//		List<IdentityData> identityList;
+		//		List<System> systems;
+		//		try {
+		//			checkSystemNamesNotExist(dto.identities()); // checks if none of the system names exist (system name has to be unique)
+		//
+		//			// writing the system entities to the database
+		//			identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
+		//			systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
+		//			identityList = updateSystemEntitiesInIdentityList(identityList, systems);
+		//		} catch (final InvalidParameterException ex) {
+		//			throw ex;
+		//		} catch (final Exception ex) {
+		//			logger.error(ex.getMessage());
+		//			logger.debug(ex);
+		//			throw new InternalServerError("Database operation error");
+		//		}
+		//
+		//		// storing authentication method specific credentials
+		//		final IAuthenticationMethod method = methods.method(dto.authenticationMethod());
+		//		Assert.notNull(method, "Authentication method is unsupported");
+		//
+		//		final List<String> extras = method.dbService().createIdentifiableSystemsInBulk(identityList);
+		//
+		//		// handling the extra fields
+		//		if (extras != null) {
+		//			// check if extras list size is correct
+		//			if (extras.size() != identityList.size()) {
+		//				// something is not right => roll back everything
+		//				logger.error("Extra list's size is incorrect.");
+		//				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+		//				throw new InternalServerError("Database operation error");
+		//			}
+		//
+		//			try {
+		//				systems = systemRepository.saveAllAndFlush(updateSystemListWithExtras(systems, extras));
+		//			} catch (final Exception ex) {
+		//				logger.error(ex.getMessage());
+		//				logger.debug(ex);
+		//				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+		//				throw new InternalServerError("Database operation error");
+		//			}
+		//		}
+		//
+		//		return systems;
 	}
 
 	//-------------------------------------------------------------------------------------------------

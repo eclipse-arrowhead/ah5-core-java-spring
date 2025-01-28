@@ -37,6 +37,7 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	//=================================================================================================
 	// methods
 
+	//-------------------------------------------------------------------------------------------------
 	@Override
 	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
 	public List<String> createIdentifiableSystemsInBulk(final List<IdentityData> identities) {

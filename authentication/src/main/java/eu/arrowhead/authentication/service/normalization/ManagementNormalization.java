@@ -16,7 +16,8 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequest
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.dto.IdentityListMgmtRequestDTO;
+import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
+import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
@@ -38,7 +39,7 @@ public class ManagementNormalization {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public NormalizedIdentityListMgmtRequestDTO normalizeIdentityList(final IdentityListMgmtRequestDTO dto) {
+	public NormalizedIdentityListMgmtRequestDTO normalizeCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto) {
 		logger.debug("normalizeIdentityList started...");
 		Assert.notNull(dto, "Payload is missing");
 		Assert.isTrue(!Utilities.isEmpty(dto.identities()), "Identities list is missing or empty");
@@ -61,6 +62,47 @@ public class ManagementNormalization {
 		}
 
 		return new NormalizedIdentityListMgmtRequestDTO(normalizedAuthenticationMethod, result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedIdentityMgmtRequestDTO> normalizeUpdateIdentityListWithoutCredentials(final IdentityListMgmtUpdateRequestDTO dto) {
+		logger.debug("normalizeUpdateIdentityListWithoutCredentials started...");
+		Assert.notNull(dto, "Payload is missing");
+		Assert.isTrue(!Utilities.isEmpty(dto.identities()), "Identities list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(dto.identities()), "Identities list contains null element");
+
+		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(dto.identities().size());
+		for (final IdentityMgmtRequestDTO identity : dto.identities()) {
+			final String normalizedSystem = nameNormalizer.normalize(identity.systemName());
+			final boolean normalizedSysop = identity.sysop() == null ? false : identity.sysop().booleanValue();
+
+			result.add(new NormalizedIdentityMgmtRequestDTO(
+					normalizedSystem,
+					identity.credentials(),
+					normalizedSysop));
+		}
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedIdentityMgmtRequestDTO> normalizeCredentials(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities) {
+		logger.debug("normalizeCredentials started...");
+		Assert.notNull(authenticationMethod, "Authentication method is missing");
+		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
+
+		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(identities.size());
+		for (final NormalizedIdentityMgmtRequestDTO identity : identities) {
+			final Map<String, String> normalizedCredentials = authenticationMethod.normalizer().normalizeCredentials(identity.credentials());
+
+			result.add(new NormalizedIdentityMgmtRequestDTO(
+					identity.systemName(),
+					normalizedCredentials,
+					identity.sysop()));
+		}
+
+		return result;
 	}
 
 	//=================================================================================================
