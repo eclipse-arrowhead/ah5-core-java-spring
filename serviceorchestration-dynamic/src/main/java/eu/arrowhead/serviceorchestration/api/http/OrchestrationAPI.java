@@ -67,7 +67,7 @@ public class OrchestrationAPI {
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		return orchService.pull(new OrchestrationForm(requesterSystem, requesterSystem, dto));
+		return orchService.pull(new OrchestrationForm(requesterSystem, requesterSystem, dto), origin);
 	}
 
 	// TODO pushSubscribe
