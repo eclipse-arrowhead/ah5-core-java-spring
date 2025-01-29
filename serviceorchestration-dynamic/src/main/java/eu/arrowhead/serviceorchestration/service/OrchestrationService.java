@@ -1,15 +1,17 @@
 package eu.arrowhead.serviceorchestration.service;
 
-import java.util.UUID;
+import java.util.Optional;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
+import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
+import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;
@@ -27,6 +29,9 @@ public class OrchestrationService {
 
 	@Autowired
 	private InterCloudServiceOrchestration interCloudOrch;
+
+	@Autowired
+	private SubscriptionDbService subscriptionDbService;
 
 	@Autowired
 	private OrchestrationValidation validator;
@@ -47,15 +52,24 @@ public class OrchestrationService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String pushSubscribe(final OrchestrationSubscription subscription, final String origin) {
+	public Pair<Boolean, String> pushSubscribe(final OrchestrationSubscription subscription, final String origin) {
 		logger.debug("pushSubscribe started...");
 
 		validator.validateAndNormalizePushSubscribeService(subscription, origin);
 		validator.validateNormalizedOrchestrationFormContext(subscription.getOrchestrationForm(), origin);
 
-		//TODO save to DB
+		final Optional<Subscription> recordOpt = subscriptionDbService.get(
+				subscription.getOrchestrationForm().getRequesterSystemName(),
+				subscription.getOrchestrationForm().getTargetSystemName(),
+				subscription.getOrchestrationForm().getServiceDefinition());
 
-		return subscription.getId();
+		boolean isOverride = false;
+		if (recordOpt.isPresent()) {
+			subscriptionDbService.deleteById(recordOpt.get().getId());
+			isOverride = true;
+		}
+
+		return Pair.of(isOverride, subscriptionDbService.create(subscription).toString());
 	}
 
 	//-------------------------------------------------------------------------------------------------

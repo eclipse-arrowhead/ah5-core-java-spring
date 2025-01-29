@@ -7,6 +7,7 @@ import java.util.Map;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
+import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 
 public class OrchestrationForm {
@@ -98,6 +99,13 @@ public class OrchestrationForm {
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasQoSRequirements() {
 		return !Utilities.isEmpty(qosRequirements);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationRequestDTO extractOrchestrationRequestDTO() {
+		final OrchestrationServiceRequirementDTO serviceReq = new OrchestrationServiceRequirementDTO(serviceDefinition, operations, versions, alivesAt, metadataRequirements, interfaceTemplateNames, interfaceAddressTypes,
+				interfacePropertyRequirements, securityPolicies, prefferedProviders);
+		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qosRequirements, exclusivityDuration);
 	}
 
 	//=================================================================================================

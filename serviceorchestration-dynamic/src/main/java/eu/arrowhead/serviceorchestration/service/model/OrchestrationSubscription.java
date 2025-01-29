@@ -10,9 +10,9 @@ public class OrchestrationSubscription {
 	//=================================================================================================
 	// members
 
-	private final String id;
+	private final UUID id;
 	private OrchestrationForm orchestrationForm;
-	private Integer duration;
+	private Long duration;
 	private String notifyProtocol;
 	private Map<String, String> notifyProperties;
 
@@ -21,7 +21,7 @@ public class OrchestrationSubscription {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSubscription(final String requesterSystemName, final OrchestrationSubscriptionRequestDTO dto) {
-		this.id = UUID.randomUUID().toString();
+		this.id = UUID.randomUUID();
 
 		if (dto != null) {
 			this.orchestrationForm = new OrchestrationForm(requesterSystemName, dto.targetSystemName(), dto.orchestrationRequest());
@@ -38,7 +38,7 @@ public class OrchestrationSubscription {
 	// boilerplate
 
 	//-------------------------------------------------------------------------------------------------
-	public String getId() {
+	public UUID getId() {
 		return id;
 	}
 
@@ -48,7 +48,7 @@ public class OrchestrationSubscription {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Integer getDuration() {
+	public Long getDuration() {
 		return duration;
 	}
 

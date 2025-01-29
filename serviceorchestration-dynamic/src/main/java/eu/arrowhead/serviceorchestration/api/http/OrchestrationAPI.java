@@ -1,10 +1,13 @@
 package eu.arrowhead.serviceorchestration.api.http;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -77,6 +80,8 @@ public class OrchestrationAPI {
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns a subscription id")
 	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
@@ -89,13 +94,14 @@ public class OrchestrationAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public String pushSubscribe(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSubscriptionRequestDTO dto) {
+	public ResponseEntity<String> pushSubscribe(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSubscriptionRequestDTO dto) {
 		logger.debug("pushSubscribe started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		return orchService.pushSubscribe(new OrchestrationSubscription(requesterSystem, dto), origin);
+		final Pair<Boolean, String> result = orchService.pushSubscribe(new OrchestrationSubscription(requesterSystem, dto), origin);
+		return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
 	//-------------------------------------------------------------------------------------------------

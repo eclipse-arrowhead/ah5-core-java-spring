@@ -11,3 +11,19 @@ CREATE TABLE IF NOT EXISTS `logs` (
   `exception` mediumtext,
   PRIMARY KEY (`log_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;  
+
+-- Subscription
+
+CREATE TABLE IF NOT EXISTS `subscription` (
+  `id` binary(16) NOT NULL,
+  `owner_system` varchar(63) NOT NULL,
+  `target_system` varchar(63) NOT NULL,
+  `service_definition` varchar(63) NOT NULL,
+  `expires_at` timestamp,
+  `notify_protocol` varchar(14) NOT NULL,
+  `notify_properties` mediumtext NOT NULL,
+  `orchestration_request` mediumtext NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `subscription_uk` (`owner_system`, `target_system`, `service_definition`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
