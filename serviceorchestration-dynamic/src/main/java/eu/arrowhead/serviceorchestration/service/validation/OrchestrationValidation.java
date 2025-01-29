@@ -10,10 +10,13 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationServiceNormalization;
 
 @Service
@@ -27,6 +30,9 @@ public class OrchestrationValidation {
 
 	@Autowired
 	private OrchestrationServiceNormalization normalization;
+
+	@Autowired
+	private DynamicServiceOrchestrationSystemInfo sysInfo;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -42,6 +48,62 @@ public class OrchestrationValidation {
 		validateOrchestrationForm(form, origin);
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validatePushSubscribeService(final OrchestrationSubscription subscription, final String origin) {
+		logger.debug("validatePushSubscribeService started...");
+
+		if (subscription == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (subscription.getDuration() != null && subscription.getDuration() <= 0) {
+			throw new InvalidParameterException("Subscription duration must be greater than 0.", origin);
+		}
+
+		// TODO validate notifyInterface
+
+		validateOrchestrationForm(subscription.getOrchestrationForm(), origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateNormalizedOrchestrationFormContext(final OrchestrationForm form, final String origin) {
+		logger.debug("validateNormalizedOrchestrationFormContext started...");
+
+		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && !sysInfo.isInterCloudEnabled()) {
+			throw new InvalidParameterException("ONLY_INTERCLOUD flag is present, but intercloud orchestration is not enabled.", origin);
+		}
+
+		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION)) {
+			// Inter-cloud translation is not supported
+			throw new InvalidParameterException("ONLY_INTERCLOUD and ALLOW_TRANSLATION flags cannot be present at the same time.", origin);
+		}
+
+		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && !Utilities.isEmpty(form.getOperations())) {
+			// The creation of inter-cloud bridges is limited to the actual operations that the requester wants to use.
+			throw new InvalidParameterException("Operations must be defined, when only inter-cloud orchestration is required.", origin);
+		}
+
+		if (form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD) && !Utilities.isEmpty(form.getOperations())) {
+			// The creation of inter-cloud bridges is limited to the actual operations that the requester wants to use.
+			throw new InvalidParameterException("Operations must be defined, when inter-cloud orchestration is allowed.", origin);
+		}
+
+		if (form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && !Utilities.isEmpty(form.getOperations())) {
+			// The creation of translation bridges is limited to the actual operations that the requester wants to use.
+			throw new InvalidParameterException("Operations must be defined, when translation is allowed", origin);
+		}
+
+		if (form.hasFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {
+			throw new InvalidParameterException("ONLY_PREFERRED falg is present, but no preferred provider is defined.", origin);
+		}
+
+		// TODO ha az összes preferred provider local és ONLY_PREFERRED + ONLY_INTERCLOUD
+
+		if (form.hasQoSRequirements() && !sysInfo.isQoSEnabled()) {
+			throw new InvalidParameterException("QoS requirements are present, but QoS support is not enabled.", origin);
+		}
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -49,52 +111,16 @@ public class OrchestrationValidation {
 		logger.debug("validatePull started...");
 
 		validatePullService(form, origin);
-		normalization.normalizeOrchestrationForm(form);
+		validateAndNormalizeOrchestrationForm(form, origin);
+	}
 
-		try {
-			nameValidator.validateName(form.getRequesterSystemName());
-			nameValidator.validateName(form.getTargetSystemName());
-			nameValidator.validateName(form.getServiceDefinition());
+	//-------------------------------------------------------------------------------------------------
+	public void validateAndNormalizePushSubscribeService(final OrchestrationSubscription subscription, final String origin) {
+		logger.debug("validateAndNormalizePushSubscribeService started...");
 
-			if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
-				form.getOrchestrationFlags().forEach(f -> {
-					if (!Utilities.isEnumValue(f, OrchestrationFlag.class)) {
-						throw new InvalidParameterException("Invalid orchestration flag: " + f);
-					}
-				});
-			}
-
-			if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
-				form.getInterfaceTemplateNames().forEach(itn -> {
-					nameValidator.validateName(itn);
-				});
-			}
-
-			if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
-				form.getInterfaceAddressTypes().forEach(iat -> {
-					if (!Utilities.isEnumValue(iat, AddressType.class)) {
-						throw new InvalidParameterException("Invalid interface address type: " + iat);
-					}
-				});
-			}
-
-			if (!Utilities.isEmpty(form.getSecurityPolicies())) {
-				form.getSecurityPolicies().forEach(sp -> {
-					if (!Utilities.isEnumValue(sp, ServiceInterfacePolicy.class)) {
-						throw new InvalidParameterException("Invalid security policy: " + sp);
-					}
-				});
-			}
-
-			if (!Utilities.isEmpty(form.getPrefferedProviders())) {
-				form.getPrefferedProviders().forEach(pp -> {
-					nameValidator.validateName(pp);
-				});
-			}
-
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
+		validatePushSubscribeService(subscription, origin);
+		validateAndNormalizeOrchestrationForm(subscription.getOrchestrationForm(), origin);
+		// TODO normalize notifyInterface
 	}
 
 	//=================================================================================================
@@ -200,6 +226,58 @@ public class OrchestrationValidation {
 					throw new InvalidParameterException("QoS Requirement map contains empty value", origin);
 				}
 			});
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateAndNormalizeOrchestrationForm(final OrchestrationForm form, final String origin) {
+		logger.debug("validateAndNormalizeOrchestrationForm...");
+
+		normalization.normalizeOrchestrationForm(form);
+
+		try {
+			nameValidator.validateName(form.getRequesterSystemName());
+			nameValidator.validateName(form.getTargetSystemName());
+			nameValidator.validateName(form.getServiceDefinition());
+
+			if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
+				form.getOrchestrationFlags().forEach(f -> {
+					if (!Utilities.isEnumValue(f, OrchestrationFlag.class)) {
+						throw new InvalidParameterException("Invalid orchestration flag: " + f);
+					}
+				});
+			}
+
+			if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
+				form.getInterfaceTemplateNames().forEach(itn -> {
+					nameValidator.validateName(itn);
+				});
+			}
+
+			if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
+				form.getInterfaceAddressTypes().forEach(iat -> {
+					if (!Utilities.isEnumValue(iat, AddressType.class)) {
+						throw new InvalidParameterException("Invalid interface address type: " + iat);
+					}
+				});
+			}
+
+			if (!Utilities.isEmpty(form.getSecurityPolicies())) {
+				form.getSecurityPolicies().forEach(sp -> {
+					if (!Utilities.isEnumValue(sp, ServiceInterfacePolicy.class)) {
+						throw new InvalidParameterException("Invalid security policy: " + sp);
+					}
+				});
+			}
+
+			if (!Utilities.isEmpty(form.getPrefferedProviders())) {
+				form.getPrefferedProviders().forEach(pp -> {
+					nameValidator.validateName(pp);
+				});
+			}
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 	}
 

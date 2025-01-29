@@ -36,6 +36,11 @@ public class OrchestrationForm {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	public OrchestrationForm(final String requesterSystemName, final OrchestrationRequestDTO dto) {
+		this(requesterSystemName, requesterSystemName, dto);
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public OrchestrationForm(final String requesterSystemName, final String targetSystemName, final OrchestrationRequestDTO dto) {
 		this.requesterSystemName = requesterSystemName;
 		this.targetSystemName = targetSystemName;

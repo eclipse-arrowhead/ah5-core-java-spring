@@ -35,7 +35,7 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/push-subscribe";
-	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/push-unsubscribe";
+	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/push-unsubscribe/{id}";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 
 	// Forbidden keys (for config service)
