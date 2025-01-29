@@ -66,6 +66,12 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String ORCH_WARN_NOT_EXCLUSIVE = "not_exclusive";
 	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "part_time_exclusivity";
 
+	public static final String NOTIFY_KEY_ADDRESS = "address";
+	public static final String NOTIFY_KEY_PORT = "port";
+	public static final String NOTIFY_KEY_METHOD = "method";
+	public static final String NOTIFY_KEY_PATH = "path";
+	public static final String NOTIFY_KEY_TOPIC = "topic";
+
 	//=================================================================================================
 	// assistant methods
 
