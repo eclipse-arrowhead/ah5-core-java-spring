@@ -13,13 +13,13 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
 
 	public static final String ENABLE_AUTHORIZATION = "enable.authorization";
-	public static final String $ENABLE_AUTHORIZATION_WD = "{" + ENABLE_AUTHORIZATION + ":false }";
+	public static final String $ENABLE_AUTHORIZATION_WD = "${" + ENABLE_AUTHORIZATION + ":false }";
 	public static final String ENABLE_TRANSLATION = "enable.translation";
-	public static final String $ENABLE_TRANSLATION_WD = "{" + ENABLE_TRANSLATION + ":false }";
+	public static final String $ENABLE_TRANSLATION_WD = "${" + ENABLE_TRANSLATION + ":false }";
 	public static final String ENABLE_QOS = "enable.qos";
-	public static final String $ENABLE_QOS_WD = "{" + ENABLE_QOS + ":false }";
+	public static final String $ENABLE_QOS_WD = "${" + ENABLE_QOS + ":false }";
 	public static final String ENABLE_INTERCLOUD = "enable.intercloud";
-	public static final String $ENABLE_INTERCLOUD_WD = "{" + ENABLE_INTERCLOUD + ":false }";
+	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":false }";
 
 	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
