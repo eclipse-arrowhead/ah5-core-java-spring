@@ -2,9 +2,9 @@ package eu.arrowhead.authentication.service.dto;
 
 import java.util.List;
 
-import eu.arrowhead.dto.enums.AuthenticationMethod;
+import eu.arrowhead.authentication.method.IAuthenticationMethod;
 
 public record NormalizedIdentityListMgmtRequestDTO(
-		AuthenticationMethod authenticationMethod,
+		IAuthenticationMethod authenticationMethod,
 		List<NormalizedIdentityMgmtRequestDTO> identities) {
 }

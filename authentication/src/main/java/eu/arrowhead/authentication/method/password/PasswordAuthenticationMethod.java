@@ -8,6 +8,7 @@ import eu.arrowhead.authentication.method.IAuthenticationMethodDbService;
 import eu.arrowhead.authentication.method.IAuthenticationMethodInputNormalizer;
 import eu.arrowhead.authentication.method.IAuthenticationMethodInputValidator;
 import eu.arrowhead.authentication.method.IAuthenticationMethodService;
+import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
 public class PasswordAuthenticationMethod implements IAuthenticationMethod {
@@ -54,5 +55,11 @@ public class PasswordAuthenticationMethod implements IAuthenticationMethod {
 	@Override
 	public IAuthenticationMethodDbService dbService() {
 		return dbService;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public AuthenticationMethod type() {
+		return AuthenticationMethod.PASSWORD;
 	}
 }

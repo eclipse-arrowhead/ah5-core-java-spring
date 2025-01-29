@@ -61,7 +61,7 @@ public class ManagementNormalization {
 					normalizedSysop));
 		}
 
-		return new NormalizedIdentityListMgmtRequestDTO(normalizedAuthenticationMethod, result);
+		return new NormalizedIdentityListMgmtRequestDTO(method, result);
 	}
 
 	//-------------------------------------------------------------------------------------------------

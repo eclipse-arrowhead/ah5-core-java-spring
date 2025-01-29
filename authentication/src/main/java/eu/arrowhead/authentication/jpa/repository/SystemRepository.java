@@ -15,6 +15,6 @@ public interface SystemRepository extends RefreshableRepository<System, Long> {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<System> findBySystemName(final String systemName);
-	public List<System> findAllBySystemNameIn(final List<String> names);
+	public Optional<System> findByName(final String systemName);
+	public List<System> findAllByNameIn(final List<String> names);
 }

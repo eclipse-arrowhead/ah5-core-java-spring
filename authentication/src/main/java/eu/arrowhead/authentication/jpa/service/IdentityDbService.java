@@ -22,7 +22,6 @@ import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.repository.ActiveSessionRepository;
 import eu.arrowhead.authentication.jpa.repository.PasswordAuthenticationRepository;
 import eu.arrowhead.authentication.jpa.repository.SystemRepository;
-import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.IdentityData;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
@@ -30,7 +29,6 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
 public class IdentityDbService {
@@ -50,9 +48,6 @@ public class IdentityDbService {
 	@Autowired
 	private ActiveSessionRepository asRepository;
 
-	@Autowired
-	private AuthenticationMethods methods;
-
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -64,7 +59,7 @@ public class IdentityDbService {
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
 
 		try {
-			return systemRepository.findBySystemName(systemName);
+			return systemRepository.findByName(systemName);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -79,7 +74,7 @@ public class IdentityDbService {
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "names contains null or empty element");
 
 		try {
-			final List<System> result = systemRepository.findAllBySystemNameIn(names);
+			final List<System> result = systemRepository.findAllByNameIn(names);
 			if (result.size() != names.size()) {
 				final List<String> missing = new ArrayList<>(names);
 				missing.removeAll(result.stream().map(s -> s.getName()).toList());
@@ -148,10 +143,7 @@ public class IdentityDbService {
 		}
 
 		// storing authentication method specific credentials
-		final IAuthenticationMethod method = methods.method(dto.authenticationMethod());
-		Assert.notNull(method, "Authentication method is unsupported");
-
-		final List<String> extras = method.dbService().createIdentifiableSystemsInBulk(identityList);
+		final List<String> extras = dto.authenticationMethod().dbService().createIdentifiableSystemsInBulk(identityList);
 
 		// handling the extra fields
 		if (extras != null) {
@@ -159,7 +151,7 @@ public class IdentityDbService {
 			if (extras.size() != identityList.size()) {
 				// something is not right => roll back everything
 				logger.error("Extra list's size is incorrect.");
-				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+				dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 				throw new InternalServerError("Database operation error");
 			}
 
@@ -168,7 +160,7 @@ public class IdentityDbService {
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
 				logger.debug(ex);
-				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+				dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 				throw new InternalServerError("Database operation error");
 			}
 		}
@@ -323,7 +315,7 @@ public class IdentityDbService {
 				.map(c -> c.systemName())
 				.collect(Collectors.toList());
 
-		final List<System> existingSystems = systemRepository.findAllBySystemNameIn(candidateNames);
+		final List<System> existingSystems = systemRepository.findAllByNameIn(candidateNames);
 
 		if (!Utilities.isEmpty(existingSystems)) {
 			final String existingSystemNames = existingSystems
@@ -335,13 +327,13 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<IdentityData> createSystemEntitiesAndIdentityList(final String requester, final AuthenticationMethod method, final List<NormalizedIdentityMgmtRequestDTO> candidates) {
+	private List<IdentityData> createSystemEntitiesAndIdentityList(final String requester, final IAuthenticationMethod method, final List<NormalizedIdentityMgmtRequestDTO> candidates) {
 		logger.debug("createSystemEntities started");
 
 		return candidates
 				.stream()
 				.map(c -> new IdentityData(
-						new System(c.systemName(), method, c.sysop(), requester),
+						new System(c.systemName(), method.type(), c.sysop(), requester),
 						c.credentials()))
 				.collect(Collectors.toList());
 	}

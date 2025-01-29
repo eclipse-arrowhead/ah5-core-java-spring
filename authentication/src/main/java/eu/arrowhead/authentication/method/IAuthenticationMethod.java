@@ -1,9 +1,14 @@
 package eu.arrowhead.authentication.method;
 
+import eu.arrowhead.dto.enums.AuthenticationMethod;
+
 public interface IAuthenticationMethod {
 
 	//=================================================================================================
 	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthenticationMethod type(); // the supported type
 
 	//-------------------------------------------------------------------------------------------------
 	public IAuthenticationMethodInputValidator validator(); // to validate input

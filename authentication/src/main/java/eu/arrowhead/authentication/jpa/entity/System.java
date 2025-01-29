@@ -27,7 +27,7 @@ public class System extends ArrowheadEntity {
 	@Enumerated(EnumType.STRING)
 	private AuthenticationMethod authenticationMethod;
 
-	@Column(nullable = false)
+	@Column(nullable = false, columnDefinition = "INT(1)")
 	private boolean sysop = false;
 
 	@Column(length = VARCHAR_LARGE)
