@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.dto.enums.OrchestrationFlag;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationServiceNormalization;
 
@@ -53,9 +56,33 @@ public class OrchestrationValidation {
 			nameValidator.validateName(form.getTargetSystemName());
 			nameValidator.validateName(form.getServiceDefinition());
 
+			if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
+				form.getOrchestrationFlags().forEach(f -> {
+					if (!Utilities.isEnumValue(f, OrchestrationFlag.class)) {
+						throw new InvalidParameterException("Invalid orchestration flag: " + f);
+					}
+				});
+			}
+
 			if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
 				form.getInterfaceTemplateNames().forEach(itn -> {
 					nameValidator.validateName(itn);
+				});
+			}
+
+			if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
+				form.getInterfaceAddressTypes().forEach(iat -> {
+					if (!Utilities.isEnumValue(iat, AddressType.class)) {
+						throw new InvalidParameterException("Invalid interface address type: " + iat);
+					}
+				});
+			}
+
+			if (!Utilities.isEmpty(form.getSecurityPolicies())) {
+				form.getSecurityPolicies().forEach(sp -> {
+					if (!Utilities.isEnumValue(sp, ServiceInterfacePolicy.class)) {
+						throw new InvalidParameterException("Invalid security policy: " + sp);
+					}
 				});
 			}
 

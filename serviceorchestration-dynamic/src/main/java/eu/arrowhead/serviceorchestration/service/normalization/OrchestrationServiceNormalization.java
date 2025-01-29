@@ -35,7 +35,10 @@ public class OrchestrationServiceNormalization {
 		form.setRequesterSystemName(nameNormalizer.normalize(form.getRequesterSystemName()));
 		form.setTargetSystemName(nameNormalizer.normalize(form.getTargetSystemName()));
 		form.setServiceDefinition(nameNormalizer.normalize(form.getServiceDefinition()));
-		form.setOrchestrationFlags(form.getOrchestrationFlags().stream().map(f -> f.trim().toUpperCase()).toList());
+
+		if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
+			form.setOrchestrationFlags(form.getOrchestrationFlags().stream().map(f -> f.trim().toUpperCase()).toList());
+		}
 
 		if (!Utilities.isEmpty(form.getOperations())) {
 			form.setOperations(form.getOperations().stream().map(o -> nameNormalizer.normalize(o)).toList());
