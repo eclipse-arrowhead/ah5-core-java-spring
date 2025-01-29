@@ -77,6 +77,13 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 				.serviceInterface(getMqttServiceInterfaceForServiceDiscovery())
 				.build();
 
+		final ServiceModel generalManagement = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_GENERAL_MANAGEMENT)
+				.version(ServiceRegistryConstants.VERSION_GENERAL_MANAGEMENT)
+				.serviceInterface(getHttpServiceInterfaceForGeneralManagement())
+				.serviceInterface(getMqttServiceInterfaceForGeneralManagement())
+				.build();
+
 		final ServiceModel serviceRegistryManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_REGISTRY_MANAGEMENT)
 				.version(ServiceRegistryConstants.VERSION_SERVICE_REGISTRY_MANAGEMENT)
@@ -86,7 +93,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		// TODO: add monitor service when it is specified and implemented
 
-		return List.of(deviceDiscovery, systemDiscovery, serviceDiscovery, serviceRegistryManagement);
+		return List.of(deviceDiscovery, systemDiscovery, serviceDiscovery, generalManagement, serviceRegistryManagement);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -132,6 +139,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	//=================================================================================================
 	// assistant methods
 
+	//-------------------------------------------------------------------------------------------------
 	// HTTP Interfaces
 
 	//-------------------------------------------------------------------------------------------------
@@ -175,7 +183,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private InterfaceModel getHttpServiceInterfaceForServiceRegistryManagement() {
+	private InterfaceModel getHttpServiceInterfaceForGeneralManagement() {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
 		final HttpOperationModel log = new HttpOperationModel.Builder()
@@ -186,6 +194,17 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 				.method(HttpMethod.GET.name())
 				.path(ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH)
 				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
+				.operation(Constants.SERVICE_OP_GET_LOG, log)
+				.operation(Constants.SERVICE_OP_GET_CONFIG, config)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForServiceRegistryManagement() {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
 		final HttpOperationModel deviceQuery = new HttpOperationModel.Builder()
 				.method(HttpMethod.POST.name())
@@ -266,8 +285,6 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
 				.basePath(ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH)
-				.operation(Constants.SERVICE_OP_GET_LOG, log)
-				.operation(Constants.SERVICE_OP_GET_CONFIG, config)
 				.operation(Constants.SERVICE_OP_DEVICE_QUERY, deviceQuery)
 				.operation(Constants.SERVICE_OP_DEVICE_CREATE, deviceCreate)
 				.operation(Constants.SERVICE_OP_DEVICE_UPDATE, deviceUpdate)
@@ -289,6 +306,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 				.build();
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	// MQTT Interfaces
 
 	//-------------------------------------------------------------------------------------------------
@@ -329,6 +347,19 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForGeneralManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.topic(ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getMqttServiceInterfaceForServiceRegistryManagement() {
 		if (!isMqttApiEnabled()) {
 			return null;
@@ -338,7 +369,6 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.topic(ServiceRegistryConstants.MQTT_API_MANAGEMENT_TOPIC)
 				.operations(Set.of(
-						Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG,
 						Constants.SERVICE_OP_DEVICE_QUERY, Constants.SERVICE_OP_DEVICE_CREATE, Constants.SERVICE_OP_DEVICE_UPDATE, Constants.SERVICE_OP_DEVICE_REMOVE,
 						Constants.SERVICE_OP_SYSTEM_QUERY, Constants.SERVICE_OP_SYSTEM_CREATE, Constants.SERVICE_OP_SYSTEM_UPDATE, Constants.SERVICE_OP_SYSTEM_REMOVE,
 						Constants.SERVICE_OP_SERVICE_DEF_QUERY, Constants.SERVICE_OP_SERVICE_DEF_CREATE, Constants.SERVICE_OP_SERVICE_DEF_REMOVE,
