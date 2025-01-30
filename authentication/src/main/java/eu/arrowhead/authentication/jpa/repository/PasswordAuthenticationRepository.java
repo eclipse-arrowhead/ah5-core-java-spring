@@ -1,5 +1,6 @@
 package eu.arrowhead.authentication.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -16,4 +17,7 @@ public interface PasswordAuthenticationRepository extends RefreshableRepository<
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<PasswordAuthentication> findBySystem(final System system);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<PasswordAuthentication> findAllBySystemIn(final List<System> systems);
 }

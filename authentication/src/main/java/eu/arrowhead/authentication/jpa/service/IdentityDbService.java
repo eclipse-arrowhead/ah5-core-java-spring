@@ -68,14 +68,14 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<System> getSystemsByNamesBeforeUpdate(final List<String> names) {
+	public List<System> getSystemsByNames(final List<String> names, final boolean strict) {
 		logger.debug("getSystemsByNamesBeforeUpdate started...");
 		Assert.isTrue(!Utilities.isEmpty(names), "names is missing or empty");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "names contains null or empty element");
 
 		try {
 			final List<System> result = systemRepository.findAllByNameIn(names);
-			if (result.size() != names.size()) {
+			if (strict && result.size() != names.size()) {
 				final List<String> missing = new ArrayList<>(names);
 				missing.removeAll(result.stream().map(s -> s.getName()).toList());
 
@@ -170,60 +170,75 @@ public class IdentityDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<System> updateIdentifiableSystemsInBulk(final String requester, final List<NormalizedIdentityMgmtRequestDTO> identities) {
+	public List<System> updateIdentifiableSystemsInBulk(final IAuthenticationMethod authenticationMethod, final String requester, final List<NormalizedIdentityMgmtRequestDTO> identities) {
 		logger.debug("updateIdentifiableSystemsInBulk started...");
+		Assert.notNull(authenticationMethod, "Authentication method is missing");
 		Assert.isTrue(!Utilities.isEmpty(requester), "Requester is missing or empty");
 		Assert.isTrue(!Utilities.isEmpty(identities), "Identities is missing or empty");
 		Assert.isTrue(!Utilities.containsNull(identities), "Identities contains null");
 
-		// TODO: continue from here
+		final List<IdentityData> identityList;
+		try {
+			// collect the system entities from the database
+			identityList = getSystemEntitiesForUpdate(authenticationMethod, identities);
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
 
-		return null;
+		// updating authentication method specific credentials
+		final List<String> extras = authenticationMethod.dbService().updateIdentifiableSystemsInBulk(identityList);
 
-		//		List<IdentityData> identityList;
-		//		List<System> systems;
-		//		try {
-		//			checkSystemNamesNotExist(dto.identities()); // checks if none of the system names exist (system name has to be unique)
-		//
-		//			// writing the system entities to the database
-		//			identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
-		//			systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
-		//			identityList = updateSystemEntitiesInIdentityList(identityList, systems);
-		//		} catch (final InvalidParameterException ex) {
-		//			throw ex;
-		//		} catch (final Exception ex) {
-		//			logger.error(ex.getMessage());
-		//			logger.debug(ex);
-		//			throw new InternalServerError("Database operation error");
-		//		}
-		//
-		//		// storing authentication method specific credentials
-		//		final IAuthenticationMethod method = methods.method(dto.authenticationMethod());
-		//		Assert.notNull(method, "Authentication method is unsupported");
-		//
-		//		final List<String> extras = method.dbService().createIdentifiableSystemsInBulk(identityList);
-		//
-		//		// handling the extra fields
-		//		if (extras != null) {
-		//			// check if extras list size is correct
-		//			if (extras.size() != identityList.size()) {
-		//				// something is not right => roll back everything
-		//				logger.error("Extra list's size is incorrect.");
-		//				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
-		//				throw new InternalServerError("Database operation error");
-		//			}
-		//
-		//			try {
-		//				systems = systemRepository.saveAllAndFlush(updateSystemListWithExtras(systems, extras));
-		//			} catch (final Exception ex) {
-		//				logger.error(ex.getMessage());
-		//				logger.debug(ex);
-		//				method.dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
-		//				throw new InternalServerError("Database operation error");
-		//			}
-		//		}
-		//
-		//		return systems;
+		// checking the extra fields
+		if (extras != null) {
+			// check if extras list size is correct
+			if (extras.size() != identityList.size()) {
+				// something is not right => roll back everything
+				logger.error("Extra list's size is incorrect.");
+				authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
+				throw new InternalServerError("Database operation error");
+			}
+		}
+
+		// updating the authentication method independent fields
+		try {
+			List<System> systems = new ArrayList<>(identityList.size());
+			for (int i = 0; i < identityList.size(); ++i) {
+				final System system = identityList.get(i).system();
+				system.setUpdatedBy(requester);
+				system.setSysop(identityList.get(i).sysop());
+				if (extras != null) {
+					system.setExtra(extras.get(i));
+				}
+				systems.add(system);
+			}
+
+			systems = systemRepository.saveAllAndFlush(systems);
+			authenticationMethod.dbService().commitUpdateIdentifiableSystemsInBulk(identityList);
+
+			return systems;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void removeIdentifiableSystemsInBulk(final IAuthenticationMethod authenticationMethod, final List<String> names) {
+		logger.debug("removeIdentifiableSystemsInBulk started...");
+		Assert.notNull(authenticationMethod, "Authentication method is missing");
+		Assert.isTrue(!Utilities.isEmpty(names), "Names is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(names), "Names contains null");
+
+		final List<System> systems = getSystemsByNames(names, false);
+		// TODO authentication method specific remove
+		// TODO systems remove (commit or rollback authentication method specific part)
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -334,7 +349,8 @@ public class IdentityDbService {
 				.stream()
 				.map(c -> new IdentityData(
 						new System(c.systemName(), method.type(), c.sysop(), requester),
-						c.credentials()))
+						c.credentials(),
+						c.sysop()))
 				.collect(Collectors.toList());
 	}
 
@@ -346,7 +362,7 @@ public class IdentityDbService {
 
 		final List<IdentityData> result = new ArrayList<>(identityList.size());
 		for (int i = 0; i < identityList.size(); ++i) {
-			result.add(new IdentityData(systems.get(i), identityList.get(i).credentials()));
+			result.add(new IdentityData(systems.get(i), identityList.get(i).credentials(), identityList.get(i).sysop()));
 		}
 
 		return result;
@@ -366,5 +382,38 @@ public class IdentityDbService {
 		}
 
 		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<IdentityData> getSystemEntitiesForUpdate(final IAuthenticationMethod method, final List<NormalizedIdentityMgmtRequestDTO> identities) {
+		logger.debug("getSystemEntitiesForUpdate started");
+
+		// get the systems and also check again (now in a transaction) that all systems are in the database
+		final List<System> systems = getSystemsByNames(identities.stream().map(id -> id.systemName()).toList(), true);
+
+		// check again that authentication method is still match
+		final Optional<System> problematicSystem = systems.stream().filter(s -> s.getAuthenticationMethod() != method.type()).findFirst();
+		if (problematicSystem.isPresent()) {
+			throw new InvalidParameterException("Bulk updating systems with different authentication method is not supported");
+		}
+
+		return identities
+				.stream()
+				.map(c -> new IdentityData(
+						findSystemInList(systems, c.systemName()),
+						c.credentials(),
+						c.sysop()))
+				.collect(Collectors.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private System findSystemInList(final List<System> systems, final String systemName) {
+		logger.debug("findSystemInList started");
+
+		return systems
+				.stream()
+				.filter(sys -> systemName.equals(sys.getName()))
+				.findFirst()
+				.orElse(null); // should never happen
 	}
 }

@@ -6,5 +6,6 @@ import eu.arrowhead.authentication.jpa.entity.System;
 
 public record IdentityData(
 		System system,
-		Map<String, String> credentials) {
+		Map<String, String> credentials,
+		boolean sysop) {
 }

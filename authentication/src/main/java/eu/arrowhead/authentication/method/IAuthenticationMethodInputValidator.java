@@ -13,5 +13,5 @@ public interface IAuthenticationMethodInputValidator {
 	//-------------------------------------------------------------------------------------------------
 	public default void validateCredentials(final Map<String, String> credentials) throws InvalidParameterException, InternalServerError {
 		// intentionally do nothing
-	};
+	}
 }

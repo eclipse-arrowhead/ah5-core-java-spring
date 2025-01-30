@@ -13,11 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.authentication.jpa.entity.PasswordAuthentication;
+import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.repository.PasswordAuthenticationRepository;
 import eu.arrowhead.authentication.method.IAuthenticationMethodDbService;
 import eu.arrowhead.authentication.service.dto.IdentityData;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.ExternalServerError;
 import eu.arrowhead.common.exception.InternalServerError;
 
 @Service
@@ -56,6 +58,28 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
+	public List<String> updateIdentifiableSystemsInBulk(final List<IdentityData> identities) throws InternalServerError, ExternalServerError {
+		logger.debug("PasswordAuthenticationMethodDbService.updateIdentifiableSystemsInBulk started...");
+		Assert.notNull(identities, "Identities list is missing");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null value");
+
+		try {
+			final List<PasswordAuthentication> entities = paRepository.findAllBySystemIn(identities.stream().map(id -> id.system()).toList());
+			updateEntities(entities, identities);
+			paRepository.saveAllAndFlush(entities);
+
+			// intentionally
+			return null;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
 	//=================================================================================================
 	// assistant methods
 
@@ -76,5 +100,36 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 		}
 
 		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void updateEntities(final List<PasswordAuthentication> entities, final List<IdentityData> identities) {
+		logger.debug("PasswordAuthenticationMethodDbService.updateEntities started...");
+
+		for (final IdentityData identityData : identities) {
+			Assert.notNull(identityData.system(), "system is null");
+			Assert.notNull(identityData.credentials(), "credentials is null");
+			Assert.isTrue(!Utilities.isEmpty(identityData.credentials().get(PasswordAuthenticationMethod.KEY_PASSWORD)), "password field is missing or empty");
+
+			final PasswordAuthentication relatedEntity = findEntityInList(entities, identityData.system());
+			if (relatedEntity == null) {
+				// should not happen
+				throw new InternalServerError("Credentials for system " + identityData.system().getName() + " not found.");
+			}
+
+			final String encodedPassword = encoder.encode(identityData.credentials().get(PasswordAuthenticationMethod.KEY_PASSWORD));
+			relatedEntity.setPassword(encodedPassword);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private PasswordAuthentication findEntityInList(final List<PasswordAuthentication> entities, final System system) {
+		logger.debug("PasswordAuthenticationMethodDbService.findEntityInList started...");
+
+		return entities
+				.stream()
+				.filter(e -> e.getSystem().equals(system))
+				.findFirst()
+				.orElse(null);
 	}
 }

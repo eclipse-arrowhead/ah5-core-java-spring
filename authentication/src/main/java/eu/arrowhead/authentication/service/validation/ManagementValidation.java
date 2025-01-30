@@ -150,6 +150,19 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveIdentities(final List<String> originalNames, final String origin) {
+		logger.debug("validateRemoveSystems started");
+
+		if (Utilities.isEmpty(originalNames)) {
+			throw new InvalidParameterException("Identifiable system name list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(originalNames)) {
+			throw new InvalidParameterException("Identifiable system name list contains null or empty element", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -203,6 +216,15 @@ public class ManagementValidation {
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveIdentities(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeRemoveIdentities started...");
+
+		validateRemoveIdentities(names, origin);
+
+		return normalizer.normalizeRemoveIdentifiableSystemNames(names);
 	}
 
 	//=================================================================================================

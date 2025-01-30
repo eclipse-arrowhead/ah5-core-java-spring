@@ -1,6 +1,5 @@
 package eu.arrowhead.authentication.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,7 +41,7 @@ public class ManagementService {
 
 	@Autowired
 	private DTOConverter converter;
-	
+
 	@Autowired
 	private AuthenticationMethods methods;
 
@@ -78,30 +77,30 @@ public class ManagementService {
 		// authentication method independent steps
 		final String normalizedRequester = validator.validateAndNormalizeRequester(requesterName, origin);
 		List<NormalizedIdentityMgmtRequestDTO> normalizedIdentities = validator.validateAndNormalizeUpdateIdentityListPhase1(dto, origin);
-		
+
 		// calculate the authentication method
 		final IAuthenticationMethod authenticationMethod;
 		try {
 			// finding related systems
-			final List<System> systems = dbService.getSystemsByNamesBeforeUpdate(normalizedIdentities.stream().map(id -> id.systemName()).toList());
-			
+			final List<System> systems = dbService.getSystemsByNames(normalizedIdentities.stream().map(id -> id.systemName()).toList(), true);
+
 			// all authentication methods have to be the same in related systems
 			if (systems.stream().map(s -> s.getAuthenticationMethod()).collect(Collectors.toSet()).size() > 1) {
 				throw new InvalidParameterException("Bulk updating systems with different authentication method is not supported");
 			}
-			
+
 			authenticationMethod = getAuthenticationMethod(systems.getFirst());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
-		
+
 		// authentication method dependent steps
 		normalizedIdentities = validator.validateAndNormalizeUpdateIdentityListPhase2(authenticationMethod, normalizedIdentities, origin);
 
 		try {
-			final List<System> systems = dbService.updateIdentifiableSystemsInBulk(normalizedRequester, normalizedIdentities);
+			final List<System> systems = dbService.updateIdentifiableSystemsInBulk(authenticationMethod, normalizedRequester, normalizedIdentities);
 
 			return converter.convertIdentifiableSystemListToDTO(systems);
 		} catch (final InvalidParameterException ex) {
@@ -112,19 +111,50 @@ public class ManagementService {
 			throw new ExternalServerError(ex.getMessage(), origin);
 		}
 	}
-	
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeIdentitiesOperation(final List<String> names, final String origin) {
+		logger.debug("removeIdentitiesOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalizedNames = validator.validateAndNormalizeRemoveIdentities(names, origin);
+
+		try {
+			// finding related systems
+			final List<System> systems = dbService.getSystemsByNames(names, false);
+
+			if (Utilities.isEmpty(systems)) {
+				// nothing to do
+				return;
+			}
+
+			// all authentication methods have to be the same in related systems
+			if (systems.stream().map(s -> s.getAuthenticationMethod()).collect(Collectors.toSet()).size() > 1) {
+				throw new InvalidParameterException("Bulk removing systems with different authentication method is not supported");
+			}
+
+			final IAuthenticationMethod authenticationMethod = getAuthenticationMethod(systems.getFirst());
+
+			dbService.removeIdentifiableSystemsInBulk(authenticationMethod, normalizedNames);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		} catch (final ExternalServerError ex) {
+			throw new ExternalServerError(ex.getMessage(), origin);
+		}
+	}
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
 	private IAuthenticationMethod getAuthenticationMethod(final System aSystem) {
 		logger.debug("getAuthenticationMethod started...");
-		
+
 		final IAuthenticationMethod method = methods.method(aSystem.getAuthenticationMethod());
 		if (method == null) {
 			throw new InvalidParameterException("Authentication method is unsupported: " + aSystem.getAuthenticationMethod());
 		}
-		
+
 		return method;
 	}
 }

@@ -105,6 +105,16 @@ public class ManagementNormalization {
 		return result;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public List<String> normalizeRemoveIdentifiableSystemNames(final List<String> originalNames) {
+		logger.debug("normalizeRemoveIdentifiableSystemNames started");
+		Assert.notNull(originalNames, "name list is null");
+
+		return originalNames.stream()
+				.map(n -> nameNormalizer.normalize(n))
+				.toList();
+	}
+
 	//=================================================================================================
 	// assistant methods
 

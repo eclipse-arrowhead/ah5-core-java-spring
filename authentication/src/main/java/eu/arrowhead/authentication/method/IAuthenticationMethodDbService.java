@@ -20,5 +20,25 @@ public interface IAuthenticationMethodDbService {
 	//-------------------------------------------------------------------------------------------------
 	public default void rollbackCreateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
 		// intentionally do nothing
-	};
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	// If the method implementation wants to change something in the System entities' extra field it can use the return value list,
+	// but in this case the return list must contain the extra fields of all systems.
+	// The return list must use the same ordering than the input.
+	// The return list can be null if extra field is not used
+	public List<String> updateIdentifiableSystemsInBulk(final List<IdentityData> identities) throws InternalServerError, ExternalServerError;
+
+	//-------------------------------------------------------------------------------------------------
+	// This method has to roll back the credentials to the old ones. To do this, the implementation may have to store the old credentials
+	// temporarily.
+	public default void rollbackUpdateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
+		// intentionally do nothing
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	// In this method the implementation can forget the related temporarily stored old credentials
+	public default void commitUpdateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
+		// intentionally do nothing
+	}
 }
