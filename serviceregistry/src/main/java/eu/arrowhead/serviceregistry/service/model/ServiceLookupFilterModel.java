@@ -39,25 +39,32 @@ public class ServiceLookupFilterModel {
 		if (!Utilities.isEmpty(dto.instanceIds())) {
 		    instanceIds.addAll(dto.instanceIds());
 		}
+		
 		if (!Utilities.isEmpty(dto.providerNames())) {
 			providerNames.addAll(dto.providerNames());
 		}
+		
 		if (!Utilities.isEmpty(dto.serviceDefinitionNames())) {
 			serviceDefinitionNames.addAll(dto.serviceDefinitionNames());
 		}
+		
 		if (!Utilities.isEmpty(dto.versions())) {
 			versions.addAll(dto.versions());
 		}
+		
 		alivesAt = Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
 		if (!Utilities.isEmpty(dto.metadataRequirementsList())) {
 			metadataRequirementsList.addAll(dto.metadataRequirementsList());
 		}
+		
 		if (!Utilities.isEmpty(dto.interfaceTemplateNames())) {
 			interfaceTemplateNames.addAll(dto.interfaceTemplateNames());
 		}
+		
 		if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList())) {
 			interfacePropertyRequirementsList.addAll(dto.interfacePropertyRequirementsList());
 		}
+		
 		if (!Utilities.isEmpty(dto.policies())) {
 			policies.addAll(dto.policies().stream().map(p -> ServiceInterfacePolicy.valueOf(p)).collect(Collectors.toSet()));
 		}

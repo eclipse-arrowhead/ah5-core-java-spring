@@ -12,13 +12,15 @@ public class VersionNormalizer {
 	//=================================================================================================
 	// members
 
-	private final Logger logger = LogManager.getLogger(this.getClass());
 	public static final String DEFAULT_MAJOR = "1";
 	public static final String DEFAULT_MINOR = "0";
 	public static final String DEFAULT_PATCH = "0";
 	public static final String DOT = ".";
 	public static final String DOT_REGEX = "\\.";
 	public static final String DEFAULT_VERSION = DEFAULT_MAJOR + DOT + DEFAULT_MINOR + DOT + DEFAULT_PATCH;
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
 	//=================================================================================================
 	// methods
 
@@ -37,9 +39,11 @@ public class VersionNormalizer {
 		if (numberOfChunks == 1) {
 			return chunks[0] + DOT + DEFAULT_MINOR + DOT + DEFAULT_PATCH;
 		}
+
 		if (numberOfChunks == 2) {
-			 return chunks[0] + DOT + chunks[1] + DOT + DEFAULT_PATCH;
+			return chunks[0] + DOT + chunks[1] + DOT + DEFAULT_PATCH;
 		}
+
 		return candidate;
 	}
 }

@@ -9,5 +9,4 @@ public record NormalizedDeviceRequestDTO(
 		String name,
 		Map<String, Object> metadata,
 		List<AddressDTO> addresses) {
-
 }

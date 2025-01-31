@@ -47,7 +47,13 @@ public class ServiceInstance extends ArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public ServiceInstance(final String serviceInstanceId, final System system, final ServiceDefinition serviceDefinition, final String version, final ZonedDateTime expiresAt, final String metadata) {
+	public ServiceInstance(
+			final String serviceInstanceId,
+			final System system,
+			final ServiceDefinition serviceDefinition,
+			final String version,
+			final ZonedDateTime expiresAt,
+			final String metadata) {
 		this.serviceInstanceId = serviceInstanceId;
 		this.system = system;
 		this.serviceDefinition = serviceDefinition;
@@ -125,5 +131,4 @@ public class ServiceInstance extends ArrowheadEntity {
 	public void setMetadata(final String metadata) {
 		this.metadata = metadata;
 	}
-
 }

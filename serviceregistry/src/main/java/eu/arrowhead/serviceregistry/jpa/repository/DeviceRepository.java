@@ -23,5 +23,5 @@ public interface DeviceRepository extends RefreshableRepository<Device, Long> {
 	public List<Device> findAllByNameIn(final List<String> names);
 
 	//-------------------------------------------------------------------------------------------------
-	public Page<Device> findAllByNameIn(final List<String> names, Pageable pageble);
+	public Page<Device> findAllByNameIn(final List<String> names, final Pageable pageble);
 }

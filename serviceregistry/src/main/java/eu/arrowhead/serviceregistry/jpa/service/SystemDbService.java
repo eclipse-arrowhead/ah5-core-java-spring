@@ -195,7 +195,6 @@ public class SystemDbService {
 			final List<System> entries = systemRepo.findAllByNameIn(names);
 			systemRepo.deleteAll(entries);
 			systemRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -208,38 +207,42 @@ public class SystemDbService {
 		logger.debug("getByName started");
 		Assert.isTrue(!Utilities.isEmpty(name), "system name is missing or empty");
 
-		synchronized (LOCK) {
+		try {
+			synchronized (LOCK) {
+				// system
+				final Optional<System> system = systemRepo.findByName(name);
+				if (system.isEmpty()) {
+					return Optional.empty();
+				}
 
-			// system
-			final Optional<System> system = systemRepo.findByName(name);
-			if (system.isEmpty()) {
-				return Optional.empty();
+				// system addresses
+				final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystem(system.get());
+
+				// device
+				final Optional<DeviceSystemConnector> deviceSystemConnection = deviceSystemConnectorRepo.findBySystem(system.get());
+				final Device device = deviceSystemConnection.isEmpty() ? null : deviceSystemConnection.get().getDevice();
+
+				// device addresses
+				final List<DeviceAddress> deviceAddresses = device == null ? List.of() : deviceAddressRepo.findAllByDevice(device);
+
+				return Optional.of(Triple.of(
+						system.get(),
+						systemAddresses,
+						device == null ? null : Map.entry(device, deviceAddresses)));
 			}
-
-			// system addresses
-			final List<SystemAddress> systemAddresses = systemAddressRepo.findAllBySystem(system.get());
-
-			// device
-			final Optional<DeviceSystemConnector> deviceSystemConnection = deviceSystemConnectorRepo.findBySystem(system.get());
-			final Device device = deviceSystemConnection.isEmpty() ? null : deviceSystemConnection.get().getDevice();
-
-			// device addresses
-			final List<DeviceAddress> deviceAddresses = device == null ? List.of() : deviceAddressRepo.findAllByDevice(device);
-
-			return Optional.of(Triple.of(
-					system.get(),
-					systemAddresses,
-					device == null ? null : Map.entry(device, deviceAddresses)));
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByNameList(final List<String> names) {
-		logger.debug("getByName started");
+		logger.debug("getByNameList started");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "system name list contains null or empty");
 
-		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>(names.size());
 
 		for (final String name : names) {
 			final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> optionalTriple = getByName(name);
@@ -253,8 +256,13 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getPageByFilters(
-			final PageRequest pagination, final List<String> systemNames, final List<String> addresses, final AddressType addressType,
-			final List<MetadataRequirementDTO> metadataRequirementList, final List<String> versions, final List<String> deviceNames) {
+			final PageRequest pagination,
+			final List<String> systemNames,
+			final List<String> addresses,
+			final AddressType addressType,
+			final List<MetadataRequirementDTO> metadataRequirementList,
+			final List<String> versions,
+			final List<String> deviceNames) {
 		logger.debug("getPageByFilters started");
 		Assert.notNull(pagination, "page is null");
 
@@ -262,24 +270,21 @@ public class SystemDbService {
 			try {
 				Page<System> systemEntries;
 
-				// without filter
 				if (Utilities.isEmpty(systemNames)
 						&& Utilities.isEmpty(addresses)
 						&& addressType == null
 						&& Utilities.isEmpty(metadataRequirementList)
 						&& Utilities.isEmpty(versions)
 						&& Utilities.isEmpty(deviceNames)) {
-
+					// without filter
 					systemEntries = systemRepo.findAll(pagination);
-					// with filter
 				} else {
+					// with filter
 
 					final List<String> matchings = new ArrayList<>();
-
 					final List<System> toFilter = Utilities.isEmpty(systemNames) ? systemRepo.findAll() : systemRepo.findAllByNameIn(systemNames);
 
 					for (final System system : toFilter) {
-
 						// address type
 						if (addressType != null && Utilities.isEmpty(systemAddressRepo.findAllBySystemAndAddressType(system, addressType))) {
 							continue;
@@ -323,6 +328,7 @@ public class SystemDbService {
 								continue;
 							}
 						}
+
 						matchings.add(system.getName());
 					}
 
@@ -341,7 +347,6 @@ public class SystemDbService {
 						result,
 						pagination,
 						systemEntries.getTotalElements());
-
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
 				logger.debug(ex);
@@ -361,11 +366,11 @@ public class SystemDbService {
 			if (optional.isPresent()) {
 				systemRepo.delete(optional.get());
 				systemRepo.flush();
+
 				return true;
 			}
 
 			return false;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -443,6 +448,7 @@ public class SystemDbService {
 				notExistingDeviceNames.add(candidateDeviceName);
 			}
 		}
+
 		if (!notExistingDeviceNames.isEmpty()) {
 			throw new InvalidParameterException("Device names do not exist: " + notExistingDeviceNames.stream()
 					.collect(Collectors.joining(", ")));
@@ -456,7 +462,6 @@ public class SystemDbService {
 		return candidates.stream()
 				.map(c -> new System(c.name(), Utilities.toJson(c.metadata()), c.version()))
 				.collect(Collectors.toList());
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -472,7 +477,6 @@ public class SystemDbService {
 					.findFirst()
 					.get();
 			if (!Utilities.isEmpty(candidate.addresses())) { // specified addresses
-
 				final List<SystemAddress> systemAddresses = candidate.addresses().stream()
 						.map(a -> new SystemAddress(
 								system,
@@ -516,14 +520,15 @@ public class SystemDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	private List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> createTriplets(
-			final List<System> systems, final List<SystemAddress> addresses, final List<DeviceSystemConnector> deviceConnections) {
+			final List<System> systems,
+			final List<SystemAddress> addresses,
+			final List<DeviceSystemConnector> deviceConnections) {
 		logger.debug("createTriples started");
 		Assert.notNull(systems, "systems are null");
 
-		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>();
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>(systems.size());
 
 		for (final System system : systems) {
-
 			// corresponding addresses
 			final List<SystemAddress> systemAddresses = addresses
 					.stream()

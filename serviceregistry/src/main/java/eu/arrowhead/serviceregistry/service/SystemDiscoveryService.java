@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -103,9 +104,9 @@ public class SystemDiscoveryService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SystemLookupRequestDTO normalized = validator.validateAndNormalizeLookupSystem(dto, origin);
+		final PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD);
 
 		try {
-			final PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD);
 			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> page = dbService.getPageByFilters(
 					pageRequest,
 					normalized.systemNames(),
@@ -117,7 +118,7 @@ public class SystemDiscoveryService {
 
 			final SystemListResponseDTO result = dtoConverter.convertSystemTripletPageToDTO(page);
 
-			//we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
+			// we do not provide device information (except for the name), if the verbose mode is not enabled, or the user set it false in the query param
 			if (!verbose || !sysInfo.isDiscoveryVerbose()) {
 				return dtoConverter.convertSystemListResponseDtoToTerse(result);
 			}
@@ -154,8 +155,9 @@ public class SystemDiscoveryService {
 		final System existingSystem = existing.getLeft();
 
 		// metadata
-		if (!Utilities.fromJson(existingSystem.getMetadata(), new TypeReference<Map<String, Object>>() {
-		}).equals(dto.metadata())) {
+		final Map<String, Object> existingMetadata = Utilities.fromJson(existingSystem.getMetadata(), new TypeReference<Map<String, Object>>() {
+		});
+		if (!Objects.equals(existingMetadata, dto.metadata())) {
 			throw new InvalidParameterException("System with name: " + existingSystem.getName() + " already exists, but provided metadata is not matching");
 		}
 

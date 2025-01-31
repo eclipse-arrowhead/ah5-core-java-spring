@@ -58,10 +58,15 @@ public class DeviceDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<Entry<Device, List<DeviceAddress>>> getByFilters(final List<String> names, final List<String> addresses, final AddressType addressType, final List<MetadataRequirementDTO> metadataRequirementList) {
+	public List<Entry<Device, List<DeviceAddress>>> getByFilters(
+			final List<String> names,
+			final List<String> addresses,
+			final AddressType addressType,
+			final List<MetadataRequirementDTO> metadataRequirementList) {
 		logger.debug("getByFilters started");
 
 		final Page<Entry<Device, List<DeviceAddress>>> page = getPage(PageRequest.of(0, Integer.MAX_VALUE), names, addresses, addressType, metadataRequirementList);
+
 		return page.toList();
 	}
 
@@ -71,7 +76,12 @@ public class DeviceDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Page<Entry<Device, List<DeviceAddress>>> getPage(final PageRequest pagination, final List<String> names, final List<String> addresses, final AddressType addressType, final List<MetadataRequirementDTO> metadataRequirementList) {
+	public Page<Entry<Device, List<DeviceAddress>>> getPage(
+			final PageRequest pagination,
+			final List<String> names,
+			final List<String> addresses,
+			final AddressType addressType,
+			final List<MetadataRequirementDTO> metadataRequirementList) {
 		logger.debug("getPage started");
 		Assert.notNull(pagination, "page is null");
 
@@ -93,7 +103,6 @@ public class DeviceDbService {
 				synchronized (LOCK) {
 					final List<Device> toFilter = Utilities.isEmpty(names) ? deviceRepo.findAll() : deviceRepo.findAllByNameIn(names);
 					for (final Device device : toFilter) {
-
 						if (addressType != null && Utilities.isEmpty(addressRepo.findAllByDeviceAndAddressType(device, addressType))) {
 							continue;
 						}
@@ -103,7 +112,6 @@ public class DeviceDbService {
 						}
 
 						if (!Utilities.isEmpty(metadataRequirementList)) {
-
 							final Map<String, Object> metadata = Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
 							});
 
@@ -121,6 +129,7 @@ public class DeviceDbService {
 
 						matchings.add(device.getName());
 					}
+
 					deviceEntries = deviceRepo.findAllByNameIn(matchings, pagination);
 				}
 			}
@@ -134,7 +143,6 @@ public class DeviceDbService {
 			}
 
 			return new PageImpl<Entry<Device, List<DeviceAddress>>>(resultList, pagination, deviceEntries.getTotalElements());
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -154,7 +162,6 @@ public class DeviceDbService {
 			}
 
 			return Optional.of(Map.entry(deviceOpt.get(), addressRepo.findAllByDevice(deviceOpt.get())));
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -203,6 +210,7 @@ public class DeviceDbService {
 					deviceAddressEntities.addAll(addresses);
 				}
 			}
+
 			addressRepo.saveAllAndFlush(deviceAddressEntities);
 
 			final List<Entry<Device, List<DeviceAddress>>> results = new ArrayList<>(deviceEntities.size());
@@ -228,7 +236,6 @@ public class DeviceDbService {
 		Assert.isTrue(!Utilities.isEmpty(candidate.name()), "device candidate name is empty");
 
 		try {
-
 			final Optional<Device> existingOpt = deviceRepo.findByName(candidate.name());
 			if (existingOpt.isPresent()) {
 				throw new InvalidParameterException("Device with name '" + candidate.name() + "' already exists");
@@ -246,10 +253,8 @@ public class DeviceDbService {
 			}
 
 			return result;
-
 		} catch (final InvalidParameterException ex) {
 			throw ex;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -290,6 +295,7 @@ public class DeviceDbService {
 						.metadata();
 				device.setMetadata(Utilities.toJson(metadata));
 			}
+
 			deviceEntries = deviceRepo.saveAllAndFlush(deviceEntries);
 
 			addressRepo.deleteAllByDeviceIn(deviceEntries);
@@ -306,6 +312,7 @@ public class DeviceDbService {
 							.collect(Collectors.toList()));
 				}
 			}
+
 			addressRepo.saveAllAndFlush(newAddresses);
 
 			final List<Entry<Device, List<DeviceAddress>>> results = new ArrayList<>(deviceEntries.size());
@@ -365,6 +372,7 @@ public class DeviceDbService {
 
 				deviceRepo.delete(optional.get());
 				deviceRepo.flush();
+
 				return true;
 			}
 

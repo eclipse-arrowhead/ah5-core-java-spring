@@ -9,7 +9,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,14 +19,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
-import eu.arrowhead.common.service.LogService;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
-import eu.arrowhead.dto.KeyValuesDTO;
-import eu.arrowhead.dto.LogEntryListResponseDTO;
-import eu.arrowhead.dto.LogRequestDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
@@ -42,7 +37,6 @@ import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
-import eu.arrowhead.serviceregistry.service.ConfigService;
 import eu.arrowhead.serviceregistry.service.ManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -63,65 +57,13 @@ public class ManagementAPI {
 	@Autowired
 	private ManagementService mgmtService;
 
-	@Autowired
-	private LogService logService;
-
-	@Autowired
-	private ConfigService configService;
-
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
-	// LOG
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the log entries")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = LogEntryListResponseDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
-	})
-	@PostMapping(path = Constants.HTTP_API_OP_LOGS_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody LogEntryListResponseDTO getLogEntries(@RequestBody(required = false) final LogRequestDTO dto) {
-		logger.debug("getLogEntries started...");
-
-		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
-		return logService.getLogEntries(dto, origin);
-	}
-
-	// CONFIG
-
-	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Return a list of configurations")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = KeyValuesDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
-	})
-	@GetMapping(path = ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
-	@ResponseBody public KeyValuesDTO getConfig(final @RequestParam(required = false) List<String> keys) {
-		logger.debug("getConfig started ...");
-
-		final String origin = HttpMethod.GET.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH;
-		return configService.getConfig(keys, origin);
-	}
-
 	// DEVICES
 
 	//-------------------------------------------------------------------------------------------------
@@ -143,6 +85,7 @@ public class ManagementAPI {
 		logger.debug("queryDevices started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_QUERY_PATH;
+
 		return mgmtService.queryDevices(dto, origin);
 	}
 
@@ -166,6 +109,7 @@ public class ManagementAPI {
 		logger.debug("createDevices started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+
 		return mgmtService.createDevices(dto, origin);
 	}
 
@@ -188,6 +132,7 @@ public class ManagementAPI {
 		logger.debug("updateDevices started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+
 		return mgmtService.updateDevices(dto, origin);
 	}
 
@@ -211,9 +156,11 @@ public class ManagementAPI {
 		logger.debug("removeDevices started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_DEVICE_PATH;
+
 		mgmtService.removeDevices(names, origin);
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	// SYSTEMS
 
 	//-------------------------------------------------------------------------------------------------
@@ -232,11 +179,7 @@ public class ManagementAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO querySystems(@RequestBody(required = false) final SystemQueryRequestDTO dto,
-			@Parameter(
-					name =  "verbose",
-					description  = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
-					example = "true")
-			@RequestParam final boolean verbose) {
+			@Parameter(name = "verbose", description = "Set true if you want the response to contain device details.", example = "true") @RequestParam final boolean verbose) {
 		logger.debug("querySystems started, verbose = {}", verbose);
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH;
@@ -264,6 +207,7 @@ public class ManagementAPI {
 		logger.debug("createSystems started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+
 		return mgmtService.createSystems(dto, origin);
 	}
 
@@ -286,6 +230,7 @@ public class ManagementAPI {
 		logger.debug("updateSystems started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+
 		return mgmtService.updateSystems(dto, origin);
 	}
 
@@ -307,9 +252,11 @@ public class ManagementAPI {
 		logger.debug("removeSystems started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_PATH;
+
 		mgmtService.removeSystems(names, origin);
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	// SERVICES DEFINITIONS
 
 	//-------------------------------------------------------------------------------------------------
@@ -332,9 +279,9 @@ public class ManagementAPI {
 		logger.debug("getServiceDefinitions started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+
 		return mgmtService.getServiceDefinitions(dto, origin);
 	}
-
 
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created service definition entries")
@@ -356,6 +303,7 @@ public class ManagementAPI {
 		logger.debug("createServiceDefinitions started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+
 		return mgmtService.createServiceDefinitions(dto, origin);
 	}
 
@@ -377,9 +325,11 @@ public class ManagementAPI {
 		logger.debug("removeServiceDefinitions started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_DEFINITION_PATH;
+
 		mgmtService.removeServiceDefinitions(names, origin);
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	// SERVICE INSTANCES
 
 	//-------------------------------------------------------------------------------------------------
@@ -399,13 +349,11 @@ public class ManagementAPI {
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInstanceListResponseDTO queryServiceInstances(
 			@RequestBody final ServiceInstanceQueryRequestDTO dto,
-			@Parameter(
-					name =  "verbose",
-					description  = "Set true if you want the response to contain the system and device details.",
-					example = "true")
-			@RequestParam final boolean verbose) {
+			@Parameter(name = "verbose", description = "Set true if you want the response to contain the system and device details.", example = "true") @RequestParam final boolean verbose) {
 		logger.debug("queryServiceInstances started");
+
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH;
+
 		return mgmtService.queryServiceInstances(dto, verbose, origin);
 	}
 
@@ -429,6 +377,7 @@ public class ManagementAPI {
 		logger.debug("createServiceInstances started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
+
 		return mgmtService.createServiceInstances(dto, origin);
 	}
 
@@ -451,7 +400,8 @@ public class ManagementAPI {
 		logger.debug("updateServiceInstances started");
 
 		final String origin = HttpMethod.PUT.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
-		return mgmtService.updateServiceInstance(dto, origin);
+
+		return mgmtService.updateServiceInstances(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -472,9 +422,11 @@ public class ManagementAPI {
 		logger.debug("removeServiceInstances started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_PATH;
+
 		mgmtService.removeServiceInstances(serviceInstances, origin);
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	// INTERFACE TEMPLATES
 
 	//-------------------------------------------------------------------------------------------------
@@ -497,6 +449,7 @@ public class ManagementAPI {
 		logger.debug("createInterfaceTemplates started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_PATH;
+
 		return mgmtService.createInterfaceTemplates(dto, origin);
 	}
 
@@ -519,6 +472,7 @@ public class ManagementAPI {
 		logger.debug("queryInterfaceTemplates started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_QUERY_PATH;
+
 		return mgmtService.queryInterfaceTemplates(dto, origin);
 	}
 
@@ -540,6 +494,7 @@ public class ManagementAPI {
 		logger.debug("removeInterfaceTemplates started");
 
 		final String origin = HttpMethod.DELETE.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_INTERFACE_TEMPLATE_PATH;
+
 		mgmtService.removeInterfaceTemplates(names, origin);
 	}
 }
