@@ -26,7 +26,7 @@ public class InterfaceNormalizer {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
-	// members
+	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public ServiceInstanceInterfaceRequestDTO normalizeInterfaceDTO(final ServiceInstanceInterfaceRequestDTO dto) {

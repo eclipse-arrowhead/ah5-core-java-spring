@@ -38,7 +38,7 @@ public class SystemDiscoveryNormalizationTest {
 		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemRequestDTO(null);});
 		
 		// normalize dto
-		SystemRequestDTO toNormalize = new SystemRequestDTO(
+		final SystemRequestDTO toNormalize = new SystemRequestDTO(
 				// name
 				" \tsysTEM-namE \n ",
 				// metadata
@@ -50,7 +50,7 @@ public class SystemDiscoveryNormalizationTest {
 				// device name
 				"\ndevice-nAME\n");
 		
-		NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
+		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
 		
 		assertAll("normalize SystemRequestDTO",
 				// name
@@ -71,11 +71,12 @@ public class SystemDiscoveryNormalizationTest {
 		// dto is null
 		assertDoesNotThrow(() -> normalizator.normalizeSystemLookupRequestDTO(null));
 		
-		// normalize dto
+		
 		final List<MetadataRequirementDTO> metadataRequirements = new ArrayList<>(1);
 		metadataRequirements.add((MetadataRequirementDTO) new MetadataRequirementDTO().put("key1", Map.of("op", "EQUALS", "value", "value1")));
 	
-		SystemLookupRequestDTO toNormalize = new SystemLookupRequestDTO(
+		// normalize dto
+		final SystemLookupRequestDTO toNormalize = new SystemLookupRequestDTO(
 				// names
 				List.of(" system-NAME-1\r\n", " system-NAME-2\r\n"), 
 				// addresses
@@ -89,7 +90,7 @@ public class SystemDiscoveryNormalizationTest {
 				// device names
 				List.of(" device-NAME-1\r\n", " device-NAME-2\r\n"));
 		
-		SystemLookupRequestDTO normalized = normalizator.normalizeSystemLookupRequestDTO(toNormalize);
+		final SystemLookupRequestDTO normalized = normalizator.normalizeSystemLookupRequestDTO(toNormalize);
 		
 		assertAll("normalize SystemLookupRequestDTO",
 				// names
@@ -98,7 +99,7 @@ public class SystemDiscoveryNormalizationTest {
 				() -> assertEquals(List.of("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "2001:0db8:85a3:0000:0000:8a2e:0370:0001"), normalized.addresses()),
 				// address type
 				() -> assertEquals("IPV6", normalized.addressType()),
-				// metadata requirements (should not change)
+				// metadata requirements (should not change during normaization)
 				() -> assertEquals(metadataRequirements, normalized.metadataRequirementList()),
 				// versions
 				() -> assertEquals(List.of("1.0.0", "1.0.0", "1.1.0"), normalized.versions()),
