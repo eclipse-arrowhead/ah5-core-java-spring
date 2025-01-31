@@ -237,8 +237,24 @@ public class IdentityDbService {
 		Assert.isTrue(!Utilities.containsNull(names), "Names contains null");
 
 		final List<System> systems = getSystemsByNames(names, false);
-		// TODO authentication method specific remove
-		// TODO systems remove (commit or rollback authentication method specific part)
+
+		// all authentication methods have to be the same in related systems (check again in a transaction)
+		if (systems.stream().map(s -> s.getAuthenticationMethod()).collect(Collectors.toSet()).size() > 1) {
+			throw new InvalidParameterException("Bulk removing systems with different authentication method is not supported");
+		}
+
+		authenticationMethod.dbService().removeIdentifiableSystemsInBulk(systems);
+
+		try {
+			systemRepository.deleteAllInBatch(systems);
+			systemRepository.flush();
+			authenticationMethod.dbService().commitRemoveIdentifiableSystemsInBulk(systems);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			authenticationMethod.dbService().rollbackRemoveIdentifiableSystemsInBulk(systems);
+			throw new InternalServerError("Database operation error");
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------

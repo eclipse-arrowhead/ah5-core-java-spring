@@ -2,6 +2,7 @@ package eu.arrowhead.authentication.method;
 
 import java.util.List;
 
+import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.service.dto.IdentityData;
 import eu.arrowhead.common.exception.ExternalServerError;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -39,6 +40,22 @@ public interface IAuthenticationMethodDbService {
 	//-------------------------------------------------------------------------------------------------
 	// In this method the implementation can forget the related temporarily stored old credentials
 	public default void commitUpdateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
+		// intentionally do nothing
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeIdentifiableSystemsInBulk(final List<System> systems) throws InternalServerError, ExternalServerError;
+
+	//-------------------------------------------------------------------------------------------------
+	// This method has to roll back the system removals. To do this, the implementation may have to store the system-related data
+	// temporarily.
+	public default void rollbackRemoveIdentifiableSystemsInBulk(final List<System> systems) {
+		// intentionally do nothing
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	// In this method the implementation can forget the related temporarily stored data
+	public default void commitRemoveIdentifiableSystemsInBulk(final List<System> systems) {
 		// intentionally do nothing
 	}
 }

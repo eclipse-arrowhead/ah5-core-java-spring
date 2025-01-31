@@ -15,6 +15,7 @@ import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -24,6 +25,7 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
+import eu.arrowhead.dto.IdentityQueryRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
@@ -163,6 +165,13 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void validateIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
+		logger.debug("validateIdentityQueryRequest started");
+
+		// TODO
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -225,6 +234,17 @@ public class ManagementValidation {
 		validateRemoveIdentities(names, origin);
 
 		return normalizer.normalizeRemoveIdentifiableSystemNames(names);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentityQueryRequestDTO validateAndNormalizeIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeIdentityQueryRequest started...");
+
+		validateIdentityQueryRequest(dto, origin);
+
+		// TODO: cont
+		
+		return null;
 	}
 
 	//=================================================================================================

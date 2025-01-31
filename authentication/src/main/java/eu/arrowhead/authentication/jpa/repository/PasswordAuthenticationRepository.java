@@ -20,4 +20,7 @@ public interface PasswordAuthenticationRepository extends RefreshableRepository<
 
 	//-------------------------------------------------------------------------------------------------
 	public List<PasswordAuthentication> findAllBySystemIn(final List<System> systems);
+
+	//-------------------------------------------------------------------------------------------------
+	public void deleteAllBySystemIn(final List<System> systems);
 }

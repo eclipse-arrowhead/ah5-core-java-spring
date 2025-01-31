@@ -44,6 +44,8 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
 	public List<String> createIdentifiableSystemsInBulk(final List<IdentityData> identities) {
 		logger.debug("PasswordAuthenticationMethodDbService.createIdentifiableSystemsInBulk started...");
+		Assert.notNull(identities, "Identity list is missing");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identity list contains null value");
 
 		try {
 			final List<PasswordAuthentication> entities = createEntities(identities);
@@ -63,8 +65,8 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
 	public List<String> updateIdentifiableSystemsInBulk(final List<IdentityData> identities) throws InternalServerError, ExternalServerError {
 		logger.debug("PasswordAuthenticationMethodDbService.updateIdentifiableSystemsInBulk started...");
-		Assert.notNull(identities, "Identities list is missing");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null value");
+		Assert.notNull(identities, "Identity list is missing");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identity list contains null value");
 
 		try {
 			final List<PasswordAuthentication> entities = paRepository.findAllBySystemIn(identities.stream().map(id -> id.system()).toList());
@@ -73,6 +75,24 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 
 			// intentionally
 			return null;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
+	public void removeIdentifiableSystemsInBulk(final List<System> systems) throws InternalServerError, ExternalServerError {
+		logger.debug("PasswordAuthenticationMethodDbService.removeIdentifiableSystemsInBulk started...");
+		Assert.notNull(systems, "System list is missing");
+		Assert.isTrue(!Utilities.containsNull(systems), "System list contains null value");
+
+		try {
+			paRepository.deleteAllBySystemIn(systems);
+			paRepository.flush();
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

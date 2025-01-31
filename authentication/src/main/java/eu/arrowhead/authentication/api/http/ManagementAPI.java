@@ -26,6 +26,7 @@ import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtResponseDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
+import eu.arrowhead.dto.IdentityQueryRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -126,5 +127,28 @@ public class ManagementAPI {
 		final String origin = HttpMethod.DELETE.name() + " " + AuthenticationConstants.HTTP_API_MANAGEMENT_PATH + AuthenticationConstants.HTTP_API_OP_IDENTITIES_PATH;
 
 		mgmtService.removeIdentitiesOperation(names, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the identifiable systems according to the query request")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = IdentityListMgmtResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = AuthenticationConstants.HTTP_API_OP_IDENTITIES_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody IdentityListMgmtResponseDTO queryIdentities(@RequestBody final IdentityQueryRequestDTO dto) {
+		logger.debug("queryIdentities started");
+
+		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_MANAGEMENT_PATH + AuthenticationConstants.HTTP_API_OP_IDENTITIES_QUERY_PATH;
+
+		return mgmtService.queryIdentitiesOperation(dto, origin);
 	}
 }

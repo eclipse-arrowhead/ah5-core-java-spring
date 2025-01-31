@@ -16,6 +16,7 @@ import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.DTOConverter;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
 import eu.arrowhead.authentication.service.validation.ManagementValidation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ExternalServerError;
@@ -24,6 +25,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtResponseDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
+import eu.arrowhead.dto.IdentityQueryRequestDTO;
 
 @Service
 public class ManagementService {
@@ -134,13 +136,24 @@ public class ManagementService {
 			}
 
 			final IAuthenticationMethod authenticationMethod = getAuthenticationMethod(systems.getFirst());
-
 			dbService.removeIdentifiableSystemsInBulk(authenticationMethod, normalizedNames);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		} catch (final ExternalServerError ex) {
 			throw new ExternalServerError(ex.getMessage(), origin);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public IdentityListMgmtResponseDTO queryIdentitiesOperation(final IdentityQueryRequestDTO dto, final String origin) {
+		logger.debug("queryIdentitiesOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final NormalizedIdentityQueryRequestDTO normalizedRequest = validator.validateAndNormalizeIdentityQueryRequest(dto, origin);
+
+		// TODO:
+		
+		return null;
 	}
 
 	//=================================================================================================
@@ -157,4 +170,5 @@ public class ManagementService {
 
 		return method;
 	}
+
 }
