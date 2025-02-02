@@ -34,6 +34,7 @@ public class InterfaceNormalizerTest {
 	@Test
 	public void normalizeInterfaceDTOTest1() {
 		
+		// create properties for dto
 		final Map<String, Object> properties = 	Map.of(
 				HttpInterfaceModel.PROP_NAME_ACCESS_ADDRESSES, List.of("192.168.56.116"),
 				HttpInterfaceModel.PROP_NAME_ACCESS_PORT, 8080,
@@ -60,7 +61,7 @@ public class InterfaceNormalizerTest {
 				() -> assertEquals("https", normalized.protocol()),
 				// policy
 				() -> assertEquals("CERT_AUTH", normalized.policy()),
-				// properties (should not change during normaization)
+				// properties (should not change, these will be normalized in the interface validator)
 				() -> assertEquals(properties, normalized.properties()));
 		
 		
@@ -68,7 +69,7 @@ public class InterfaceNormalizerTest {
 	
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeInterfaceDTOTest2_CasesOfNull() {
+	public void normalizeInterfaceDTOTest2_NullCases() {
 		// dto is null
 		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizer.normalizeInterfaceDTO(null);});
 		
@@ -103,7 +104,7 @@ public class InterfaceNormalizerTest {
 						// mandatory
 						false,
 						// validator
-						"\n min_max \n",
+						"\n minmax \n",
 						// validator params
 						List.of("192.168.0.0 \n", "192.168.255.255 \n")))
 				);
@@ -116,13 +117,13 @@ public class InterfaceNormalizerTest {
 				// protocol
 				() -> assertEquals("http", normalized.protocol()),
 				// property requirements
-				() -> assertEquals(List.of(new ServiceInterfaceTemplatePropertyDTO("ipAddress", false, "MIN_MAX", List.of("192.168.0.0", "192.168.255.255"))), normalized.propertyRequirements()));
+				() -> assertEquals(List.of(new ServiceInterfaceTemplatePropertyDTO("ipAddress", false, "MINMAX", List.of("192.168.0.0", "192.168.255.255"))), normalized.propertyRequirements()));
 		
 	}
 	
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeTemplateDTOTest2_CasesOfNull() {
+	public void normalizeTemplateDTOTest2_NullCases() {
 		// dto is null
 		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizer.normalizeTemplateDTO(null);});
 		
@@ -148,7 +149,7 @@ public class InterfaceNormalizerTest {
 		
 		assertEquals(1, normalized.propertyRequirements().size());
 		assertEquals("", normalized.propertyRequirements().get(0).validator());
-		assertEquals(new ArrayList(), normalized.propertyRequirements().get(0).validatorParams());
+		assertEquals(new ArrayList<>(), normalized.propertyRequirements().get(0).validatorParams());
 	}
 
 }
