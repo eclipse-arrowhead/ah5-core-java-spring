@@ -121,7 +121,7 @@ public class ServiceDiscoveryNormalizationTest {
 		// normalize dto
 		final ServiceInstanceLookupRequestDTO toNormalize = new ServiceInstanceLookupRequestDTO(
 				// instance ids
-				List.of(" instance-ID-1 ", " instance-ID-2 "),
+				List.of(" system-NAME::service-definition::1.0.0 ", " system-NAME::service-definition::1.0.1 "),
 				// provides names
 				List.of(" provider-NAME-1 ", " provider-NAME-2 "),
 				// service definition names
@@ -144,7 +144,7 @@ public class ServiceDiscoveryNormalizationTest {
 		
 		assertAll("normalize ServiceInstanceLookupRequestDTO 1",
 				// instance ids
-				() -> assertEquals(List.of("instance-id-1", "instance-id-2"), normalized.instanceIds()),
+				() -> assertEquals(List.of("system-name::service-definition::1.0.0", "system-name::service-definition::1.0.1"), normalized.instanceIds()),
 				// provicer names
 				() -> assertEquals(List.of("provider-name-1", "provider-name-2"), normalized.providerNames()),
 				// service definition names
@@ -194,6 +194,31 @@ public class ServiceDiscoveryNormalizationTest {
 				// policies
 				() -> assertEquals(new ArrayList<>(), normalized.policies())
 				);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeSystemNameTest() {
+		// name is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemName(null);});
 		
+		// name is empty
+		assertThrows(java.lang.IllegalArgumentException.class, () -> { normalizator.normalizeSystemName(""); });
+		
+		// normalize name
+		assertEquals("system-name-1", normalizator.normalizeSystemName("\n \tsystem-NAME-1\r \n"));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeServiceInstanceIdTest() {
+		// instance id is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInstanceId(null);});
+		
+		// instance id is empty
+		assertThrows(java.lang.IllegalArgumentException.class, () -> { normalizator.normalizeServiceInstanceId(""); });
+		
+		// normalize instance id
+		assertEquals("system-name::service-definition::1.0.0", normalizator.normalizeServiceInstanceId(" system-NAME::service-definition::1.0.0 "));
 	}
 }

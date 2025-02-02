@@ -35,15 +35,7 @@ public class DeviceDiscoveryNormalizationTest {
 	
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeDeviceRequestDTOTest() {
-		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTO(null);});
-		
-		// dto name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTO(new DeviceRequestDTO(null, null, null));});
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTO(new DeviceRequestDTO("", null, null));});
-		
-		// normalize dto
+	public void normalizeDeviceRequestDTOTest1() {
 		final DeviceRequestDTO toNormalize = new DeviceRequestDTO(
 				// name
 				"\n \tdevice-NAME-1\r \n", 
@@ -62,6 +54,22 @@ public class DeviceDiscoveryNormalizationTest {
 				() -> assertEquals(List.of(
 						new AddressDTO(String.valueOf(AddressType.HOSTNAME), "1.device.com"),
 						new AddressDTO(String.valueOf(AddressType.MAC), "1a:2b:3c:4d:5e:6f")), normalized.addresses()));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeDeviceRequestDTOTest2_NullCases() {
+		// dto is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTO(null);});
+		
+		// dto name is empty
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTO(new DeviceRequestDTO(null, null, null));});
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTO(new DeviceRequestDTO("", null, null));});
+		
+		// addresses are null
+		final DeviceRequestDTO toNormalize = new DeviceRequestDTO("name", Map.of("key1", "value1", "key2", "value2"), null);
+		final NormalizedDeviceRequestDTO normalized = normalizator.normalizeDeviceRequestDTO(toNormalize);
+		assertEquals(new ArrayList<>(), normalized.addresses());
 	}
 	
 	//-------------------------------------------------------------------------------------------------
