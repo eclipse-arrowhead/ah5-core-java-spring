@@ -33,11 +33,7 @@ public class SystemDiscoveryNormalizationTest {
 	
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeSystemRequestDTOTest() {
-		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemRequestDTO(null);});
-		
-		// normalize dto
+	public void normalizeSystemRequestDTOTest1() {
 		final SystemRequestDTO toNormalize = new SystemRequestDTO(
 				// name
 				" \tsysTEM-namE \n ",
@@ -63,6 +59,34 @@ public class SystemDiscoveryNormalizationTest {
 				() -> assertEquals(List.of(new AddressDTO("IPV6", "2001:0db8:85a3:0000:0000:8a2e:0370:7334"), new AddressDTO("IPV4", "192.168.1.1")), normalized.addresses()),
 				// device name
 				() -> assertEquals("device-name", normalized.deviceName()));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeSystemRequestDTOTest2_NullCases() {
+		// dto is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemRequestDTO(null);});
+		
+		// dto contains null members (expires at, interfaces)
+		final SystemRequestDTO toNormalize = new SystemRequestDTO(
+				// name
+				"system-name",
+				// metadata
+				Map.of("key", "value"),
+				// version
+				null,
+				// addresses
+				null,
+				// device name
+				"device-name");
+		
+		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
+		
+		assertAll("normalize SystemRequestDTO",
+				// version
+				() -> assertEquals("1.0.0", normalized.version()),
+				// addresses
+				() -> assertEquals(new ArrayList<>(), normalized.addresses()));
 	}
 	
 	//-------------------------------------------------------------------------------------------------
