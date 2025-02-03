@@ -192,7 +192,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 				.build();
 		final HttpOperationModel config = new HttpOperationModel.Builder()
 				.method(HttpMethod.GET.name())
-				.path(ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH)
+				.path(Constants.HTTP_API_OP_GET_CONFIG_PATH)
 				.build();
 
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())

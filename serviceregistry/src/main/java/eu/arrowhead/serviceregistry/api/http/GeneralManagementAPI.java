@@ -85,11 +85,11 @@ public class GeneralManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@GetMapping(path = ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(path = Constants.HTTP_API_OP_GET_CONFIG_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody public KeyValuesDTO getConfig(final @RequestParam(required = false) List<String> keys) {
 		logger.debug("getConfig started ...");
 
-		final String origin = HttpMethod.GET.name() + " " + ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_GET_CONFIG_PATH;
+		final String origin = HttpMethod.GET.name() + " " + ServiceRegistryConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
 		return configService.getConfig(keys, ServiceRegistryConstants.FORBIDDEN_KEYS, origin);
 	}
 }
