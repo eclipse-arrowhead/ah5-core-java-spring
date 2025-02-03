@@ -48,7 +48,7 @@ public class DeviceDiscoveryNormalizationTest {
 		assertAll("normalize DeviceRequestDTO",
 				// name
 				() -> assertEquals("device-name-1", normalized.name()), 
-				// metadata
+				// metadata -> should not change
 				() -> assertEquals(Map.of("key1", "value1", "key2", "value2"), normalized.metadata()),
 				// addresses
 				() -> assertEquals(List.of(

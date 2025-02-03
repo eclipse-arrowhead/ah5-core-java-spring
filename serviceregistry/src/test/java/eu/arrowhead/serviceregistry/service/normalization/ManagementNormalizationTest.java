@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -15,11 +16,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import eu.arrowhead.common.service.validation.meta.MetaOps;
 import eu.arrowhead.common.service.validation.meta.MetadataRequirementTokenizer;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 
 @SpringBootTest
@@ -170,6 +174,75 @@ public class ManagementNormalizationTest {
 	}
 	
 	// DEVICES
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeDeviceRequestDTOListTest1() {
+		final DeviceRequestDTO toNormalize1 = new DeviceRequestDTO(
+				// name
+				"\n \tdevice-NAME-1\r \n", 
+				// metadata
+				Map.of("key1", "value1", "key2", "value2"), 
+				// addresses
+				Arrays.asList(" 1.DEVICE.COM\n", " 1A-2B-3C-4D-5E-6F\n"));
+		
+		final DeviceRequestDTO toNormalize2 = new DeviceRequestDTO(
+				// name
+				"\n \tdevice-NAME-2\r \n", 
+				// metadata
+				Map.of("key1", "value1", "key2", "value2"), 
+				// addresses
+				Arrays.asList(" 2.DEVICE.COM\n", " 1A-2B-3C-4D-5E-70\n"));
+		
+		final List<NormalizedDeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(List.of(toNormalize1, toNormalize2));
+		
+		assertAll("normalize DeviceRequestDTOList 1",
+				() -> assertEquals(2, normalized.size()),
+				// name
+				() -> assertEquals("device-name-1", normalized.get(0).name()), 
+				() -> assertEquals("device-name-2", normalized.get(1).name()), 
+				// metadata -> should not change
+				() -> assertEquals(Map.of("key1", "value1", "key2", "value2"), normalized.get(0).metadata()),
+				() -> assertEquals(Map.of("key1", "value1", "key2", "value2"), normalized.get(0).metadata()),
+				// addresses
+				() -> assertEquals(List.of(
+						new AddressDTO(String.valueOf(AddressType.HOSTNAME), "1.device.com"),
+						new AddressDTO(String.valueOf(AddressType.MAC), "1a:2b:3c:4d:5e:6f")), normalized.get(0).addresses()),
+				() -> assertEquals(List.of(
+						new AddressDTO(String.valueOf(AddressType.HOSTNAME), "2.device.com"),
+						new AddressDTO(String.valueOf(AddressType.MAC), "1a:2b:3c:4d:5e:70")), normalized.get(1).addresses()));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeDeviceRequestDTOListTest2_NullCases() {
+		// list is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTOList(null);});
+		
+		// name is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO(null, Map.of("key", "value"), List.of("device.com"))));});
+		
+		// addresses are null
+		final List<NormalizedDeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO("name", Map.of("key", "value"), null)));
+		assertEquals(1, normalized.size());
+		assertEquals(new ArrayList<>(), normalized.get(0).addresses());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeDeviceQueryRequestDTOTest() {
+		// dto is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceQueryRequestDTO(null);});
+		
+		// normalize dto
+		final DeviceQueryRequestDTO toNormalize = new DeviceQueryRequestDTO(
+				// pagination
+				// device names
+				// addresses
+				// address type
+				// metadata requirement list
+				);
+	}
 	
 	// SERVICE DEFINITIONS
 	
