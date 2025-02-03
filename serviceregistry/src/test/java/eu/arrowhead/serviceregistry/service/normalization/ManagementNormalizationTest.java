@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import eu.arrowhead.common.service.validation.meta.MetaOps;
 import eu.arrowhead.common.service.validation.meta.MetadataRequirementTokenizer;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
@@ -235,13 +236,46 @@ public class ManagementNormalizationTest {
 		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceQueryRequestDTO(null);});
 		
 		// normalize dto
+		
+		final List<MetadataRequirementDTO> metadataRequirements = new ArrayList<>(1);
+		metadataRequirements.add((MetadataRequirementDTO) new MetadataRequirementDTO().put("key1", Map.of("op", "EQUALS", "value", "value1")));
+		
 		final DeviceQueryRequestDTO toNormalize = new DeviceQueryRequestDTO(
 				// pagination
+				new PageDTO(0, 10, "asc", "id"),
 				// device names
+				List.of("\tdevice-NAME-1\r", "\tdevice-NAME-2\r"),
 				// addresses
+				List.of("1A:2b:3c:4d:5e:70 ", "1A:2b:3c:4d:5e:71 "),
 				// address type
+				"ipv6 \n",
 				// metadata requirement list
+				metadataRequirements);
+		
+		final DeviceQueryRequestDTO normalized = normalizator.normalizeDeviceQueryRequestDTO(toNormalize);
+		
+		assertAll("normalize DeviceQueryRequestDTO",
+				// names
+				() -> assertEquals(List.of("device-name-1", "device-name-2"), normalized.deviceNames()),
+				// addresses
+				() -> assertEquals(List.of("1a:2b:3c:4d:5e:70", "1a:2b:3c:4d:5e:71"), normalized.addresses()),
+				// address type
+				() -> assertEquals("IPV6", normalized.addressType()),
+				// requirements (sould stay the same)
+				() -> assertEquals(metadataRequirements, normalized.metadataRequirementList())
 				);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeDeviceNamesTest() {
+		// dto is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeDeviceNames(null);});
+		
+		// normalize list
+		final List<String> toNormalize = List.of("namE1 ", "namE2", "", "\n \t");
+		final List<String> normalized = normalizator.normalizeDeviceNames(toNormalize);
+		assertEquals(List.of("name1", "name2"), normalized);
 	}
 	
 	// SERVICE DEFINITIONS
