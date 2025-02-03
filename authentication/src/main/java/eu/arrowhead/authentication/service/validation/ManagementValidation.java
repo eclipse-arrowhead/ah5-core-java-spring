@@ -1,5 +1,7 @@
 package eu.arrowhead.authentication.service.validation;
 
+import java.time.DateTimeException;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,21 +13,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.authentication.AuthenticationConstants;
+import eu.arrowhead.authentication.jpa.entity.ActiveSession;
+import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
 import eu.arrowhead.dto.IdentityQueryRequestDTO;
+import eu.arrowhead.dto.IdentitySessionQueryRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
@@ -38,6 +45,9 @@ public class ManagementValidation {
 
 	@Autowired
 	private NameValidator nameValidator;
+
+	@Autowired
+	private PageValidator pageValidator;
 
 	@Autowired
 	private NameNormalizer nameNormalizer;
@@ -152,8 +162,8 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveIdentities(final List<String> originalNames, final String origin) {
-		logger.debug("validateRemoveSystems started");
+	public void validateIdentityNames(final List<String> originalNames, final String origin) {
+		logger.debug("validateIdentityNames started");
 
 		if (Utilities.isEmpty(originalNames)) {
 			throw new InvalidParameterException("Identifiable system name list is missing or empty", origin);
@@ -168,7 +178,64 @@ public class ManagementValidation {
 	public void validateIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
 		logger.debug("validateIdentityQueryRequest started");
 
-		// TODO
+		if (dto != null) {
+			// pagination
+			pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
+
+			ZonedDateTime from = null;
+			if (!Utilities.isEmpty(dto.creationFrom())) {
+				try {
+					from = Utilities.parseUTCStringToZonedDateTime(dto.creationFrom());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Minimum creation time has an invalid time format", origin);
+				}
+			}
+
+			ZonedDateTime to = null;
+			if (!Utilities.isEmpty(dto.creationTo())) {
+				try {
+					to = Utilities.parseUTCStringToZonedDateTime(dto.creationTo());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Maximum creation time has an invalid time format", origin);
+				}
+			}
+
+			if (from != null && to != null && to.isBefore(from)) {
+				throw new InvalidParameterException("Empty creation time interval", origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
+		logger.debug("validateSessionQueryRequest started");
+
+		if (dto != null) {
+			// pagination
+			pageValidator.validatePageParameter(dto.pagination(), ActiveSession.ACCEPTABLE_SORT_FIELDS, origin);
+
+			ZonedDateTime from = null;
+			if (!Utilities.isEmpty(dto.loginFrom())) {
+				try {
+					from = Utilities.parseUTCStringToZonedDateTime(dto.loginFrom());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Minimum login time has an invalid time format", origin);
+				}
+			}
+
+			ZonedDateTime to = null;
+			if (!Utilities.isEmpty(dto.loginTo())) {
+				try {
+					to = Utilities.parseUTCStringToZonedDateTime(dto.loginTo());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Maximum login time has an invalid time format", origin);
+				}
+			}
+
+			if (from != null && to != null && to.isBefore(from)) {
+				throw new InvalidParameterException("Empty login time interval", origin);
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -231,9 +298,9 @@ public class ManagementValidation {
 	public List<String> validateAndNormalizeRemoveIdentities(final List<String> names, final String origin) {
 		logger.debug("validateAndNormalizeRemoveIdentities started...");
 
-		validateRemoveIdentities(names, origin);
+		validateIdentityNames(names, origin);
 
-		return normalizer.normalizeRemoveIdentifiableSystemNames(names);
+		return normalizer.normalizeIdentifiableSystemNames(names);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -242,9 +309,25 @@ public class ManagementValidation {
 
 		validateIdentityQueryRequest(dto, origin);
 
-		// TODO: cont
-		
-		return null;
+		return normalizer.normalizeIdentityQueryRequest(dto);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeCloseSessions(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeCloseSessions started...");
+
+		validateIdentityNames(names, origin);
+
+		return normalizer.normalizeIdentifiableSystemNames(names);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentitySessionQueryRequestDTO validateAndNormalizeSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeSessionQueryRequest started...");
+
+		validateSessionQueryRequest(dto, origin);
+
+		return normalizer.normalizeSessionQueryRequest(dto);
 	}
 
 	//=================================================================================================

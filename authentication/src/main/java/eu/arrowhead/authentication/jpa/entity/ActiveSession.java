@@ -1,6 +1,8 @@
 package eu.arrowhead.authentication.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.stream.Stream;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
@@ -17,6 +19,12 @@ public class ActiveSession {
 
 	//=================================================================================================
 	// members
+
+	public static final String SORT_NAME_SYSTEM_NAME = "system_name";
+	public static final List<String> SYSTEM_NAME_ALTERNATIVES = List.of("systemname", "name");
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", SORT_NAME_SYSTEM_NAME, "loginTime");
+	public static final List<String> ACCEPTABLE_SORT_FIELDS = Stream.concat(SORTABLE_FIELDS_BY.stream(), SYSTEM_NAME_ALTERNATIVES.stream()).toList();
+	public static final String DEFAULT_SORT_FIELD = SORT_NAME_SYSTEM_NAME;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

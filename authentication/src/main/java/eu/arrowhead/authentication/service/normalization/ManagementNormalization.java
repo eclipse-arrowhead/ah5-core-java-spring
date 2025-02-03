@@ -10,15 +10,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.authentication.jpa.entity.ActiveSession;
+import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
+import eu.arrowhead.dto.IdentityQueryRequestDTO;
+import eu.arrowhead.dto.IdentitySessionQueryRequestDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
 @Service
@@ -31,6 +39,9 @@ public class ManagementNormalization {
 
 	@Autowired
 	private NameNormalizer nameNormalizer;
+
+	@Autowired
+	private PageService pageService;
 
 	@Autowired
 	private AuthenticationMethods methods;
@@ -106,13 +117,62 @@ public class ManagementNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<String> normalizeRemoveIdentifiableSystemNames(final List<String> originalNames) {
-		logger.debug("normalizeRemoveIdentifiableSystemNames started");
+	public List<String> normalizeIdentifiableSystemNames(final List<String> originalNames) {
+		logger.debug("normalizeIdentifiableSystemNames started");
 		Assert.notNull(originalNames, "name list is null");
 
 		return originalNames.stream()
 				.map(n -> nameNormalizer.normalize(n))
 				.toList();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentityQueryRequestDTO normalizeIdentityQueryRequest(final IdentityQueryRequestDTO dto) {
+		logger.debug("normalizeIdentityQueryRequest started");
+
+		if (dto == null) {
+			return new NormalizedIdentityQueryRequestDTO(
+					pageService.getPageRequest(null, System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, "does not matter"),
+					null,
+					null,
+					null,
+					null,
+					null,
+					null);
+		}
+
+		return new NormalizedIdentityQueryRequestDTO(
+				pageService.getPageRequest(dto.pagination(), System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, "does not matter"),
+				Utilities.isEmpty(dto.namePart()) ? null : nameNormalizer.normalize(dto.namePart()),
+				dto.isSysop(),
+				Utilities.isEmpty(dto.createdBy()) ? null : nameNormalizer.normalize(dto.createdBy()),
+				Utilities.isEmpty(dto.creationFrom()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.creationFrom()),
+				Utilities.isEmpty(dto.creationTo()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.creationTo()),
+				dto.hasSession());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentitySessionQueryRequestDTO normalizeSessionQueryRequest(final IdentitySessionQueryRequestDTO dto) {
+		logger.debug("normalizeSessionQueryRequest started");
+
+		if (dto == null) {
+			return new NormalizedIdentitySessionQueryRequestDTO(
+					pageService.getPageRequest(null, ActiveSession.SORTABLE_FIELDS_BY, ActiveSession.DEFAULT_SORT_FIELD, "does not matter"),
+					null,
+					null,
+					null);
+		}
+
+		final PageDTO pagination = dto.pagination();
+		final PageDTO normalizedPageDTO = !Utilities.isEmpty(pagination.sortField()) && ActiveSession.SYSTEM_NAME_ALTERNATIVES.contains(dto.pagination().sortField().trim().toLowerCase())
+				? new PageDTO(pagination.page(), pagination.size(), pagination.direction(), ActiveSession.SORT_NAME_SYSTEM_NAME)
+				: pagination;
+
+		return new NormalizedIdentitySessionQueryRequestDTO(
+				pageService.getPageRequest(normalizedPageDTO, ActiveSession.SORTABLE_FIELDS_BY, ActiveSession.DEFAULT_SORT_FIELD, "does not matter"),
+				Utilities.isEmpty(dto.namePart()) ? null : nameNormalizer.normalize(dto.namePart()),
+				Utilities.isEmpty(dto.loginFrom()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.loginFrom()),
+				Utilities.isEmpty(dto.loginTo()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.loginTo()));
 	}
 
 	//=================================================================================================

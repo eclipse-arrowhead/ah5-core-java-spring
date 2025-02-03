@@ -1,7 +1,10 @@
 package eu.arrowhead.authentication.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.authentication.jpa.entity.ActiveSession;
@@ -23,4 +26,15 @@ public interface ActiveSessionRepository extends RefreshableRepository<ActiveSes
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:MethodNameCheck")
 	public void deleteBySystem_Name(final String systemName);
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MethodNameCheck")
+	public List<ActiveSession> findAllBySystem_NameContains(final String namePart);
+
+	//-------------------------------------------------------------------------------------------------
+	public Page<ActiveSession> findAllByIdIn(final Pageable pageable, final List<Long> ids);
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MethodNameCheck")
+	public void deleteBySystem_NameIn(final List<String> systemNames);
 }

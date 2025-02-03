@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -26,6 +27,8 @@ import eu.arrowhead.authentication.method.IAuthenticationMethod;
 import eu.arrowhead.authentication.service.dto.IdentityData;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -35,6 +38,9 @@ public class IdentityDbService {
 
 	//=================================================================================================
 	// members
+
+	private static final Object SYSTEM_LOCK = new Object();
+	private static final Object SESSION_LOCK = new Object();
 
 	@Value(AuthenticationConstants.$IDENTITY_TOKEN_DURATION)
 	private int identityTokenDuration;
@@ -127,41 +133,43 @@ public class IdentityDbService {
 
 		List<IdentityData> identityList;
 		List<System> systems;
-		try {
-			checkSystemNamesNotExist(dto.identities()); // checks if none of the system names exist (system name has to be unique)
-
-			// writing the system entities to the database
-			identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
-			systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
-			identityList = updateSystemEntitiesInIdentityList(identityList, systems);
-		} catch (final InvalidParameterException ex) {
-			throw ex;
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Database operation error");
-		}
-
-		// storing authentication method specific credentials
-		final List<String> extras = dto.authenticationMethod().dbService().createIdentifiableSystemsInBulk(identityList);
-
-		// handling the extra fields
-		if (extras != null) {
-			// check if extras list size is correct
-			if (extras.size() != identityList.size()) {
-				// something is not right => roll back everything
-				logger.error("Extra list's size is incorrect.");
-				dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
-				throw new InternalServerError("Database operation error");
-			}
-
+		synchronized (SYSTEM_LOCK) {
 			try {
-				systems = systemRepository.saveAllAndFlush(updateSystemListWithExtras(systems, extras));
+				checkSystemNamesNotExist(dto.identities()); // checks if none of the system names exist (system name has to be unique)
+
+				// writing the system entities to the database
+				identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
+				systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
+				identityList = updateSystemEntitiesInIdentityList(identityList, systems);
+			} catch (final InvalidParameterException ex) {
+				throw ex;
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
 				logger.debug(ex);
-				dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 				throw new InternalServerError("Database operation error");
+			}
+
+			// storing authentication method specific credentials
+			final List<String> extras = dto.authenticationMethod().dbService().createIdentifiableSystemsInBulk(identityList);
+
+			// handling the extra fields
+			if (extras != null) {
+				// check if extras list size is correct
+				if (extras.size() != identityList.size()) {
+					// something is not right => roll back everything
+					logger.error("Extra list's size is incorrect.");
+					dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+					throw new InternalServerError("Database operation error");
+				}
+
+				try {
+					systems = systemRepository.saveAllAndFlush(updateSystemListWithExtras(systems, extras));
+				} catch (final Exception ex) {
+					logger.error(ex.getMessage());
+					logger.debug(ex);
+					dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
+					throw new InternalServerError("Database operation error");
+				}
 			}
 		}
 
@@ -177,54 +185,56 @@ public class IdentityDbService {
 		Assert.isTrue(!Utilities.isEmpty(identities), "Identities is missing or empty");
 		Assert.isTrue(!Utilities.containsNull(identities), "Identities contains null");
 
-		final List<IdentityData> identityList;
-		try {
-			// collect the system entities from the database
-			identityList = getSystemEntitiesForUpdate(authenticationMethod, identities);
-		} catch (final InvalidParameterException ex) {
-			throw ex;
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Database operation error");
-		}
+		synchronized (SYSTEM_LOCK) {
+			final List<IdentityData> identityList;
+			try {
+				// collect the system entities from the database
+				identityList = getSystemEntitiesForUpdate(authenticationMethod, identities);
+			} catch (final InvalidParameterException ex) {
+				throw ex;
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
 
-		// updating authentication method specific credentials
-		final List<String> extras = authenticationMethod.dbService().updateIdentifiableSystemsInBulk(identityList);
+			// updating authentication method specific credentials
+			final List<String> extras = authenticationMethod.dbService().updateIdentifiableSystemsInBulk(identityList);
 
-		// checking the extra fields
-		if (extras != null) {
-			// check if extras list size is correct
-			if (extras.size() != identityList.size()) {
-				// something is not right => roll back everything
-				logger.error("Extra list's size is incorrect.");
+			// checking the extra fields
+			if (extras != null) {
+				// check if extras list size is correct
+				if (extras.size() != identityList.size()) {
+					// something is not right => roll back everything
+					logger.error("Extra list's size is incorrect.");
+					authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
+					throw new InternalServerError("Database operation error");
+				}
+			}
+
+			// updating the authentication method independent fields
+			try {
+				List<System> systems = new ArrayList<>(identityList.size());
+				for (int i = 0; i < identityList.size(); ++i) {
+					final System system = identityList.get(i).system();
+					system.setUpdatedBy(requester);
+					system.setSysop(identityList.get(i).sysop());
+					if (extras != null) {
+						system.setExtra(extras.get(i));
+					}
+					systems.add(system);
+				}
+
+				systems = systemRepository.saveAllAndFlush(systems);
+				authenticationMethod.dbService().commitUpdateIdentifiableSystemsInBulk(identityList);
+
+				return systems;
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
 				authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
 				throw new InternalServerError("Database operation error");
 			}
-		}
-
-		// updating the authentication method independent fields
-		try {
-			List<System> systems = new ArrayList<>(identityList.size());
-			for (int i = 0; i < identityList.size(); ++i) {
-				final System system = identityList.get(i).system();
-				system.setUpdatedBy(requester);
-				system.setSysop(identityList.get(i).sysop());
-				if (extras != null) {
-					system.setExtra(extras.get(i));
-				}
-				systems.add(system);
-			}
-
-			systems = systemRepository.saveAllAndFlush(systems);
-			authenticationMethod.dbService().commitUpdateIdentifiableSystemsInBulk(identityList);
-
-			return systems;
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
-			throw new InternalServerError("Database operation error");
 		}
 	}
 
@@ -258,6 +268,24 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public Page<System> queryIdentifiableSystems(final NormalizedIdentityQueryRequestDTO dto) {
+		logger.debug("queryIdentifiableSystems started...");
+		Assert.notNull(dto, "DTO is missing");
+
+		try {
+			if (!dto.hasFilters()) {
+				return systemRepository.findAll(dto.pageRequest());
+			}
+
+			return findIdentifiableSystemsByFilters(dto);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Optional<ActiveSession> getSessionByToken(final String token) {
 		logger.debug("getSessionByToken started...");
 		Assert.isTrue(!Utilities.isEmpty(token), "Token is missing or empty");
@@ -272,30 +300,16 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Transactional(rollbackFor = ArrowheadException.class)
-	public ActiveSession createOrUpdateSession(final System system, final String token) {
-		logger.debug("getPasswordAuthenticationBySystem started...");
-		Assert.notNull(system, "system is null");
-		Assert.isTrue(!Utilities.isEmpty(token), "Token is missing or empty");
+	public Page<ActiveSession> querySessions(final NormalizedIdentitySessionQueryRequestDTO dto) {
+		logger.debug("querySessions started...");
+		Assert.notNull(dto, "DTO is missing");
 
 		try {
-			final Optional<ActiveSession> sessionOpt = asRepository.findBySystem(system);
-			final ZonedDateTime now = Utilities.utcNow();
-			final ZonedDateTime expirationTime = identityTokenDuration > 0 ? now.plusSeconds(identityTokenDuration) : now.plusYears(AuthenticationConstants.INFINITE_TOKEN_DURATION);
-
-			final ActiveSession session = sessionOpt.isPresent() ? sessionOpt.get() : new ActiveSession(system, token, now, expirationTime);
-			if (sessionOpt.isPresent()) {
-				if (now.isAfter(session.getExpirationTime())) {
-					// session is already expired, just the record is not removed => re-using it
-					session.setLoginTime(now);
-				}
-
-				// update
-				session.setToken(token);
-				session.setExpirationTime(expirationTime);
+			if (!dto.hasFilters()) {
+				return asRepository.findAll(dto.pageRequest());
 			}
 
-			return asRepository.saveAndFlush(session);
+			return findSessionsByFilters(dto);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -305,17 +319,72 @@ public class IdentityDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
+	public ActiveSession createOrUpdateSession(final System system, final String token) {
+		logger.debug("getPasswordAuthenticationBySystem started...");
+		Assert.notNull(system, "system is null");
+		Assert.isTrue(!Utilities.isEmpty(token), "Token is missing or empty");
+
+		synchronized (SESSION_LOCK) {
+			try {
+				final Optional<ActiveSession> sessionOpt = asRepository.findBySystem(system);
+				final ZonedDateTime now = Utilities.utcNow();
+				final ZonedDateTime expirationTime = identityTokenDuration > 0 ? now.plusSeconds(identityTokenDuration) : now.plusYears(AuthenticationConstants.INFINITE_TOKEN_DURATION);
+
+				final ActiveSession session = sessionOpt.isPresent() ? sessionOpt.get() : new ActiveSession(system, token, now, expirationTime);
+				if (sessionOpt.isPresent()) {
+					if (now.isAfter(session.getExpirationTime())) {
+						// session is already expired, just the record is not removed => re-using it
+						session.setLoginTime(now);
+					}
+
+					// update
+					session.setToken(token);
+					session.setExpirationTime(expirationTime);
+				}
+
+				return asRepository.saveAndFlush(session);
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
 	public void removeSession(final String systemName) {
 		logger.debug("removeSession started...");
 		Assert.isTrue(!Utilities.isEmpty(systemName), "System name is missing or empty");
 
-		try {
-			asRepository.deleteBySystem_Name(systemName);
-			asRepository.flush();
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Database operation error");
+		synchronized (SESSION_LOCK) {
+			try {
+				asRepository.deleteBySystem_Name(systemName);
+				asRepository.flush();
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void closeSessionsInBulk(final List<String> systemNames) {
+		logger.debug("closeSessionsInBulk started...");
+		Assert.isTrue(!Utilities.isEmpty(systemNames), "System name list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(systemNames), "System name list contains null");
+
+		synchronized (SESSION_LOCK) {
+			try {
+				asRepository.deleteBySystem_NameIn(systemNames);
+				asRepository.flush();
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
 		}
 	}
 
@@ -431,5 +500,78 @@ public class IdentityDbService {
 				.filter(sys -> systemName.equals(sys.getName()))
 				.findFirst()
 				.orElse(null); // should never happen
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Page<System> findIdentifiableSystemsByFilters(final NormalizedIdentityQueryRequestDTO dto) {
+		logger.debug("findIdentifiableSystemsByFilters started");
+
+		synchronized (SYSTEM_LOCK) {
+			final ZonedDateTime now = Utilities.utcNow();
+			final List<Long> matchings = new ArrayList<>();
+			final List<System> toFilter = dto.namePart() == null ? systemRepository.findAll() : systemRepository.findAllByNameContains(dto.namePart());
+
+			for (final System system : toFilter) {
+				// sysop
+				if (dto.isSysop() != null && system.isSysop() != dto.isSysop().booleanValue()) {
+					continue;
+				}
+
+				// created by
+				if (dto.createdBy() != null && !system.getCreatedBy().equals(dto.createdBy())) {
+					continue;
+				}
+
+				// creation from
+				if (dto.creationFrom() != null && system.getCreatedAt().isBefore(dto.creationFrom())) {
+					continue;
+				}
+
+				// creation to
+				if (dto.creationTo() != null && system.getCreatedAt().isAfter(dto.creationTo())) {
+					continue;
+				}
+
+				// has session
+				if (dto.hasSession() != null) {
+					final Optional<ActiveSession> sessionOpt = asRepository.findBySystem(system);
+					final boolean validSession = sessionOpt.isPresent() && sessionOpt.get().getExpirationTime().isAfter(now);
+
+					if (validSession != dto.hasSession().booleanValue()) {
+						continue;
+					}
+				}
+
+				matchings.add(system.getId());
+			}
+
+			return systemRepository.findAllByIdIn(dto.pageRequest(), matchings);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Page<ActiveSession> findSessionsByFilters(final NormalizedIdentitySessionQueryRequestDTO dto) {
+		logger.debug("findSessionsByFilters started");
+
+		synchronized (SESSION_LOCK) {
+			final List<Long> matchings = new ArrayList<>();
+			final List<ActiveSession> toFilter = dto.namePart() == null ? asRepository.findAll() : asRepository.findAllBySystem_NameContains(dto.namePart());
+
+			for (final ActiveSession session : toFilter) {
+				// login from
+				if (dto.loginFrom() != null && session.getLoginTime().isBefore(dto.loginFrom())) {
+					continue;
+				}
+
+				// login to
+				if (dto.loginTo() != null && session.getLoginTime().isAfter(dto.loginTo())) {
+					continue;
+				}
+
+				matchings.add(session.getId());
+			}
+
+			return asRepository.findAllByIdIn(dto.pageRequest(), matchings);
+		}
 	}
 }

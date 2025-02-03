@@ -6,9 +6,11 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.authentication.jpa.entity.ActiveSession;
 import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.service.IdentityDbService;
 import eu.arrowhead.authentication.method.AuthenticationMethods;
@@ -17,6 +19,7 @@ import eu.arrowhead.authentication.service.dto.DTOConverter;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.authentication.service.validation.ManagementValidation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ExternalServerError;
@@ -26,6 +29,8 @@ import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtResponseDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityQueryRequestDTO;
+import eu.arrowhead.dto.IdentitySessionListMgmtResponseDTO;
+import eu.arrowhead.dto.IdentitySessionQueryRequestDTO;
 
 @Service
 public class ManagementService {
@@ -148,12 +153,46 @@ public class ManagementService {
 	public IdentityListMgmtResponseDTO queryIdentitiesOperation(final IdentityQueryRequestDTO dto, final String origin) {
 		logger.debug("queryIdentitiesOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		
+
 		final NormalizedIdentityQueryRequestDTO normalizedRequest = validator.validateAndNormalizeIdentityQueryRequest(dto, origin);
 
-		// TODO:
-		
-		return null;
+		try {
+			final Page<System> systems = dbService.queryIdentifiableSystems(normalizedRequest);
+
+			return converter.convertIdentifiableSystemListToDTO(systems);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void closeSessionsOperation(final List<String> names, final String origin) {
+		logger.debug("closeSessionsOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<String> normalizedNames = validator.validateAndNormalizeCloseSessions(names, origin);
+
+		try {
+			dbService.closeSessionsInBulk(normalizedNames);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public IdentitySessionListMgmtResponseDTO querySessionsOperation(final IdentitySessionQueryRequestDTO dto, final String origin) {
+		logger.debug("querySessionsOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final NormalizedIdentitySessionQueryRequestDTO normalizedRequest = validator.validateAndNormalizeSessionQueryRequest(dto, origin);
+
+		try {
+			final Page<ActiveSession> sessions = dbService.querySessions(normalizedRequest);
+
+			return converter.convertSessionListToDTO(sessions);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	//=================================================================================================
@@ -170,5 +209,4 @@ public class ManagementService {
 
 		return method;
 	}
-
 }

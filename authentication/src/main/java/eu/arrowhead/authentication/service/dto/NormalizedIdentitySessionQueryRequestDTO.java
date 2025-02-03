@@ -4,14 +4,11 @@ import java.time.ZonedDateTime;
 
 import org.springframework.data.domain.PageRequest;
 
-public record NormalizedIdentityQueryRequestDTO(
+public record NormalizedIdentitySessionQueryRequestDTO(
 		PageRequest pageRequest,
 		String namePart,
-		Boolean isSysop,
-		String createdBy,
-		ZonedDateTime creationFrom,
-		ZonedDateTime creationTo,
-		Boolean hasSession) {
+		ZonedDateTime loginFrom,
+		ZonedDateTime loginTo) {
 
 	//=================================================================================================
 	// methods
@@ -19,10 +16,7 @@ public record NormalizedIdentityQueryRequestDTO(
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasFilters() {
 		return namePart != null
-				|| isSysop != null
-				|| createdBy != null
-				|| creationFrom != null
-				|| creationTo != null
-				|| hasSession != null;
+				|| loginFrom != null
+				|| loginTo != null;
 	}
 }
