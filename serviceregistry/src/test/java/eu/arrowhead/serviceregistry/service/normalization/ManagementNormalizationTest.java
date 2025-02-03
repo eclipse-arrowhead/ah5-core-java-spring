@@ -20,6 +20,7 @@ import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -279,6 +280,39 @@ public class ManagementNormalizationTest {
 	}
 	
 	// SERVICE DEFINITIONS
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test	
+	public void normalizeCreateServiceDefinitionsTest() {
+		// dto is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeCreateServiceDefinitions(null);});
+		
+		// list is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeCreateServiceDefinitions(new ServiceDefinitionListRequestDTO(null));});
+		
+		// normalize dto
+		final ServiceDefinitionListRequestDTO toNormalize = new ServiceDefinitionListRequestDTO(List.of("dEf1 ", "dEf2 "));
+		final List<String> normalized = normalizator.normalizeCreateServiceDefinitions(toNormalize);
+		
+		assertEquals(2, normalized.size());
+		assertEquals("def1", normalized.get(0));
+		assertEquals("def2", normalized.get(1));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeRemoveServiceDefinitionsTest() {
+		// list is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeRemoveServiceDefinitions(null);});
+		
+		// normalize list
+		final List<String> toNormalize = List.of("dEf1 ", "dEf2 ");
+		final List<String> normalized = normalizator.normalizeRemoveServiceDefinitions(toNormalize);
+		
+		assertEquals(2, normalized.size());
+		assertEquals("def1", normalized.get(0));
+		assertEquals("def2", normalized.get(1));
+	}
 	
 	// SERVICE INSTANCES
 	
