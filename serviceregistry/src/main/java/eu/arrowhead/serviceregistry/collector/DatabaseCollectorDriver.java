@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +23,6 @@ import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
-import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -56,9 +54,6 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	@Override
 	public void init() throws ArrowheadException {
 		logger.debug("DatabaseCollectorDriver.init started...");
-
-		// TODO Auto-generated method stub
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
