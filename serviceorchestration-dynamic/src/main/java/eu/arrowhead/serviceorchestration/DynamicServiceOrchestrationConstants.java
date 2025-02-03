@@ -23,9 +23,12 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
-	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
+	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
+	public static final String HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt";
 
+	public static final String VERSION_MONITOR = "1.0.0";
+	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
 	public static final String VERSION_ORCHESTRATION = "1.0.0";
 
 	public static final String METADATA_KEY_ORCHESTRATION_STRATEGY = "orchestration-strategy";
@@ -33,9 +36,11 @@ public final class DynamicServiceOrchestrationConstants {
 
 	// Operation related
 
+	public static final String HTTP_API_OP_ECHO = "/echo";
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/push-subscribe";
 	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/push-unsubscribe/{id}";
+	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/push-trigger";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 
 	// Forbidden keys (for config service)

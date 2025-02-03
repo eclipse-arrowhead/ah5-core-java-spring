@@ -1,6 +1,8 @@
 package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +16,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.repository.SubscriptionRepository;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
@@ -34,24 +37,38 @@ public class SubscriptionDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public UUID create(final OrchestrationSubscription candidate) {
+	public List<Subscription> create(final List<OrchestrationSubscription> candidates) {
 		logger.debug("create started..");
-		Assert.notNull(candidate, "subscription candidate is null");
-		Assert.isTrue(!subscriptionRepo.existsById(candidate.getId()), "subscription id already exist");
+		Assert.notNull(candidates, "subscription candidate list is null");
 
 		try {
-			final ZonedDateTime expireAt = candidate.getDuration() == null ? null : Utilities.utcNow().plusSeconds(candidate.getDuration());
+			final List<Subscription> toSave = new ArrayList<>(candidates.size());
+			for (final OrchestrationSubscription candidate : candidates) {
+				final Optional<Subscription> optional = subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(
+						candidate.getOrchestrationForm().getRequesterSystemName(),
+						candidate.getOrchestrationForm().getTargetSystemName(),
+						candidate.getOrchestrationForm().getServiceDefinition());
 
-			final Subscription saved = subscriptionRepo.saveAndFlush(new Subscription(
-					candidate.getId(),
-					candidate.getOrchestrationForm().getRequesterSystemName(),
-					candidate.getOrchestrationForm().getTargetSystemName(),
-					expireAt,
-					candidate.getNotifyProtocol(),
-					Utilities.toJson(candidate.getNotifyProperties()),
-					Utilities.toJson(candidate.getOrchestrationForm().extractOrchestrationRequestDTO())));
+				if (optional.isPresent()) {
+					throw new InvalidParameterException("Subscription with " + candidate.getOrchestrationForm().getRequesterSystemName() + " owner, " + candidate.getOrchestrationForm().getTargetSystemName() + " target and "
+							+ candidate.getOrchestrationForm().getServiceDefinition() + " service already exsists");
+				}
 
-			return saved.getId();
+				final ZonedDateTime expireAt = candidate.getDuration() == null ? null : Utilities.utcNow().plusSeconds(candidate.getDuration());
+				toSave.add(new Subscription(
+						UUID.randomUUID(),
+						candidate.getOrchestrationForm().getRequesterSystemName(),
+						candidate.getOrchestrationForm().getTargetSystemName(),
+						expireAt,
+						candidate.getNotifyProtocol(),
+						Utilities.toJson(candidate.getNotifyProperties()),
+						Utilities.toJson(candidate.getOrchestrationForm().extractOrchestrationRequestDTO())));
+			}
+
+			return subscriptionRepo.saveAllAndFlush(toSave);
+
+		} catch (InvalidParameterException ex) {
+			throw ex;
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

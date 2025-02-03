@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.utils.LocalServiceOrchestration;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationFromContextValidation;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
 
 @Service
@@ -38,6 +40,9 @@ public class OrchestrationService {
 	@Autowired
 	private OrchestrationValidation validator;
 
+	@Autowired
+	private OrchestrationFromContextValidation formContextValidator;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -48,7 +53,7 @@ public class OrchestrationService {
 		logger.debug("pull started...");
 
 		validator.validateAndNormalizePullService(form, origin);
-		validator.validateNormalizedOrchestrationFormContext(form, origin);
+		formContextValidator.validate(form, origin);
 
 		return orchestrate(form);
 	}
@@ -58,7 +63,7 @@ public class OrchestrationService {
 		logger.debug("pushSubscribe started...");
 
 		validator.validateAndNormalizePushSubscribeService(subscription, origin);
-		validator.validateNormalizedOrchestrationFormContext(subscription.getOrchestrationForm(), origin);
+		formContextValidator.validate(subscription.getOrchestrationForm(), origin);
 
 		final Optional<Subscription> recordOpt = subscriptionDbService.get(
 				subscription.getOrchestrationForm().getRequesterSystemName(),
@@ -71,7 +76,8 @@ public class OrchestrationService {
 			isOverride = true;
 		}
 
-		return Pair.of(isOverride, subscriptionDbService.create(subscription).toString());
+		final List<Subscription> result = subscriptionDbService.create(List.of(subscription));
+		return Pair.of(isOverride, result.getFirst().getId().toString());
 	}
 
 	//-------------------------------------------------------------------------------------------------

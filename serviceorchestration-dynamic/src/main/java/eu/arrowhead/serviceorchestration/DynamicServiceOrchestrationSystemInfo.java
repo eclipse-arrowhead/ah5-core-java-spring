@@ -65,15 +65,28 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public List<ServiceModel> getServices() {
+		final ServiceModel monitor = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_MONITOR)
+				.version(DynamicServiceOrchestrationConstants.VERSION_MONITOR)
+				.serviceInterface(getHttpServiceInterfaceForMonitorService())
+				.build();
+
+		final ServiceModel generalManagement = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_GENERAL_MANAGEMENT)
+				.version(DynamicServiceOrchestrationConstants.VERSION_GENERAL_MANAGEMENT)
+				.serviceInterface(getHttpServiceInterfaceForGeneralManagement())
+				.build();
+
 		final ServiceModel orchestration = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION)
 				.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY)
+				// TODO add onrestricted-discovery: true
 				.serviceInterface(getHttpServiceInterfaceForOrchestration())
 				.build();
 
 		// TODO add the rest
-		return List.of(orchestration);
+		return List.of(monitor, generalManagement, orchestration);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -102,8 +115,54 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	// HTTP Interfaces
 
 	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForMonitorService() {
+		return getHttpServiceInterfaceForAMonitorService(DynamicServiceOrchestrationConstants.HTTP_API_MONITOR_PATH);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForGeneralManagement() {
+		return getHttpServiceInterfaceForAGeneralManagementService(DynamicServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH);
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getHttpServiceInterfaceForOrchestration() {
 		return getHttpServiceInterfaceForAnOrchestrationService(DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAMonitorService(final String basePath) {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel echo = new HttpOperationModel.Builder()
+				.method(HttpMethod.GET.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_ECHO)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(DynamicServiceOrchestrationConstants.HTTP_API_MONITOR_PATH)
+				.operation(Constants.SERVICE_OP_ECHO, echo)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAGeneralManagementService(final String basePath) {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel log = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(Constants.HTTP_API_OP_LOGS_PATH)
+				.build();
+
+		final HttpOperationModel config = new HttpOperationModel.Builder()
+				.method(HttpMethod.GET.name())
+				.path(Constants.HTTP_API_OP_GET_CONFIG_PATH)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(DynamicServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
+				.operation(Constants.SERVICE_OP_GET_LOG, log)
+				.operation(Constants.SERVICE_OP_GET_CONFIG, config)
+				.build();
 	}
 
 	//-------------------------------------------------------------------------------------------------

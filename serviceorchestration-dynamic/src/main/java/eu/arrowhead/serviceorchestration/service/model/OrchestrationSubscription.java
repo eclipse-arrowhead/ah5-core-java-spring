@@ -1,7 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.model;
 
 import java.util.Map;
-import java.util.UUID;
 
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 
@@ -10,7 +9,6 @@ public class OrchestrationSubscription {
 	//=================================================================================================
 	// members
 
-	private final UUID id;
 	private OrchestrationForm orchestrationForm;
 	private Long duration;
 	private String notifyProtocol;
@@ -21,8 +19,6 @@ public class OrchestrationSubscription {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSubscription(final String requesterSystemName, final OrchestrationSubscriptionRequestDTO dto) {
-		this.id = UUID.randomUUID();
-
 		if (dto != null) {
 			this.orchestrationForm = new OrchestrationForm(requesterSystemName, dto.targetSystemName(), dto.orchestrationRequest());
 			this.duration = dto.duration();
@@ -36,11 +32,6 @@ public class OrchestrationSubscription {
 
 	//=================================================================================================
 	// boilerplate
-
-	//-------------------------------------------------------------------------------------------------
-	public UUID getId() {
-		return id;
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationForm getOrchestrationForm() {

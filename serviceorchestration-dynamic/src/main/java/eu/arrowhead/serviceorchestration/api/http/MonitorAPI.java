@@ -32,7 +32,7 @@ public class MonitorAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@GetMapping(path = "/echo")
+	@GetMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_ECHO)
 	public String echoService() {
 		return "Got it!";
 	}
