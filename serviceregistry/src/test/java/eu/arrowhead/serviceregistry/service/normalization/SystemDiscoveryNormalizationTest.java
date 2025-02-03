@@ -48,7 +48,7 @@ public class SystemDiscoveryNormalizationTest {
 		
 		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
 		
-		assertAll("normalize SystemRequestDTO",
+		assertAll("normalize SystemRequestDTO 1",
 				// name
 				() -> assertEquals("system-name", normalized.name()),
 				// metadata (should not change)
@@ -67,7 +67,7 @@ public class SystemDiscoveryNormalizationTest {
 		// dto is null
 		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemRequestDTO(null);});
 		
-		// dto contains null members (expires at, interfaces)
+		// dto contains null members (version, addresses)
 		final SystemRequestDTO toNormalize = new SystemRequestDTO(
 				// name
 				"system-name",
