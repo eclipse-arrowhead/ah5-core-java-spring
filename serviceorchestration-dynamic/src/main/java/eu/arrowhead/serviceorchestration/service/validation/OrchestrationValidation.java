@@ -3,7 +3,9 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import java.time.DateTimeException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,6 +87,19 @@ public class OrchestrationValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void validatePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
+		logger.debug("validatePushUnsubscribeService started...");
+
+		if (Utilities.isEmpty(requesterSystem)) {
+			throw new InvalidParameterException("Requester system is missing.", origin);
+		}
+
+		if (Utilities.isEmpty(subscriptionId)) {
+			throw new InvalidParameterException("Subscription id system is missing.", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public void validateNormalizedOrchestrationFormContext(final OrchestrationForm form, final String origin) {
 		logger.debug("validateNormalizedOrchestrationFormContext started...");
 
@@ -158,6 +173,21 @@ public class OrchestrationValidation {
 				|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
 			validateNormalizedNotifyPropertiesForMQTT(subscription.getNotifyProperties(), origin);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Pair<String, UUID> validateAndNormalizePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
+		logger.debug("validateAndNormalizePushUnsubscribeService started...");
+
+		validateAndNormalizePushUnsubscribeService(requesterSystem, subscriptionId, origin);
+		final Pair<String, String> normalized = normalization.normalizePushUnsubscribe(requesterSystem, subscriptionId);
+
+		if (!Utilities.isUUID(normalized.getRight())) {
+			throw new InvalidParameterException("Invalid subscription id.", origin);
+		}
+
+		return Pair.of(normalized.getLeft(), UUID.fromString(normalized.getRight()));
+
 	}
 
 	//=================================================================================================

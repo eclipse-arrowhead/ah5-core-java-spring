@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -8,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
@@ -73,8 +75,20 @@ public class OrchestrationService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void pushUnsubscribe(final String requesterSystem, final String subscriptionId, final String origin) {
-		// TODO make sure that the requester sys is the same who made the subscription
+	public boolean pushUnsubscribe(final String requesterSystem, final String subscriptionId, final String origin) {
+		logger.debug("pushUnsubscribe started...");
+
+		final Pair<String, UUID> normalized = validator.validateAndNormalizePushUnsubscribeService(requesterSystem, subscriptionId, origin);
+
+		final Optional<Subscription> recordOpt = subscriptionDbService.get(normalized.getRight());
+		if (recordOpt.isPresent()) {
+			if (!recordOpt.get().getOwnerSystem().equals(normalized.getLeft())) {
+				throw new ForbiddenException(requesterSystem + " is not the subscription owner.", origin);
+			}
+			subscriptionDbService.deleteById(normalized.getRight());
+			return true;
+		}
+		return false;
 	}
 
 	//=================================================================================================

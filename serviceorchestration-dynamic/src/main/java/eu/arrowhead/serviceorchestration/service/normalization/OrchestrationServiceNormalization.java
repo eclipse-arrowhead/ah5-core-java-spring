@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.service.normalization;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,5 +66,14 @@ public class OrchestrationServiceNormalization {
 			form.getQosRequirements().forEach((k, v) -> normalizedQoSReq.put(k.trim(), v.trim()));
 			form.setQosRequirements(normalizedQoSReq);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Pair<String, String> normalizePushUnsubscribe(final String requesterSystem, final String subscriptionId) {
+		logger.debug("normalizePushUnsubscribe started...");
+		Assert.isTrue(!Utilities.isEmpty(requesterSystem), "requesterSystem is empty");
+		Assert.isTrue(!Utilities.isEmpty(subscriptionId), "subscriptionId is empty");
+
+		return Pair.of(nameNormalizer.normalize(requesterSystem), subscriptionId.trim());
 	}
 }
