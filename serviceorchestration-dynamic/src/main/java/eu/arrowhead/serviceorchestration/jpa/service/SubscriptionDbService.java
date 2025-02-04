@@ -16,7 +16,6 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.repository.SubscriptionRepository;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
@@ -42,6 +41,7 @@ public class SubscriptionDbService {
 		Assert.notNull(candidates, "subscription candidate list is null");
 
 		try {
+			final List<UUID> toRemove = new ArrayList<>();
 			final List<Subscription> toSave = new ArrayList<>(candidates.size());
 			for (final OrchestrationSubscription candidate : candidates) {
 				final Optional<Subscription> optional = subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(
@@ -50,8 +50,7 @@ public class SubscriptionDbService {
 						candidate.getOrchestrationForm().getServiceDefinition());
 
 				if (optional.isPresent()) {
-					throw new InvalidParameterException("Subscription with " + candidate.getOrchestrationForm().getRequesterSystemName() + " owner, " + candidate.getOrchestrationForm().getTargetSystemName() + " target and "
-							+ candidate.getOrchestrationForm().getServiceDefinition() + " service already exsists");
+					toRemove.add(optional.get().getId());
 				}
 
 				final ZonedDateTime expireAt = candidate.getDuration() == null ? null : Utilities.utcNow().plusSeconds(candidate.getDuration());
@@ -65,10 +64,10 @@ public class SubscriptionDbService {
 						Utilities.toJson(candidate.getOrchestrationForm().extractOrchestrationRequestDTO())));
 			}
 
-			return subscriptionRepo.saveAllAndFlush(toSave);
-
-		} catch (InvalidParameterException ex) {
-			throw ex;
+			subscriptionRepo.deleteAllById(toRemove);
+			final List<Subscription> saved = subscriptionRepo.saveAll(toSave);
+			subscriptionRepo.flush();
+			return saved;
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

@@ -7,12 +7,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
+import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationFromContextValidation;
@@ -29,13 +29,16 @@ public class OrchestrationPushManagementService {
 	@Autowired
 	private SubscriptionDbService subscriptionDbService;
 
+	@Autowired
+	private DTOConverter dtoConverter;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public @ResponseBody OrchestrationSubscriptionListResponseDTO pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
+	public OrchestrationSubscriptionListResponseDTO pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
 		logger.debug("pushSubscribe started...");
 
 		// TODO validate (check duplicates too) and normalize
@@ -43,12 +46,8 @@ public class OrchestrationPushManagementService {
 		final List<OrchestrationSubscription> subscriptions = dto.subscriptions().stream().map(subscriptionDTO -> new OrchestrationSubscription(requesterSystem, subscriptionDTO)).toList();
 		subscriptions.forEach(s -> formContextValidator.validate(s.getOrchestrationForm(), origin));
 
-		// TODO delete existing
-
 		final List<Subscription> result = subscriptionDbService.create(subscriptions);
-
-		// TODO return converted to DTO
-		return null;
+		return dtoConverter.convertSubscriptionListToDTO(result);
 	}
 
 	//-------------------------------------------------------------------------------------------------

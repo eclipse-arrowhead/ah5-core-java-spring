@@ -78,7 +78,7 @@ public class OrchestrationAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns a subscription id")
+	@Operation(summary = "Returns a subscription id. Existing will be overwritten.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
 					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),

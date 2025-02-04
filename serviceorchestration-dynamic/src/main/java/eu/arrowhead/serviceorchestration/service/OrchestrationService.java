@@ -70,11 +70,7 @@ public class OrchestrationService {
 				subscription.getOrchestrationForm().getTargetSystemName(),
 				subscription.getOrchestrationForm().getServiceDefinition());
 
-		boolean isOverride = false;
-		if (recordOpt.isPresent()) {
-			subscriptionDbService.deleteById(recordOpt.get().getId());
-			isOverride = true;
-		}
+		final boolean isOverride = recordOpt.isPresent();
 
 		final List<Subscription> result = subscriptionDbService.create(List.of(subscription));
 		return Pair.of(isOverride, result.getFirst().getId().toString());

@@ -49,7 +49,7 @@ public class OrchestrationPushManagementAPI {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the created and/or existing subscription records")
+	@Operation(summary = "Returns the created subscription records. Existing ones will be overwritten.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationSubscriptionListResponseDTO.class)) }),
