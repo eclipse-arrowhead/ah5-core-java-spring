@@ -23,46 +23,46 @@ import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 
 @SpringBootTest
 public class ServiceDiscoveryNormalizationTest {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	@Autowired
 	private ServiceDiscoveryNormalization normalizator;
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void normalizeServiceInstanceRequestDTOTest1() {
-		
+
 		// create ServiceInstanceInterfaceRequestDTO list for dto
 		final Map<String, Object> properties = 	Map.of(
 				MqttInterfaceModel.PROP_NAME_ACCESS_ADDRESSES, List.of("192.168.56.116"),
 				MqttInterfaceModel.PROP_NAME_ACCESS_PORT, 8080,
 				MqttInterfaceModel.PROP_NAME_TOPIC, "hello");
-		
+
 		final ServiceInstanceInterfaceRequestDTO interface1 = new ServiceInstanceInterfaceRequestDTO("\n generic-mqtt", "\n tcp", "\n none", properties);
 		final ServiceInstanceInterfaceRequestDTO interface2 = new ServiceInstanceInterfaceRequestDTO("\n generic-mqtts", "\n ssl", "\n token_auth", properties);
-		
+
 		// normalize dto
 		final ServiceInstanceRequestDTO toNormalize = new ServiceInstanceRequestDTO(
 				// system name
-				" \tsYSTEM-NAME\n \n ", 
+				" \tsYSTEM-NAME\n \n ",
 				// service definiton name
-				" \tsERVICE-DEFINITION-NAME\n \n ", 
+				" \tsERVICE-DEFINITION-NAME\n \n ",
 				// version
 				" 1\n",
 				// expires at
-				"\n 2025-01-31T12:00:00Z \n", 
+				"\n 2025-01-31T12:00:00Z \n",
 				// metadata
-				Map.of("key", "value"), 
+				Map.of("key", "value"),
 				// interfaces
 				List.of(interface1, interface2));
-		
+
 		final ServiceInstanceRequestDTO normalized = normalizator.normalizeServiceInstanceRequestDTO(toNormalize);
-		
+
 		assertAll("normalize ServiceInstanceRequestDTO 1",
 				// system name
 				() -> assertEquals("system-name", normalized.systemName()),
@@ -80,44 +80,48 @@ public class ServiceDiscoveryNormalizationTest {
 				() -> assertEquals(new ServiceInstanceInterfaceRequestDTO("generic-mqtts", "ssl", "TOKEN_AUTH", properties), normalized.interfaces().get(1))
  				);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeServiceInstanceRequestDTOTest2_NullCases() {
-		
+	public void normalizeServiceInstanceRequestDTOTest2NullCases() {
+
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInstanceRequestDTO(null);});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeServiceInstanceRequestDTO(null);
+			});
+
 		// system name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInstanceRequestDTO(
-				new ServiceInstanceRequestDTO(null, "service-def", "1.0.0", "2025-01-31T12:00:00Z", Map.of("key", "value"), null));});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeServiceInstanceRequestDTO(new ServiceInstanceRequestDTO(null, "service-def", "1.0.0", "2025-01-31T12:00:00Z", Map.of("key", "value"), null));
+			});
+
 		// dto contains null members (expires at, interfaces)
 		final ServiceInstanceRequestDTO toNormalize = new ServiceInstanceRequestDTO("system-name", "service-definitions-name", "1.0.0",
 				// expires at -> should be changed to an empty string
-				null, 
+				null,
 				// metadata
-				Map.of("key", "value"), 
+				Map.of("key", "value"),
 				// interfaces -> should be changed to an empty list
 				null);
-		
+
 		final ServiceInstanceRequestDTO normalized = normalizator.normalizeServiceInstanceRequestDTO(toNormalize);
-		
+
 		assertEquals("", normalized.expiresAt());
 		assertEquals(new ArrayList<>(), normalized.interfaces());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	@SuppressWarnings("checkstyle:magicnumber")
 	public void normalizeServiceInstanceLookupRequestDTOTest1() {
 		// create metadata requirements
 		final MetadataRequirementDTO metadataRequirement = new MetadataRequirementDTO();
 		metadataRequirement.put("priority", Map.of(MetadataRequirementTokenizer.OP, MetaOps.LESS_THAN, MetadataRequirementTokenizer.VALUE, 100));
-		
+
 		// create interface property requirements
 		final MetadataRequirementDTO interfacePropertyRequirement = new MetadataRequirementDTO();
 		interfacePropertyRequirement.put(HttpInterfaceModel.PROP_NAME_BASE_PATH, Map.of(MetadataRequirementTokenizer.OP, MetaOps.CONTAINS, MetadataRequirementTokenizer.VALUE, "path"));
-		
+
 		// normalize dto
 		final ServiceInstanceLookupRequestDTO toNormalize = new ServiceInstanceLookupRequestDTO(
 				// instance ids
@@ -138,9 +142,9 @@ public class ServiceDiscoveryNormalizationTest {
 				List.of(interfacePropertyRequirement),
 				// policies
 				List.of(" none ", " cert_auth "));
-		
+
 		final ServiceInstanceLookupRequestDTO normalized = normalizator.normalizeServiceInstanceLookupRequestDTO(toNormalize);
-		
+
 		assertAll("normalize ServiceInstanceLookupRequestDTO 1",
 				// instance ids
 				() -> assertEquals(List.of("system-name::service-definition::1.0.0", "system-name::service-definition::1.0.1"), normalized.instanceIds()),
@@ -161,14 +165,16 @@ public class ServiceDiscoveryNormalizationTest {
 				// policies
 				() -> assertEquals(List.of("NONE", "CERT_AUTH"), normalized.policies()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeServiceInstanceLookupRequestDTOTest2_NullCases() {
-		
+	public void normalizeServiceInstanceLookupRequestDTOTest2NullCases() {
+
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInstanceLookupRequestDTO(null);});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeServiceInstanceLookupRequestDTO(null);
+			});
+
 		// everything is null
 		final ServiceInstanceLookupRequestDTO toNormalize = new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null);
 		final ServiceInstanceLookupRequestDTO normalized = normalizator.normalizeServiceInstanceLookupRequestDTO(toNormalize);
@@ -198,24 +204,32 @@ public class ServiceDiscoveryNormalizationTest {
 	@Test
 	public void normalizeSystemNameTest() {
 		// name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemName(null);});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeSystemName(null);
+			});
+
 		// name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> { normalizator.normalizeSystemName(""); });
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeSystemName("");
+			});
+
 		// normalize name
 		assertEquals("system-name-1", normalizator.normalizeSystemName("\n \tsystem-NAME-1\r \n"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void normalizeServiceInstanceIdTest() {
 		// instance id is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInstanceId(null);});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeServiceInstanceId(null);
+			});
+
 		// instance id is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> { normalizator.normalizeServiceInstanceId(""); });
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeServiceInstanceId("");
+			});
+
 		// normalize instance id
 		assertEquals("system-name::service-definition::1.0.0", normalizator.normalizeServiceInstanceId(" system-NAME::service-definition::1.0.0 "));
 	}

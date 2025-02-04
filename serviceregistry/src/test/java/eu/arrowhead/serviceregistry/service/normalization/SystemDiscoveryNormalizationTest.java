@@ -21,16 +21,16 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 
 @SpringBootTest
 public class SystemDiscoveryNormalizationTest {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	@Autowired
 	private SystemDiscoveryNormalization normalizator;
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void normalizeSystemRequestDTOTest1() {
@@ -45,9 +45,9 @@ public class SystemDiscoveryNormalizationTest {
 				List.of("2001:db8:85a3::8a2e:0370:7334\r\n", " 192.168.1.1\n \t"),
 				// device name
 				"\ndevice-nAME\n");
-		
+
 		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
-		
+
 		assertAll("normalize SystemRequestDTO 1",
 				// name
 				() -> assertEquals("system-name", normalized.name()),
@@ -60,13 +60,15 @@ public class SystemDiscoveryNormalizationTest {
 				// device name
 				() -> assertEquals("device-name", normalized.deviceName()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeSystemRequestDTOTest2_NullCases() {
+	public void normalizeSystemRequestDTOTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeSystemRequestDTO(null);});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeSystemRequestDTO(null);
+			});
+
 		// dto contains null members (version, addresses)
 		final SystemRequestDTO toNormalize = new SystemRequestDTO(
 				// name
@@ -79,43 +81,42 @@ public class SystemDiscoveryNormalizationTest {
 				null,
 				// device name
 				"device-name");
-		
+
 		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
-		
+
 		assertAll("normalize SystemRequestDTO",
 				// version
 				() -> assertEquals("1.0.0", normalized.version()),
 				// addresses
 				() -> assertEquals(new ArrayList<>(), normalized.addresses()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void normalizeSystemLookupRequestDTO() {
 		// dto is null
 		assertDoesNotThrow(() -> normalizator.normalizeSystemLookupRequestDTO(null));
-		
-		
+
 		final List<MetadataRequirementDTO> metadataRequirements = new ArrayList<>(1);
 		metadataRequirements.add((MetadataRequirementDTO) new MetadataRequirementDTO().put("key1", Map.of("op", "EQUALS", "value", "value1")));
-	
+
 		// normalize dto
 		final SystemLookupRequestDTO toNormalize = new SystemLookupRequestDTO(
 				// names
-				List.of(" system-NAME-1\r\n", " system-NAME-2\r\n"), 
+				List.of(" system-NAME-1\r\n", " system-NAME-2\r\n"),
 				// addresses
-				List.of("2001:db8:85a3::8a2e:370:7334\r\n", "    2001:db8:85a3::8a2e:370:1\r\n"), 
+				List.of("2001:db8:85a3::8a2e:370:7334\r\n", "    2001:db8:85a3::8a2e:370:1\r\n"),
 				// address type
-				" ipv6\r\n", 
+				" ipv6\r\n",
 				// metadata requirements
-				metadataRequirements, 
+				metadataRequirements,
 				// versions
-				List.of("", " 1 ", "1.1\r\n"), 
+				List.of("", " 1 ", "1.1\r\n"),
 				// device names
 				List.of(" device-NAME-1\r\n", " device-NAME-2\r\n"));
-		
+
 		final SystemLookupRequestDTO normalized = normalizator.normalizeSystemLookupRequestDTO(toNormalize);
-		
+
 		assertAll("normalize SystemLookupRequestDTO",
 				// names
 				() -> assertEquals(List.of("system-name-1", "system-name-2"), normalized.systemNames()),
@@ -130,16 +131,20 @@ public class SystemDiscoveryNormalizationTest {
 				// device names
 				() -> assertEquals(List.of("device-name-1", "device-name-2"), normalized.deviceNames()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void normalizeRevokeSystemNameTest() {
 		// name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeRevokeSystemName(null);});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeRevokeSystemName(null);
+			});
+
 		// name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> { normalizator.normalizeRevokeSystemName("");});
-		
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {
+			normalizator.normalizeRevokeSystemName("");
+			});
+
 		// normalize name
 		assertEquals("system-name-1", normalizator.normalizeRevokeSystemName("\n \tsystem-NAME-1\r \n"));
 	}
