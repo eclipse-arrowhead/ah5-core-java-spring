@@ -30,6 +30,10 @@ import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -632,4 +636,105 @@ public class ManagementNormalizationTest {
 	}
 	
 	// INTERFACE TEMPLATES
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeServiceInterfaceTemplateListRequestDTOTest() {
+		// dto is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInterfaceTemplateListRequestDTO(null);});
+		
+		// template list is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeServiceInterfaceTemplateListRequestDTO(new ServiceInterfaceTemplateListRequestDTO(null));});
+		
+		// normalize dto
+		final ServiceInterfaceTemplateRequestDTO toNormalize1 = new ServiceInterfaceTemplateRequestDTO(
+				// name
+				"\t generic-hTTp \t\n",
+				// protocol
+				" hTTp  ",
+				// property requirements
+				List.of(new ServiceInterfaceTemplatePropertyDTO(
+						// name
+						"\n ipAddress \t ",
+						// mandatory
+						false,
+						// validator
+						"\n minmax \n",
+						// validator params
+						List.of("192.168.0.0 \n", "192.168.255.255 \n")))
+				);
+		
+		final ServiceInterfaceTemplateRequestDTO toNormalize2 = new ServiceInterfaceTemplateRequestDTO(
+				// name
+				"\t generic-hTTps \t\n",
+				// protocol
+				" hTTps  ",
+				// property requirements
+				List.of(new ServiceInterfaceTemplatePropertyDTO(
+						// name
+						"\n ipAddress \t ",
+						// mandatory
+						false,
+						// validator
+						"\n minmax \n",
+						// validator params
+						List.of("192.166.0.0 \n", "192.166.255.255 \n"))));
+		
+		final ServiceInterfaceTemplateListRequestDTO normalized = normalizator.normalizeServiceInterfaceTemplateListRequestDTO(new ServiceInterfaceTemplateListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		
+		assertAll("normalize ServiceInterfaceTemplateListRequestDTO 1",
+				() -> assertEquals(2, normalized.interfaceTemplates().size()),
+				// name
+				() -> assertEquals("generic-http", normalized.interfaceTemplates().get(0).name()),
+				() -> assertEquals("generic-https", normalized.interfaceTemplates().get(1).name()),
+				// protocol
+				() -> assertEquals("http", normalized.interfaceTemplates().get(0).protocol()),
+				() -> assertEquals("https", normalized.interfaceTemplates().get(1).protocol()),
+				// property requirements
+				() -> assertEquals(List.of(new ServiceInterfaceTemplatePropertyDTO("ipAddress", false, "MINMAX", List.of("192.168.0.0", "192.168.255.255"))), normalized.interfaceTemplates().get(0).propertyRequirements()),
+				() -> assertEquals(List.of(new ServiceInterfaceTemplatePropertyDTO("ipAddress", false, "MINMAX", List.of("192.166.0.0", "192.166.255.255"))), normalized.interfaceTemplates().get(1).propertyRequirements()));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeServiceInterfaceTemplateQueryRequestDTOTest() {
+		// dto is null
+		assertEquals(new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>()), 
+				normalizator.normalizeServiceInterfaceTemplateQueryRequestDTO(null));
+		
+		// dto has null members (template names, protocols)
+		assertEquals(new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>()), 
+				normalizator.normalizeServiceInterfaceTemplateQueryRequestDTO(new ServiceInterfaceTemplateQueryRequestDTO(null, null, null)));
+		
+		// normalize dto
+		final ServiceInterfaceTemplateQueryRequestDTO toNormalize = new ServiceInterfaceTemplateQueryRequestDTO(
+				// pagination
+				new PageDTO(0, 10, "asc", "id"),
+				// template names
+				List.of("generic-MQTT \n", "generic-MQTTS \n"),
+				// protocols
+				List.of("TCP \n", "SSL \n"));
+		
+		final ServiceInterfaceTemplateQueryRequestDTO normalized = normalizator.normalizeServiceInterfaceTemplateQueryRequestDTO(toNormalize);
+		assertAll("normalize ServiceInterfaceTemplateQueryRequestDTO",
+				// pagination -> should not change
+				() -> assertEquals(new PageDTO(0, 10, "asc", "id"), normalized.pagination()),
+				// template names
+				() -> assertEquals(List.of("generic-mqtt", "generic-mqtts"), normalized.templateNames()),
+				// protocols
+				() -> assertEquals(List.of("tcp", "ssl"), normalized.protocols()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void normalizeRemoveInterfaceTemplatesTest() {
+		// name list is null
+		assertThrows(java.lang.IllegalArgumentException.class, () -> {normalizator.normalizeRemoveInterfaceTemplates(null);});
+		
+		// normalize list
+		final List<String> toNormalize = List.of("generic-MQTT \n", "generic-MQTTS \n");
+		final List<String> normalized = normalizator.normalizeRemoveInterfaceTemplates(toNormalize);
+		assertEquals("generic-mqtt", normalized.get(0));
+		assertEquals("generic-mqtts", normalized.get(1));
+	}
 }

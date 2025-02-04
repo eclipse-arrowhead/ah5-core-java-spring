@@ -111,7 +111,7 @@ public class InterfaceNormalizerTest {
 		
 		final ServiceInterfaceTemplateRequestDTO normalized = normalizer.normalizeTemplateDTO(toNormalize);
 		
-		assertAll("normalize emplateDTO 1",
+		assertAll("normalize templateDTO 1",
 				// name
 				() -> assertEquals("generic-http", normalized.name()),
 				// protocol
