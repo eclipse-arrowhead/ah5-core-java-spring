@@ -43,8 +43,8 @@ public class ServiceDiscoveryNormalizationTest {
 				MqttInterfaceModel.PROP_NAME_ACCESS_PORT, 8080,
 				MqttInterfaceModel.PROP_NAME_TOPIC, "hello");
 		
-		final ServiceInstanceInterfaceRequestDTO interface1 = new ServiceInstanceInterfaceRequestDTO("\n generic-mqtt", "\n tcp", "\n NONE", properties);
-		final ServiceInstanceInterfaceRequestDTO interface2 = new ServiceInstanceInterfaceRequestDTO("\n generic-mqtts", "\n ssl", "\n TOKEN_AUTH", properties);
+		final ServiceInstanceInterfaceRequestDTO interface1 = new ServiceInstanceInterfaceRequestDTO("\n generic-mqtt", "\n tcp", "\n none", properties);
+		final ServiceInstanceInterfaceRequestDTO interface2 = new ServiceInstanceInterfaceRequestDTO("\n generic-mqtts", "\n ssl", "\n token_auth", properties);
 		
 		// normalize dto
 		final ServiceInstanceRequestDTO toNormalize = new ServiceInstanceRequestDTO(
@@ -116,7 +116,7 @@ public class ServiceDiscoveryNormalizationTest {
 		
 		// create interface property requirements
 		final MetadataRequirementDTO interfacePropertyRequirement = new MetadataRequirementDTO();
-		interfacePropertyRequirement.put("priority", Map.of(HttpInterfaceModel.PROP_NAME_BASE_PATH, Map.of(MetadataRequirementTokenizer.OP, MetaOps.CONTAINS, MetadataRequirementTokenizer.VALUE, "path")));
+		interfacePropertyRequirement.put(HttpInterfaceModel.PROP_NAME_BASE_PATH, Map.of(MetadataRequirementTokenizer.OP, MetaOps.CONTAINS, MetadataRequirementTokenizer.VALUE, "path"));
 		
 		// normalize dto
 		final ServiceInstanceLookupRequestDTO toNormalize = new ServiceInstanceLookupRequestDTO(
@@ -137,8 +137,7 @@ public class ServiceDiscoveryNormalizationTest {
 				// interface property requirements list
 				List.of(interfacePropertyRequirement),
 				// policies
-				List.of(" none ", " cert_auth ")
-				);
+				List.of(" none ", " cert_auth "));
 		
 		final ServiceInstanceLookupRequestDTO normalized = normalizator.normalizeServiceInstanceLookupRequestDTO(toNormalize);
 		
@@ -160,8 +159,7 @@ public class ServiceDiscoveryNormalizationTest {
 				// interface property requirements list -> should not change
 				() -> assertEquals(List.of(interfacePropertyRequirement), normalized.interfacePropertyRequirementsList()),
 				// policies
-				() -> assertEquals(List.of("NONE", "CERT_AUTH"), normalized.policies())
-				);
+				() -> assertEquals(List.of("NONE", "CERT_AUTH"), normalized.policies()));
 	}
 	
 	//-------------------------------------------------------------------------------------------------
