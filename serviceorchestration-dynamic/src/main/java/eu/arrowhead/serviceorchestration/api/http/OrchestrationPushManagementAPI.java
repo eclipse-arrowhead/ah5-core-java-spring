@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
+import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
 import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
-import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
@@ -73,13 +73,27 @@ public class OrchestrationPushManagementAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void pushTrigger(final HttpServletRequest httpServletRequest, final OrchestrationPushTriggerDTO dto) {
+	@Operation(summary = "Returns the created push orchestration job records")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationPushJobListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public OrchestrationPushJobListResponseDTO pushTrigger(final HttpServletRequest httpServletRequest, final OrchestrationPushTriggerDTO dto) {
 		logger.debug("pushTrigger started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		pushService.pushTrigger(new OrchestrationPushTrigger(requesterSystem, dto), origin);
+		return pushService.pushTrigger(new OrchestrationPushTrigger(requesterSystem, dto), origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------

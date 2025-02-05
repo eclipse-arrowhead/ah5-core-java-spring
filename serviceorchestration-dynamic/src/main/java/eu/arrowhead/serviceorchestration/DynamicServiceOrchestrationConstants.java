@@ -33,6 +33,8 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String METADATA_KEY_ORCHESTRATION_STRATEGY = "orchestration-strategy";
 	public static final String METADATA_VALUE_ORCHESTRATION_STRATEGY = "dynamic";
+	
+	public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
 
 	// Operation related
 

@@ -27,3 +27,19 @@ CREATE TABLE IF NOT EXISTS `subscription` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `subscription_uk` (`owner_system`, `target_system`, `service_definition`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
+
+-- Push job
+
+CREATE TABLE IF NOT EXISTS `push_job` (
+  `id` binary(16) NOT NULL,
+  `started_at` timestamp NOT NULL,
+  `finished_at` timestamp NOT NULL,
+  `status` varchar(14) NOT NULL,
+  `type` varchar(14) NOT NULL,
+  `requester_system` varchar(63) NOT NULL,
+  `target_system` varchar(63) NOT NULL,
+  `service_definition` varchar(63) NOT NULL,
+  `subscription_id` varchar(63),
+  `message` mediumtext
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8; 

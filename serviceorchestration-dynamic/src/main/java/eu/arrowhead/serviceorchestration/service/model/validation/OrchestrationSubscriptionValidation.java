@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.enums.NotifyProtocol;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
@@ -23,6 +24,9 @@ public class OrchestrationSubscriptionValidation {
 
 	@Autowired
 	private OrchestrationFormValidation orchFormValidator;
+
+	@Autowired
+	private DynamicServiceOrchestrationSystemInfo sysInfo;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -87,6 +91,10 @@ public class OrchestrationSubscriptionValidation {
 		if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
 				|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
 			validateNormalizedNotifyPropertiesForMQTT(subscription.getNotifyProperties(), origin);
+
+			if (!sysInfo.isMqttApiEnabled()) {
+				throw new InvalidParameterException("MQTT notify protocol required, but MQTT is not enabled.", origin);
+			}
 		}
 	}
 
