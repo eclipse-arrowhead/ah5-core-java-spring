@@ -10,12 +10,14 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationFromContextValidation;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationPushManagementValidation;
 
 @Service
 public class OrchestrationPushManagementService {
@@ -32,6 +34,9 @@ public class OrchestrationPushManagementService {
 	@Autowired
 	private DTOConverter dtoConverter;
 
+	@Autowired
+	private OrchestrationPushManagementValidation validation;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -41,9 +46,8 @@ public class OrchestrationPushManagementService {
 	public OrchestrationSubscriptionListResponseDTO pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
 		logger.debug("pushSubscribe started...");
 
-		// TODO validate (check duplicates too) and normalize
-		final Pair<String, List<OrchestrationSubscriptionListRequestDTO>> normalized = null;
-		final List<OrchestrationSubscription> subscriptions = dto.subscriptions().stream().map(subscriptionDTO -> new OrchestrationSubscription(requesterSystem, subscriptionDTO)).toList();
+		final Pair<String, List<OrchestrationSubscriptionRequestDTO>> normalized = validation.validateAndNormalizePushSubscribeService(requesterSystem, dto, origin);
+		final List<OrchestrationSubscription> subscriptions = normalized.getRight().stream().map(subscriptionDTO -> new OrchestrationSubscription(normalized.getLeft(), subscriptionDTO)).toList();
 		subscriptions.forEach(s -> formContextValidator.validate(s.getOrchestrationForm(), origin));
 
 		final List<Subscription> result = subscriptionDbService.create(subscriptions);
