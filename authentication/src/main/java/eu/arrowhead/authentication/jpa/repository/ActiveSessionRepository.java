@@ -1,5 +1,6 @@
 package eu.arrowhead.authentication.jpa.repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,10 +26,6 @@ public interface ActiveSessionRepository extends RefreshableRepository<ActiveSes
 
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:MethodNameCheck")
-	public void deleteBySystem_Name(final String systemName);
-
-	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:MethodNameCheck")
 	public List<ActiveSession> findAllBySystem_NameContains(final String namePart);
 
 	//-------------------------------------------------------------------------------------------------
@@ -36,5 +33,12 @@ public interface ActiveSessionRepository extends RefreshableRepository<ActiveSes
 
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:MethodNameCheck")
+	public void deleteBySystem_Name(final String systemName);
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MethodNameCheck")
 	public void deleteBySystem_NameIn(final List<String> systemNames);
+
+	//-------------------------------------------------------------------------------------------------
+	public void deleteByExpirationTimeLessThan(final ZonedDateTime time);
 }

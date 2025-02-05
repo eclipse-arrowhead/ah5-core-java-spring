@@ -389,6 +389,24 @@ public class IdentityDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void removeExpiredSessions() {
+		logger.debug("removeExpiredSessions started...");
+
+		final ZonedDateTime now = Utilities.utcNow();
+		synchronized (SESSION_LOCK) {
+			try {
+				asRepository.deleteByExpirationTimeLessThan(now);
+				asRepository.flush();
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Database operation error");
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Optional<PasswordAuthentication> getPasswordAuthenticationBySystem(final System system) {
 		logger.debug("getPasswordAuthenticationBySystem started...");
 		Assert.notNull(system, "system is null");

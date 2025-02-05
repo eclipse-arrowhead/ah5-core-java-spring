@@ -14,12 +14,19 @@
 
 	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
 	
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-quartz</artifactId>
+		</dependency>
+	</dependencies>
+	
 	<build>
 	 	<plugins>
 	   		<plugin>
 	 			<artifactId>maven-resources-plugin</artifactId>
-	        <version>${mvn.resources.version}</version>
-	        <executions>
+		        <version>${mvn.resources.version}</version>
+		        <executions>
 	          		<execution>
 	            		<id>copy-resources</id>
 	            		<phase>validate</phase>
@@ -43,10 +50,4 @@
 	      	</plugin>
 	 	</plugins>
   	</build>
-	<dependencies>
-		<dependency>
-		    <groupId>org.apache.commons</groupId>
-    		<artifactId>commons-lang3</artifactId>
-		</dependency>
-	</dependencies>
 </project>

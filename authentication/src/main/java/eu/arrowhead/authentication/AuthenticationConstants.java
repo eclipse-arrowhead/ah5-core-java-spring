@@ -44,9 +44,15 @@ public final class AuthenticationConstants {
 	public static final String IDENTITY_TOKEN_DURATION = "identity.token.duration"; // in seconds
 	public static final String $IDENTITY_TOKEN_DURATION = "${" + IDENTITY_TOKEN_DURATION + ":600}";
 	public static final int INFINITE_TOKEN_DURATION = 100; // in years
+	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
+	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":30000}";
 
 	// property size related
 	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
+
+	// Quartz related
+	public static final String CLEANER_TRIGGER = "authenticationCleanerTrigger";
+	public static final String CLEANER_JOB = "authenticationCleanerJob";
 
 	// Forbidden keys (for config service)
 

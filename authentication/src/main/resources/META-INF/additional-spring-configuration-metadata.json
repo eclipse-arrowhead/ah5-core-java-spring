@@ -53,5 +53,10 @@
     "name": "identity.token.duration",
     "type": "java.lang.Integer",
     "description": "A description for 'identity.token.duration'"
+  },
+  {
+    "name": "cleaner.job.interval",
+    "type": "java.lang.Long",
+    "description": "A description for 'cleaner_job_interval'"
   }
 ]}

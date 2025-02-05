@@ -86,7 +86,7 @@ public final class ServiceRegistryConstants {
 			"mqtt.client.password",
 
 			// cert related
-			"authenticator.secret.key",
+			"authenticator.secret.keys",
 			"server.ssl.key-store-type",
 			"server.ssl.key-store",
 			"server.ssl.key-store-password",
