@@ -1,8 +1,5 @@
 package eu.arrowhead.serviceorchestration.service.normalization;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +9,6 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 @Service
 public class OrchestrationServiceNormalization {
@@ -27,46 +23,6 @@ public class OrchestrationServiceNormalization {
 
 	//=================================================================================================
 	// methods
-
-	//-------------------------------------------------------------------------------------------------
-	public void normalizeOrchestrationForm(final OrchestrationForm form) {
-		logger.debug("normalizeOrchestrationForm started...");
-		Assert.notNull(form, "form is null");
-
-		form.setRequesterSystemName(nameNormalizer.normalize(form.getRequesterSystemName()));
-		form.setTargetSystemName(nameNormalizer.normalize(form.getTargetSystemName()));
-		form.setServiceDefinition(nameNormalizer.normalize(form.getServiceDefinition()));
-
-		if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
-			form.setOrchestrationFlags(form.getOrchestrationFlags().stream().map(f -> f.trim().toUpperCase()).toList());
-		}
-
-		if (!Utilities.isEmpty(form.getOperations())) {
-			form.setOperations(form.getOperations().stream().map(o -> nameNormalizer.normalize(o)).toList());
-		}
-
-		if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
-			form.setInterfaceTemplateNames(form.getInterfaceTemplateNames().stream().map(itn -> nameNormalizer.normalize(itn)).toList());
-		}
-
-		if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
-			form.setInterfaceAddressTypes(form.getInterfaceAddressTypes().stream().map(iat -> iat.trim().toUpperCase()).toList());
-		}
-
-		if (!Utilities.isEmpty(form.getSecurityPolicies())) {
-			form.setSecurityPolicies(form.getSecurityPolicies().stream().map(sp -> sp.trim().toUpperCase()).toList());
-		}
-
-		if (!Utilities.isEmpty(form.getPrefferedProviders())) {
-			form.setPrefferedProviders(form.getPrefferedProviders().stream().map(pp -> nameNormalizer.normalize(pp)).toList());
-		}
-
-		if (!Utilities.isEmpty(form.getQosRequirements())) {
-			final Map<String, String> normalizedQoSReq = new HashMap<>();
-			form.getQosRequirements().forEach((k, v) -> normalizedQoSReq.put(k.trim(), v.trim()));
-			form.setQosRequirements(normalizedQoSReq);
-		}
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public Pair<String, String> normalizePushUnsubscribe(final String requesterSystem, final String subscriptionId) {

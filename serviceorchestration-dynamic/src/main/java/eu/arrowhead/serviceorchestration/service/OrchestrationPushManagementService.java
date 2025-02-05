@@ -1,13 +1,14 @@
 package eu.arrowhead.serviceorchestration.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
@@ -35,7 +36,7 @@ public class OrchestrationPushManagementService {
 	private DTOConverter dtoConverter;
 
 	@Autowired
-	private OrchestrationPushManagementValidation validation;
+	private OrchestrationPushManagementValidation validator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -46,8 +47,14 @@ public class OrchestrationPushManagementService {
 	public OrchestrationSubscriptionListResponseDTO pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
 		logger.debug("pushSubscribe started...");
 
-		final Pair<String, List<OrchestrationSubscriptionRequestDTO>> normalized = validation.validateAndNormalizePushSubscribeService(requesterSystem, dto, origin);
-		final List<OrchestrationSubscription> subscriptions = normalized.getRight().stream().map(subscriptionDTO -> new OrchestrationSubscription(normalized.getLeft(), subscriptionDTO)).toList();
+		List<OrchestrationSubscription> subscriptions = new ArrayList<>();
+		if (dto != null && !Utilities.isEmpty(dto.subscriptions())) {
+			for (OrchestrationSubscriptionRequestDTO subsReq : dto.subscriptions()) {
+				subscriptions.add(new OrchestrationSubscription(requesterSystem, subsReq));
+			}
+		}
+
+		validator.validateAndNormalizePushSubscribeService(subscriptions, origin);
 		subscriptions.forEach(s -> formContextValidator.validate(s.getOrchestrationForm(), origin));
 
 		final List<Subscription> result = subscriptionDbService.create(subscriptions);

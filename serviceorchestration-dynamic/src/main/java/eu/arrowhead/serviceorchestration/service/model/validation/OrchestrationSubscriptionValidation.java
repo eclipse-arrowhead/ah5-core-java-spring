@@ -1,0 +1,151 @@
+package eu.arrowhead.serviceorchestration.service.model.validation;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.service.enums.NotifyProtocol;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
+import io.swagger.v3.oas.models.PathItem.HttpMethod;
+
+@Service
+public class OrchestrationSubscriptionValidation {
+
+	//=================================================================================================
+	// members
+
+	@Autowired
+	private OrchestrationFormValidation orchFormValidator;
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateOrchestrationSubscription(final OrchestrationSubscription subscription, final String origin) {
+		logger.debug("validateOrchestrationSubscription started...");
+
+		if (subscription == null) {
+			throw new InvalidParameterException("Request payload is missing.", origin);
+		}
+
+		if (subscription.getDuration() != null && subscription.getDuration() <= 0) {
+			throw new InvalidParameterException("Subscription duration must be greater than 0.", origin);
+		}
+
+		if (Utilities.isEmpty(subscription.getNotifyProtocol())) {
+			throw new InvalidParameterException("Notify protocol is missing.", origin);
+		}
+
+		if (Utilities.isEmpty(subscription.getNotifyProperties())) {
+			throw new InvalidParameterException("Notify properties are missing.", origin);
+		}
+
+		subscription.getNotifyProperties().forEach((k, v) -> {
+			if (Utilities.isEmpty(k)) {
+				throw new InvalidParameterException("Notify properties contains empty key.", origin);
+			}
+			if (Utilities.isEmpty(v)) {
+				throw new InvalidParameterException("Notify properties contains empty value.", origin);
+			}
+		});
+
+		orchFormValidator.validateOrchestrationForm(subscription.getOrchestrationForm(), origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateAndNormalizeOrchestrationSubscription(final OrchestrationSubscription subscription, final String origin) {
+		logger.debug("validateAndNormalizeOrchestrationSubscription started...");
+
+		validateOrchestrationSubscription(subscription, origin);
+		orchFormValidator.validateAndNormalizeOrchestrationForm(subscription.getOrchestrationForm(), origin);
+
+		subscription.setNotifyProtocol(subscription.getNotifyProtocol().trim().toUpperCase());
+		if (!Utilities.isEnumValue(subscription.getNotifyProtocol(), NotifyProtocol.class)) {
+			throw new InvalidParameterException("Unsupported notify protocol: " + subscription.getNotifyProtocol(), origin);
+		}
+
+		final Map<String, String> normalizedNotifyProps = new HashMap<>();
+		subscription.getNotifyProperties().forEach((k, v) -> {
+			normalizedNotifyProps.put(k.trim().toLowerCase(), v.trim());
+		});
+		subscription.setNotifyProperties(normalizedNotifyProps);
+
+		if (subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())
+				|| subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())) {
+			validateNormalizedNotifyPropertiesForHTTP(subscription.getNotifyProperties(), origin);
+		}
+
+		if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
+				|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
+			validateNormalizedNotifyPropertiesForMQTT(subscription.getNotifyProperties(), origin);
+		}
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateNormalizedNotifyPropertiesForHTTP(final Map<String, String> props, final String origin) {
+		logger.debug("validateNormalizedNotifyPropertiesForHTTP...");
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " member.", origin);
+		}
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT + " member.", origin);
+		}
+
+		try {
+			Integer.valueOf(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+		} catch (final NumberFormatException ex) {
+			throw new InvalidParameterException("Notify port is not a number", origin);
+		}
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD + " member.", origin);
+		}
+
+		if (!props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.POST.name())
+				|| !props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PUT.name())
+				|| !props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PATCH.name())) {
+			throw new InvalidParameterException("Unsupported notify http method: " + props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD), origin);
+		}
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH + " member.", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateNormalizedNotifyPropertiesForMQTT(final Map<String, String> props, final String origin) {
+		logger.debug("validateNormalizedNotifyPropertiesForMQTT...");
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " member.", origin);
+		}
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT + " member.", origin);
+		}
+
+		try {
+			Integer.valueOf(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+		} catch (final NumberFormatException ex) {
+			throw new InvalidParameterException("Notify port is not a number", origin);
+		}
+
+		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC)) {
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC + " member.", origin);
+		}
+	}
+}
