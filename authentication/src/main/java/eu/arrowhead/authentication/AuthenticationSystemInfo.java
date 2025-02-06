@@ -62,6 +62,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 		final ServiceModel identity = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_IDENTITY)
 				.version(AuthenticationConstants.VERSION_IDENTITY)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForIdentity())
 				.build();
 

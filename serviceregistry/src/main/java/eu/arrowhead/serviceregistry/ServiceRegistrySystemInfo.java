@@ -56,7 +56,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		final ServiceModel deviceDiscovery = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_DEVICE_DISCOVERY)
 				.version(ServiceRegistryConstants.VERSION_DEVICE_DISCOVERY)
-				.metadata(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForDeviceDiscovery())
 				.serviceInterface(getMqttServiceInterfaceForDeviceDiscovery())
 				.build();
@@ -64,7 +64,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		final ServiceModel systemDiscovery = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_SYSTEM_DISCOVERY)
 				.version(ServiceRegistryConstants.VERSION_SYSTEM_DISCOVERY)
-				.metadata(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForSystemDiscovery())
 				.serviceInterface(getMqttServiceInterfaceForSystemDiscovery())
 				.build();
@@ -72,7 +72,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 		final ServiceModel serviceDiscovery = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_DISCOVERY)
 				.version(ServiceRegistryConstants.VERSION_SERVICE_DISCOVERY)
-				.metadata(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForServiceDiscovery())
 				.serviceInterface(getMqttServiceInterfaceForServiceDiscovery())
 				.build();

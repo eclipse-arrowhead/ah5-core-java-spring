@@ -164,7 +164,9 @@ public class ManagementNormalization {
 		}
 
 		final PageDTO pagination = dto.pagination();
-		final PageDTO normalizedPageDTO = !Utilities.isEmpty(pagination.sortField()) && ActiveSession.SYSTEM_NAME_ALTERNATIVES.contains(dto.pagination().sortField().trim().toLowerCase())
+		final PageDTO normalizedPageDTO = pagination != null
+				&& !Utilities.isEmpty(pagination.sortField())
+				&& ActiveSession.SYSTEM_NAME_ALTERNATIVES.contains(dto.pagination().sortField().trim().toLowerCase())
 				? new PageDTO(pagination.page(), pagination.size(), pagination.direction(), ActiveSession.SORT_NAME_SYSTEM_NAME)
 				: pagination;
 

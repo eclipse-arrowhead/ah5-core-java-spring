@@ -32,7 +32,8 @@ public class InternalAuthenticationFilter extends ArrowheadFilter implements IAu
 	private static final List<String> tokenlessOperationPaths = List.of(
 			AuthenticationConstants.HTTP_API_OP_LOGIN_PATH,
 			AuthenticationConstants.HTTP_API_OP_LOGOUT_PATH,
-			AuthenticationConstants.HTTP_API_OP_CHANGE_PATH);
+			AuthenticationConstants.HTTP_API_OP_CHANGE_PATH,
+			Constants.HTTP_API_OP_ECHO_PATH);
 
 	@Autowired
 	private IdentityDbService dbService;

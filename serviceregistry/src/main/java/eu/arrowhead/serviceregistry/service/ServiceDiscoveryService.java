@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -23,7 +24,6 @@ import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
@@ -96,7 +96,7 @@ public class ServiceDiscoveryService {
 			}
 
 			for (final MetadataRequirementDTO metadataReq : normalized.metadataRequirementsList()) {
-				metadataReq.put(ServiceRegistryConstants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true);
+				metadataReq.put(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true);
 			}
 		}
 

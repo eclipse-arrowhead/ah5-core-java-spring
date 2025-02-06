@@ -32,7 +32,7 @@ public final class AuthenticationConstants {
 	public static final String HTTP_API_OP_CHANGE_PATH = "/change";
 	public static final String HTTP_API_OP_VERIFY_BASE_PATH = "/verify";
 	public static final String HTTP_PARAM_TOKEN = "{token}";
-	public static final String HTTP_API_OP_VERIFY_PATH = HTTP_API_BASE_PATH + "/" + HTTP_PARAM_TOKEN;
+	public static final String HTTP_API_OP_VERIFY_PATH = "/" + HTTP_PARAM_TOKEN;
 	public static final String HTTP_API_OP_IDENTITIES_PATH = "/identities";
 	public static final String HTTP_API_OP_IDENTITIES_QUERY_PATH = HTTP_API_OP_IDENTITIES_PATH + "/query";
 	public static final String HTTP_API_OP_SESSION_PATH = "/sessions";

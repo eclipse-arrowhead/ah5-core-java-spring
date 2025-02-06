@@ -34,10 +34,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping(AuthenticationConstants.HTTP_API_MANAGEMENT_PATH)
+@SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class ManagementAPI {
 
 	//=================================================================================================

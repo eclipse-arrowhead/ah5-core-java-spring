@@ -33,8 +33,6 @@ public final class ServiceRegistryConstants {
 	public static final String MQTT_API_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/management";
 	public static final String MQTT_API_GENERAL_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/general/management";
 
-	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
-
 	public static final String VERSION_DEVICE_DISCOVERY = "1.0.0";
 	public static final String VERSION_SYSTEM_DISCOVERY = "1.0.0";
 	public static final String VERSION_SERVICE_DISCOVERY = "1.0.0";
