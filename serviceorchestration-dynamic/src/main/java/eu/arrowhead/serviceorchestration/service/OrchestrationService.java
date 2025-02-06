@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
+import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
+import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;
@@ -38,6 +41,9 @@ public class OrchestrationService {
 	private SubscriptionDbService subscriptionDbService;
 
 	@Autowired
+	private OrchestrationJobDbService orchJobDbService;
+
+	@Autowired
 	private OrchestrationValidation validator;
 
 	@Autowired
@@ -55,9 +61,16 @@ public class OrchestrationService {
 		validator.validateAndNormalizePullService(form, origin);
 		formContextValidator.validate(form, origin);
 
-		// TODO create job record
-		final OrchestrationResponseDTO result = orchestrate(form);
-		// TODO update job record
+		final OrchestrationJob job = orchJobDbService.create(List.of(
+				new OrchestrationJob(
+						OrchestrationType.PULL,
+						form.getRequesterSystemName(),
+						form.getTargetSystemName(),
+						form.getServiceDefinition(),
+						null)))
+				.getFirst();
+
+		final OrchestrationResponseDTO result = orchestrate(job.getId(), form);
 		return result;
 	}
 
@@ -99,13 +112,13 @@ public class OrchestrationService {
 	//=================================================================================================
 	// assistant methods
 
-	private OrchestrationResponseDTO orchestrate(final OrchestrationForm form) {
+	private OrchestrationResponseDTO orchestrate(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("orchestrate started...");
 
 		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
-			return interCloudOrch.doInterCloudServiceOrchestration(form);
+			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		}
 
-		return localOrch.doLocalServiceOrchestration(form);
+		return localOrch.doLocalServiceOrchestration(jobId, form);
 	}
 }

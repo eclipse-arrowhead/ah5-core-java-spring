@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.service.utils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,8 @@ import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.QoSEvaulationType;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
+import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
+import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
@@ -28,136 +31,149 @@ public class LocalServiceOrchestration {
 	@Autowired
 	private InterCloudServiceOrchestration interCloudOrch;
 
+	@Autowired
+	private OrchestrationJobDbService orchJobDbService;
+
 	private static final Object LOCK = new Object();
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationResponseDTO doLocalServiceOrchestration(final OrchestrationForm form) {
-		final Set<String> warnings = new HashSet<>();
+	public OrchestrationResponseDTO doLocalServiceOrchestration(final UUID jobId, final OrchestrationForm form) {
+		orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
 
-		// Service Discovery
-		final boolean translationAllowed = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
-		List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
-		filterOutReservedOnes(candidates);
+		try {
+			final Set<String> warnings = new HashSet<>();
 
-		if (Utilities.isEmpty(candidates)) {
-			return doInterCloudOrReturn(form);
-		}
+			// Service Discovery
+			final boolean translationAllowed = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
+			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
+			filterOutReservedOnes(candidates);
 
-		// Dealing with exclusivity
-		if (form.exclusivityIsPreferred()) {
-			markExclusivityIfFeasible(candidates);
-		}
-
-		if (form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-			candidates = filterOutWhereExclusivityIsNotPossible(candidates);
-			if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
-				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
 			}
-		}
 
-		// Authorization cross-check
-		if (sysInfo.isAuthorizationEnabled()) {
-			candidates = filterOutUnauthorizedOnes(candidates);
-		}
-
-		if (Utilities.isEmpty(candidates)) {
-			return doInterCloudOrReturn(form);
-		}
-
-		// Temporary lock if required and possible
-		if (form.exclusivityIsPreferred()) {
-			candidates = filterOutReservedOnesAndTemporaryLockIfCanBeExclusive(candidates);
-		} else {
-			candidates = filterOutReservedOnes(candidates);
-		}
-
-		// Check if translation is necessary
-		if (translationAllowed) {
-			markIfTranslationIsNeeded(candidates);
-		}
-
-		// QoS cross-check
-		if (form.hasQoSRequirements()) {
-			if (!sysInfo.isQoSEnabled()) {
-				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
-				releaseTemporaryLockIfItWasLocked(candidates);
-				return convertToOrchestrationResponse(List.of(), warnings);
+			// Dealing with exclusivity
+			if (form.exclusivityIsPreferred()) {
+				markExclusivityIfFeasible(candidates);
 			}
-			candidates = doQoSCompliance(candidates);
-		}
 
-		if (Utilities.isEmpty(candidates)) {
-			return doInterCloudOrReturn(form);
-		}
-
-		// Deal with translations
-		if (translationAllowed) {
-			if (checkIfHasNativeOnes(candidates)) {
-				candidates = filterOutNonNativeOnes(candidates);
-			} else {
-				candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
-				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
-					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
-				}
-			}
-		}
-
-		if (Utilities.isEmpty(candidates)) {
-			return doInterCloudOrReturn(form);
-		}
-
-		// Dealing with preferences
-		if (form.exclusivityIsPreferred() && !form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
-			if (containsReservable(candidates)) {
+			if (form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
 				candidates = filterOutWhereExclusivityIsNotPossible(candidates);
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
-			} else {
-				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE);
 			}
-		}
 
-		if (form.hasPreferredProviders() && !form.hasFlag(OrchestrationFlag.ONLY_PREFERRED)) {
-			if (containsPreferredProviders(candidates)) {
-				candidates = filterOutNonPreferredProviders(candidates);
+			// Authorization cross-check
+			if (sysInfo.isAuthorizationEnabled()) {
+				candidates = filterOutUnauthorizedOnes(candidates);
 			}
-		}
 
-		// Matchmaking if required
-		if (Utilities.isEmpty(candidates)) {
-			return doInterCloudOrReturn(form);
-		}
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
+			}
 
-		if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
-			final OrchestrationCandidate match = matchmaking(candidates, getQoSEvaulationType(form));
+			// Temporary lock if required and possible
 			if (form.exclusivityIsPreferred()) {
-				reserve(match, form.getExclusivityDuration());
-				String matchInstanceId = match.getServiceInstance().instanceId();
-				releaseTemporaryLockIfItWasLocked(candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList());
-				if (form.getExclusivityDuration() < match.getExclusivityDuration()) {
-					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY);
+				candidates = filterOutReservedOnesAndTemporaryLockIfCanBeExclusive(candidates);
+			} else {
+				candidates = filterOutReservedOnes(candidates);
+			}
+
+			// Check if translation is necessary
+			if (translationAllowed) {
+				markIfTranslationIsNeeded(candidates);
+			}
+
+			// QoS cross-check
+			if (form.hasQoSRequirements()) {
+				if (!sysInfo.isQoSEnabled()) {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
+					releaseTemporaryLockIfItWasLocked(candidates);
+					return convertToOrchestrationResponse(List.of(), warnings);
+				}
+				candidates = doQoSCompliance(candidates);
+			}
+
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
+			}
+
+			// Deal with translations
+			if (translationAllowed) {
+				if (checkIfHasNativeOnes(candidates)) {
+					candidates = filterOutNonNativeOnes(candidates);
+				} else {
+					candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
+					if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
+					}
 				}
 			}
 
-			candidates.clear();
-			candidates.add(match);
-		}
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
+			}
 
-		// Obtain Authorization tokens when required
-		if (sysInfo.isAuthorizationEnabled()) {
-			obtainAuthorizationTokensIfRequired(candidates);
-		}
+			// Dealing with preferences
+			if (form.exclusivityIsPreferred() && !form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
+				if (containsReservable(candidates)) {
+					candidates = filterOutWhereExclusivityIsNotPossible(candidates);
+					if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
+					}
+				} else {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE);
+				}
+			}
 
-		// Create translation bridge if necessary
-		if (form.hasFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isTranslationNeeded()) {
-			buildTranslationBridge(candidates.get(0));
-		}
+			if (form.hasPreferredProviders() && !form.hasFlag(OrchestrationFlag.ONLY_PREFERRED)) {
+				if (containsPreferredProviders(candidates)) {
+					candidates = filterOutNonPreferredProviders(candidates);
+				}
+			}
 
-		return convertToOrchestrationResponse(candidates, warnings);
+			// Matchmaking if required
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
+			}
+
+			if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
+				final OrchestrationCandidate match = matchmaking(candidates, getQoSEvaulationType(form));
+				if (form.exclusivityIsPreferred()) {
+					reserve(match, form.getExclusivityDuration());
+					String matchInstanceId = match.getServiceInstance().instanceId();
+					releaseTemporaryLockIfItWasLocked(candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList());
+					if (form.getExclusivityDuration() < match.getExclusivityDuration()) {
+						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY);
+					}
+				}
+
+				candidates.clear();
+				candidates.add(match);
+			}
+
+			// Obtain Authorization tokens when required
+			if (sysInfo.isAuthorizationEnabled()) {
+				obtainAuthorizationTokensIfRequired(candidates);
+			}
+
+			// Create translation bridge if necessary
+			if (form.hasFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isTranslationNeeded()) {
+				buildTranslationBridge(candidates.get(0));
+			}
+
+			final OrchestrationResponseDTO result = convertToOrchestrationResponse(candidates, warnings);
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, null);
+			return result;
+
+		} catch (final Exception ex) {
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, ex.getMessage());
+			throw ex;
+		}
 	}
 
 	//=================================================================================================
@@ -297,9 +313,9 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private OrchestrationResponseDTO doInterCloudOrReturn(final OrchestrationForm form) {
+	private OrchestrationResponseDTO doInterCloudOrReturn(final UUID jobId, final OrchestrationForm form) {
 		if (sysInfo.isInterCloudEnabled() && form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
-			return interCloudOrch.doInterCloudServiceOrchestration(form);
+			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
 			return new OrchestrationResponseDTO();
 		}

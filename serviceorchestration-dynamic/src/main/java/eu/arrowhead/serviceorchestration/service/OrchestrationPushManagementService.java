@@ -20,6 +20,7 @@ import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
+import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
@@ -39,6 +40,9 @@ public class OrchestrationPushManagementService {
 
 	@Autowired
 	private SubscriptionDbService subscriptionDbService;
+
+	@Autowired
+	private OrchestrationJobDbService orchJobDbService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
