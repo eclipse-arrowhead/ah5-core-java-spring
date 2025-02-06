@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,7 @@ public interface SubscriptionRepository extends RefreshableRepository<Subscripti
 
 	//-------------------------------------------------------------------------------------------------
 	Optional<Subscription> findByOwnerSystemAndTargetSystemAndServiceDefinition(final String ownerSystem, final String targetSystem, final String serviceDefinition);
+
+	//-------------------------------------------------------------------------------------------------
+	List<Subscription> findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(final List<String> ownerSystem, final List<String> targetSystem, final List<String> serviceDefinition);
 }

@@ -92,6 +92,21 @@ public class SubscriptionDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> get(final List<UUID> ids) {
+		logger.debug("get started..");
+		Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+
+		try {
+			return subscriptionRepo.findAllById(ids);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Optional<Subscription> get(final String ownerSystem, final String targetSystem, final String serviceDefinition) {
 		logger.debug("get started..");
 		Assert.isTrue(!Utilities.isEmpty(ownerSystem), "ownerSystem is empty");
@@ -99,6 +114,20 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(ownerSystem, targetSystem, serviceDefinition);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> query(final List<String> ownerSystems, final List<String> targetSystems, final List<String> serviceDefinitions) {
+		logger.debug("get started..");
+
+		try {
+			return subscriptionRepo.findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(ownerSystems, targetSystems, serviceDefinitions);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

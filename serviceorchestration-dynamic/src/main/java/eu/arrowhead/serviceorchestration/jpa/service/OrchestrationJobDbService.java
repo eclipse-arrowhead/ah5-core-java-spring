@@ -15,6 +15,7 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationJobRepository;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 
 @Service
 public class OrchestrationJobDbService {
@@ -30,6 +31,7 @@ public class OrchestrationJobDbService {
 	//=================================================================================================
 	// members
 
+	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationJob> create(final List<OrchestrationJob> jobs) {
 		logger.debug("save started...");
 		Assert.isTrue(!Utilities.isEmpty(jobs), "job list is null");
@@ -42,6 +44,12 @@ public class OrchestrationJobDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationJob> query(final OrchestrationJobFilter filter) {
+		//TODO
+		return null;
 	}
 
 	//-------------------------------------------------------------------------------------------------

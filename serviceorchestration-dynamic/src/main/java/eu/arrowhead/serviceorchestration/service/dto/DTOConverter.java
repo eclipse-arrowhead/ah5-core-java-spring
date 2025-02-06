@@ -15,9 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
+import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
+import eu.arrowhead.dto.OrchestrationPushJobResponseDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionResponseDTO;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 
 @Service
@@ -58,11 +61,38 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(subscription.getCreatedAt()));
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationPushJobListResponseDTO convertOrchestrationJobListToDTO(final List<OrchestrationJob> jobs) {
+		logger.debug("convertSubscriptionListToDTO started...");
+		Assert.notNull(jobs, "job list is null");
+
+		return new OrchestrationPushJobListResponseDTO(jobs.stream().map(j -> convertOrchestrationJobToDTO(j)).toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationPushJobResponseDTO convertOrchestrationJobToDTO(final OrchestrationJob job) {
+		logger.debug("convertOrchestrationJobToDTO started...");
+		Assert.notNull(job, "job is null");
+
+		return new OrchestrationPushJobResponseDTO(
+				job.getId().toString(),
+				job.getStatus(),
+				job.getType(),
+				job.getRequesterSystem(),
+				job.getTargetSystem(),
+				job.getServiceDefinition(),
+				job.getSubscriptionId(),
+				job.getMessage(),
+				Utilities.convertZonedDateTimeToUTCString(job.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(job.getStartedAt()),
+				Utilities.convertZonedDateTimeToUTCString(job.getFinishedAt()));
+	}
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationRequestDTO createOrchestrationRequestDTO(final String orchestrationRequestStr) {
+	private OrchestrationRequestDTO createOrchestrationRequestDTO(final String orchestrationRequestStr) {
 		logger.debug("createOrchestrationRequestDTO started...");
 
 		try {
@@ -74,7 +104,7 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationNotifyInterfaceDTO createOrchestrationNotifyInterfaceDTO(final String protocol, final String propertiesStr) {
+	private OrchestrationNotifyInterfaceDTO createOrchestrationNotifyInterfaceDTO(final String protocol, final String propertiesStr) {
 		logger.debug("createOrchestrationNotifyInterfaceDTO started...");
 
 		final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {

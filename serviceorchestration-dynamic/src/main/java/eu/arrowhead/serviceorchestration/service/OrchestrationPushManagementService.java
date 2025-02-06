@@ -19,10 +19,14 @@ import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
+import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
+import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationFromContextValidation;
@@ -82,12 +86,39 @@ public class OrchestrationPushManagementService {
 		logger.debug("pushTrigger started...");
 
 		// TODO validate and normalize
-		// TODO query subscriptions
-		// TODO check if there is an already running for the same and return the existing job id
-		// TODO create jobs from subscriptions
-		// TODO save to job DB
-		// TODO convert to DTO
-		return null;
+
+		List<Subscription> subscriptions;
+		if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTartgetSystems())) {
+			subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of());
+		} else if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
+			subscriptions = subscriptionDbService.get(trigger.getSubscriptionIds().stream().map(id -> UUID.fromString(id)).toList());
+		} else {
+			subscriptions = subscriptionDbService.query(List.of(), trigger.getTartgetSystems(), List.of());
+		}
+
+		final List<OrchestrationJob> existingJobs = new ArrayList<>();
+		final List<OrchestrationJob> newJobs = new ArrayList<>();
+		for (final Subscription subscription : subscriptions) {
+			final List<OrchestrationJob> possiblySameJob = orchJobDbService.query(new OrchestrationJobFilter(
+					List.of(),
+					List.of(OrchestrationJobStatus.PENDING, OrchestrationJobStatus.IN_PROGRESS),
+					OrchestrationType.PUSH,
+					List.of(),
+					List.of(),
+					null,
+					List.of(subscription.getId().toString())));
+
+			if (!Utilities.isEmpty(possiblySameJob)) {
+				existingJobs.addAll(possiblySameJob);
+			} else {
+				newJobs.add(new OrchestrationJob(OrchestrationType.PUSH, trigger.getRequesterSystem(), subscription.getTargetSystem(), subscription.getServiceDefinition(), subscription.getId().toString()));
+			}
+		}
+
+		final List<OrchestrationJob> saved = orchJobDbService.create(newJobs);
+		existingJobs.addAll(saved);
+
+		return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
 	}
 
 	//=================================================================================================
