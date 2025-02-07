@@ -10,6 +10,8 @@ import java.util.concurrent.BlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
@@ -106,7 +108,8 @@ public class OrchestrationPushManagementService {
 					List.of(),
 					List.of(),
 					null,
-					List.of(subscription.getId().toString())));
+					List.of(subscription.getId().toString())),
+					PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD)).toList();
 
 			if (!Utilities.isEmpty(possiblySameJob)) {
 				existingJobs.addAll(possiblySameJob);

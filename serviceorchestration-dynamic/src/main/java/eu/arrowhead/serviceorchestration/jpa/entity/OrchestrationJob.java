@@ -18,6 +18,8 @@ public class OrchestrationJob {
 	//=================================================================================================
 	// members
 
+	public static final String DEFAULT_SORT_FIELD = "id";
+
 	@Id
 	private UUID id;
 
