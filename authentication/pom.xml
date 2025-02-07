@@ -14,13 +14,6 @@
 
 	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
 	
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-quartz</artifactId>
-		</dependency>
-	</dependencies>
-	
 	<build>
 	 	<plugins>
 	   		<plugin>
