@@ -11,9 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationJobRepository;
@@ -36,12 +38,28 @@ public class OrchestrationJobDbService {
 	// members
 
 	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationJob> create(final List<OrchestrationJob> jobs) {
 		logger.debug("save started...");
 		Assert.isTrue(!Utilities.isEmpty(jobs), "job list is null");
 
 		try {
 			return jobRepo.saveAllAndFlush(jobs);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Optional<OrchestrationJob> getById(final UUID id) {
+		logger.debug("getById started...");
+		Assert.notNull(id, "id is null");
+
+		try {
+			return jobRepo.findById(id);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -129,7 +147,8 @@ public class OrchestrationJobDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setStatus(final UUID jobId, final OrchestrationJobStatus status, final String message) {
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public OrchestrationJob setStatus(final UUID jobId, final OrchestrationJobStatus status, final String message) {
 		logger.debug("setStartedAt started...");
 
 		try {
@@ -156,7 +175,7 @@ public class OrchestrationJobDbService {
 				Assert.isTrue(false, "Unhandled orchestration job status: " + status);
 			}
 
-			jobRepo.saveAndFlush(job);
+			return jobRepo.saveAndFlush(job);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

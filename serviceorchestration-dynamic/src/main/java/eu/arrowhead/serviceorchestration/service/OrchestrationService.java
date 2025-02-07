@@ -70,8 +70,7 @@ public class OrchestrationService {
 						null)))
 				.getFirst();
 
-		final OrchestrationResponseDTO result = orchestrate(job.getId(), form);
-		return result;
+		return orchestrate(job.getId(), form);
 	}
 
 	//-------------------------------------------------------------------------------------------------
