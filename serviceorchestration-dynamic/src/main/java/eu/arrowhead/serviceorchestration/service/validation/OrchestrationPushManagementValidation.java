@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
+import eu.arrowhead.serviceorchestration.service.model.validation.OrchestrationPushTriggerValidation;
 import eu.arrowhead.serviceorchestration.service.model.validation.OrchestrationSubscriptionValidation;
 
 @Service
@@ -20,6 +22,9 @@ public class OrchestrationPushManagementValidation {
 
 	@Autowired
 	private OrchestrationSubscriptionValidation orchSubsValidator;
+
+	@Autowired
+	private OrchestrationPushTriggerValidation orchPushTriggerValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -41,6 +46,13 @@ public class OrchestrationPushManagementValidation {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validatePushTriggerService(final OrchestrationPushTrigger trigger, final String origin) {
+		logger.debug("validatePushTriggerService started");
+
+		orchPushTriggerValidator.validateOrchestrationPushTrigger(trigger, origin);
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -54,5 +66,12 @@ public class OrchestrationPushManagementValidation {
 		for (final OrchestrationSubscription subs : subscription) {
 			orchSubsValidator.validateAndNormalizeOrchestrationSubscription(subs, origin);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateAndNormalizePushTriggerService(final OrchestrationPushTrigger trigger, final String origin) {
+		logger.debug("validateAndNormalizePushTriggerService started");
+
+		orchPushTriggerValidator.validateAndNormalizeOrchestrationPushTrigger(trigger, origin);
 	}
 }

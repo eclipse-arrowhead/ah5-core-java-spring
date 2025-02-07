@@ -87,7 +87,7 @@ public class OrchestrationPushManagementService {
 	public OrchestrationPushJobListResponseDTO pushTrigger(final OrchestrationPushTrigger trigger, final String origin) {
 		logger.debug("pushTrigger started...");
 
-		// TODO validate and normalize
+		validator.validateAndNormalizePushTriggerService(trigger, origin);
 
 		List<Subscription> subscriptions;
 		if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTartgetSystems())) {
@@ -119,6 +119,7 @@ public class OrchestrationPushManagementService {
 		}
 
 		final List<OrchestrationJob> saved = orchJobDbService.create(newJobs);
+		pushOrchJobQueue.addAll(saved.stream().map(job -> job.getId()).toList());
 		existingJobs.addAll(saved);
 
 		return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
