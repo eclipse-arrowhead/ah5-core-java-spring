@@ -37,15 +37,18 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	// members
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	@Autowired
 	private NameValidator nameValidator;
-	
+
 	@Autowired
 	private NameNormalizer nameNormalizer;
-	
+
 	@Autowired
 	private ServiceInstanceDbService instanceDbService;
+
+	// only HTTP and HTTPS are supported
+	private final List<String> supportedInterfaces = List.of(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME, Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME);
 
 	//=================================================================================================
 	// methods
@@ -59,36 +62,35 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName) throws ArrowheadException {
-		logger.debug("DatabaseCollectorDriver.acquireService started...");
-		
-		// only http and https are supported
-		if (!Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME.equals(interfaceTemplateName)
-				&& !Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME.equals(interfaceTemplateName)) {
-			throw new InvalidParameterException("This collector only supports the following interfaces: "
-					+ String.join(", ", Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME, Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME));
+		logger.debug("DatabaseCollectorDriver.acquireService started: service definition: {}, interface template: {}", serviceDefinitionName, interfaceTemplateName);
+
+		if (!supportedInterfaces.contains(interfaceTemplateName)) {
+			throw new InvalidParameterException("This collector only supports the following interfaces: " + String.join(", ", supportedInterfaces));
 		}
-		
+
 		// get the service instance entries from the database
 		final Page<Map.Entry<ServiceInstance, List<ServiceInstanceInterface>>> instanceEntries = getInstanceEntries(serviceDefinitionName, interfaceTemplateName);
 		if (instanceEntries.isEmpty()) {
 			return null;
 		}
-		
+
 		// only the first instance entry will be returned
 		final ServiceInstance instance = instanceEntries.getContent().getFirst().getKey();
 		final List<ServiceInstanceInterface> interfaces = instanceEntries.getContent().getFirst().getValue();
-		
-		// create the list of interface models 
+
+		// create the list of interface models
 		final List<InterfaceModel> interfaceModelList = new ArrayList<>(interfaces.size());
 		for (final ServiceInstanceInterface interf : interfaces) {
-			
+
 			final String templateName = interf.getServiceInterfaceTemplate().getName();
 			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
-			}); 
-			
-			interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
+			});
+
+			if (supportedInterfaces.contains(templateName)) {
+				interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
+			}
 		}
-		
+
 		final ServiceModel serviceModel = new ServiceModel
 				.Builder()
 				.serviceDefinition(instance.getServiceDefinition().getName())
@@ -97,55 +99,54 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 				.metadata(Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
 				}))
 				.build();
-		
+
 		return serviceModel;
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private Page<Map.Entry<ServiceInstance, List<ServiceInstanceInterface>>> getInstanceEntries(final String serviceDefinitionName, final String interfaceTemplateName) {
-		
+
 		// validate and normalize
 		nameValidator.validateName(serviceDefinitionName);
 		nameValidator.validateName(interfaceTemplateName);
 		final String nServiceDefinitionName = nameNormalizer.normalize(serviceDefinitionName);
 		final String nInterfaceTemplateName = nameNormalizer.normalize(interfaceTemplateName);
-		
-		
+
 		final PageRequest pagination = PageRequest.of(0, 1, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
-		
+
 		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(
 				new ServiceInstanceLookupRequestDTO
 				.Builder()
 				.serviceDefinitionName(nServiceDefinitionName)
 				.interfaceTemplateName(nInterfaceTemplateName)
 				.build());
-		
+
 		// get the instances from the database
 		return instanceDbService.getPageByFilters(pagination, filterModel);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("unchecked")
 	private HttpInterfaceModel createHttpInterfaceModel(final String templateName, final Map<String, Object> properties) {
-		
+
 		// access addresses
-		final List<String> accessAddresses = (List<String>) properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_ADDRESSES); 
-		
+		final List<String> accessAddresses = (List<String>) properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_ADDRESSES);
+
 		// access port
-		final int accessPort = (int) properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_PORT); 
-		
+		final int accessPort = (int) properties.get(HttpInterfaceModel.PROP_NAME_ACCESS_PORT);
+
 		// base path
 		final String basePath = (String) properties.get(HttpInterfaceModel.PROP_NAME_BASE_PATH);
-		
+
 		// operations
 		Map<String, Object> operations = (Map<String, Object>) properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS);
 		if (operations == null) {
 			operations = Map.of();
 		}
-		
+
 		// create the operation model map
 		final Map<String, HttpOperationModel> operationModelMap = new HashMap<>(operations.size()); // expected type
 		for (final Map.Entry<String, Object> operation : operations.entrySet()) {
@@ -157,7 +158,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 														.path((String) operationProps.get(HttpOperationModel.PROP_NAME_PATH))
 														.build());
 		}
-		
+
 		// create the interface model
 		final HttpInterfaceModel model = new HttpInterfaceModel
 				.Builder(templateName)
@@ -166,7 +167,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 				.basePath(basePath)
 				.operations(operationModelMap)
 				.build();
-		
+
 		return model;
 	}
 }
