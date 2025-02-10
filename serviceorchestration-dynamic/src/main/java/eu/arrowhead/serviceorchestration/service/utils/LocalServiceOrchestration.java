@@ -1,10 +1,14 @@
 package eu.arrowhead.serviceorchestration.service.utils;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +18,9 @@ import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.QoSEvaulationType;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
+import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationLockDbService;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
@@ -34,13 +40,20 @@ public class LocalServiceOrchestration {
 	@Autowired
 	private OrchestrationJobDbService orchJobDbService;
 
+	@Autowired
+	private OrchestrationLockDbService orchLockDbService;
+
 	private static final Object LOCK = new Object();
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationResponseDTO doLocalServiceOrchestration(final UUID jobId, final OrchestrationForm form) {
+		logger.debug("doLocalServiceOrchestration started...");
+
 		orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
 
 		try {
@@ -49,7 +62,7 @@ public class LocalServiceOrchestration {
 			// Service Discovery
 			final boolean translationAllowed = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
 			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
-			filterOutReservedOnes(candidates);
+			filterOutLockedOnes(jobId, candidates);
 
 			if (Utilities.isEmpty(candidates)) {
 				return doInterCloudOrReturn(jobId, form);
@@ -78,9 +91,9 @@ public class LocalServiceOrchestration {
 
 			// Temporary lock if required and possible
 			if (form.exclusivityIsPreferred()) {
-				candidates = filterOutReservedOnesAndTemporaryLockIfCanBeExclusive(candidates);
+				candidates = filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(jobId, form.getRequesterSystemName(), candidates);
 			} else {
-				candidates = filterOutReservedOnes(candidates);
+				candidates = filterOutLockedOnes(jobId, candidates);
 			}
 
 			// Check if translation is necessary
@@ -145,7 +158,7 @@ public class LocalServiceOrchestration {
 				final OrchestrationCandidate match = matchmaking(candidates, getQoSEvaulationType(form));
 				if (form.exclusivityIsPreferred()) {
 					reserve(match, form.getExclusivityDuration());
-					String matchInstanceId = match.getServiceInstance().instanceId();
+					final String matchInstanceId = match.getServiceInstance().instanceId();
 					releaseTemporaryLockIfItWasLocked(candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList());
 					if (form.getExclusivityDuration() < match.getExclusivityDuration()) {
 						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY);
@@ -167,7 +180,7 @@ public class LocalServiceOrchestration {
 			}
 
 			final OrchestrationResponseDTO result = convertToOrchestrationResponse(candidates, warnings);
-			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, null);
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, candidates.size() + " local result.");
 			return result;
 
 		} catch (final Exception ex) {
@@ -187,21 +200,51 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutReservedOnes(final List<OrchestrationCandidate> candidates) {
+	@SuppressWarnings("checkstyle:.EmptyBlockCheck")
+	private List<OrchestrationCandidate> filterOutLockedOnes(final UUID jobId, final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutLockedOnes started...");
+
 		synchronized (LOCK) {
-			// filter out those what currently reserved for someone else
-			// If isLocked is true in candidate object, that means is locked by this session
-			return List.of();
+			final String jobIdStr = jobId.toString();
+			final List<OrchestrationLock> lockRecords = orchLockDbService.getByServiceInstanceId(candidates.stream().map(c -> c.getServiceInstance().instanceId()).toList());
+
+			final ZonedDateTime now = Utilities.utcNow();
+			final Set<Long> expiredLocks = new HashSet<>();
+			final Set<String> lockedServiceInstanceIds = new HashSet<>();
+
+			for (final OrchestrationLock lockRecord : lockRecords) {
+				if (lockRecord.getOrchestrationJobId().equals(jobIdStr)) {
+					// lock belongs to this session
+				} else if (lockRecord.getExpiresAt().isBefore(now)) {
+					expiredLocks.add(lockRecord.getId());
+				} else {
+					lockedServiceInstanceIds.add(lockRecord.getServiceInstanceId());
+				}
+			}
+
+			orchLockDbService.delete(expiredLocks);
+			return candidates.stream().filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId())).toList();
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> filterOutReservedOnesAndTemporaryLockIfCanBeExclusive(final List<OrchestrationCandidate> candidates) {
+	public List<OrchestrationCandidate> filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(final UUID jobId, final String consumerSystem, final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutLockedOnesAndTemporaryLockIfCanBeExclusive started...");
+
 		synchronized (LOCK) {
-			// filter out those what already locked or currently exclusive for someone other
-			// set locked where it can be exclusive even if the duration is lower
-			// do not lock where the reservation is denied
-			return List.of();
+			final List<OrchestrationCandidate> freeCandidates = filterOutLockedOnes(jobId, candidates);
+			final String jonIdStr = jobId.toString();
+			final ZonedDateTime tempLockExpiresAt = Utilities.utcNow().plusMinutes(1); // TODO constant
+
+			final List<OrchestrationLock> toLock = new ArrayList<>(freeCandidates.size());
+			for (final OrchestrationCandidate candidate : freeCandidates) {
+				if (candidate.canBeExclusive()) {
+					candidate.setLocked(true);
+					toLock.add(new OrchestrationLock(jonIdStr, candidate.getServiceInstance().instanceId(), consumerSystem, tempLockExpiresAt, true));
+				}
+			}
+			orchLockDbService.create(toLock);
+			return freeCandidates;
 		}
 	}
 
@@ -317,6 +360,7 @@ public class LocalServiceOrchestration {
 		if (sysInfo.isInterCloudEnabled() && form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");
 			return new OrchestrationResponseDTO();
 		}
 	}

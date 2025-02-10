@@ -25,7 +25,9 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
-	public static final String HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt";
+	public static final String HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/push";
+	public static final String HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/history";
+	public static final String HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/lock";
 
 	public static final String VERSION_MONITOR = "1.0.0";
 	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
@@ -40,9 +42,9 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String HTTP_API_OP_ECHO = "/echo";
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
-	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/push-subscribe";
-	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/push-unsubscribe/{id}";
-	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/push-trigger";
+	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
+	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/{id}";
+	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 
 	// Forbidden keys (for config service)

@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `subscription` (
   UNIQUE KEY `subscription_uk` (`owner_system`, `target_system`, `service_definition`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
 
--- Push job
+-- Orchestration job
 
 CREATE TABLE IF NOT EXISTS `orchestration_job` (
   `id` binary(16) NOT NULL,
@@ -44,3 +44,15 @@ CREATE TABLE IF NOT EXISTS `orchestration_job` (
   `finished_at` timestamp NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
+
+-- Orchestration lock
+
+CREATE TABLE IF NOT EXISTS `orchestration_lock` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `orchestration_job_id` varchar(63) NOT NULL,
+  `service_instance_id` varchar(255) NOT NULL,
+  `consumer_system` varchar(63) NOT NULL,
+  `expiresAt` timestamp NOT NULL,
+  `temporary` int(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
