@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS `orchestration_lock` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `orchestration_job_id` varchar(63) NOT NULL,
   `service_instance_id` varchar(255) NOT NULL,
-  `consumer_system` varchar(63) NOT NULL,
-  `expiresAt` timestamp NOT NULL,
+  `owner` varchar(63) NOT NULL,
+  `expires_at` timestamp NOT NULL,
   `temporary` int(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

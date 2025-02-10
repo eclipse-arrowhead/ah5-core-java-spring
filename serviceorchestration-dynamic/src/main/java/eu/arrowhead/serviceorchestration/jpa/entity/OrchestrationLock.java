@@ -2,8 +2,11 @@ package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
 
+import org.hibernate.type.NumericBooleanConverter;
+
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,21 +29,22 @@ public class OrchestrationLock {
 	private String serviceInstanceId;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String consumerSystem;
+	private String owner;
 
 	@Column(nullable = true)
 	private ZonedDateTime expiresAt;
 
-	private boolean temporary;
+	@Convert(converter = NumericBooleanConverter.class)
+	private boolean temporary = false;
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationLock(final String orchestrationJobId, final String serviceInstanceId, final String consumerSystem, final ZonedDateTime expiresAt, final boolean temporary) {
+	public OrchestrationLock(final String orchestrationJobId, final String serviceInstanceId, final String owner, final ZonedDateTime expiresAt, final boolean temporary) {
 		this.orchestrationJobId = orchestrationJobId;
 		this.serviceInstanceId = serviceInstanceId;
-		this.consumerSystem = consumerSystem;
+		this.owner = owner;
 		this.expiresAt = expiresAt;
 		this.temporary = temporary;
 	}
@@ -79,13 +83,13 @@ public class OrchestrationLock {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getConsumerSystem() {
-		return consumerSystem;
+	public String getOwner() {
+		return owner;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setConsumerSystem(final String consumerSystem) {
-		this.consumerSystem = consumerSystem;
+	public void setOwner(final String owner) {
+		this.owner = owner;
 	}
 
 	//-------------------------------------------------------------------------------------------------
