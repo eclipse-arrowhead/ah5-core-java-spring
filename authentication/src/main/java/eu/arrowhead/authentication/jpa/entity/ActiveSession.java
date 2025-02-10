@@ -37,10 +37,10 @@ public class ActiveSession {
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String token;
 
-	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	@Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
 	private ZonedDateTime loginTime;
 
-	@Column(nullable = false, updatable = false)
+	@Column(nullable = false)
 	private ZonedDateTime expirationTime;
 
 	//=================================================================================================

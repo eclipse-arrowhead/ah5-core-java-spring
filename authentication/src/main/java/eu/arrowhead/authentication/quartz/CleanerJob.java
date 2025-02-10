@@ -31,7 +31,7 @@ public class CleanerJob implements Job {
 	@Override
 	public void execute(final JobExecutionContext context) throws JobExecutionException {
 		logger.debug("Cleaner job called...");
-		
+
 		try {
 			dbService.removeExpiredSessions();
 		} catch (final ArrowheadException ex) {
