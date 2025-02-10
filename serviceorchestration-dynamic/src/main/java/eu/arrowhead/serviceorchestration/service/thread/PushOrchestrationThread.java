@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.thread;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -9,11 +10,17 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.http.HttpService;
+import eu.arrowhead.common.http.HttpUtilities;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
@@ -52,6 +59,9 @@ public class PushOrchestrationThread extends Thread {
 
 	@Autowired
 	private InterCloudServiceOrchestration interCloudOrch;
+
+	@Autowired
+	private HttpService httpService;
 
 	private boolean doWork = false;
 
@@ -136,13 +146,13 @@ public class PushOrchestrationThread extends Thread {
 
 			if (subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())
 					|| subscription.getNotifyProtocol().equals(NotifyProtocol.HTTPS.name())) {
-				notifyViaHttp(subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
+				notifyViaHttp(subscription.getId(), subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
 				return;
 			}
 
 			if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
 					|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
-				notifyViaMqtt(subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
+				notifyViaMqtt(subscription.getId(), subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
 				return;
 			}
 
@@ -157,12 +167,40 @@ public class PushOrchestrationThread extends Thread {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private void notifyViaHttp(final String protocol, final String properties, final OrchestrationResponseDTO result) {
+	private void notifyViaHttp(final UUID subscriptionId, final String protocol, final String properties, final OrchestrationResponseDTO result) {
+		logger.debug("notifyViaHttp starterd...");
+
+		final Map<String, String> propsMap = readNotifyProperties(properties);
+		final String address = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS);
+		final int port = Integer.valueOf(propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+		final String method = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD);
+		final String path = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH);
+
+		try {
+			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method), Void.class, result);
+		} catch (final Exception ex) {
+			logger.debug(ex);
+			throw new ArrowheadException("Error occured while sending push orchestration to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void notifyViaMqtt(final UUID subscriptionId, final String protocol, final String properties, final OrchestrationResponseDTO result) {
 		// TODO
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void notifyViaMqtt(final String protocol, final String properties, final OrchestrationResponseDTO result) {
-		// TODO
+	private Map<String, String> readNotifyProperties(final String properties) {
+		logger.debug("readNotifyProperties starterd...");
+
+		final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
+		};
+
+		try {
+			return mapper.readValue(properties, typeReference);
+		} catch (final JsonProcessingException ex) {
+			logger.debug(ex);
+			throw new IllegalArgumentException(ex.getMessage());
+		}
 	}
 }
