@@ -1,7 +1,9 @@
 package eu.arrowhead.serviceorchestration.jpa.service;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,6 +55,29 @@ public class OrchestrationLockDbService {
 
 		try {
 			return lockRepo.findAllByServiceInstanceIdIn(ids);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public Optional<OrchestrationLock> changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId, final ZonedDateTime time) {
+		logger.debug("changeExpiration started...");
+		Assert.isTrue(!Utilities.isEmpty(orchestrationJobId), "Orchestration job id is empty.");
+		Assert.isTrue(!Utilities.isEmpty(serviceInstanceId), "Serice instance id is empty.");
+
+		try {
+			final Optional<OrchestrationLock> optional = lockRepo.findByOrchestrationJobIdAndServiceInstanceId(orchestrationJobId, serviceInstanceId);
+			if (optional.isPresent()) {
+				optional.get().setExpiresAt(time);
+				lockRepo.saveAndFlush(optional.get());
+			}
+
+			return optional;
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
