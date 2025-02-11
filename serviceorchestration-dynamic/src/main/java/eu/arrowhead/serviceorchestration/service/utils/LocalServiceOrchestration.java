@@ -14,8 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.QoSEvaulationType;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
@@ -44,6 +48,9 @@ public class LocalServiceOrchestration {
 
 	@Autowired
 	private OrchestrationLockDbService orchLockDbService;
+
+	@Autowired
+	private ArrowheadHttpService ahHttpService;
 
 	private static final Object LOCK = new Object();
 
@@ -200,9 +207,26 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> serviceDiscovery(final OrchestrationForm form, final boolean withoutInterace, final boolean onlyPreferred) {
-		// use provider filter if only preferred
-		// do not use interface filters if withoutInterace is true
-		return List.of();
+		logger.debug("serviceDiscovery started...");
+
+		final ServiceInstanceLookupRequestDTO lookupDTO = new ServiceInstanceLookupRequestDTO.Builder()
+				.serviceDefinitionName(form.getServiceDefinition())
+				.versions(form.getVersions())
+				.alivesAt(form.getAlivesAt())
+				.metadataRequirementsList(form.getMetadataRequirements())
+				.policies(form.getSecurityPolicies())
+				.interfaceTemplateNames(withoutInterace ? null : form.getInterfaceTemplateNames())
+				.interfacePropertyRequirementsList(withoutInterace ? null : form.getInterfacePropertyRequirements())
+				.providerNames(onlyPreferred ? form.getPrefferedProviders() : null)
+				.build();
+
+		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(Constants.SERVICE_DEF_SERVICE_DISCOVERY, Constants.SERVICE_OP_LOOKUP, ServiceInstanceListResponseDTO.class, lookupDTO);
+
+		if (Utilities.isEmpty(response.entries())) {
+			return List.of();
+		}
+
+		return response.entries().stream().map(instance -> new OrchestrationCandidate(instance, true)).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -256,13 +280,28 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private void markExclusivityIfFeasible(final List<OrchestrationCandidate> candidates) {
-		// TODO set the canBeExclusive flag if possible to fulfilled
+		logger.debug("markExclusivityIfFeasible");
+
+		for (final OrchestrationCandidate candidate : candidates) {
+			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+			if (allowedExclusivityDurationObj != null) {
+				try {
+					int allowedExclusivityDuration = Integer.parseInt((String) allowedExclusivityDurationObj);
+					candidate.setCanBeExclusive(allowedExclusivityDuration > 0);
+					candidate.setExclusivityDuration(allowedExclusivityDuration);
+
+				} catch (final Exception ex) {
+					// Should not happen
+					logger.error(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata is not an integer. Service instance id: " + candidate.getServiceInstance().instanceId());
+				}
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
-		// TODO
-		return null;
+		logger.debug("filterOutWhereExclusivityIsNotPossible started...");
+		return candidates.stream().filter(c -> c.canBeExclusive()).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -273,8 +312,11 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutUnauthorizedOnes(final List<OrchestrationCandidate> candidates) {
-		// TODO
-		return List.of();
+		logger.debug("filterOutUnauthorizedOnes started...");
+
+		// TODO call auth service once it is implemented
+		logger.warn("Authorization crosscheck is not implemented yet");
+		return candidates;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -290,9 +332,11 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> doQoSCompliance(final List<OrchestrationCandidate> candidates) {
-		// TODO
-		// let QoS evaluator know that translation is necessary or not
-		return List.of();
+		// TODO implement when QoS Evaluator is ready
+		// TODO let QoS evaluator know that translation is necessary or not
+
+		logger.warn("QoS crosschek is not implemented yet");
+		return candidates;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -392,8 +436,7 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationResponseDTO doInterCloudOrReturn(final UUID jobId, final OrchestrationForm form) {
 		if (sysInfo.isInterCloudEnabled() && form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
-			// return interCloudOrch.doInterCloudServiceOrchestration(jobId, form); Once inter-cloud will be supported.
-			return new OrchestrationResponseDTO();
+			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");
 			return new OrchestrationResponseDTO();

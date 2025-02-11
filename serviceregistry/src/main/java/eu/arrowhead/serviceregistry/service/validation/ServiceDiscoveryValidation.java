@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
@@ -201,6 +202,16 @@ public class ServiceDiscoveryValidation {
 		try {
 			versionValidator.validateNormalizedVersion(normalizedInstance.version());
 			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
+
+			if (normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
+				try {
+					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+					Integer.parseInt(str);
+
+				} catch (final ClassCastException | NumberFormatException ex) {
+					throw new InvalidParameterException(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata must have integer value.");
+				}
+			}
 
 			return new ServiceInstanceRequestDTO(
 					normalizedInstance.systemName(),

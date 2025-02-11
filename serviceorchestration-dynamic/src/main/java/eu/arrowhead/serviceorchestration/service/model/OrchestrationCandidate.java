@@ -15,7 +15,7 @@ public class OrchestrationCandidate {
 	// private Cloud cloud; not supported yet
 	private boolean isLocked;
 	private boolean canBeExclusive;
-	private int  exclusivityDuration = -1; // -1 means can't be exclusive
+	private int  exclusivityDuration = 0; // 0 or negative means can't be exclusive
 	private boolean translationNeeded;
 	private boolean properQoS;
 	private Map<String, String> authorizationTokens;
