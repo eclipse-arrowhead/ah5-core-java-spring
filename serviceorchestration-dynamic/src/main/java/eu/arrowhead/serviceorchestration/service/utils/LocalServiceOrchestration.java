@@ -164,8 +164,8 @@ public class LocalServiceOrchestration {
 			}
 
 			if (form.hasPreferredProviders() && !form.hasFlag(OrchestrationFlag.ONLY_PREFERRED)) {
-				if (containsPreferredProviders(candidates)) {
-					candidates = filterOutNonPreferredProviders(candidates);
+				if (containsPreferredProviders(form, candidates)) {
+					candidates = filterOutNonPreferredProviders(form, candidates);
 				}
 			}
 
@@ -331,7 +331,13 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private boolean containsReservable(final List<OrchestrationCandidate> candidates) {
-		// TODO
+		logger.debug("containsReservable started...");
+
+		for (final OrchestrationCandidate candidate : candidates) {
+			if (candidate.canBeExclusive()) {
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -394,33 +400,49 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private boolean checkIfHasNativeOnes(final List<OrchestrationCandidate> candidates) {
-		// TODO
-		return true;
-	}
+		logger.debug("checkIfHasNativeOnes started...");
 
-	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNonNativeOnes(final List<OrchestrationCandidate> candidates) {
-		// TODO
-		return List.of();
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
-		// TODO
-		// here comes the translation discovery
-		return List.of();
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private boolean containsPreferredProviders(final List<OrchestrationCandidate> candidates) {
-		// TODO
+		for (final OrchestrationCandidate candidate : candidates) {
+			if (!candidate.isTranslationNeeded()) {
+				return true;
+			}
+		}
 		return false;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNonPreferredProviders(final List<OrchestrationCandidate> candidates) {
-		// TODO
+	private List<OrchestrationCandidate> filterOutNonNativeOnes(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNonNativeOnes started...");
+
+		return candidates.stream().filter(c -> !c.isTranslationNeeded()).toList();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNotTranslatableOnes started...");
+
+		// TODO here comes the translation discovery
+		logger.warn("Translation support is not implemented yet");
 		return List.of();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private boolean containsPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("containsPreferredProviders started...");
+
+		for (final OrchestrationCandidate candidate : candidates) {
+			if (form.getPrefferedProviders().contains(candidate.getServiceInstance().provider().name())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<OrchestrationCandidate> filterOutNonPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNonPreferredProviders started...");
+		
+		return candidates.stream().filter(c -> form.getPrefferedProviders().contains(c.getServiceInstance().provider().name())).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
