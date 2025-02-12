@@ -9,6 +9,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -17,14 +19,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.http.HttpService;
 import eu.arrowhead.common.http.HttpUtilities;
+import eu.arrowhead.common.mqtt.MqttQoS;
+import eu.arrowhead.common.mqtt.MqttService;
+import eu.arrowhead.dto.MqttNotifyTemplate;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
@@ -62,6 +69,12 @@ public class PushOrchestrationThread extends Thread {
 
 	@Autowired
 	private HttpService httpService;
+
+	@Autowired
+	private MqttService mqttService;
+
+	@Autowired
+	private DynamicServiceOrchestrationSystemInfo sysInfo;
 
 	private boolean doWork = false;
 
@@ -152,7 +165,7 @@ public class PushOrchestrationThread extends Thread {
 
 			if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
 					|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
-				notifyViaMqtt(subscription.getId(), subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
+				notifyViaMqtt(subscription.getId(), subscription.getTargetSystem(), subscription.getNotifyProperties(), result);
 				return;
 			}
 
@@ -180,13 +193,27 @@ public class PushOrchestrationThread extends Thread {
 			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method), Void.class, result);
 		} catch (final Exception ex) {
 			logger.debug(ex);
-			throw new ArrowheadException("Error occured while sending push orchestration to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+			throw new ArrowheadException("Error occured while sending push orchestration via http to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void notifyViaMqtt(final UUID subscriptionId, final String protocol, final String properties, final OrchestrationResponseDTO result) {
-		// TODO
+	private void notifyViaMqtt(final UUID subscriptionId, final String targetSystem, final String properties, final OrchestrationResponseDTO result) {
+		logger.debug("notifyViaMqtt started...");
+
+		// Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results.
+		final MqttClient mqttClient = mqttService.client(Constants.MQTT_SERVICE_PROVIDING_BROKER_CONNECT_ID);
+		final Map<String, String> propsMap = readNotifyProperties(properties);
+
+		try {
+			final MqttNotifyTemplate template = new MqttNotifyTemplate(targetSystem, sysInfo.getSystemName(), result);
+			final MqttMessage msg = new MqttMessage(mapper.writeValueAsBytes(template));
+			msg.setQos(MqttQoS.EXACTLY_ONCE.value());
+			mqttClient.publish(propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC), msg);
+		} catch (final Exception ex) {
+			logger.debug(ex);
+			throw new ArrowheadException("Error occured while sending push orchestration via mqtt to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------

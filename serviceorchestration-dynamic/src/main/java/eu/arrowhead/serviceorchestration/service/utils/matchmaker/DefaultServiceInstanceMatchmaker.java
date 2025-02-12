@@ -65,7 +65,7 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 		if (form.exclusivityIsPreferred()
 				&& bestCandidates.getFirst().candidate.getExclusivityDuration() < form.getExclusivityDuration()) {
 			// all of them can be exclusive, but not full-time
-			bestCandidates.sort(Comparator.comparingInt((Scored s) -> s.getCandidate().getExclusivityDuration()).reversed());
+			bestCandidates.sort(Comparator.comparingInt((final Scored s) -> s.getCandidate().getExclusivityDuration()).reversed());
 			final int bestExclusivityDuration = bestCandidates.getFirst().getCandidate().getExclusivityDuration();
 			bestCandidates = bestCandidates.stream().filter(s -> s.getCandidate().getExclusivityDuration() == bestExclusivityDuration).toList();
 			if (bestCandidates.size() == 1) {

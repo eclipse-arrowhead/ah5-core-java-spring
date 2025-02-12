@@ -138,19 +138,7 @@ public class OrchestrationSubscriptionValidation {
 	private void validateNormalizedNotifyPropertiesForMQTT(final Map<String, String> props, final String origin) {
 		logger.debug("validateNormalizedNotifyPropertiesForMQTT...");
 
-		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS)) {
-			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " member.", origin);
-		}
-
-		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT)) {
-			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT + " member.", origin);
-		}
-
-		try {
-			Integer.valueOf(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
-		} catch (final NumberFormatException ex) {
-			throw new InvalidParameterException("Notify port is not a number", origin);
-		}
+		// Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results, so no address and port is required.
 
 		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC)) {
 			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC + " member.", origin);
