@@ -20,6 +20,7 @@ import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
+import eu.arrowhead.dto.OrchestrationResultDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -95,9 +96,6 @@ public class LocalServiceOrchestration {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
 			}
-
-			// Dealing with address types
-			candidates = filterOutUnsuitableAddressTypes(form, candidates);
 
 			// Authorization cross-check
 			if (sysInfo.isAuthorizationEnabled()) {
@@ -284,24 +282,6 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutUnsuitableAddressTypes(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
-		logger.debug("filterOutUnsuitableAddressTypes started...");
-
-		final List<String> suitableAddressTypes = form.getInterfaceAddressTypes();
-		if (Utilities.isEmpty(suitableAddressTypes)) {
-			return candidates;
-		}
-
-		final List<OrchestrationCandidate> suitableCandidates = new ArrayList<>();
-		for (final OrchestrationCandidate candidate : candidates) {
-
-			// TODO how to do this? Address value appears only in the interface properties if any and with whatever keys. It can be even a simple string or string list...
-		}
-
-		return suitableCandidates;
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	private void markExclusivityIfFeasible(final List<OrchestrationCandidate> candidates) {
 		logger.debug("markExclusivityIfFeasible");
 
@@ -380,6 +360,8 @@ public class LocalServiceOrchestration {
 					}
 					isMatchingInterface = matchingProps;
 				}
+
+				// TODO AddressTypes -> How to do this? Address value appears in the interface properties if any and with whatever keys. It can be even a simple string or string list...
 
 				if (isMatchingInterface) {
 					candidate.addMatchingInterface(offeredInterface);
@@ -489,6 +471,8 @@ public class LocalServiceOrchestration {
 			if (optional.isEmpty()) {
 				orchLockDbService.create(List.of(new OrchestrationLock(jobIdStr, candidate.getServiceInstance().instanceId(), consumerSystem, expiresAt, false)));
 			}
+
+			candidate.setExclusiveUntil(expiresAt);
 		}
 	}
 
@@ -523,7 +507,7 @@ public class LocalServiceOrchestration {
 	private void buildTranslationBridge(final OrchestrationCandidate candidate) {
 		logger.debug("buildTranslationBridge started...");
 
-		// TODO set new connection details in the candidate object
+		// TODO add the new connection details into the candidate object's matchingInterface list
 
 		logger.warn("Translation bridge support is not implemented yet");
 	}
@@ -536,14 +520,27 @@ public class LocalServiceOrchestration {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");
-			return new OrchestrationResponseDTO();
+			return new OrchestrationResponseDTO(List.of(), List.of());
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationResponseDTO convertToOrchestrationResponse(final List<OrchestrationCandidate> candidates, final Set<String> warnings) {
-		// TODO
-		return null;
+		logger.debug("convertToOrchestrationResponse started...");
+
+		final List<OrchestrationResultDTO> results = candidates.stream()
+				.map(c -> new OrchestrationResultDTO(
+						c.getServiceInstance().instanceId(),
+						c.getServiceInstance().provider().name(),
+						c.getServiceInstance().serviceDefinition().name(),
+						c.getServiceInstance().version(),
+						c.getServiceInstance().expiresAt(),
+						Utilities.convertZonedDateTimeToUTCString(c.getExclusiveUntil()),
+						c.getServiceInstance().metadata(),
+						c.getMatchingInterfaces()))
+				.toList();
+
+		return new OrchestrationResponseDTO(results, warnings.stream().toList());
 	}
 
 }

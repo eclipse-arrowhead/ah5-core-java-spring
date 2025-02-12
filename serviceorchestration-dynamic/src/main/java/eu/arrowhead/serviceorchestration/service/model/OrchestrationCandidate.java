@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.model;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,10 +20,11 @@ public class OrchestrationCandidate {
 	private boolean isLocked;
 	private boolean canBeExclusive;
 	private int exclusivityDuration = 0; // 0 or negative means can't be exclusive
+	private ZonedDateTime exclusiveUntil;
 	private boolean nonNative; // Interface translation is necessary if allowed
 	private boolean properQoS;
 	private Map<String, String> authorizationTokens;
-	private List<ServiceInstanceInterfaceResponseDTO> matchingInterfaces = new ArrayList<>();
+	private final List<ServiceInstanceInterfaceResponseDTO> matchingInterfaces = new ArrayList<>();
 
 	//=================================================================================================
 	// methods
@@ -71,6 +73,16 @@ public class OrchestrationCandidate {
 	//-------------------------------------------------------------------------------------------------
 	public void setExclusivityDuration(final int exclusivityDuration) {
 		this.exclusivityDuration = exclusivityDuration;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getExclusiveUntil() {
+		return exclusiveUntil;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setExclusiveUntil(final ZonedDateTime exclusiveUntil) {
+		this.exclusiveUntil = exclusiveUntil;
 	}
 
 	//-------------------------------------------------------------------------------------------------
