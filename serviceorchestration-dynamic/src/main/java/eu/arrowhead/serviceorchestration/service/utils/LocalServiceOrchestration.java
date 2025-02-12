@@ -17,7 +17,10 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.ArrowheadHttpService;
+import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
@@ -75,7 +78,7 @@ public class LocalServiceOrchestration {
 			// Service Discovery
 			final boolean translationAllowed = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
 			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
-			filterOutLockedOnes(jobId, candidates);
+			candidates = filterOutLockedOnes(jobId, candidates);
 
 			if (Utilities.isEmpty(candidates)) {
 				return doInterCloudOrReturn(jobId, form);
@@ -92,6 +95,9 @@ public class LocalServiceOrchestration {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
 			}
+
+			// Dealing with address types
+			candidates = filterOutUnsuitableAddressTypes(form, candidates);
 
 			// Authorization cross-check
 			if (sysInfo.isAuthorizationEnabled()) {
@@ -111,7 +117,7 @@ public class LocalServiceOrchestration {
 
 			// Check if translation is necessary
 			if (translationAllowed) {
-				markIfTranslationIsNeeded(candidates);
+				markIfTranslationIsNeeded(form, candidates);
 			}
 
 			// QoS cross-check
@@ -119,6 +125,7 @@ public class LocalServiceOrchestration {
 				if (!sysInfo.isQoSEnabled()) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
 					releaseTemporaryLockIfItWasLocked(jobId, candidates);
+					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, candidates.size() + " local result.");
 					return convertToOrchestrationResponse(List.of(), warnings);
 				}
 				candidates = doQoSCompliance(candidates);
@@ -279,6 +286,24 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private List<OrchestrationCandidate> filterOutUnsuitableAddressTypes(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutUnsuitableAddressTypes started...");
+
+		final List<String> suitableAddressTypes = form.getInterfaceAddressTypes();
+		if (Utilities.isEmpty(suitableAddressTypes)) {
+			return candidates;
+		}
+
+		final List<OrchestrationCandidate> suitableCandidates = new ArrayList<>();
+		for (final OrchestrationCandidate candidate : candidates) {
+
+			// TODO how to do this? Address value appears only in the interface properties if any and with whatever keys. It can be even a simple string or string list...
+		}
+
+		return suitableCandidates;
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private void markExclusivityIfFeasible(final List<OrchestrationCandidate> candidates) {
 		logger.debug("markExclusivityIfFeasible");
 
@@ -286,7 +311,7 @@ public class LocalServiceOrchestration {
 			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 			if (allowedExclusivityDurationObj != null) {
 				try {
-					int allowedExclusivityDuration = Integer.parseInt((String) allowedExclusivityDurationObj);
+					final int allowedExclusivityDuration = Integer.parseInt((String) allowedExclusivityDurationObj);
 					candidate.setCanBeExclusive(allowedExclusivityDuration > 0);
 					candidate.setExclusivityDuration(allowedExclusivityDuration);
 
@@ -320,8 +345,36 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void markIfTranslationIsNeeded(final List<OrchestrationCandidate> candidates) {
-		// TODO
+	private void markIfTranslationIsNeeded(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("markIfTranslationIsNeeded started...");
+
+		if (Utilities.isEmpty(form.getInterfaceTemplateNames()) && Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+			return;
+		}
+
+		for (final OrchestrationCandidate candidate : candidates) {
+			for (final ServiceInstanceInterfaceResponseDTO offeredInterface : candidate.getServiceInstance().interfaces()) {
+
+				// Checking interface template names
+				if (!Utilities.isEmpty(form.getInterfaceTemplateNames())
+						&& !form.getInterfaceTemplateNames().contains(offeredInterface.templateName())) {
+					candidate.setTranslationNeeded(true);
+					continue;
+				}
+
+				// Checking interface properties
+				if (!Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+					boolean match = false;
+					for (final MetadataRequirementDTO interfacePropertyRequirement : form.getInterfacePropertyRequirements()) {
+						if (MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
+							match = true;
+							break;
+						}
+					}
+					candidate.setTranslationNeeded(!match);
+				}
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
