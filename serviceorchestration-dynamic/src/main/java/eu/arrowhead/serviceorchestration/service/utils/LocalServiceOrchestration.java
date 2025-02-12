@@ -34,6 +34,8 @@ import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationLockDbService;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
+import eu.arrowhead.serviceorchestration.service.utils.matchmaker.ServiceInstanceMatchmaker;
+import jakarta.annotation.Resource;
 
 @Service
 public class LocalServiceOrchestration {
@@ -56,11 +58,14 @@ public class LocalServiceOrchestration {
 	@Autowired
 	private ArrowheadHttpService ahHttpService;
 
+	@Resource(name = DynamicServiceOrchestrationConstants.SERVICE_INSTANCE_MATCHMAKER)
+	private ServiceInstanceMatchmaker matchmaker;
+
 	private static final Object LOCK = new Object();
 
 	private static final int TEMPORARY_LOCK_DURATION = 60; // sec
 
-	private static final int RESERVATION_BUFER = 10; // sec
+	private static final int RESERVATION_BUFFER = 10; // sec
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -160,7 +165,7 @@ public class LocalServiceOrchestration {
 			}
 
 			if (form.hasPreferredProviders() && !form.hasFlag(OrchestrationFlag.ONLY_PREFERRED)) {
-				if (containsPreferredProviders(form, candidates)) {
+				if (searchForPreferredProviders(form, candidates)) {
 					candidates = filterOutNonPreferredProviders(form, candidates);
 				}
 			}
@@ -171,7 +176,7 @@ public class LocalServiceOrchestration {
 			}
 
 			if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
-				final OrchestrationCandidate match = matchmaking(candidates, getQoSEvaulationType(form));
+				final OrchestrationCandidate match = matchmaking(form, candidates);
 				if (form.exclusivityIsPreferred()) {
 					reserve(jobId, form.getRequesterSystemName(), match, form.getExclusivityDuration());
 					final String matchInstanceId = match.getServiceInstance().instanceId();
@@ -229,7 +234,7 @@ public class LocalServiceOrchestration {
 			return List.of();
 		}
 
-		return response.entries().stream().map(instance -> new OrchestrationCandidate(instance, true)).toList();
+		return response.entries().stream().map(instance -> new OrchestrationCandidate(instance, true, onlyPreferred)).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -379,7 +384,7 @@ public class LocalServiceOrchestration {
 		// TODO
 
 		logger.warn("QoS support is not implemented yet");
-		return QoSEvaulationType.RANKING;
+		return QoSEvaulationType.FILTERING;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -422,33 +427,35 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean containsPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
-		logger.debug("containsPreferredProviders started...");
+	private boolean searchForPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("searchForPreferredProviders started...");
 
+		boolean hasPreferred = false;
 		for (final OrchestrationCandidate candidate : candidates) {
 			if (form.getPrefferedProviders().contains(candidate.getServiceInstance().provider().name())) {
-				return true;
+				hasPreferred = true;
+				candidate.setPreferred(true);
 			}
 		}
-		return false;
+		return hasPreferred;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutNonPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonPreferredProviders started...");
 
-		return candidates.stream().filter(c -> form.getPrefferedProviders().contains(c.getServiceInstance().provider().name())).toList();
+		return candidates.stream().filter(c -> c.isPreferred()).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private OrchestrationCandidate matchmaking(final List<OrchestrationCandidate> candidates, final QoSEvaulationType qosType) {
-		if (qosType == QoSEvaulationType.RANKING) {
+	private OrchestrationCandidate matchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("matchmaking started...");
+
+		if (form.hasQoSRequirements() && getQoSEvaulationType(form) == QoSEvaulationType.RANKING) {
 			return candidates.getFirst();
 		}
 
-		// TODO
-		// canBeExclusive and full-time exclusivity has priority
-		return null;
+		return matchmaker.doMatchmaking(form, candidates);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -463,7 +470,7 @@ public class LocalServiceOrchestration {
 			Assert.isTrue(candidate.isLocked(), "Unlocked candidate is intended to being reserved.");
 
 			final String jobIdStr = jobId.toString();
-			final ZonedDateTime expiresAt = Utilities.utcNow().plusSeconds(RESERVATION_BUFER + Math.min(duration, candidate.getExclusivityDuration()));
+			final ZonedDateTime expiresAt = Utilities.utcNow().plusSeconds(RESERVATION_BUFFER + Math.min(duration, candidate.getExclusivityDuration()));
 
 			final Optional<OrchestrationLock> optional = orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(jobIdStr, candidate.getServiceInstance().instanceId(), expiresAt);
 

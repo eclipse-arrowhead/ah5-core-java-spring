@@ -22,6 +22,7 @@ public class OrchestrationCandidate {
 	private int exclusivityDuration = 0; // 0 or negative means can't be exclusive
 	private ZonedDateTime exclusiveUntil;
 	private boolean nonNative; // Interface translation is necessary if allowed
+	private boolean preferred;
 	private boolean properQoS;
 	private Map<String, String> authorizationTokens;
 	private final List<ServiceInstanceInterfaceResponseDTO> matchingInterfaces = new ArrayList<>();
@@ -30,9 +31,10 @@ public class OrchestrationCandidate {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationCandidate(final ServiceInstanceResponseDTO serviceInstance, final boolean isLocal) {
+	public OrchestrationCandidate(final ServiceInstanceResponseDTO serviceInstance, final boolean isLocal, final boolean isPreferred) {
 		this.serviceInstance = serviceInstance;
 		this.isLocal = isLocal;
+		this.preferred = isPreferred;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -93,6 +95,16 @@ public class OrchestrationCandidate {
 	//-------------------------------------------------------------------------------------------------
 	public void setNonNative(final boolean nonNative) {
 		this.nonNative = nonNative;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isPreferred() {
+		return preferred;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setPreferred(final boolean preferred) {
+		this.preferred = preferred;
 	}
 
 	//-------------------------------------------------------------------------------------------------

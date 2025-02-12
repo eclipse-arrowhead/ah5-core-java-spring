@@ -1,0 +1,111 @@
+package eu.arrowhead.serviceorchestration.service.utils.matchmaker;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.util.Assert;
+
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
+
+public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmaker {
+
+	//=================================================================================================
+	// members
+
+	private final int fullTimeExclusivityScore = 15;
+	private final int canBeExclusiveScore = 10;
+	private final int isPreferredScore = 5;
+
+	// preferred and full time exclusive		 		30
+	// not preferred, but can be full-time exclusive	25
+	// preferred and can be exclusive					15
+	// not preferred, but can be exclusive				10
+	// preferred only									5
+	// nothing											0
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public OrchestrationCandidate doMatchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("doMatchmaking started");
+		Assert.isTrue(!Utilities.isEmpty(candidates), "Candidate list is empty");
+
+		if (candidates.size() == 1) {
+			return candidates.getFirst();
+		}
+
+		final List<Scored> scoredCandidates = new ArrayList<>();
+		for (final OrchestrationCandidate candidate : candidates) {
+			int score = candidate.isPreferred() ? isPreferredScore : 0;
+			if (form.exclusivityIsPreferred()) {
+				score += candidate.canBeExclusive() ? canBeExclusiveScore : 0;
+				score += candidate.getExclusivityDuration() >= form.getExclusivityDuration() ? fullTimeExclusivityScore : 0;
+			}
+			scoredCandidates.add(new Scored(candidate, score));
+		}
+
+		scoredCandidates.sort(Comparator.comparingInt(Scored::getScore).reversed());
+
+		final int highestScore = scoredCandidates.getFirst().getScore();
+		List<Scored> bestCandidates = scoredCandidates.stream().filter(s -> s.getScore() == highestScore).toList();
+		if (bestCandidates.size() == 1) {
+			return bestCandidates.getFirst().getCandidate();
+		}
+
+		if (form.exclusivityIsPreferred()
+				&& bestCandidates.getFirst().candidate.getExclusivityDuration() < form.getExclusivityDuration()) {
+			// all of them can be exclusive, but not full-time
+			bestCandidates.sort(Comparator.comparingInt((Scored s) -> s.getCandidate().getExclusivityDuration()).reversed());
+			final int bestExclusivityDuration = bestCandidates.getFirst().getCandidate().getExclusivityDuration();
+			bestCandidates = bestCandidates.stream().filter(s -> s.getCandidate().getExclusivityDuration() == bestExclusivityDuration).toList();
+			if (bestCandidates.size() == 1) {
+				return bestCandidates.getFirst().getCandidate();
+			}
+		}
+
+		final Random rng = new Random(System.currentTimeMillis());
+		return bestCandidates.get(rng.nextInt(bestCandidates.size())).getCandidate();
+	}
+
+	//=================================================================================================
+	// nested class
+
+	private final class Scored {
+
+		//=================================================================================================
+		// members
+
+		private final OrchestrationCandidate candidate;
+
+		private final int score;
+
+		//=================================================================================================
+		// methods
+
+		//-------------------------------------------------------------------------------------------------
+		private Scored(final OrchestrationCandidate candidate, final int score) {
+			this.candidate = candidate;
+			this.score = score;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public OrchestrationCandidate getCandidate() {
+			return candidate;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public int getScore() {
+			return score;
+		}
+	}
+}
