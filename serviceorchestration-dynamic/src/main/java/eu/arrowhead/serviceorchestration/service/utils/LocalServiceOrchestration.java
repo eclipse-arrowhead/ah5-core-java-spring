@@ -115,17 +115,15 @@ public class LocalServiceOrchestration {
 				candidates = filterOutLockedOnes(jobId, candidates);
 			}
 
-			// Check if translation is necessary
-			if (translationAllowed) {
-				markIfTranslationIsNeeded(form, candidates);
-			}
+			// Collect matching interfaces and mark if translation is necessary
+			assortInterfacesAndMarkIfNonNative(form, candidates);
 
 			// QoS cross-check
 			if (form.hasQoSRequirements()) {
 				if (!sysInfo.isQoSEnabled()) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
 					releaseTemporaryLockIfItWasLocked(jobId, candidates);
-					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, candidates.size() + " local result.");
+					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");
 					return convertToOrchestrationResponse(List.of(), warnings);
 				}
 				candidates = doQoSCompliance(candidates);
@@ -195,7 +193,7 @@ public class LocalServiceOrchestration {
 			}
 
 			// Create translation bridge if necessary
-			if (form.hasFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isTranslationNeeded()) {
+			if (form.hasFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isNonNative()) {
 				buildTranslationBridge(candidates.get(0));
 			}
 
@@ -351,46 +349,61 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void markIfTranslationIsNeeded(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
-		logger.debug("markIfTranslationIsNeeded started...");
+	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+		logger.debug("assortInterfacesAndMarkIfNonNative started...");
 
 		if (Utilities.isEmpty(form.getInterfaceTemplateNames()) && Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+			for (final OrchestrationCandidate candidate : candidates) {
+				candidate.addMatchingInterfaces(candidate.getServiceInstance().interfaces());
+			}
 			return;
 		}
 
 		for (final OrchestrationCandidate candidate : candidates) {
 			for (final ServiceInstanceInterfaceResponseDTO offeredInterface : candidate.getServiceInstance().interfaces()) {
+				boolean isMatchingInterface = true;
 
 				// Checking interface template names
 				if (!Utilities.isEmpty(form.getInterfaceTemplateNames())
 						&& !form.getInterfaceTemplateNames().contains(offeredInterface.templateName())) {
-					candidate.setTranslationNeeded(true);
-					continue;
+					isMatchingInterface = false;
 				}
 
 				// Checking interface properties
-				if (!Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
-					boolean match = false;
+				if (isMatchingInterface && !Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+					boolean matchingProps = false;
 					for (final MetadataRequirementDTO interfacePropertyRequirement : form.getInterfacePropertyRequirements()) {
 						if (MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
-							match = true;
+							matchingProps = true;
 							break;
 						}
 					}
-					candidate.setTranslationNeeded(!match);
+					isMatchingInterface = matchingProps;
+				}
+
+				if (isMatchingInterface) {
+					candidate.addMatchingInterface(offeredInterface);
 				}
 			}
+
+			candidate.setNonNative(Utilities.isEmpty(candidate.getMatchingInterfaces()));
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private QoSEvaulationType getQoSEvaulationType(final OrchestrationForm form) {
+		logger.debug("getQoSEvaulationType started...");
+
 		// TODO
-		return null;
+
+		logger.warn("QoS support is not implemented yet");
+		return QoSEvaulationType.RANKING;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> doQoSCompliance(final List<OrchestrationCandidate> candidates) {
+		logger.debug("doQoSCompliance started...");
+
 		// TODO implement when QoS Evaluator is ready
 		// TODO let QoS evaluator know that translation is necessary or not
 
@@ -403,7 +416,7 @@ public class LocalServiceOrchestration {
 		logger.debug("checkIfHasNativeOnes started...");
 
 		for (final OrchestrationCandidate candidate : candidates) {
-			if (!candidate.isTranslationNeeded()) {
+			if (!candidate.isNonNative()) {
 				return true;
 			}
 		}
@@ -414,7 +427,7 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutNonNativeOnes(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonNativeOnes started...");
 
-		return candidates.stream().filter(c -> !c.isTranslationNeeded()).toList();
+		return candidates.stream().filter(c -> !c.isNonNative()).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -441,7 +454,7 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutNonPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonPreferredProviders started...");
-		
+
 		return candidates.stream().filter(c -> form.getPrefferedProviders().contains(c.getServiceInstance().provider().name())).toList();
 	}
 
@@ -481,7 +494,7 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private void releaseTemporaryLockIfItWasLocked(final UUID jobId, final List<OrchestrationCandidate> candidates) {
-		logger.debug("releaseTemporaryLockIfItWasLocked start...");
+		logger.debug("releaseTemporaryLockIfItWasLocked started...");
 
 		synchronized (LOCK) {
 			final String jobIdStr = jobId.toString();
@@ -500,16 +513,25 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private void obtainAuthorizationTokensIfRequired(final List<OrchestrationCandidate> candidates) {
+		logger.debug("obtainAuthorizationTokensIfRequired started...");
+
 		// TODO where ServiceInterfacePolicy is TOKEN_AUTH
+		logger.warn("Authorization token support is not implemented yet");
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void buildTranslationBridge(final OrchestrationCandidate candidate) {
+		logger.debug("buildTranslationBridge started...");
+
 		// TODO set new connection details in the candidate object
+
+		logger.warn("Translation bridge support is not implemented yet");
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationResponseDTO doInterCloudOrReturn(final UUID jobId, final OrchestrationForm form) {
+		logger.debug("doInterCloudOrReturn started...");
+
 		if (sysInfo.isInterCloudEnabled() && form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
