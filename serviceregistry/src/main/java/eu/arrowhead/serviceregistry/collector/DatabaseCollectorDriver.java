@@ -1,9 +1,11 @@
 package eu.arrowhead.serviceregistry.collector;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,8 +23,11 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
+import eu.arrowhead.common.intf.properties.PropertyValidatorType;
+import eu.arrowhead.common.intf.properties.PropertyValidators;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
+import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -47,8 +52,14 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	@Autowired
 	private ServiceInstanceDbService instanceDbService;
 
-	// only HTTP and HTTPS are supported
-	private final List<String> supportedInterfaces = List.of(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME, Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME);
+	@Autowired
+	private PropertyValidators validators;
+
+	private final List<String> supportedInterfaces = List.of(
+			Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME,
+			Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME,
+			Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME,
+			Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME);
 
 	//=================================================================================================
 	// methods
@@ -79,15 +90,21 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final List<ServiceInstanceInterface> interfaces = instanceEntries.getContent().getFirst().getValue();
 
 		// create the list of interface models
-		final List<InterfaceModel> interfaceModelList = new ArrayList<>(interfaces.size());
+		final List<InterfaceModel> interfaceModelList = new ArrayList<>();
 		for (final ServiceInstanceInterface interf : interfaces) {
 
 			final String templateName = interf.getServiceInterfaceTemplate().getName();
 			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 			});
 
-			if (supportedInterfaces.contains(templateName)) {
+			// HTTP or HTTPS
+			if (templateName.contains(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME)) {
 				interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
+			}
+
+			// MQTT or MQTTS
+			if (templateName.contains(Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME)) {
+				interfaceModelList.add(createMqttInterfaceModel(templateName, properties));
 			}
 		}
 
@@ -142,22 +159,9 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final String basePath = (String) properties.get(HttpInterfaceModel.PROP_NAME_BASE_PATH);
 
 		// operations
-		Map<String, Object> operations = (Map<String, Object>) properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS);
-		if (operations == null) {
-			operations = Map.of();
-		}
-
-		// create the operation model map
-		final Map<String, HttpOperationModel> operationModelMap = new HashMap<>(operations.size()); // expected type
-		for (final Map.Entry<String, Object> operation : operations.entrySet()) {
-			final String operationName = operation.getKey();
-			final Map<String, Object> operationProps = (Map<String, Object>) operation.getValue();
-			operationModelMap.put(operationName, new HttpOperationModel
-														.Builder()
-														.method((String) operationProps.get(HttpOperationModel.PROP_NAME_METHOD))
-														.path((String) operationProps.get(HttpOperationModel.PROP_NAME_PATH))
-														.build());
-		}
+		final Map<String, HttpOperationModel> operations = properties.containsKey(HttpInterfaceModel.PROP_NAME_OPERATIONS)
+				? (Map<String, HttpOperationModel>) validators.getValidator(PropertyValidatorType.HTTP_OPERATIONS).validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS))
+				: Map.of();
 
 		// create the interface model
 		final HttpInterfaceModel model = new HttpInterfaceModel
@@ -165,7 +169,36 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
 				.basePath(basePath)
-				.operations(operationModelMap)
+				.operations(operations)
+				.build();
+
+		return model;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
+	private MqttInterfaceModel createMqttInterfaceModel(final String templateName, final Map<String, Object> properties) {
+
+		// access addresses
+		final List<String> accessAddresses = (List<String>) properties.get(MqttInterfaceModel.PROP_NAME_ACCESS_ADDRESSES);
+
+		// access port
+		final int accessPort = (int) properties.get(MqttInterfaceModel.PROP_NAME_ACCESS_PORT);
+
+		// topic
+		final String topic = (String) properties.get(MqttInterfaceModel.PROP_NAME_TOPIC);
+
+		// operations
+		final Set<String> operations = properties.containsKey(MqttInterfaceModel.PROP_NAME_OPERATIONS)
+				? new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS)) : Set.of();
+
+		// create the interface model
+		MqttInterfaceModel model = new MqttInterfaceModel
+				.Builder(templateName)
+				.accessAddresses(accessAddresses)
+				.accessPort(accessPort)
+				.topic(topic)
+				.operations(operations)
 				.build();
 
 		return model;
