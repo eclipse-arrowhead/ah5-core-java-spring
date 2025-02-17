@@ -28,7 +28,7 @@ public class DeviceDiscoveryNormalizationTest {
 	// members
 
 	@Autowired
-	private DeviceDiscoveryNormalization normalizator;
+	private DeviceDiscoveryNormalization normalizer;
 
 	//=================================================================================================
 	// methods
@@ -44,7 +44,7 @@ public class DeviceDiscoveryNormalizationTest {
 				// addresses
 				Arrays.asList(" 1.DEVICE.COM\n", " 1A-2B-3C-4D-5E-6F\n"));
 
-		final NormalizedDeviceRequestDTO normalized = normalizator.normalizeDeviceRequestDTO(toNormalize);
+		final NormalizedDeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(toNormalize);
 		assertAll("normalize DeviceRequestDTO",
 				// name
 				() -> assertEquals("device-name-1", normalized.name()),
@@ -60,21 +60,21 @@ public class DeviceDiscoveryNormalizationTest {
 	@Test
 	public void normalizeDeviceRequestDTOTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceRequestDTO(null);
 			});
 
 		// dto name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceRequestDTO(new DeviceRequestDTO(null, null, null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceRequestDTO(new DeviceRequestDTO(null, null, null));
 			});
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceRequestDTO(new DeviceRequestDTO("", null, null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceRequestDTO(new DeviceRequestDTO("", null, null));
 			});
 
 		// addresses are null
 		final DeviceRequestDTO toNormalize = new DeviceRequestDTO("name", Map.of("key1", "value1", "key2", "value2"), null);
-		final NormalizedDeviceRequestDTO normalized = normalizator.normalizeDeviceRequestDTO(toNormalize);
+		final NormalizedDeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(toNormalize);
 		assertEquals(new ArrayList<>(), normalized.addresses());
 	}
 
@@ -82,8 +82,8 @@ public class DeviceDiscoveryNormalizationTest {
 	@Test
 	public void normalizeDeviceLookupRequestDTOTest() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceLookupRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceLookupRequestDTO(null);
 			});
 
 		// normalize dto
@@ -100,7 +100,7 @@ public class DeviceDiscoveryNormalizationTest {
 				// metadata requirements
 				metadataRequirements);
 
-		final DeviceLookupRequestDTO normalized = normalizator.normalizeDeviceLookupRequestDTO(toNormalize);
+		final DeviceLookupRequestDTO normalized = normalizer.normalizeDeviceLookupRequestDTO(toNormalize);
 		assertAll("normalize DeviceLookupRequestDTO",
 				// names
 				() -> assertEquals(List.of("device-name-1", "device-name-2"), normalized.deviceNames()),
@@ -108,7 +108,7 @@ public class DeviceDiscoveryNormalizationTest {
 				() -> assertEquals(List.of("1.device.com", "2.device.org"), normalized.addresses()),
 				// address type
 				() -> assertEquals("HOSTNAME", normalized.addressType()),
-				// requirements (sould stay the same)
+				// requirements (should stay the same)
 				() -> assertEquals(metadataRequirements, normalized.metadataRequirementList())
 				);
 	}
@@ -117,17 +117,17 @@ public class DeviceDiscoveryNormalizationTest {
 	@Test
 	public void normalizeDeviceNameTest() {
 		// name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceName(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceName(null);
 			});
 
 		// name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceName("");
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceName("");
 			});
 
 		// normalize name
-		assertEquals("device-name-1", normalizator.normalizeDeviceName("\n \tdevice-NAME-1\r \n"));
+		assertEquals("device-name-1", normalizer.normalizeDeviceName("\n \tdevice-NAME-1\r \n"));
 	}
 
 }

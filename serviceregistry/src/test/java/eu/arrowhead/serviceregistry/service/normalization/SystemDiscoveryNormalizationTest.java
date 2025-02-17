@@ -26,7 +26,7 @@ public class SystemDiscoveryNormalizationTest {
 	// members
 
 	@Autowired
-	private SystemDiscoveryNormalization normalizator;
+	private SystemDiscoveryNormalization normalizer;
 
 	//=================================================================================================
 	// methods
@@ -46,7 +46,7 @@ public class SystemDiscoveryNormalizationTest {
 				// device name
 				"\ndevice-nAME\n");
 
-		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
+		final NormalizedSystemRequestDTO normalized = normalizer.normalizeSystemRequestDTO(toNormalize);
 
 		assertAll("normalize SystemRequestDTO 1",
 				// name
@@ -65,8 +65,8 @@ public class SystemDiscoveryNormalizationTest {
 	@Test
 	public void normalizeSystemRequestDTOTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeSystemRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeSystemRequestDTO(null);
 			});
 
 		// dto contains null members (version, addresses)
@@ -82,7 +82,7 @@ public class SystemDiscoveryNormalizationTest {
 				// device name
 				"device-name");
 
-		final NormalizedSystemRequestDTO normalized = normalizator.normalizeSystemRequestDTO(toNormalize);
+		final NormalizedSystemRequestDTO normalized = normalizer.normalizeSystemRequestDTO(toNormalize);
 
 		assertAll("normalize SystemRequestDTO",
 				// version
@@ -95,7 +95,7 @@ public class SystemDiscoveryNormalizationTest {
 	@Test
 	public void normalizeSystemLookupRequestDTO() {
 		// dto is null
-		assertDoesNotThrow(() -> normalizator.normalizeSystemLookupRequestDTO(null));
+		assertDoesNotThrow(() -> normalizer.normalizeSystemLookupRequestDTO(null));
 
 		final List<MetadataRequirementDTO> metadataRequirements = new ArrayList<>(1);
 		metadataRequirements.add((MetadataRequirementDTO) new MetadataRequirementDTO().put("key1", Map.of("op", "EQUALS", "value", "value1")));
@@ -115,7 +115,7 @@ public class SystemDiscoveryNormalizationTest {
 				// device names
 				List.of(" device-NAME-1\r\n", " device-NAME-2\r\n"));
 
-		final SystemLookupRequestDTO normalized = normalizator.normalizeSystemLookupRequestDTO(toNormalize);
+		final SystemLookupRequestDTO normalized = normalizer.normalizeSystemLookupRequestDTO(toNormalize);
 
 		assertAll("normalize SystemLookupRequestDTO",
 				// names
@@ -136,16 +136,16 @@ public class SystemDiscoveryNormalizationTest {
 	@Test
 	public void normalizeRevokeSystemNameTest() {
 		// name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeRevokeSystemName(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeRevokeSystemName(null);
 			});
 
 		// name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeRevokeSystemName("");
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeRevokeSystemName("");
 			});
 
 		// normalize name
-		assertEquals("system-name-1", normalizator.normalizeRevokeSystemName("\n \tsystem-NAME-1\r \n"));
+		assertEquals("system-name-1", normalizer.normalizeRevokeSystemName("\n \tsystem-NAME-1\r \n"));
 	}
 }

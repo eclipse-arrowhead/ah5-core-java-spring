@@ -47,7 +47,7 @@ public class ManagementNormalizationTest {
 	// members
 
 	@Autowired
-	private ManagementNormalization normalizator;
+	private ManagementNormalization normalizer;
 
 	//=================================================================================================
 	// methods
@@ -81,7 +81,7 @@ public class ManagementNormalizationTest {
 				"\ndevice-nAME2\n");
 
 		// normalize dto list
-		final List<NormalizedSystemRequestDTO> normalized = normalizator.normalizeSystemRequestDTOs(new SystemListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		final List<NormalizedSystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(new SystemListRequestDTO(List.of(toNormalize1, toNormalize2)));
 
 		assertAll("normalize SystemRequestDTOs 1",
 				() -> assertEquals(2, normalized.size()),
@@ -106,19 +106,19 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeSystemRequestDTOsTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeSystemRequestDTOs(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeSystemRequestDTOs(null);
 			});
 
 		// system list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeSystemRequestDTOs(new SystemListRequestDTO(null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeSystemRequestDTOs(new SystemListRequestDTO(null));
 			});
 
 		// dto contains null members (version, addresses)
 		final SystemRequestDTO toNormalize1 = new SystemRequestDTO("system-name", Map.of("key", "value"), null, null, "device-name");
 		final SystemRequestDTO toNormalize2 = new SystemRequestDTO("system-name", Map.of("key", "value"), null, null, "device-name");
-		final List<NormalizedSystemRequestDTO> normalized = normalizator.normalizeSystemRequestDTOs(new SystemListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		final List<NormalizedSystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(new SystemListRequestDTO(List.of(toNormalize1, toNormalize2)));
 
 		assertAll("normalize SystemRequestDTOs 2",
 				() -> assertEquals(2, normalized.size()),
@@ -135,7 +135,7 @@ public class ManagementNormalizationTest {
 	@SuppressWarnings("checkstyle:magicnumber")
 	public void normalizeSystemQueryRequestDTOTest() {
 		// dto is null
-		assertEquals(new SystemQueryRequestDTO(null, null, null, null, null, null, null), normalizator.normalizeSystemQueryRequestDTO(null));
+		assertEquals(new SystemQueryRequestDTO(null, null, null, null, null, null, null), normalizer.normalizeSystemQueryRequestDTO(null));
 
 		// normalize dto
 
@@ -161,7 +161,7 @@ public class ManagementNormalizationTest {
 				// device names
 				List.of(" device-namE1 ", " device-namE2 "));
 
-		final SystemQueryRequestDTO normalized = normalizator.normalizeSystemQueryRequestDTO(toNormalize);
+		final SystemQueryRequestDTO normalized = normalizer.normalizeSystemQueryRequestDTO(toNormalize);
 
 		assertAll("normalize SystemQueryRequestDTO",
 				// paginations -> should not change
@@ -184,13 +184,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeRemoveSystemNamesTest() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeRemoveSystemNames(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeRemoveSystemNames(null);
 			});
 
 		// normalize list
 		final List<String> toNormalize = List.of("namE1 ", "namE2", "", "\n \t");
-		final List<String> normalized = normalizator.normalizeRemoveSystemNames(toNormalize);
+		final List<String> normalized = normalizer.normalizeRemoveSystemNames(toNormalize);
 		assertEquals(List.of("name1", "name2"), normalized);
 	}
 
@@ -215,7 +215,7 @@ public class ManagementNormalizationTest {
 				// addresses
 				Arrays.asList(" 2.DEVICE.COM\n", " 1A-2B-3C-4D-5E-70\n"));
 
-		final List<NormalizedDeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(List.of(toNormalize1, toNormalize2));
+		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(List.of(toNormalize1, toNormalize2));
 
 		assertAll("normalize DeviceRequestDTOList 1",
 				() -> assertEquals(2, normalized.size()),
@@ -238,17 +238,17 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeDeviceRequestDTOListTest2NullCases() {
 		// list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceRequestDTOList(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceRequestDTOList(null);
 			});
 
 		// name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO(null, Map.of("key", "value"), List.of("device.com"))));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO(null, Map.of("key", "value"), List.of("device.com"))));
 			});
 
 		// addresses are null
-		final List<NormalizedDeviceRequestDTO> normalized = normalizator.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO("name", Map.of("key", "value"), null)));
+		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO("name", Map.of("key", "value"), null)));
 		assertEquals(1, normalized.size());
 		assertEquals(new ArrayList<>(), normalized.get(0).addresses());
 	}
@@ -257,8 +257,8 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeDeviceQueryRequestDTOTest() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceQueryRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceQueryRequestDTO(null);
 			});
 
 		// normalize dto
@@ -278,7 +278,7 @@ public class ManagementNormalizationTest {
 				// metadata requirement list
 				metadataRequirements);
 
-		final DeviceQueryRequestDTO normalized = normalizator.normalizeDeviceQueryRequestDTO(toNormalize);
+		final DeviceQueryRequestDTO normalized = normalizer.normalizeDeviceQueryRequestDTO(toNormalize);
 
 		assertAll("normalize DeviceQueryRequestDTO",
 				// names
@@ -287,7 +287,7 @@ public class ManagementNormalizationTest {
 				() -> assertEquals(List.of("1a:2b:3c:4d:5e:70", "1a:2b:3c:4d:5e:71"), normalized.addresses()),
 				// address type
 				() -> assertEquals("IPV6", normalized.addressType()),
-				// requirements (sould stay the same)
+				// requirements (should stay the same)
 				() -> assertEquals(metadataRequirements, normalized.metadataRequirementList())
 				);
 	}
@@ -296,13 +296,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeDeviceNamesTest() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeDeviceNames(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeDeviceNames(null);
 			});
 
 		// normalize list
 		final List<String> toNormalize = List.of("namE1 ", "namE2", "", "\n \t");
-		final List<String> normalized = normalizator.normalizeDeviceNames(toNormalize);
+		final List<String> normalized = normalizer.normalizeDeviceNames(toNormalize);
 		assertEquals(List.of("name1", "name2"), normalized);
 	}
 
@@ -312,18 +312,18 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeCreateServiceDefinitionsTest() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeCreateServiceDefinitions(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeCreateServiceDefinitions(null);
 			});
 
 		// list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeCreateServiceDefinitions(new ServiceDefinitionListRequestDTO(null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeCreateServiceDefinitions(new ServiceDefinitionListRequestDTO(null));
 			});
 
 		// normalize dto
 		final ServiceDefinitionListRequestDTO toNormalize = new ServiceDefinitionListRequestDTO(List.of("dEf1 ", "dEf2 "));
-		final List<String> normalized = normalizator.normalizeCreateServiceDefinitions(toNormalize);
+		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(toNormalize);
 
 		assertEquals(2, normalized.size());
 		assertEquals("def1", normalized.get(0));
@@ -334,13 +334,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeRemoveServiceDefinitionsTest() {
 		// list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeRemoveServiceDefinitions(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeRemoveServiceDefinitions(null);
 			});
 
 		// normalize list
 		final List<String> toNormalize = List.of("dEf1 ", "dEf2 ");
-		final List<String> normalized = normalizator.normalizeRemoveServiceDefinitions(toNormalize);
+		final List<String> normalized = normalizer.normalizeRemoveServiceDefinitions(toNormalize);
 
 		assertEquals(2, normalized.size());
 		assertEquals("def1", normalized.get(0));
@@ -393,12 +393,12 @@ public class ManagementNormalizationTest {
 				List.of(interface1, interface2)
 				);
 
-		final List<ServiceInstanceRequestDTO> normalized = normalizator.normalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		final List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(List.of(toNormalize1, toNormalize2)));
 		assertEquals(2, normalized.size());
 		final List<ServiceInstanceInterfaceRequestDTO> nInterfaces1 = normalized.get(0).interfaces();
 		final List<ServiceInstanceInterfaceRequestDTO> nInterfaces2 = normalized.get(1).interfaces();
 
-		assertAll("normlaize CreateServiceInstances 1",
+		assertAll("normalize CreateServiceInstances 1",
 				// system name
 				() -> assertEquals("system-name-1", normalized.get(0).systemName()),
 				() -> assertEquals("system-name-2", normalized.get(1).systemName()),
@@ -441,13 +441,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeCreateServiceInstancesTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeCreateServiceInstances(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeCreateServiceInstances(null);
 			});
 
 		// instance list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(null));
 			});
 
 		// dto contain null members (version, expires at)
@@ -461,7 +461,7 @@ public class ManagementNormalizationTest {
 				null,
 				Map.of("key", "value"), List.of());
 
-		final List<ServiceInstanceRequestDTO> normalized = normalizator.normalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		final List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(List.of(toNormalize1, toNormalize2)));
 		assertEquals(2, normalized.size());
 		assertEquals("1.0.0", normalized.get(0).version());
 		assertEquals("", normalized.get(1).expiresAt());
@@ -499,12 +499,12 @@ public class ManagementNormalizationTest {
 				// interfaces
 				List.of(interface1, interface2));
 
-		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizator.normalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(List.of(toNormalize1, toNormalize2)));
 		assertEquals(2, normalized.size());
 		final List<ServiceInstanceInterfaceRequestDTO> nInterfaces1 = normalized.get(0).interfaces();
 		final List<ServiceInstanceInterfaceRequestDTO> nInterfaces2 = normalized.get(1).interfaces();
 
-		assertAll("normlaize UpdateServiceInstances 1",
+		assertAll("normalize UpdateServiceInstances 1",
 				// instance id
 				() -> assertEquals("system-name::service-definition::1.0.0", normalized.get(0).instanceId()),
 				() -> assertEquals("system-name::service-definition::1.0.1", normalized.get(1).instanceId()),
@@ -541,13 +541,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeUpdateServiceInstancesTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeUpdateServiceInstances(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeUpdateServiceInstances(null);
 			});
 
 		// instance list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(null));
 			});
 
 		// dto contains null member (expires at)
@@ -555,7 +555,7 @@ public class ManagementNormalizationTest {
 				// expires at
 				null,
 				Map.of("key", "value"), List.of());
-		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizator.normalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(List.of(toNormalize)));
+		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(List.of(toNormalize)));
 		assertEquals(1, normalized.size());
 		assertEquals("", normalized.get(0).expiresAt());
 	}
@@ -564,13 +564,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeRemoveServiceInstancesTest() {
 		// instance list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeRemoveServiceInstances(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeRemoveServiceInstances(null);
 			});
 
 		// normalize list
 		final List<String> toNormalize = List.of("\tsystem-NAME::service-definition::1.0.0 ", "\tsystem-NAME::service-definition::1.0.1 ");
-		final List<String> normalized = normalizator.normalizeRemoveInterfaceTemplates(toNormalize);
+		final List<String> normalized = normalizer.normalizeRemoveInterfaceTemplates(toNormalize);
 		assertEquals("system-name::service-definition::1.0.0", normalized.get(0));
 		assertEquals("system-name::service-definition::1.0.1", normalized.get(1));
 	}
@@ -603,7 +603,7 @@ public class ManagementNormalizationTest {
 				"\n 2025-01-31T12:00:00Z \n",
 				// metadata requirement list
 				List.of(metadataRequirement),
-				// interface template namesk
+				// interface template names
 				List.of(" generic-MQTT ", " generic-MQTTS "),
 				// interface property requirements list
 				List.of(interfacePropertyRequirement),
@@ -611,7 +611,7 @@ public class ManagementNormalizationTest {
 				List.of(" none ", " cert_auth "));
 
 		// normalize dto
-		final ServiceInstanceQueryRequestDTO normalized = normalizator.normalizeQueryServiceInstances(toNormalize);
+		final ServiceInstanceQueryRequestDTO normalized = normalizer.normalizeQueryServiceInstances(toNormalize);
 
 		assertAll("normalize QueryServiceInstances 1",
 				// pagination -> should not change
@@ -640,13 +640,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeQueryServiceInstancesTest2NullCases() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeQueryServiceInstances(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeQueryServiceInstances(null);
 			});
 
 		// dto conatins null members
 		final ServiceInstanceQueryRequestDTO toNormalize = new ServiceInstanceQueryRequestDTO(new PageDTO(0, 10, "asc", "id"), null, null, null, null, null, null, null, null, null);
-		final ServiceInstanceQueryRequestDTO normalized = normalizator.normalizeQueryServiceInstances(toNormalize);
+		final ServiceInstanceQueryRequestDTO normalized = normalizer.normalizeQueryServiceInstances(toNormalize);
 		assertAll("normalize eQueryServiceInstances 2",
 				// instance ids
 				() -> assertEquals(new ArrayList<>(), normalized.instanceIds()),
@@ -674,13 +674,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeServiceInterfaceTemplateListRequestDTOTest() {
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInterfaceTemplateListRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInterfaceTemplateListRequestDTO(null);
 			});
 
 		// template list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInterfaceTemplateListRequestDTO(new ServiceInterfaceTemplateListRequestDTO(null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInterfaceTemplateListRequestDTO(new ServiceInterfaceTemplateListRequestDTO(null));
 			});
 
 		// normalize dto
@@ -717,7 +717,7 @@ public class ManagementNormalizationTest {
 						// validator params
 						List.of("192.166.0.0 \n", "192.166.255.255 \n"))));
 
-		final ServiceInterfaceTemplateListRequestDTO normalized = normalizator.normalizeServiceInterfaceTemplateListRequestDTO(new ServiceInterfaceTemplateListRequestDTO(List.of(toNormalize1, toNormalize2)));
+		final ServiceInterfaceTemplateListRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateListRequestDTO(new ServiceInterfaceTemplateListRequestDTO(List.of(toNormalize1, toNormalize2)));
 
 		assertAll("normalize ServiceInterfaceTemplateListRequestDTO 1",
 				() -> assertEquals(2, normalized.interfaceTemplates().size()),
@@ -738,11 +738,11 @@ public class ManagementNormalizationTest {
 	public void normalizeServiceInterfaceTemplateQueryRequestDTOTest() {
 		// dto is null
 		assertEquals(new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>()),
-				normalizator.normalizeServiceInterfaceTemplateQueryRequestDTO(null));
+				normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(null));
 
 		// dto has null members (template names, protocols)
 		assertEquals(new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>()),
-				normalizator.normalizeServiceInterfaceTemplateQueryRequestDTO(new ServiceInterfaceTemplateQueryRequestDTO(null, null, null)));
+				normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(new ServiceInterfaceTemplateQueryRequestDTO(null, null, null)));
 
 		// normalize dto
 		final ServiceInterfaceTemplateQueryRequestDTO toNormalize = new ServiceInterfaceTemplateQueryRequestDTO(
@@ -753,7 +753,7 @@ public class ManagementNormalizationTest {
 				// protocols
 				List.of("TCP \n", "SSL \n"));
 
-		final ServiceInterfaceTemplateQueryRequestDTO normalized = normalizator.normalizeServiceInterfaceTemplateQueryRequestDTO(toNormalize);
+		final ServiceInterfaceTemplateQueryRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(toNormalize);
 		assertAll("normalize ServiceInterfaceTemplateQueryRequestDTO",
 				// pagination -> should not change
 				() -> assertEquals(new PageDTO(0, 10, "asc", "id"), normalized.pagination()),
@@ -767,13 +767,13 @@ public class ManagementNormalizationTest {
 	@Test
 	public void normalizeRemoveInterfaceTemplatesTest() {
 		// name list is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeRemoveInterfaceTemplates(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeRemoveInterfaceTemplates(null);
 			});
 
 		// normalize list
 		final List<String> toNormalize = List.of("generic-MQTT \n", "generic-MQTTS \n");
-		final List<String> normalized = normalizator.normalizeRemoveInterfaceTemplates(toNormalize);
+		final List<String> normalized = normalizer.normalizeRemoveInterfaceTemplates(toNormalize);
 		assertEquals("generic-mqtt", normalized.get(0));
 		assertEquals("generic-mqtts", normalized.get(1));
 	}

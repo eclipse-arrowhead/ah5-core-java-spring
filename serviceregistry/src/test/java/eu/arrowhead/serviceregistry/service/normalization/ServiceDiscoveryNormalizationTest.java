@@ -28,7 +28,7 @@ public class ServiceDiscoveryNormalizationTest {
 	// members
 
 	@Autowired
-	private ServiceDiscoveryNormalization normalizator;
+	private ServiceDiscoveryNormalization normalizer;
 
 	//=================================================================================================
 	// methods
@@ -61,7 +61,7 @@ public class ServiceDiscoveryNormalizationTest {
 				// interfaces
 				List.of(interface1, interface2));
 
-		final ServiceInstanceRequestDTO normalized = normalizator.normalizeServiceInstanceRequestDTO(toNormalize);
+		final ServiceInstanceRequestDTO normalized = normalizer.normalizeServiceInstanceRequestDTO(toNormalize);
 
 		assertAll("normalize ServiceInstanceRequestDTO 1",
 				// system name
@@ -86,13 +86,13 @@ public class ServiceDiscoveryNormalizationTest {
 	public void normalizeServiceInstanceRequestDTOTest2NullCases() {
 
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInstanceRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInstanceRequestDTO(null);
 			});
 
 		// system name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInstanceRequestDTO(new ServiceInstanceRequestDTO(null, "service-def", "1.0.0", "2025-01-31T12:00:00Z", Map.of("key", "value"), null));
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInstanceRequestDTO(new ServiceInstanceRequestDTO(null, "service-def", "1.0.0", "2025-01-31T12:00:00Z", Map.of("key", "value"), null));
 			});
 
 		// dto contains null members (expires at, interfaces)
@@ -104,7 +104,7 @@ public class ServiceDiscoveryNormalizationTest {
 				// interfaces -> should be changed to an empty list
 				null);
 
-		final ServiceInstanceRequestDTO normalized = normalizator.normalizeServiceInstanceRequestDTO(toNormalize);
+		final ServiceInstanceRequestDTO normalized = normalizer.normalizeServiceInstanceRequestDTO(toNormalize);
 
 		assertEquals("", normalized.expiresAt());
 		assertEquals(new ArrayList<>(), normalized.interfaces());
@@ -143,7 +143,7 @@ public class ServiceDiscoveryNormalizationTest {
 				// policies
 				List.of(" none ", " cert_auth "));
 
-		final ServiceInstanceLookupRequestDTO normalized = normalizator.normalizeServiceInstanceLookupRequestDTO(toNormalize);
+		final ServiceInstanceLookupRequestDTO normalized = normalizer.normalizeServiceInstanceLookupRequestDTO(toNormalize);
 
 		assertAll("normalize ServiceInstanceLookupRequestDTO 1",
 				// instance ids
@@ -171,13 +171,13 @@ public class ServiceDiscoveryNormalizationTest {
 	public void normalizeServiceInstanceLookupRequestDTOTest2NullCases() {
 
 		// dto is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInstanceLookupRequestDTO(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInstanceLookupRequestDTO(null);
 			});
 
 		// everything is null
 		final ServiceInstanceLookupRequestDTO toNormalize = new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null);
-		final ServiceInstanceLookupRequestDTO normalized = normalizator.normalizeServiceInstanceLookupRequestDTO(toNormalize);
+		final ServiceInstanceLookupRequestDTO normalized = normalizer.normalizeServiceInstanceLookupRequestDTO(toNormalize);
 		assertAll("normalize ServiceInstanceLookupRequestDTO 1",
 				// instance ids
 				() -> assertEquals(new ArrayList<>(), normalized.instanceIds()),
@@ -204,33 +204,33 @@ public class ServiceDiscoveryNormalizationTest {
 	@Test
 	public void normalizeSystemNameTest() {
 		// name is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeSystemName(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeSystemName(null);
 			});
 
 		// name is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeSystemName("");
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeSystemName("");
 			});
 
 		// normalize name
-		assertEquals("system-name-1", normalizator.normalizeSystemName("\n \tsystem-NAME-1\r \n"));
+		assertEquals("system-name-1", normalizer.normalizeSystemName("\n \tsystem-NAME-1\r \n"));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void normalizeServiceInstanceIdTest() {
 		// instance id is null
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInstanceId(null);
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInstanceId(null);
 			});
 
 		// instance id is empty
-		assertThrows(java.lang.IllegalArgumentException.class, () -> {
-			normalizator.normalizeServiceInstanceId("");
+		assertThrows(IllegalArgumentException.class, () -> {
+			normalizer.normalizeServiceInstanceId("");
 			});
 
 		// normalize instance id
-		assertEquals("system-name::service-definition::1.0.0", normalizator.normalizeServiceInstanceId(" system-NAME::service-definition::1.0.0 "));
+		assertEquals("system-name::service-definition::1.0.0", normalizer.normalizeServiceInstanceId(" system-NAME::service-definition::1.0.0 "));
 	}
 }
