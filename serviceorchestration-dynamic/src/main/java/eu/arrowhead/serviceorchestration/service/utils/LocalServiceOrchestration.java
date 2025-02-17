@@ -17,7 +17,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.ArrowheadHttpService;
-import eu.arrowhead.common.service.util.ServiceInterfaceAddressTypeFilter;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
@@ -63,7 +63,7 @@ public class LocalServiceOrchestration {
 	private ServiceInstanceMatchmaker matchmaker;
 
 	@Autowired
-	private ServiceInterfaceAddressTypeFilter interfaceAddressTypeFilter;
+	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
 
 	private static final Object LOCK = new Object();
 
@@ -233,7 +233,7 @@ public class LocalServiceOrchestration {
 				.providerNames(onlyPreferred ? form.getPrefferedProviders() : null)
 				.build();
 
-		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(Constants.SERVICE_DEF_SERVICE_DISCOVERY, Constants.SERVICE_OP_LOOKUP, ServiceInstanceListResponseDTO.class, lookupDTO);
+		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(Constants.SERVICE_DEF_SERVICE_DISCOVERY, Constants.SERVICE_OP_LOOKUP, Constants.SYS_NAME_SERVICE_REGISTRY, ServiceInstanceListResponseDTO.class, lookupDTO);
 
 		if (Utilities.isEmpty(response.entries())) {
 			return List.of();
@@ -243,7 +243,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:.EmptyBlockCheck")
+	@SuppressWarnings("checkstyle:EmptyBlockCheck")
 	private List<OrchestrationCandidate> filterOutLockedOnes(final UUID jobId, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutLockedOnes started...");
 
@@ -373,7 +373,7 @@ public class LocalServiceOrchestration {
 
 				// Checking address types
 				if (considerAddressTypes && isMatchingInterface && !Utilities.isEmpty(form.getInterfaceAddressTypes())) {
-					isMatchingInterface = interfaceAddressTypeFilter.filter(offeredInterface.properties(), form.getInterfaceAddressTypes());
+					isMatchingInterface = interfaceAddressPropertyProcessor.filterOnAddressTypes(offeredInterface.properties(), form.getInterfaceAddressTypes());
 				}
 
 				if (isMatchingInterface) {

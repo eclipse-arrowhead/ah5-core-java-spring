@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -72,7 +73,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName) throws ArrowheadException {
+	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName, final String providerName) throws ArrowheadException {
 		logger.debug("DatabaseCollectorDriver.acquireService started: service definition: {}, interface template: {}", serviceDefinitionName, interfaceTemplateName);
 
 		if (!supportedInterfaces.contains(interfaceTemplateName)) {
@@ -85,9 +86,23 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			return null;
 		}
 
-		// only the first instance entry will be returned
-		final ServiceInstance instance = instanceEntries.getContent().getFirst().getKey();
-		final List<ServiceInstanceInterface> interfaces = instanceEntries.getContent().getFirst().getValue();
+		// only the first instance or the first matching system name entry will be returned
+		ServiceInstance instance = null;
+		List<ServiceInstanceInterface> interfaces = null;
+		if (Utilities.isEmpty(providerName)) {
+			instance = instanceEntries.getContent().getFirst().getKey();
+			interfaces = instanceEntries.getContent().getFirst().getValue();
+		} else {
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> matchingProvider = instanceEntries.stream().filter(ie -> ie.getKey().getSystem().getName().equalsIgnoreCase(providerName)).toList();
+			if (!Utilities.isEmpty(matchingProvider)) {
+				instance = matchingProvider.getFirst().getKey();
+				interfaces = matchingProvider.getFirst().getValue();
+			}
+		}
+
+		if (instance == null) {
+			return null;
+		}
 
 		// create the list of interface models
 		final List<InterfaceModel> interfaceModelList = new ArrayList<>();
@@ -108,12 +123,12 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			}
 		}
 
-		final ServiceModel serviceModel = new ServiceModel
-				.Builder()
+		final ServiceModel serviceModel = new ServiceModel.Builder()
 				.serviceDefinition(instance.getServiceDefinition().getName())
 				.version(instance.getVersion())
 				.serviceInterfaces(interfaceModelList)
-				.metadata(Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
+				.metadata(Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>()
+				{
 				}))
 				.build();
 
@@ -135,11 +150,10 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final PageRequest pagination = PageRequest.of(0, 1, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
 
 		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(
-				new ServiceInstanceLookupRequestDTO
-				.Builder()
-				.serviceDefinitionName(nServiceDefinitionName)
-				.interfaceTemplateName(nInterfaceTemplateName)
-				.build());
+				new ServiceInstanceLookupRequestDTO.Builder()
+						.serviceDefinitionName(nServiceDefinitionName)
+						.interfaceTemplateName(nInterfaceTemplateName)
+						.build());
 
 		// get the instances from the database
 		return instanceDbService.getPageByFilters(pagination, filterModel);
@@ -164,8 +178,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 				: Map.of();
 
 		// create the interface model
-		final HttpInterfaceModel model = new HttpInterfaceModel
-				.Builder(templateName)
+		final HttpInterfaceModel model = new HttpInterfaceModel.Builder(templateName)
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
 				.basePath(basePath)
@@ -190,11 +203,11 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 
 		// operations
 		final Set<String> operations = properties.containsKey(MqttInterfaceModel.PROP_NAME_OPERATIONS)
-				? new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS)) : Set.of();
+				? new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS))
+				: Set.of();
 
 		// create the interface model
-		MqttInterfaceModel model = new MqttInterfaceModel
-				.Builder(templateName)
+		final MqttInterfaceModel model = new MqttInterfaceModel.Builder(templateName)
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
 				.topic(topic)

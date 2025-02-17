@@ -12,7 +12,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.init.ApplicationInitListener;
-import eu.arrowhead.common.service.util.ServiceInterfaceAddressTypeFilter;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.serviceorchestration.service.thread.PushOrchestrationThread;
 
@@ -29,7 +29,7 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 	private PushOrchestrationThread pushOrchestrationThread;
 
 	@Autowired
-	private ServiceInterfaceAddressTypeFilter serviceInterfaceAddressTypeFilter;
+	private ServiceInterfaceAddressPropertyProcessor serviceInterfaceAddressPropertyProcessor;
 
 	//=================================================================================================
 	// assistant methods
@@ -57,14 +57,14 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 	private void initServiceInterfaceAddressTypeFilter() {
 		logger.debug("initServiceInterfaceAddressTypeFilter started...");
 
-		final KeyValuesDTO srConfigDTO = arrowheadHttpService.consumeService(Constants.SERVICE_DEF_GENERAL_MANAGEMENT, Constants.SERVICE_OP_GET_CONFIG, KeyValuesDTO.class,
-				Map.of(Constants.SERVICE_OP_GET_CONFIG_REQ_PARAM, List.of(Constants.SERVICE_ADDRESS_ALIAS))); // TODO consume especially from SR
+		final KeyValuesDTO srConfigDTO = arrowheadHttpService.consumeService(Constants.SERVICE_DEF_GENERAL_MANAGEMENT, Constants.SERVICE_OP_GET_CONFIG, Constants.SYS_NAME_SERVICE_REGISTRY,
+				KeyValuesDTO.class, Map.of(Constants.SERVICE_OP_GET_CONFIG_REQ_PARAM, List.of(Constants.SERVICE_ADDRESS_ALIAS)));
 
 		final String serviceAddressAliasListStr = srConfigDTO.map().get(Constants.SERVICE_ADDRESS_ALIAS);
 
 		if (!Utilities.isEmpty(serviceAddressAliasListStr)) {
 			final List<String> serviceAddressAliasList = Arrays.asList(serviceAddressAliasListStr.split(","));
-			serviceInterfaceAddressTypeFilter.setAddressAliasNames(serviceAddressAliasList);
+			serviceInterfaceAddressPropertyProcessor.setAddressAliasNames(serviceAddressAliasList);
 		}
 	}
 

@@ -27,7 +27,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.util.ServiceInterfaceAddressTypeFilter;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
@@ -79,7 +79,7 @@ public class ServiceInstanceDbService {
 	private ServiceInterfaceTemplatePropertyRepository serviceInterfaceTemplatePropsRepo;
 
 	@Autowired
-	private ServiceInterfaceAddressTypeFilter interfaceAddressTypeFilter;
+	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
 
 	private static final Object LOCK = new Object();
 
@@ -565,7 +565,7 @@ public class ServiceInstanceDbService {
 							}
 
 							if (interfacePropertyMatch && !Utilities.isEmpty(filters.getAddressTypes())) {
-								interfacePropertyMatch = interfaceAddressTypeFilter.filter(interfaceProps, filters.getAddressTypes().stream().map(at -> at.name()).toList());
+								interfacePropertyMatch = interfaceAddressPropertyProcessor.filterOnAddressTypes(interfaceProps, filters.getAddressTypes().stream().map(at -> at.name()).toList());
 								if (interfacePropertyMatch) {
 									interf.setProperties(Utilities.toJson(interfaceProps));
 								}

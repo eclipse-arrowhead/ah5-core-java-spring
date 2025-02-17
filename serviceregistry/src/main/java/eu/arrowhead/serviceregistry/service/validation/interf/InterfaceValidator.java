@@ -18,9 +18,14 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.intf.properties.IPropertyValidator;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor.AddressData;
+import eu.arrowhead.common.service.validation.address.AddressNormalizer;
+import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
@@ -39,6 +44,15 @@ public class InterfaceValidator {
 
 	@Autowired
 	private PropertyValidators interfacePropertyValidator;
+
+	@Autowired
+	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
+
+	@Autowired
+	private AddressNormalizer addressNormalizer;
+
+	@Autowired
+	private AddressValidator addressValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -74,6 +88,8 @@ public class InterfaceValidator {
 					}
 				});
 
+				discoverAndNormalizeAndValidateAddressProperty(interfaceInstance.properties());
+
 				normalized.add(interfaceInstance);
 			} else {
 				if (!Utilities.isEmpty(interfaceInstance.protocol()) && !interfaceInstance.protocol().equals(templateOpt.get().getProtocol())) {
@@ -91,7 +107,11 @@ public class InterfaceValidator {
 
 							if (instanceProp != null && !Utilities.isEmpty(templateProp.getValidator())) {
 								final String[] validatorWithArgs = templateProp.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
-								final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
+								final PropertyValidatorType propertyValidatorType = PropertyValidatorType.valueOf(validatorWithArgs[0]);
+								if (propertyValidatorType != PropertyValidatorType.NOT_EMPTY_ADDRESS_LIST) {
+									discoverAndNormalizeAndValidateAddressProperty(interfaceInstance.properties());
+								}
+								final IPropertyValidator validator = interfacePropertyValidator.getValidator(propertyValidatorType);
 								if (validator != null) {
 									final Object normalizedProp = validator.validateAndNormalize(
 											instanceProp,
@@ -133,5 +153,33 @@ public class InterfaceValidator {
 				}
 			});
 		});
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void discoverAndNormalizeAndValidateAddressProperty(final Map<String, Object> props) {
+		logger.debug("discoverAndNormalizeAndValidateAddressProperty started..");
+
+		final AddressData addressData = interfaceAddressPropertyProcessor.findAddresses(props);
+
+		if (Utilities.isEmpty(addressData.addresses())) {
+			return;
+		}
+
+		final List<String> normalizedAndValidAddresses = new ArrayList<>();
+		addressData.addresses().forEach(address -> {
+			String normalized = addressNormalizer.normalize(address);
+			final AddressType type = addressValidator.detectType(normalized);
+			addressValidator.validateNormalizedAddress(type, address);
+			normalizedAndValidAddresses.add(normalized);
+		});
+
+		if (addressData.isList()) {
+			props.put(addressData.addressKey(), normalizedAndValidAddresses);
+		} else {
+			props.put(addressData.addressKey(), normalizedAndValidAddresses.getFirst());
+		}
 	}
 }
