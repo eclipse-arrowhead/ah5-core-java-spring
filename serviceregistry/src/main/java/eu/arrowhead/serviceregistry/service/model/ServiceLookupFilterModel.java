@@ -12,6 +12,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 public class ServiceLookupFilterModel {
@@ -25,6 +26,7 @@ public class ServiceLookupFilterModel {
 	private final Set<String> versions = new HashSet<>();
 	private final ZonedDateTime alivesAt;
 	private final List<MetadataRequirementDTO> metadataRequirementsList = new ArrayList<>();
+	private final List<AddressType> addressTypes = new ArrayList<>();
 	private final Set<String> interfaceTemplateNames = new HashSet<>();
 	private final List<MetadataRequirementDTO> interfacePropertyRequirementsList = new ArrayList<>();
 	private final Set<ServiceInterfacePolicy> policies = new HashSet<>();
@@ -37,34 +39,41 @@ public class ServiceLookupFilterModel {
 		Assert.notNull(dto, "ServiceInstanceLookupRequestDTO is null");
 
 		if (!Utilities.isEmpty(dto.instanceIds())) {
-		    instanceIds.addAll(dto.instanceIds());
+			instanceIds.addAll(dto.instanceIds());
 		}
-		
+
 		if (!Utilities.isEmpty(dto.providerNames())) {
 			providerNames.addAll(dto.providerNames());
 		}
-		
+
 		if (!Utilities.isEmpty(dto.serviceDefinitionNames())) {
 			serviceDefinitionNames.addAll(dto.serviceDefinitionNames());
 		}
-		
+
 		if (!Utilities.isEmpty(dto.versions())) {
 			versions.addAll(dto.versions());
 		}
-		
+
 		alivesAt = Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
 		if (!Utilities.isEmpty(dto.metadataRequirementsList())) {
 			metadataRequirementsList.addAll(dto.metadataRequirementsList());
 		}
-		
+
+		if (!Utilities.isEmpty(dto.addressTypes())) {
+			for (final String type : dto.addressTypes()) {
+				Assert.isTrue(Utilities.isEnumValue(type, AddressType.class), "Invlid addres type: " + type);
+				addressTypes.add(AddressType.valueOf(type));
+			}
+		}
+
 		if (!Utilities.isEmpty(dto.interfaceTemplateNames())) {
 			interfaceTemplateNames.addAll(dto.interfaceTemplateNames());
 		}
-		
+
 		if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList())) {
 			interfacePropertyRequirementsList.addAll(dto.interfacePropertyRequirementsList());
 		}
-		
+
 		if (!Utilities.isEmpty(dto.policies())) {
 			policies.addAll(dto.policies().stream().map(p -> ServiceInterfacePolicy.valueOf(p)).collect(Collectors.toSet()));
 		}
@@ -78,6 +87,7 @@ public class ServiceLookupFilterModel {
 				|| !Utilities.isEmpty(versions)
 				|| alivesAt != null
 				|| !Utilities.isEmpty(metadataRequirementsList)
+				|| !Utilities.isEmpty(addressTypes)
 				|| !Utilities.isEmpty(interfaceTemplateNames)
 				|| !Utilities.isEmpty(interfacePropertyRequirementsList)
 				|| !Utilities.isEmpty(policies);
@@ -114,6 +124,11 @@ public class ServiceLookupFilterModel {
 	//-------------------------------------------------------------------------------------------------
 	public List<MetadataRequirementDTO> getMetadataRequirementsList() {
 		return metadataRequirementsList;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AddressType> getAddressTypes() {
+		return addressTypes;
 	}
 
 	//-------------------------------------------------------------------------------------------------

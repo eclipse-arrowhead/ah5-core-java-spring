@@ -19,6 +19,7 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
@@ -152,6 +153,18 @@ public class ServiceDiscoveryValidation {
 
 		if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
 			throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.addressTypes())) {
+			for (final String type : dto.addressTypes()) {
+				if (Utilities.isEmpty(type)) {
+					throw new InvalidParameterException("Address type list contains null or empty element", origin);
+				}
+
+				if (!Utilities.isEnumValue(type.toUpperCase(), AddressType.class)) {
+					throw new InvalidParameterException("Address type list contains invalid element: " + type, origin);
+				}
+			}
 		}
 
 		if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {

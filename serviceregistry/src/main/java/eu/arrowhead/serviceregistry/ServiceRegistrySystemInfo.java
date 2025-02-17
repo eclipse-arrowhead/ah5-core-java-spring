@@ -39,6 +39,9 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_INTERFACE_POLICY_WD)
 	private ServiceDiscoveryInterfacePolicy serviceDiscoveryInterfacePolicy;
 
+	@Value(Constants.$SERVICE_ADDRESS_ALIAS_WD)
+	private List<String> serviceAddressAliases;
+
 	private SystemModel systemModel;
 
 	//=================================================================================================
@@ -134,6 +137,11 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public ServiceDiscoveryInterfacePolicy getServiceDiscoveryInterfacePolicy() {
 		return this.serviceDiscoveryInterfacePolicy;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> getServiceAddressAliases() {
+		return serviceAddressAliases;
 	}
 
 	//=================================================================================================

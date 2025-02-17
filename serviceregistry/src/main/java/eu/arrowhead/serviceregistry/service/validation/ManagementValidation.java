@@ -708,6 +708,18 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Metadata requirements list contains null element", origin);
 			}
 
+			if (!Utilities.isEmpty(dto.addressTypes())) {
+				for (final String type : dto.addressTypes()) {
+					if (Utilities.isEmpty(type)) {
+						throw new InvalidParameterException("Address type list contains null or empty element", origin);
+					}
+
+					if (!Utilities.isEnumValue(type.toUpperCase(), AddressType.class)) {
+						throw new InvalidParameterException("Address type list contains invalid element: " + type, origin);
+					}
+				}
+			}
+
 			// interfaceTemplateNames
 			if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
 				throw new InvalidParameterException("Interface template list contains null or empty element", origin);

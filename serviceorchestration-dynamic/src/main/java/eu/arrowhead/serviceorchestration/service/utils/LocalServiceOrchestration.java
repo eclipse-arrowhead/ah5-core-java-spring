@@ -17,6 +17,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.ArrowheadHttpService;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressTypeFilter;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
@@ -60,6 +61,9 @@ public class LocalServiceOrchestration {
 
 	@Resource(name = DynamicServiceOrchestrationConstants.SERVICE_INSTANCE_MATCHMAKER)
 	private ServiceInstanceMatchmaker matchmaker;
+
+	@Autowired
+	private ServiceInterfaceAddressTypeFilter interfaceAddressTypeFilter;
 
 	private static final Object LOCK = new Object();
 
@@ -119,7 +123,7 @@ public class LocalServiceOrchestration {
 			}
 
 			// Collect matching interfaces and mark if translation is necessary
-			assortInterfacesAndMarkIfNonNative(form, candidates);
+			assortInterfacesAndMarkIfNonNative(form, candidates, translationAllowed);
 
 			// QoS cross-check
 			if (form.hasQoSRequirements()) {
@@ -225,6 +229,7 @@ public class LocalServiceOrchestration {
 				.policies(form.getSecurityPolicies())
 				.interfaceTemplateNames(withoutInterace ? null : form.getInterfaceTemplateNames())
 				.interfacePropertyRequirementsList(withoutInterace ? null : form.getInterfacePropertyRequirements())
+				.addressTypes(withoutInterace ? null : form.getInterfaceAddressTypes())
 				.providerNames(onlyPreferred ? form.getPrefferedProviders() : null)
 				.build();
 
@@ -334,10 +339,10 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
+	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean considerAddressTypes) {
 		logger.debug("assortInterfacesAndMarkIfNonNative started...");
 
-		if (Utilities.isEmpty(form.getInterfaceTemplateNames()) && Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+		if (Utilities.isEmpty(form.getInterfaceTemplateNames()) && Utilities.isEmpty(form.getInterfacePropertyRequirements()) && Utilities.isEmpty(form.getInterfaceAddressTypes())) {
 			for (final OrchestrationCandidate candidate : candidates) {
 				candidate.addMatchingInterfaces(candidate.getServiceInstance().interfaces());
 			}
@@ -366,7 +371,10 @@ public class LocalServiceOrchestration {
 					isMatchingInterface = matchingProps;
 				}
 
-				// TODO AddressTypes -> How to do this? Address value appears in the interface properties if any and with whatever keys. It can be even a simple string or string list...
+				// Checking address types
+				if (considerAddressTypes && isMatchingInterface && !Utilities.isEmpty(form.getInterfaceAddressTypes())) {
+					isMatchingInterface = interfaceAddressTypeFilter.filter(offeredInterface.properties(), form.getInterfaceAddressTypes());
+				}
 
 				if (isMatchingInterface) {
 					candidate.addMatchingInterface(offeredInterface);
