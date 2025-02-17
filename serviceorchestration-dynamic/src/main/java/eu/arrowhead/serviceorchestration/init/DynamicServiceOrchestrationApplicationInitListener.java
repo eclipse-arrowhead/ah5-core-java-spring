@@ -7,6 +7,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
@@ -57,8 +59,9 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 	private void initServiceInterfaceAddressTypeFilter() {
 		logger.debug("initServiceInterfaceAddressTypeFilter started...");
 
-		final KeyValuesDTO srConfigDTO = arrowheadHttpService.consumeService(Constants.SERVICE_DEF_GENERAL_MANAGEMENT, Constants.SERVICE_OP_GET_CONFIG, Constants.SYS_NAME_SERVICE_REGISTRY,
-				KeyValuesDTO.class, Map.of(Constants.SERVICE_OP_GET_CONFIG_REQ_PARAM, List.of(Constants.SERVICE_ADDRESS_ALIAS)));
+		MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>(Map.of(Constants.SERVICE_OP_GET_CONFIG_REQ_PARAM, List.of(Constants.SERVICE_ADDRESS_ALIAS)));
+
+		final KeyValuesDTO srConfigDTO = arrowheadHttpService.consumeService(Constants.SERVICE_DEF_GENERAL_MANAGEMENT, Constants.SERVICE_OP_GET_CONFIG, Constants.SYS_NAME_SERVICE_REGISTRY, KeyValuesDTO.class, queryParams);
 
 		final String serviceAddressAliasListStr = srConfigDTO.map().get(Constants.SERVICE_ADDRESS_ALIAS);
 

@@ -39,7 +39,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_INTERFACE_POLICY_WD)
 	private ServiceDiscoveryInterfacePolicy serviceDiscoveryInterfacePolicy;
 
-	@Value(Constants.$SERVICE_ADDRESS_ALIAS_WD)
+	@Value(Constants.$SERVICE_ADDRESS_ALIAS)
 	private List<String> serviceAddressAliases;
 
 	private SystemModel systemModel;

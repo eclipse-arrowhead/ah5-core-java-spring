@@ -70,7 +70,7 @@ public class PushOrchestrationThread extends Thread {
 	@Autowired
 	private HttpService httpService;
 
-	@Autowired
+	@Autowired(required = false)
 	private MqttService mqttService;
 
 	@Autowired
@@ -200,6 +200,11 @@ public class PushOrchestrationThread extends Thread {
 	//-------------------------------------------------------------------------------------------------
 	private void notifyViaMqtt(final UUID subscriptionId, final String targetSystem, final String properties, final OrchestrationResponseDTO result) {
 		logger.debug("notifyViaMqtt started...");
+
+		if (!sysInfo.isMqttApiEnabled()) {
+			logger.error("Orchestration push notification via MQTT is required for subscripiton: " + subscriptionId.toString() + ", but MQTT is not enabled");
+			return;
+		}
 
 		// Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results.
 		final MqttClient mqttClient = mqttService.client(Constants.MQTT_SERVICE_PROVIDING_BROKER_CONNECT_ID);
