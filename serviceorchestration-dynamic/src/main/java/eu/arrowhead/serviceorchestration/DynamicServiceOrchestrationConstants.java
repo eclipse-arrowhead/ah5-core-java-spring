@@ -20,6 +20,8 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String $ENABLE_QOS_WD = "${" + ENABLE_QOS + ":false }";
 	public static final String ENABLE_INTERCLOUD = "enable.intercloud";
 	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":false }";
+	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
+	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":30000}";
 
 	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
@@ -38,6 +40,10 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
 	public static final String SERVICE_INSTANCE_MATCHMAKER = "serviceInstanceMatchmaker";
+
+	// Quartz related
+	public static final String CLEANER_TRIGGER = "dynamicOrchestrationCleanerTrigger";
+	public static final String CLEANER_JOB = "dynamicOrchestrationCleanerJob";
 
 	// Operation related
 

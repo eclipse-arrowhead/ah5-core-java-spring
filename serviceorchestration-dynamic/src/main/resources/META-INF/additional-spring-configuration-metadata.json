@@ -83,5 +83,10 @@
     "name": "enable.intercloud",
     "type": "java.lang.Boolean",
     "description": "A description for 'enable.intercloud'"
+  },
+  {
+    "name": "cleaner.job.interval",
+    "type": "java.lang.Integer",
+    "description": "A description for 'cleaner.job.interval'"
   }
 ]}
