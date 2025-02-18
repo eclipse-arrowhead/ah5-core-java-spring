@@ -93,5 +93,10 @@
     "name": "orchestration.history.max.age",
     "type": "java.lang.Integer",
     "description": "A description for 'orchestration.history.max.age'"
+  },
+  {
+    "name": "push.orchestration.max.thread",
+    "type": "java.lang.Integer",
+    "description": "A description for 'push.orchestration.max.thread'"
   }
 ]}

@@ -36,6 +36,9 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	@Value(DynamicServiceOrchestrationConstants.$ORCHESTRATION_HISTORY_MAX_AGE_WD)
 	private int orchestrationHistoryMaxAge;
 
+	@Value(DynamicServiceOrchestrationConstants.$PUSH_ORCHESTRATION_MAX_THREAD_WD)
+	private int pushOrchestrationMaxThread;
+
 	private SystemModel systemModel;
 
 	//=================================================================================================
@@ -115,6 +118,11 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public int getOrchestrationHistoryMaxAge() {
 		return orchestrationHistoryMaxAge;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public int getPushOrchestrationMaxThread() {
+		return pushOrchestrationMaxThread;
 	}
 
 	//=================================================================================================

@@ -41,6 +41,7 @@ import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.utils.LocalServiceOrchestration;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 
 @Component
@@ -78,7 +79,7 @@ public class PushOrchestrationThread extends Thread {
 
 	private boolean doWork = false;
 
-	private final ThreadPoolExecutor threadpool = (ThreadPoolExecutor) Executors.newFixedThreadPool(2); // TODO from sysInfo
+	private ThreadPoolExecutor threadpool; // TODO from sysInfo
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -116,6 +117,14 @@ public class PushOrchestrationThread extends Thread {
 
 	//=================================================================================================
 	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	@PostConstruct
+	private void init() {
+		logger.debug("init started...");
+
+		threadpool = (ThreadPoolExecutor) Executors.newFixedThreadPool(sysInfo.getPushOrchestrationMaxThread());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void doPushOrchestration(final UUID jobId) {
