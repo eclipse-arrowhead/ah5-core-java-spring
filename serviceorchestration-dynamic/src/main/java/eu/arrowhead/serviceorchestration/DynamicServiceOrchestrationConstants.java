@@ -22,6 +22,8 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":false }";
 	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
 	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":30000}";
+	public static final String ORCHESTRATION_HISTORY_MAX_AGE = "orchestration.history.max.age";
+	public static final String $ORCHESTRATION_HISTORY_MAX_AGE_WD = "${" + ORCHESTRATION_HISTORY_MAX_AGE + ":15}";
 
 	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";

@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +61,21 @@ public class OrchestrationJobDbService {
 
 		try {
 			return jobRepo.findById(id);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationJob> getAllByStatusIn(final List<OrchestrationJobStatus> statuses) {
+		logger.debug("getAllByStatusIn started...");
+		Assert.isTrue(!Utilities.isEmpty(statuses), "status list is empty");
+
+		try {
+			return jobRepo.findAllByStatusIn(statuses.stream().map(s -> s.name()).toList());
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -176,6 +192,23 @@ public class OrchestrationJobDbService {
 			}
 
 			return jobRepo.saveAndFlush(job);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteInBatch(final Collection<UUID> ids) {
+		logger.debug("delete started...");
+		Assert.isTrue(!Utilities.isEmpty(ids), "job id list is empty.");
+
+		try {
+			jobRepo.deleteAllByIdInBatch(ids);
+			jobRepo.flush();
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

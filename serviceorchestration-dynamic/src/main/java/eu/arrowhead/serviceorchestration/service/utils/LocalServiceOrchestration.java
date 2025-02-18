@@ -265,7 +265,7 @@ public class LocalServiceOrchestration {
 				}
 			}
 
-			orchLockDbService.delete(expiredLocks);
+			orchLockDbService.deleteInBatch(expiredLocks);
 			return candidates.stream().filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId())).toList();
 		}
 	}
@@ -503,7 +503,7 @@ public class LocalServiceOrchestration {
 					.map(c -> c.getServiceInstance().instanceId())
 					.toList());
 
-			orchLockDbService.delete(lockRecords.stream()
+			orchLockDbService.deleteInBatch(lockRecords.stream()
 					.filter(lr -> lr.getOrchestrationJobId().equals(jobIdStr))
 					.map(lr -> lr.getId())
 					.toList());

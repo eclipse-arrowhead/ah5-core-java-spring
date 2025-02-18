@@ -64,6 +64,20 @@ public class OrchestrationLockDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationLock> getAll() {
+		logger.debug("getAll started...");
+
+		try {
+			return lockRepo.findAll();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Optional<OrchestrationLock> changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId, final ZonedDateTime time) {
 		logger.debug("changeExpiration started...");
@@ -88,12 +102,12 @@ public class OrchestrationLockDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public void delete(final Collection<Long> ids) {
+	public void deleteInBatch(final Collection<Long> ids) {
 		logger.debug("delete started...");
 		Assert.isTrue(!Utilities.isEmpty(ids), "Orchestration lock is list is empty.");
 
 		try {
-			lockRepo.deleteAllById(ids);
+			lockRepo.deleteAllByIdInBatch(ids);
 			lockRepo.flush();
 
 		} catch (final Exception ex) {

@@ -88,5 +88,10 @@
     "name": "cleaner.job.interval",
     "type": "java.lang.Integer",
     "description": "A description for 'cleaner.job.interval'"
+  },
+  {
+    "name": "orchestration.history.max.age",
+    "type": "java.lang.Integer",
+    "description": "A description for 'orchestration.history.max.age'"
   }
 ]}

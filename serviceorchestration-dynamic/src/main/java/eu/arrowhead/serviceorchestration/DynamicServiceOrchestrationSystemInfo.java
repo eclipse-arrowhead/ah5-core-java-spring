@@ -33,6 +33,9 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_INTERCLOUD_WD)
 	private boolean enableIntercloud;
 
+	@Value(DynamicServiceOrchestrationConstants.$ORCHESTRATION_HISTORY_MAX_AGE_WD)
+	private int orchestrationHistoryMaxAge;
+
 	private SystemModel systemModel;
 
 	//=================================================================================================
@@ -107,6 +110,11 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public boolean isInterCloudEnabled() {
 		return enableIntercloud;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public int getOrchestrationHistoryMaxAge() {
+		return orchestrationHistoryMaxAge;
 	}
 
 	//=================================================================================================

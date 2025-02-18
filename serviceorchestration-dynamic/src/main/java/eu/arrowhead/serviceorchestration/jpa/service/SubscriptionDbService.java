@@ -2,6 +2,7 @@ package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -123,8 +124,22 @@ public class SubscriptionDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> getAll() {
+		logger.debug("getAll started..");
+
+		try {
+			return subscriptionRepo.findAll();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public List<Subscription> query(final List<String> ownerSystems, final List<String> targetSystems, final List<String> serviceDefinitions) {
-		logger.debug("get started..");
+		logger.debug("query started..");
 
 		try {
 			return subscriptionRepo.findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(ownerSystems, targetSystems, serviceDefinitions);
@@ -145,6 +160,7 @@ public class SubscriptionDbService {
 		try {
 			if (subscriptionRepo.existsById(id)) {
 				subscriptionRepo.deleteById(id);
+				subscriptionRepo.flush();
 				return true;
 			}
 			return false;
@@ -156,4 +172,20 @@ public class SubscriptionDbService {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteInBatch(final Collection<UUID> ids) {
+		logger.debug("deleteInBatch started..");
+		Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+
+		try {
+			subscriptionRepo.deleteAllByIdInBatch(ids);
+			subscriptionRepo.flush();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
 }
