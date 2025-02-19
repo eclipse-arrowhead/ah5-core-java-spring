@@ -10,6 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
@@ -18,10 +19,12 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
 import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
@@ -59,6 +62,9 @@ public class OrchestrationPushManagementService {
 	@Autowired
 	private OrchestrationPushManagementValidation validator;
 
+	@Autowired
+	private PageService pageService;
+
 	@Resource(name = DynamicServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
 	private BlockingQueue<UUID> pushOrchJobQueue;
 
@@ -84,7 +90,7 @@ public class OrchestrationPushManagementService {
 
 		try {
 			final List<Subscription> result = subscriptionDbService.create(subscriptions);
-			return dtoConverter.convertSubscriptionListToDTO(result);
+			return dtoConverter.convertSubscriptionListToDTO(result, result.size());
 
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
@@ -102,11 +108,11 @@ public class OrchestrationPushManagementService {
 		try {
 			List<Subscription> subscriptions;
 			if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTartgetSystems())) {
-				subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of());
+				subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
 			} else if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
 				subscriptions = subscriptionDbService.get(trigger.getSubscriptionIds().stream().map(id -> UUID.fromString(id)).toList());
 			} else {
-				subscriptions = subscriptionDbService.query(List.of(), trigger.getTartgetSystems(), List.of());
+				subscriptions = subscriptionDbService.query(List.of(), trigger.getTartgetSystems(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
 			}
 
 			final List<OrchestrationJob> existingJobs = new ArrayList<>();
@@ -156,6 +162,23 @@ public class OrchestrationPushManagementService {
 			}
 
 			subscriptionDbService.deleteInBatch(subscriptionIds);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationSubscriptionListResponseDTO queryPushSubscriptions(final OrchestrationSubscriptionQueryRequestDTO dto, final String origin) {
+		logger.debug("queryPushSubscriptions started...");
+
+		final OrchestrationSubscriptionQueryRequestDTO normalized = validator.validateAndNormalizeQueryPushSubscriptionsService(dto, origin);
+
+		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, Subscription.SORTABLE_FIELDS_BY, Subscription.DEFAULT_SORT_FIELD, origin);
+
+		try {
+			final Page<Subscription> results = subscriptionDbService.query(dto.ownerSystems(), dto.targetSystems(), dto.serviceDefinitions(), pageRequest);
+			return dtoConverter.convertSubscriptionListToDTO(results.getContent(), results.getTotalElements());
+
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

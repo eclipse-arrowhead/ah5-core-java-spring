@@ -40,12 +40,12 @@ public class DTOConverter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationSubscriptionListResponseDTO convertSubscriptionListToDTO(final List<Subscription> subscriptions) {
+	public OrchestrationSubscriptionListResponseDTO convertSubscriptionListToDTO(final List<Subscription> subscriptions, final long count) {
 		logger.debug("convertSubscriptionListToDTO started...");
 		Assert.notNull(subscriptions, "subscriptions list is null");
 
 		final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions.stream().map(subscription -> convertSubscriptionToDTO(subscription)).toList();
-		return new OrchestrationSubscriptionListResponseDTO(entries, (long) entries.size());
+		return new OrchestrationSubscriptionListResponseDTO(entries, count);
 	}
 
 	//-------------------------------------------------------------------------------------------------

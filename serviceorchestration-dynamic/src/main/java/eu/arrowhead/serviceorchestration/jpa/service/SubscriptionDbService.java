@@ -10,6 +10,8 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -138,11 +140,12 @@ public class SubscriptionDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<Subscription> query(final List<String> ownerSystems, final List<String> targetSystems, final List<String> serviceDefinitions) {
+	public Page<Subscription> query(final List<String> ownerSystems, final List<String> targetSystems, final List<String> serviceDefinitions, final PageRequest pagination) {
 		logger.debug("query started..");
+		Assert.notNull(pagination, "pagination is null");
 
 		try {
-			return subscriptionRepo.findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(ownerSystems, targetSystems, serviceDefinitions);
+			return subscriptionRepo.findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(ownerSystems, targetSystems, serviceDefinitions, pagination);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

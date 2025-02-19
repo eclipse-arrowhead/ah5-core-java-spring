@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
@@ -17,4 +19,7 @@ public interface SubscriptionRepository extends RefreshableRepository<Subscripti
 
 	//-------------------------------------------------------------------------------------------------
 	List<Subscription> findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(final List<String> ownerSystem, final List<String> targetSystem, final List<String> serviceDefinition);
+
+	//-------------------------------------------------------------------------------------------------
+	Page<Subscription> findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(final List<String> ownerSystem, final List<String> targetSystem, final List<String> serviceDefinition, final Pageable pageble);
 }
