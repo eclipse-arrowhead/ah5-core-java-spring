@@ -73,8 +73,11 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationHistoryResponseDTO convertOrchestrationJobPageToHistoryDTO(final Page<OrchestrationJob> page) {
-		// TODO
-		return null;
+		logger.debug("convertOrchestrationJobPageToHistoryDTO started...");
+		Assert.notNull(page, "page is null");
+
+		final List<OrchestrationJobDTO> entries = page.stream().map(job -> convertOrchestrationJobToDTO(job)).toList();
+		return new OrchestrationHistoryResponseDTO(entries, page.getTotalElements());
 	}
 
 	//-------------------------------------------------------------------------------------------------

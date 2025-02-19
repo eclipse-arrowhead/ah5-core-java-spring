@@ -49,6 +49,15 @@ public class OrchestrationJobFilter {
 	}
 
 	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasFilter() {
+		return !Utilities.isEmpty(ids) || !Utilities.isEmpty(statuses) || type != null || !Utilities.isEmpty(requesterSystems)
+				|| !Utilities.isEmpty(targetSystems) || !Utilities.isEmpty(serviceDefinitions) || !Utilities.isEmpty(subscriptionIds);
+	}
+
+	//=================================================================================================
 	// boilerplate
 
 	//-------------------------------------------------------------------------------------------------

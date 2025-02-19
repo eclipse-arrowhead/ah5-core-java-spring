@@ -15,12 +15,16 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationHistoryManagementValidation;
 
 @Service
 public class OrchestrationHistoryManagementService {
 
 	//=================================================================================================
 	// members
+
+	@Autowired
+	private OrchestrationHistoryManagementValidation validator;
 
 	@Autowired
 	private OrchestrationJobDbService jobDbService;
@@ -39,11 +43,12 @@ public class OrchestrationHistoryManagementService {
 	public OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
 		logger.debug("query started...");
 
-		final OrchestrationHistoryQueryRequestDTO normalized = dto; // TODO validateAndNormalize
+		final OrchestrationHistoryQueryRequestDTO normalized = validator.validateAndNormalizeQueryService(dto, origin);
+
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
+		final OrchestrationJobFilter filter = new OrchestrationJobFilter(normalized);
 
-		final Page<OrchestrationJob> results = jobDbService.query(new OrchestrationJobFilter(normalized), pageRequest);
-
+		final Page<OrchestrationJob> results = jobDbService.query(filter, pageRequest);
 		return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
 	}
 }

@@ -85,7 +85,7 @@ public class OrchestrationValidation {
 	public Pair<String, UUID> validateAndNormalizePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
 		logger.debug("validateAndNormalizePushUnsubscribeService started...");
 
-		validateAndNormalizePushUnsubscribeService(requesterSystem, subscriptionId, origin);
+		validatePushUnsubscribeService(requesterSystem, subscriptionId, origin);
 		final Pair<String, String> normalized = normalization.normalizePushUnsubscribe(requesterSystem, subscriptionId);
 
 		if (!Utilities.isUUID(normalized.getRight())) {

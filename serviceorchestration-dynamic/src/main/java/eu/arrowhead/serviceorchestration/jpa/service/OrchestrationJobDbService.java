@@ -87,6 +87,8 @@ public class OrchestrationJobDbService {
 	//-------------------------------------------------------------------------------------------------
 	public Page<OrchestrationJob> query(final OrchestrationJobFilter filter, final PageRequest pagination) {
 		logger.debug("query started...");
+		Assert.notNull(filter, "filter is null");
+		Assert.notNull(pagination, "pagination is null");
 
 		try {
 			List<OrchestrationJob> toFilter;
