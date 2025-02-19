@@ -22,7 +22,7 @@ import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationLockReposit
 public class OrchestrationLockDbService {
 
 	//=================================================================================================
-	// membres
+	// members
 
 	@Autowired
 	private OrchestrationLockRepository lockRepo;

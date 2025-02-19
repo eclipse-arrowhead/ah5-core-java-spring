@@ -17,12 +17,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
 import eu.arrowhead.dto.OrchestrationJobDTO;
+import eu.arrowhead.dto.OrchestrationLockListResponseDTO;
+import eu.arrowhead.dto.OrchestrationLockResponseDTO;
 import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 
 @Service
@@ -97,6 +100,31 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(job.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(job.getStartedAt()),
 				Utilities.convertZonedDateTimeToUTCString(job.getFinishedAt()));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationLockListResponseDTO converOrchestartionLockListToDTO(final List<OrchestrationLock> locks, final long count ) {
+		logger.debug("converOrchestartionLockListToDTO started...");
+		Assert.notNull(locks, "lock list is null");
+		
+		return new OrchestrationLockListResponseDTO(
+				locks.stream().map(l -> converOrchestartionLockToDTO(l)).toList(),
+				count);
+				
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationLockResponseDTO converOrchestartionLockToDTO(final OrchestrationLock lock) {
+		logger.debug("converOrchestartionLockToDTO started...");
+		Assert.notNull(lock, "lock is null");
+
+		return new OrchestrationLockResponseDTO(
+				lock.getId(),
+				lock.getOrchestrationJobId(),
+				lock.getServiceInstanceId(),
+				lock.getOwner(),
+				Utilities.convertZonedDateTimeToUTCString(lock.getExpiresAt()),
+				lock.isTemporary());
 	}
 
 	//=================================================================================================

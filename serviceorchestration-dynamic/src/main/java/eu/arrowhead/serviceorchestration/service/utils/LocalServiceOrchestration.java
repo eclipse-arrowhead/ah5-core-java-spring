@@ -256,7 +256,7 @@ public class LocalServiceOrchestration {
 			final Set<String> lockedServiceInstanceIds = new HashSet<>();
 
 			for (final OrchestrationLock lockRecord : lockRecords) {
-				if (lockRecord.getOrchestrationJobId().equals(jobIdStr)) {
+				if (!Utilities.isEmpty(lockRecord.getOrchestrationJobId()) && lockRecord.getOrchestrationJobId().equals(jobIdStr)) {
 					// lock belongs to this session
 				} else if (lockRecord.getExpiresAt().isBefore(now)) {
 					expiredLocks.add(lockRecord.getId());
@@ -504,7 +504,7 @@ public class LocalServiceOrchestration {
 					.toList());
 
 			orchLockDbService.deleteInBatch(lockRecords.stream()
-					.filter(lr -> lr.getOrchestrationJobId().equals(jobIdStr))
+					.filter(lr -> !Utilities.isEmpty(lr.getOrchestrationJobId()) && lr.getOrchestrationJobId().equals(jobIdStr))
 					.map(lr -> lr.getId())
 					.toList());
 		}

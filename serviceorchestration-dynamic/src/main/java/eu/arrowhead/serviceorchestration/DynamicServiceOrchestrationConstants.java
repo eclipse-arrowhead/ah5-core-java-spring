@@ -59,6 +59,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
+	public static final String HTTP_API_OP_CREATE_PATH = "/create";
 
 	// Forbidden keys (for config service)
 

@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import org.hibernate.type.NumericBooleanConverter;
 
@@ -18,11 +19,14 @@ public class OrchestrationLock {
 	//=================================================================================================
 	// members
 
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "owner", "serviceInstanceId", "expiresAt");
+	public static final String DEFAULT_SORT_FIELD = "id";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	@Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String orchestrationJobId;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_MEDIUM)
@@ -47,6 +51,13 @@ public class OrchestrationLock {
 		this.owner = owner;
 		this.expiresAt = expiresAt;
 		this.temporary = temporary;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationLock(final String serviceInstanceId, final String owner, final ZonedDateTime expiresAt) {
+		this.serviceInstanceId = serviceInstanceId;
+		this.owner = owner;
+		this.expiresAt = expiresAt;
 	}
 
 	//=================================================================================================
