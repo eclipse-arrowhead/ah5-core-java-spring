@@ -1,13 +1,17 @@
 package eu.arrowhead.serviceorchestration.api.http;
 
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,7 +24,6 @@ import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationPushManagementService;
-import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -93,12 +96,30 @@ public class OrchestrationPushManagementAPI {
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		return pushService.pushTrigger(new OrchestrationPushTrigger(requesterSystem, dto), origin);
+		return pushService.pushTrigger(requesterSystem, dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void pushUnsubscribe() {
-		// TODO
+	@Operation(summary = "Removes the specified suubscriptions")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@DeleteMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH)
+	public void pushUnsubscribe(final HttpServletRequest httpServletRequest, final @RequestParam List<String> ids) {
+		logger.debug("pushUnsubscribe started...");
+
+		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH;
+		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
+
+		pushService.pushUnsubscribe(requesterSystem, ids, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------

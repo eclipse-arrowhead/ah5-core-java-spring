@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.validation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -53,6 +54,19 @@ public class OrchestrationPushManagementValidation {
 		orchPushTriggerValidator.validateOrchestrationPushTrigger(trigger, origin);
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validatePublishUnsubscribeService(final List<String> ids, final String origin) {
+		logger.debug("validateAndNormalizePublishUnsubscribeService started...");
+
+		if (Utilities.isEmpty(ids)) {
+			throw new InvalidParameterException("ID list is empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(ids)) {
+			throw new InvalidParameterException("ID list contains empty element", origin);
+		}
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -73,5 +87,23 @@ public class OrchestrationPushManagementValidation {
 		logger.debug("validateAndNormalizePushTriggerService started");
 
 		orchPushTriggerValidator.validateAndNormalizeOrchestrationPushTrigger(trigger, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizePublishUnsubscribeService(final List<String> ids, final String origin) {
+		logger.debug("validateAndNormalizePublishUnsubscribeService started...");
+
+		validateAndNormalizePublishUnsubscribeService(ids, origin);
+
+		final List<String> normalizedList = new ArrayList<>();
+		ids.forEach(id -> {
+			final String normalized = id.trim().toUpperCase();
+			if (!Utilities.isUUID(normalized)) {
+				throw new InvalidParameterException("Invalid subscription ID: " + id, origin);
+			}
+			normalizedList.add(normalized);
+		});
+
+		return normalizedList;
 	}
 }

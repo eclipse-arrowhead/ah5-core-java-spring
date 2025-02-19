@@ -55,6 +55,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
 	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/{id}";
+	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH = "/unsubscribe";
 	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";

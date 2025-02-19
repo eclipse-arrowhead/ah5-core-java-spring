@@ -15,8 +15,11 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
+import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
@@ -79,50 +82,83 @@ public class OrchestrationPushManagementService {
 		checkForDuplicateSubscriptionRequest(subscriptions, origin);
 		subscriptions.forEach(s -> formContextValidator.validate(s.getOrchestrationForm(), origin));
 
-		final List<Subscription> result = subscriptionDbService.create(subscriptions);
-		return dtoConverter.convertSubscriptionListToDTO(result);
+		try {
+			final List<Subscription> result = subscriptionDbService.create(subscriptions);
+			return dtoConverter.convertSubscriptionListToDTO(result);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationPushJobListResponseDTO pushTrigger(final OrchestrationPushTrigger trigger, final String origin) {
+	public OrchestrationPushJobListResponseDTO pushTrigger(final String requesterSystem, final OrchestrationPushTriggerDTO dto, final String origin) {
 		logger.debug("pushTrigger started...");
 
+		final OrchestrationPushTrigger trigger = new OrchestrationPushTrigger(requesterSystem, dto);
 		validator.validateAndNormalizePushTriggerService(trigger, origin);
 
-		List<Subscription> subscriptions;
-		if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTartgetSystems())) {
-			subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of());
-		} else if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
-			subscriptions = subscriptionDbService.get(trigger.getSubscriptionIds().stream().map(id -> UUID.fromString(id)).toList());
-		} else {
-			subscriptions = subscriptionDbService.query(List.of(), trigger.getTartgetSystems(), List.of());
-		}
-
-		final List<OrchestrationJob> existingJobs = new ArrayList<>();
-		final List<OrchestrationJob> newJobs = new ArrayList<>();
-		for (final Subscription subscription : subscriptions) {
-			final List<OrchestrationJob> possiblySameJob = orchJobDbService.query(new OrchestrationJobFilter(
-					List.of(),
-					List.of(OrchestrationJobStatus.PENDING, OrchestrationJobStatus.IN_PROGRESS),
-					OrchestrationType.PUSH,
-					List.of(),
-					List.of(),
-					null,
-					List.of(subscription.getId().toString())),
-					PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD)).toList();
-
-			if (!Utilities.isEmpty(possiblySameJob)) {
-				existingJobs.addAll(possiblySameJob);
+		try {
+			List<Subscription> subscriptions;
+			if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTartgetSystems())) {
+				subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of());
+			} else if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
+				subscriptions = subscriptionDbService.get(trigger.getSubscriptionIds().stream().map(id -> UUID.fromString(id)).toList());
 			} else {
-				newJobs.add(new OrchestrationJob(OrchestrationType.PUSH, trigger.getRequesterSystem(), subscription.getTargetSystem(), subscription.getServiceDefinition(), subscription.getId().toString()));
+				subscriptions = subscriptionDbService.query(List.of(), trigger.getTartgetSystems(), List.of());
 			}
+
+			final List<OrchestrationJob> existingJobs = new ArrayList<>();
+			final List<OrchestrationJob> newJobs = new ArrayList<>();
+			for (final Subscription subscription : subscriptions) {
+				final List<OrchestrationJob> possiblySameJob = orchJobDbService.query(new OrchestrationJobFilter(
+						List.of(),
+						List.of(OrchestrationJobStatus.PENDING, OrchestrationJobStatus.IN_PROGRESS),
+						OrchestrationType.PUSH,
+						List.of(),
+						List.of(),
+						null,
+						List.of(subscription.getId().toString())),
+						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD)).toList();
+
+				if (!Utilities.isEmpty(possiblySameJob)) {
+					existingJobs.addAll(possiblySameJob);
+				} else {
+					newJobs.add(new OrchestrationJob(OrchestrationType.PUSH, trigger.getRequesterSystem(), subscription.getTargetSystem(), subscription.getServiceDefinition(), subscription.getId().toString()));
+				}
+			}
+
+			final List<OrchestrationJob> saved = orchJobDbService.create(newJobs);
+			pushOrchJobQueue.addAll(saved.stream().map(job -> job.getId()).toList());
+			existingJobs.addAll(saved);
+
+			return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
+	}
 
-		final List<OrchestrationJob> saved = orchJobDbService.create(newJobs);
-		pushOrchJobQueue.addAll(saved.stream().map(job -> job.getId()).toList());
-		existingJobs.addAll(saved);
+	//-------------------------------------------------------------------------------------------------
+	public void pushUnsubscribe(final String requesterSystem, final List<String> ids, final String origin) {
+		logger.debug("pushUnsubscribe started...");
 
-		return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
+		final List<String> normalized = validator.validateAndNormalizePublishUnsubscribeService(ids, origin);
+		final List<UUID> subscriptionIds = normalized.stream().map(id -> UUID.fromString(id)).toList();
+
+		try {
+			final List<Subscription> subscriptions = subscriptionDbService.get(subscriptionIds);
+			for (final Subscription subscription : subscriptions) {
+				if (!subscription.getOwnerSystem().equals(requesterSystem)) {
+					throw new ForbiddenException(subscription.getId().toString() + " is not owned by the requester.", origin);
+				}
+			}
+
+			subscriptionDbService.deleteInBatch(subscriptionIds);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 
 	//=================================================================================================
