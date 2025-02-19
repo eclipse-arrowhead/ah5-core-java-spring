@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -14,9 +15,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
+import eu.arrowhead.dto.OrchestrationJobDTO;
 import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
-import eu.arrowhead.dto.OrchestrationPushJobResponseDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionResponseDTO;
@@ -70,11 +72,17 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationPushJobResponseDTO convertOrchestrationJobToDTO(final OrchestrationJob job) {
+	public OrchestrationHistoryResponseDTO convertOrchestrationJobPageToHistoryDTO(final Page<OrchestrationJob> page) {
+		// TODO
+		return null;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationJobDTO convertOrchestrationJobToDTO(final OrchestrationJob job) {
 		logger.debug("convertOrchestrationJobToDTO started...");
 		Assert.notNull(job, "job is null");
 
-		return new OrchestrationPushJobResponseDTO(
+		return new OrchestrationJobDTO(
 				job.getId().toString(),
 				job.getStatus(),
 				job.getType(),

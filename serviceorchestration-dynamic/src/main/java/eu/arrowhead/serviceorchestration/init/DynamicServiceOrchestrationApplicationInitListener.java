@@ -41,15 +41,14 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 	protected void customInit(final ContextRefreshedEvent event) throws InterruptedException {
 		logger.debug("customInit started...");
 
+		pushOrchestrationThread.start();
+
 		if (standaloneMode) {
 			return;
 		}
 
-		// TODO implement
-
 		initServiceInterfaceAddressTypeFilter();
 
-		pushOrchestrationThread.start();
 	}
 
 	//=================================================================================================

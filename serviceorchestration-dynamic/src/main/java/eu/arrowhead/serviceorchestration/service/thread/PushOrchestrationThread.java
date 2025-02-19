@@ -79,7 +79,7 @@ public class PushOrchestrationThread extends Thread {
 
 	private boolean doWork = false;
 
-	private ThreadPoolExecutor threadpool; // TODO from sysInfo
+	private ThreadPoolExecutor threadpool;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 

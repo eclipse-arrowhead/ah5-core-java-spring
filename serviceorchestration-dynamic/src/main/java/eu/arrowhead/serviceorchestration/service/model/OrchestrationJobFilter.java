@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 
@@ -33,6 +35,17 @@ public class OrchestrationJobFilter {
 		this.targetSystems = targetSystems;
 		this.serviceDefinitions = serviceDefinitions;
 		this.subscriptionIds = subscriptionIds;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationJobFilter(final OrchestrationHistoryQueryRequestDTO dto) {
+		this.ids = Utilities.isEmpty(dto.ids()) ? new ArrayList<>() : dto.ids().stream().map(id -> UUID.fromString(id)).toList();
+		this.statuses = Utilities.isEmpty(dto.statuses()) ? new ArrayList<>() : dto.statuses().stream().map(s -> OrchestrationJobStatus.valueOf(s)).toList();
+		this.type = Utilities.isEmpty(dto.type()) ? null : OrchestrationType.valueOf(dto.type());
+		this.requesterSystems = dto.requesterSystrems();
+		this.targetSystems = dto.targetSystems();
+		this.serviceDefinitions = dto.serviceDefinitions();
+		this.subscriptionIds = dto.subscriptionIds();
 	}
 
 	//=================================================================================================

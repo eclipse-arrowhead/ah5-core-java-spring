@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.exception.ForbiddenException;
+import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
@@ -55,9 +57,10 @@ public class OrchestrationService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationResponseDTO pull(final OrchestrationForm form, final String origin) {
+	public OrchestrationResponseDTO pull(final String requesterSystem, final OrchestrationRequestDTO dto, final String origin) {
 		logger.debug("pull started...");
 
+		final OrchestrationForm form = new OrchestrationForm(requesterSystem, dto);
 		validator.validateAndNormalizePullService(form, origin);
 		formContextValidator.validate(form, origin);
 
@@ -74,9 +77,10 @@ public class OrchestrationService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<Boolean, String> pushSubscribe(final OrchestrationSubscription subscription, final String origin) {
+	public Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final String origin) {
 		logger.debug("pushSubscribe started...");
 
+		final OrchestrationSubscription subscription = new OrchestrationSubscription(requesterSystem, dto);
 		validator.validateAndNormalizePushSubscribeService(subscription, origin);
 		formContextValidator.validate(subscription.getOrchestrationForm(), origin);
 

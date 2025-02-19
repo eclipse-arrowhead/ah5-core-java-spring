@@ -24,8 +24,6 @@ import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationService;
-import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
-import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -74,7 +72,7 @@ public class OrchestrationAPI {
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		return orchService.pull(new OrchestrationForm(requesterSystem, dto), origin);
+		return orchService.pull(requesterSystem, dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -100,7 +98,7 @@ public class OrchestrationAPI {
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		final Pair<Boolean, String> result = orchService.pushSubscribe(new OrchestrationSubscription(requesterSystem, dto), origin);
+		final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, origin);
 		return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 

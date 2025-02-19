@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
@@ -18,6 +19,7 @@ public class OrchestrationJob {
 	//=================================================================================================
 	// members
 
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "createdAt", "startedAt", "finishedAt");
 	public static final String DEFAULT_SORT_FIELD = "id";
 
 	@Id
