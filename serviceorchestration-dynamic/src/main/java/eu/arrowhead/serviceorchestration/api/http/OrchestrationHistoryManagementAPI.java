@@ -54,7 +54,7 @@ public class OrchestrationHistoryManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody OrchestrationHistoryResponseDTO query(final @RequestBody OrchestrationHistoryQueryRequestDTO dto) {
+	public @ResponseBody OrchestrationHistoryResponseDTO query(final @RequestBody(required = false) OrchestrationHistoryQueryRequestDTO dto) {
 		logger.debug("query started...");
 
 		final String origin = DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;

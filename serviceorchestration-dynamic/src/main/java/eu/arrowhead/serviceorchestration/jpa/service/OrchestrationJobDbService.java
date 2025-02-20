@@ -92,21 +92,16 @@ public class OrchestrationJobDbService {
 
 		try {
 			List<OrchestrationJob> toFilter;
-			BaseFilter baseFilter = BaseFilter.NONE;
-			if (!Utilities.isEmpty(filter.getIds())) {
-				baseFilter = BaseFilter.ID;
+			final BaseFilter baseFilter = filter.getBaseFilter();
+			if (baseFilter == BaseFilter.ID) {
 				toFilter = jobRepo.findAllById(filter.getIds());
-			} else if (!Utilities.isEmpty(filter.getStatuses())) {
-				baseFilter = BaseFilter.STATUS;
+			} else if (baseFilter == BaseFilter.STATUS) {
 				toFilter = jobRepo.findAllByStatusIn(filter.getStatuses().stream().map(s -> s.name()).toList());
-			} else if (!Utilities.isEmpty(filter.getRequesterSystems())) {
-				baseFilter = BaseFilter.OWNER;
+			} else if (baseFilter == BaseFilter.OWNER) {
 				toFilter = jobRepo.findAllByRequesterSystemIn(filter.getRequesterSystems());
-			} else if (!Utilities.isEmpty(filter.getTargetSystems())) {
-				baseFilter = BaseFilter.TARGET;
+			} else if (baseFilter == BaseFilter.TARGET) {
 				toFilter = jobRepo.findAllByTargetSystemIn(filter.getTargetSystems());
-			} else if (!Utilities.isEmpty(filter.getServiceDefinitions())) {
-				baseFilter = BaseFilter.SERVICE;
+			} else if (baseFilter == BaseFilter.SERVICE) {
 				toFilter = jobRepo.findAllByServiceDefinitionIn(filter.getServiceDefinitions());
 			} else {
 				toFilter = jobRepo.findAll();

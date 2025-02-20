@@ -19,6 +19,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.OrchestrationLockListRequestDTO;
 import eu.arrowhead.dto.OrchestrationLockListResponseDTO;
+import eu.arrowhead.dto.OrchestrationLockQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.service.OrchestrationLockManagementService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -68,6 +69,28 @@ public class OrchestrationLockManagementAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the lock records according to the given filters")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody OrchestrationLockListResponseDTO query(@RequestBody(required = false) final OrchestrationLockQueryRequestDTO dto) {
+		logger.debug("query started...");
+
+		final String origin = DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		return lockMgmtService.query(dto, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes the lock entry if exists")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
@@ -90,8 +113,4 @@ public class OrchestrationLockManagementAPI {
 
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
-
-	// TODO extend
-
-	// TODO query active
 }

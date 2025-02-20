@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceorchestration.service.normalization;
 
+import java.util.ArrayList;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.OrchestrationLockListRequestDTO;
+import eu.arrowhead.dto.OrchestrationLockQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationLockRequestDTO;
 
 @Service
@@ -37,6 +40,25 @@ public class OrchestrationLockManagementNormalization {
 								nameNormalizer.normalize(lock.owner()),
 								Utilities.isEmpty(lock.expiresAt()) ? null : lock.expiresAt().trim()))
 						.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationLockQueryRequestDTO normalizeOrchestrationLockQueryRequestDTO(final OrchestrationLockQueryRequestDTO dto) {
+		logger.debug("normalizeOrchestrationLockQueryRequestDTO started...");
+
+		if (dto == null) {
+			return new OrchestrationLockQueryRequestDTO(null, null, null, null, null, null, null);
+		}
+
+		return new OrchestrationLockQueryRequestDTO(
+				dto.pagination(), // no need to normalize, because it will happen in the getPageRequest method
+				Utilities.isEmpty(dto.ids()) ? new ArrayList<>() : dto.ids(),
+				Utilities.isEmpty(dto.orchestrationJobIds()) ? new ArrayList<>() : dto.orchestrationJobIds().stream().map(id -> id.trim().toUpperCase()).toList(),
+				Utilities.isEmpty(dto.serviceInstanceIds()) ? new ArrayList<>() : dto.serviceInstanceIds().stream().map(instance -> nameNormalizer.normalize(instance)).toList(),
+				Utilities.isEmpty(dto.owners()) ? new ArrayList<>() : dto.owners().stream().map(owner -> nameNormalizer.normalize(owner)).toList(),
+				Utilities.isEmpty(dto.expiresBefore()) ? null : dto.expiresBefore().trim(),
+				Utilities.isEmpty(dto.expiresAfter()) ? null : dto.expiresAfter().trim());
+
 	}
 
 	//-------------------------------------------------------------------------------------------------

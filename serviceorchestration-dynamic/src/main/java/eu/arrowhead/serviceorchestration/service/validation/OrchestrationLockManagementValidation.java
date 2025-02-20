@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.validation;
 
+import java.time.DateTimeException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 
@@ -11,8 +12,11 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.OrchestrationLockListRequestDTO;
+import eu.arrowhead.dto.OrchestrationLockQueryRequestDTO;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationLockManagementNormalization;
 
 @Service
@@ -26,6 +30,9 @@ public class OrchestrationLockManagementValidation {
 
 	@Autowired
 	private NameValidator nameValidator;
+
+	@Autowired
+	private PageValidator pageValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -70,6 +77,33 @@ public class OrchestrationLockManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public void normalizeQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
+		logger.debug("normalizeQueryService started...");
+
+		if (dto == null) {
+			return;
+		}
+
+		pageValidator.validatePageParameter(dto.pagination(), OrchestrationJob.SORTABLE_FIELDS_BY, origin);
+
+		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNull(dto.ids())) {
+			throw new InvalidParameterException("ID list contains empty element.", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.orchestrationJobIds()) && Utilities.containsNullOrEmpty(dto.orchestrationJobIds())) {
+			throw new InvalidParameterException("Orchestration job id list contains empty element.", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceInstanceIds())) {
+			throw new InvalidParameterException("Service instance id list contains empty element.", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.owners()) && Utilities.containsNullOrEmpty(dto.owners())) {
+			throw new InvalidParameterException("Owner list contains empty element.", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public void validateRemoveService(final String serviceInstanceId, final String owner, final String origin) {
 		logger.debug("validateRemoveService started...");
 
@@ -97,6 +131,52 @@ public class OrchestrationLockManagementValidation {
 				nameValidator.validateName(lock.serviceInstanceId());
 				nameValidator.validateName(lock.owner());
 			});
+
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationLockQueryRequestDTO validateAndNormalizeQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryService started...");
+
+		validateAndNormalizeQueryService(dto, origin);
+
+		final OrchestrationLockQueryRequestDTO normalized = normalization.normalizeOrchestrationLockQueryRequestDTO(dto);
+
+		try {
+			normalized.orchestrationJobIds().forEach(jobId -> {
+				if (!Utilities.isUUID(jobId)) {
+					throw new InvalidParameterException("Invalid orchestration job id: " + jobId);
+				}
+			});
+
+			normalized.serviceInstanceIds().forEach(instance -> {
+				nameValidator.validateName(instance);
+			});
+
+			normalized.owners().forEach(owner -> {
+				nameValidator.validateName(owner);
+			});
+
+			if (!Utilities.isEmpty(normalized.expiresBefore())) {
+				try {
+					Utilities.parseUTCStringToZonedDateTime(normalized.expiresBefore());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Invalid expires before: " + normalized.expiresBefore());
+				}
+			}
+
+			if (!Utilities.isEmpty(normalized.expiresAfter())) {
+				try {
+					Utilities.parseUTCStringToZonedDateTime(normalized.expiresAfter());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Invalid expires after: " + normalized.expiresAfter());
+				}
+			}
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

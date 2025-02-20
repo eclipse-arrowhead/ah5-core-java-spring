@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
+import eu.arrowhead.serviceorchestration.service.enums.BaseFilter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 
@@ -39,22 +40,36 @@ public class OrchestrationJobFilter {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationJobFilter(final OrchestrationHistoryQueryRequestDTO dto) {
-		this.ids = Utilities.isEmpty(dto.ids()) ? new ArrayList<>() : dto.ids().stream().map(id -> UUID.fromString(id)).toList();
-		this.statuses = Utilities.isEmpty(dto.statuses()) ? new ArrayList<>() : dto.statuses().stream().map(s -> OrchestrationJobStatus.valueOf(s)).toList();
+		this.ids = Utilities.isEmpty(dto.ids()) ? ids : dto.ids().stream().map(id -> UUID.fromString(id)).toList();
+		this.statuses = Utilities.isEmpty(dto.statuses()) ? statuses : dto.statuses().stream().map(s -> OrchestrationJobStatus.valueOf(s)).toList();
 		this.type = Utilities.isEmpty(dto.type()) ? null : OrchestrationType.valueOf(dto.type());
-		this.requesterSystems = dto.requesterSystrems();
-		this.targetSystems = dto.targetSystems();
-		this.serviceDefinitions = dto.serviceDefinitions();
-		this.subscriptionIds = dto.subscriptionIds();
+		this.requesterSystems = Utilities.isEmpty(dto.requesterSystrems()) ? requesterSystems : dto.requesterSystrems();
+		this.targetSystems = Utilities.isEmpty(dto.targetSystems()) ? targetSystems : dto.targetSystems();
+		this.serviceDefinitions = Utilities.isEmpty(dto.serviceDefinitions()) ? serviceDefinitions : dto.serviceDefinitions();
+		this.subscriptionIds = Utilities.isEmpty(dto.subscriptionIds()) ? subscriptionIds : dto.subscriptionIds();
 	}
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean hasFilter() {
-		return !Utilities.isEmpty(ids) || !Utilities.isEmpty(statuses) || type != null || !Utilities.isEmpty(requesterSystems)
-				|| !Utilities.isEmpty(targetSystems) || !Utilities.isEmpty(serviceDefinitions) || !Utilities.isEmpty(subscriptionIds);
+	public BaseFilter getBaseFilter() {
+		if (!Utilities.isEmpty(ids)) {
+			return BaseFilter.ID;
+		}
+		if (!Utilities.isEmpty(statuses)) {
+			return BaseFilter.STATUS;
+		}
+		if (!Utilities.isEmpty(requesterSystems)) {
+			return BaseFilter.OWNER;
+		}
+		if (!Utilities.isEmpty(targetSystems)) {
+			return BaseFilter.TARGET;
+		}
+		if (!Utilities.isEmpty(serviceDefinitions)) {
+			return BaseFilter.SERVICE;
+		}
+		return BaseFilter.NONE;
 	}
 
 	//=================================================================================================
