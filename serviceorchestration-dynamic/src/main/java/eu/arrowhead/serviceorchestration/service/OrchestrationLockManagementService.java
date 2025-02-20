@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceorchestration.service;
 
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,14 +45,27 @@ public class OrchestrationLockManagementService {
 		logger.debug("create started..");
 
 		final OrchestrationLockListRequestDTO normalized = validator.validateAndNormalizeCreateService(dto, origin);
+		final ZonedDateTime now = Utilities.utcNow();
 
 		synchronized (LOCK) {
 			try {
 				final List<OrchestrationLock> existingLocks = lockDbService.getByServiceInstanceId(normalized.locks().stream().map(l -> l.serviceInstanceId()).toList());
-				if (!Utilities.isEmpty(existingLocks)) {
-					throw new InvalidParameterException("Already locked: " + existingLocks.stream().map(el -> el.getServiceInstanceId()).collect(Collectors.joining(", ")), origin);
+				final List<Long> expiredLockIds = new ArrayList<>();
+				final List<String> alreadyLockedServices = new ArrayList<>();
+				for (OrchestrationLock existingLock : existingLocks) {
+					if (!Utilities.isEmpty(existingLock.getOrchestrationJobId())
+							&& existingLock.getExpiresAt() != null
+							&& existingLock.getExpiresAt().isBefore(now)) {
+						expiredLockIds.add(existingLock.getId());
+					} else {
+						alreadyLockedServices.add(existingLock.getServiceInstanceId());
+					}
+				}
+				if (!Utilities.isEmpty(alreadyLockedServices)) {
+					throw new InvalidParameterException("Already locked: " + alreadyLockedServices.stream().collect(Collectors.joining(", ")), origin);
 				}
 
+				lockDbService.deleteInBatch(expiredLockIds);
 				final List<OrchestrationLock> candidates = normalized.locks().stream().map(l -> new OrchestrationLock(l.serviceInstanceId(), l.owner(), Utilities.parseUTCStringToZonedDateTime(l.expiresAt()))).toList();
 				final List<OrchestrationLock> saved = lockDbService.create(candidates);
 

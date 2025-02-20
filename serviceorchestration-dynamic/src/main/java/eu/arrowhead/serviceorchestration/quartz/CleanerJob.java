@@ -92,7 +92,7 @@ public class CleanerJob implements Job {
 			final ZonedDateTime now = Utilities.utcNow();
 			final List<Long> toRemove = new ArrayList<>();
 			orchestrationLockDbService.getAll().forEach(lock -> {
-				if (lock.getExpiresAt().isAfter(now)) {
+				if (lock.getExpiresAt() != null && lock.getExpiresAt().isAfter(now)) {
 					toRemove.add(lock.getId());
 				}
 			});
