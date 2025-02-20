@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,8 @@ public class OrchestrationLockManagementService {
 
 	//=================================================================================================
 	// methods
+
+	//-------------------------------------------------------------------------------------------------
 	public OrchestrationLockListResponseDTO create(final OrchestrationLockListRequestDTO dto, final String origin) {
 		logger.debug("create started..");
 
@@ -75,5 +78,36 @@ public class OrchestrationLockManagementService {
 				throw new InternalServerError(ex.getMessage(), origin);
 			}
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean remove(final String serviceInstanceId, final String owner, final String origin) {
+		logger.debug("remove started...");
+
+		final Pair<String, String> normalized = validator.validateAndNormalizeRemoveService(serviceInstanceId, owner, origin);
+
+		try {
+			synchronized (LOCK) {
+				final List<Long> removeIds = new ArrayList<>();
+				final List<OrchestrationLock> records = lockDbService.getByServiceInstanceId(List.of(normalized.getLeft()));
+				for (final OrchestrationLock record : records) {
+					if (Utilities.isEmpty(record.getOrchestrationJobId())
+							&& record.getOwner().equals(normalized.getRight())) {
+						removeIds.add(record.getId());
+					}
+				}
+
+				if (!Utilities.isEmpty(removeIds)) {
+					lockDbService.deleteInBatch(removeIds);
+					return true;
+				}
+
+				return false;
+			}
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+
 	}
 }

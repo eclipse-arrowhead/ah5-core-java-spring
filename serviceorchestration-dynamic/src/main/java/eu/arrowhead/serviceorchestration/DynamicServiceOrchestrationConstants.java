@@ -60,6 +60,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
+	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/{instanceId}/{owner}";
 
 	// Forbidden keys (for config service)
 

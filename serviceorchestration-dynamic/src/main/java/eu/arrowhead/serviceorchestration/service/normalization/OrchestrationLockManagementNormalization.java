@@ -38,4 +38,20 @@ public class OrchestrationLockManagementNormalization {
 								Utilities.isEmpty(lock.expiresAt()) ? null : lock.expiresAt().trim()))
 						.toList());
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String normalizeServiceInstanceId(final String instanceId) {
+		logger.debug("normalizeServiceInstanceId started...");
+		Assert.isTrue(!Utilities.isEmpty(instanceId), "Service instance id is empty");
+
+		return nameNormalizer.normalize(instanceId);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String normalizeSystemName(final String name) {
+		logger.debug("normalizeSystemName started...");
+		Assert.isTrue(!Utilities.isEmpty(name), "System name is empty");
+
+		return nameNormalizer.normalize(name);
+	}
 }

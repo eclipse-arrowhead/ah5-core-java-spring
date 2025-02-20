@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,19 @@ public class OrchestrationLockManagementValidation {
 		});
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validateRemoveService(final String serviceInstanceId, final String owner, final String origin) {
+		logger.debug("validateRemoveService started...");
+
+		if (Utilities.isEmpty(serviceInstanceId)) {
+			throw new InvalidParameterException("Service instance id is missing", origin);
+		}
+
+		if (Utilities.isEmpty(owner)) {
+			throw new InvalidParameterException("Owner is missing", origin);
+		}
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -89,5 +103,13 @@ public class OrchestrationLockManagementValidation {
 		}
 
 		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Pair<String, String> validateAndNormalizeRemoveService(final String serviceInstanceId, final String owner, final String origin) {
+		logger.debug("validateAndNormalizeRemoveService started...");
+
+		validateAndNormalizeRemoveService(serviceInstanceId, owner, origin);
+		return Pair.of(normalization.normalizeServiceInstanceId(serviceInstanceId), normalization.normalizeSystemName(owner));
 	}
 }
