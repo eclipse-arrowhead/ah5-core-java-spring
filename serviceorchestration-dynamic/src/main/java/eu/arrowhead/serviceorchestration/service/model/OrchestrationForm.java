@@ -47,7 +47,7 @@ public class OrchestrationForm {
 		this.targetSystemName = targetSystemName;
 
 		if (dto != null) {
-			this.orchestrationFlags.addAll(dto.orchestrationFlags());
+			this.orchestrationFlags.addAll(dto.orchestrationFlags() == null ? List.of() : dto.orchestrationFlags());
 			this.qosRequirements = dto.qosRequirements();
 			this.exclusivityDuration = dto.exclusivityDuration();
 

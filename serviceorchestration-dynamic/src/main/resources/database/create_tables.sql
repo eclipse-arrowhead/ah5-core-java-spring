@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS `orchestration_job` (
   `subscription_id` varchar(63),
   `message` mediumtext,
   `created_at` timestamp NOT NULL,
-  `started_at` timestamp NOT NULL,
-  `finished_at` timestamp NOT NULL,
+  `started_at` timestamp,
+  `finished_at` timestamp,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8; 
 

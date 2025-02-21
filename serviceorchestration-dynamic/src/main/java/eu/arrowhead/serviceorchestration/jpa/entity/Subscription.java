@@ -54,6 +54,10 @@ public class Subscription {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	public Subscription() {
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public Subscription(final UUID id, final String ownerSystem, final String targetSystem, final ZonedDateTime expiresAt, final String notifyProtocol, final String notifyProperties, final String orchestrationRequest) {
 		this.id = id;
 		this.ownerSystem = ownerSystem;

@@ -4,15 +4,19 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
@@ -184,8 +188,8 @@ public class LocalServiceOrchestration {
 				if (form.exclusivityIsPreferred()) {
 					reserve(jobId, form.getRequesterSystemName(), match, form.getExclusivityDuration());
 					final String matchInstanceId = match.getServiceInstance().instanceId();
-					releaseTemporaryLockIfItWasLocked(jobId, candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).toList());
-					if (form.getExclusivityDuration() < match.getExclusivityDuration()) {
+					releaseTemporaryLockIfItWasLocked(jobId, candidates.stream().filter(c -> !c.getServiceInstance().instanceId().equals(matchInstanceId)).collect(Collectors.toList()));
+					if (form.getExclusivityDuration() > match.getExclusivityDuration()) {
 						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY);
 					}
 				}
@@ -233,13 +237,15 @@ public class LocalServiceOrchestration {
 				.providerNames(onlyPreferred ? form.getPrefferedProviders() : null)
 				.build();
 
-		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(Constants.SERVICE_DEF_SERVICE_DISCOVERY, Constants.SERVICE_OP_LOOKUP, Constants.SYS_NAME_SERVICE_REGISTRY, ServiceInstanceListResponseDTO.class, lookupDTO);
+		final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>(Map.of(Constants.VERBOSE, List.of(Boolean.FALSE.toString())));
+		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(Constants.SERVICE_DEF_SERVICE_DISCOVERY, Constants.SERVICE_OP_LOOKUP, Constants.SYS_NAME_SERVICE_REGISTRY, ServiceInstanceListResponseDTO.class, lookupDTO,
+				queryParams);
 
 		if (Utilities.isEmpty(response.entries())) {
 			return List.of();
 		}
 
-		return response.entries().stream().map(instance -> new OrchestrationCandidate(instance, true, onlyPreferred)).toList();
+		return response.entries().stream().map(instance -> new OrchestrationCandidate(instance, true, onlyPreferred)).collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -247,9 +253,13 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutLockedOnes(final UUID jobId, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutLockedOnes started...");
 
+		if (Utilities.isEmpty(candidates)) {
+			return candidates;
+		}
+
 		synchronized (LOCK) {
 			final String jobIdStr = jobId.toString();
-			final List<OrchestrationLock> lockRecords = orchLockDbService.getByServiceInstanceId(candidates.stream().map(c -> c.getServiceInstance().instanceId()).toList());
+			final List<OrchestrationLock> lockRecords = orchLockDbService.getByServiceInstanceId(candidates.stream().map(c -> c.getServiceInstance().instanceId()).collect(Collectors.toList()));
 
 			final ZonedDateTime now = Utilities.utcNow();
 			final Set<Long> expiredLocks = new HashSet<>();
@@ -265,8 +275,10 @@ public class LocalServiceOrchestration {
 				}
 			}
 
-			orchLockDbService.deleteInBatch(expiredLocks);
-			return candidates.stream().filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId())).toList();
+			if (!Utilities.isEmpty(expiredLocks)) {
+				orchLockDbService.deleteInBatch(expiredLocks);
+			}
+			return candidates.stream().filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId())).collect(Collectors.toList());
 		}
 	}
 
@@ -274,19 +286,28 @@ public class LocalServiceOrchestration {
 	public List<OrchestrationCandidate> filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(final UUID jobId, final String consumerSystem, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutLockedOnesAndTemporaryLockIfCanBeExclusive started...");
 
+		if (Utilities.isEmpty(candidates)) {
+			return candidates;
+		}
+
 		synchronized (LOCK) {
 			final List<OrchestrationCandidate> freeCandidates = filterOutLockedOnes(jobId, candidates);
-			final String jonIdStr = jobId.toString();
-			final ZonedDateTime tempLockExpiresAt = Utilities.utcNow().plusSeconds(TEMPORARY_LOCK_DURATION);
+			if (!Utilities.isEmpty(freeCandidates)) {
+				final String jonIdStr = jobId.toString();
+				final ZonedDateTime tempLockExpiresAt = Utilities.utcNow().plusSeconds(TEMPORARY_LOCK_DURATION);
 
-			final List<OrchestrationLock> toLock = new ArrayList<>(freeCandidates.size());
-			for (final OrchestrationCandidate candidate : freeCandidates) {
-				if (candidate.canBeExclusive()) {
-					candidate.setLocked(true);
-					toLock.add(new OrchestrationLock(jonIdStr, candidate.getServiceInstance().instanceId(), consumerSystem, tempLockExpiresAt, true));
+				final List<OrchestrationLock> toLock = new ArrayList<>(freeCandidates.size());
+				for (final OrchestrationCandidate candidate : freeCandidates) {
+					if (candidate.canBeExclusive()) {
+						candidate.setLocked(true);
+						toLock.add(new OrchestrationLock(jonIdStr, candidate.getServiceInstance().instanceId(), consumerSystem, tempLockExpiresAt, true));
+					}
+				}
+
+				if (!Utilities.isEmpty(toLock)) {
+					orchLockDbService.create(toLock);
 				}
 			}
-			orchLockDbService.create(toLock);
 			return freeCandidates;
 		}
 	}
@@ -299,13 +320,12 @@ public class LocalServiceOrchestration {
 			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 			if (allowedExclusivityDurationObj != null) {
 				try {
-					final int allowedExclusivityDuration = Integer.parseInt((String) allowedExclusivityDurationObj);
+					final int allowedExclusivityDuration = Utilities.parseToInt(allowedExclusivityDurationObj);
 					candidate.setCanBeExclusive(allowedExclusivityDuration > 0);
 					candidate.setExclusivityDuration(allowedExclusivityDuration);
 
-				} catch (final Exception ex) {
-					// Should not happen
-					logger.error(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata is not an integer. Service instance id: " + candidate.getServiceInstance().instanceId());
+				} catch (final NumberFormatException ex) {
+					logger.warn(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata is not an integer. Service instance id: " + candidate.getServiceInstance().instanceId());
 				}
 			}
 		}
@@ -314,7 +334,7 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutWhereExclusivityIsNotPossible started...");
-		return candidates.stream().filter(c -> c.canBeExclusive()).toList();
+		return candidates.stream().filter(c -> c.canBeExclusive()).collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -422,7 +442,7 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutNonNativeOnes(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonNativeOnes started...");
 
-		return candidates.stream().filter(c -> !c.isNonNative()).toList();
+		return candidates.stream().filter(c -> !c.isNonNative()).collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -452,7 +472,7 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutNonPreferredProviders(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonPreferredProviders started...");
 
-		return candidates.stream().filter(c -> c.isPreferred()).toList();
+		return candidates.stream().filter(c -> c.isPreferred()).collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -495,18 +515,32 @@ public class LocalServiceOrchestration {
 	private void releaseTemporaryLockIfItWasLocked(final UUID jobId, final List<OrchestrationCandidate> candidates) {
 		logger.debug("releaseTemporaryLockIfItWasLocked started...");
 
+		if (Utilities.isEmpty(candidates)) {
+			return;
+		}
+
 		synchronized (LOCK) {
 			final String jobIdStr = jobId.toString();
 
-			final List<OrchestrationLock> lockRecords = orchLockDbService.getByServiceInstanceId(candidates.stream()
+			final List<String> lockedOnes = candidates.stream()
 					.filter(c -> c.isLocked())
 					.map(c -> c.getServiceInstance().instanceId())
-					.toList());
+					.collect(Collectors.toList());
 
-			orchLockDbService.deleteInBatch(lockRecords.stream()
+			if (Utilities.isEmpty(lockedOnes)) {
+				return;
+			}
+
+			final List<OrchestrationLock> lockRecords = orchLockDbService.getByServiceInstanceId(lockedOnes);
+
+			final List<Long> toRelease = lockRecords.stream()
 					.filter(lr -> !Utilities.isEmpty(lr.getOrchestrationJobId()) && lr.getOrchestrationJobId().equals(jobIdStr))
 					.map(lr -> lr.getId())
-					.toList());
+					.collect(Collectors.toList());
+
+			if (!Utilities.isEmpty(toRelease)) {
+				orchLockDbService.deleteInBatch(toRelease);
+			}
 		}
 	}
 
@@ -553,9 +587,9 @@ public class LocalServiceOrchestration {
 						Utilities.convertZonedDateTimeToUTCString(c.getExclusiveUntil()),
 						c.getServiceInstance().metadata(),
 						c.getMatchingInterfaces()))
-				.toList();
+				.collect(Collectors.toList());
 
-		return new OrchestrationResponseDTO(results, warnings.stream().toList());
+		return new OrchestrationResponseDTO(results, warnings.stream().collect(Collectors.toList()));
 	}
 
 }

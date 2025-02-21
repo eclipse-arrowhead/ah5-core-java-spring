@@ -45,6 +45,10 @@ public class OrchestrationLock {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	public OrchestrationLock() {
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public OrchestrationLock(final String orchestrationJobId, final String serviceInstanceId, final String owner, final ZonedDateTime expiresAt, final boolean temporary) {
 		this.orchestrationJobId = orchestrationJobId;
 		this.serviceInstanceId = serviceInstanceId;

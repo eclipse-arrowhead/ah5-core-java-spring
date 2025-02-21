@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,7 +58,7 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 		scoredCandidates.sort(Comparator.comparingInt(Scored::getScore).reversed());
 
 		final int highestScore = scoredCandidates.getFirst().getScore();
-		List<Scored> bestCandidates = scoredCandidates.stream().filter(s -> s.getScore() == highestScore).toList();
+		List<Scored> bestCandidates = scoredCandidates.stream().filter(s -> s.getScore() == highestScore).collect(Collectors.toList());
 		if (bestCandidates.size() == 1) {
 			return bestCandidates.getFirst().getCandidate();
 		}

@@ -51,7 +51,7 @@ public class CleanerJob implements Job {
 	@Override
 	public void execute(final JobExecutionContext context) throws JobExecutionException {
 		logger.debug("execute started...");
-		System.out.println("cleaning...");
+
 		try {
 			removeExpiredSubscriptions();
 			removeExpiredOrchestrationLocks();

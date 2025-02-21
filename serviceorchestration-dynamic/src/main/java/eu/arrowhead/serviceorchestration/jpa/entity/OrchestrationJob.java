@@ -40,19 +40,19 @@ public class OrchestrationJob {
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String serviceDefinition;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	@Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String subscriptionId;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String message;
 
 	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
 	private ZonedDateTime createdAt;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private ZonedDateTime startedAt;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private ZonedDateTime finishedAt;
 
 	//=================================================================================================
@@ -62,6 +62,10 @@ public class OrchestrationJob {
 	@PrePersist
 	public void onCreate() {
 		this.createdAt = Utilities.utcNow();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationJob() {
 	}
 
 	//-------------------------------------------------------------------------------------------------
