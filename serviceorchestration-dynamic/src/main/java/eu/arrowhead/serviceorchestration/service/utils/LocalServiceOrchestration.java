@@ -500,7 +500,7 @@ public class LocalServiceOrchestration {
 			final String jobIdStr = jobId.toString();
 			final ZonedDateTime expiresAt = Utilities.utcNow().plusSeconds(RESERVATION_BUFFER + Math.min(duration, candidate.getExclusivityDuration()));
 
-			final Optional<OrchestrationLock> optional = orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(jobIdStr, candidate.getServiceInstance().instanceId(), expiresAt);
+			final Optional<OrchestrationLock> optional = orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(jobIdStr, candidate.getServiceInstance().instanceId(), expiresAt, false);
 
 			// the temporary lock may expire
 			if (optional.isEmpty()) {

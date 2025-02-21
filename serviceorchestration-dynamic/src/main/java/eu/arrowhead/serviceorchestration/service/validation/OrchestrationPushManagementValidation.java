@@ -130,7 +130,7 @@ public class OrchestrationPushManagementValidation {
 	public List<String> validateAndNormalizePublishUnsubscribeService(final List<String> ids, final String origin) {
 		logger.debug("validateAndNormalizePublishUnsubscribeService started...");
 
-		validateAndNormalizePublishUnsubscribeService(ids, origin);
+		validatePublishUnsubscribeService(ids, origin);
 
 		final List<String> normalizedList = new ArrayList<>();
 		ids.forEach(id -> {

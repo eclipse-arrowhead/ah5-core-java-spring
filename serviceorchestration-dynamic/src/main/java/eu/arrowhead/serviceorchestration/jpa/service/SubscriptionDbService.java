@@ -21,6 +21,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.repository.SubscriptionRepository;
+import eu.arrowhead.serviceorchestration.service.enums.BaseFilter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 
 @Service
@@ -61,6 +62,7 @@ public class SubscriptionDbService {
 						UUID.randomUUID(),
 						candidate.getOrchestrationForm().getRequesterSystemName(),
 						candidate.getOrchestrationForm().getTargetSystemName(),
+						candidate.getOrchestrationForm().getServiceDefinition(),
 						expireAt,
 						candidate.getNotifyProtocol(),
 						Utilities.toJson(candidate.getNotifyProperties()),
@@ -68,6 +70,7 @@ public class SubscriptionDbService {
 			}
 
 			subscriptionRepo.deleteAllById(toRemove);
+			subscriptionRepo.flush();
 			final List<Subscription> saved = subscriptionRepo.saveAll(toSave);
 			subscriptionRepo.flush();
 			return saved;
@@ -145,7 +148,43 @@ public class SubscriptionDbService {
 		Assert.notNull(pagination, "pagination is null");
 
 		try {
-			return subscriptionRepo.findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(ownerSystems, targetSystems, serviceDefinitions, pagination);
+			BaseFilter baseFilter = BaseFilter.NONE;
+			List<Subscription> toFilter;
+			if (!Utilities.isEmpty(ownerSystems)) {
+				toFilter = subscriptionRepo.findByOwnerSystemIn(ownerSystems);
+				baseFilter = BaseFilter.OWNER;
+			} else if (!Utilities.isEmpty(targetSystems)) {
+				toFilter = subscriptionRepo.findByTargetSystemIn(targetSystems);
+				baseFilter = BaseFilter.TARGET;
+			} else if (!Utilities.isEmpty(serviceDefinitions)) {
+				toFilter = subscriptionRepo.findByServiceDefinitionIn(serviceDefinitions);
+				baseFilter = BaseFilter.SERVICE;
+			} else {
+				return subscriptionRepo.findAll(pagination);
+			}
+
+			final List<UUID> matchingIds = new ArrayList<>();
+			for (final Subscription subscription : toFilter) {
+				boolean matching = true;
+
+				if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(ownerSystems) && !ownerSystems.contains(subscription.getOwnerSystem())) {
+					matching = false;
+				}
+
+				if (matching && baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(subscription.getTargetSystem())) {
+					matching = false;
+				}
+
+				if (matching && baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(serviceDefinitions) && !serviceDefinitions.contains(subscription.getServiceDefinition())) {
+					matching = false;
+				}
+
+				if (matching) {
+					matchingIds.add(subscription.getId());
+				}
+			}
+
+			return subscriptionRepo.findByIdIn(matchingIds, pagination);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

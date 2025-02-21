@@ -58,10 +58,13 @@ public class Subscription {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Subscription(final UUID id, final String ownerSystem, final String targetSystem, final ZonedDateTime expiresAt, final String notifyProtocol, final String notifyProperties, final String orchestrationRequest) {
+	@SuppressWarnings("checkstyle:ParameterNumberCheck")
+	public Subscription(final UUID id, final String ownerSystem, final String targetSystem, final String serviceDefinition,
+			final ZonedDateTime expiresAt, final String notifyProtocol, final String notifyProperties, final String orchestrationRequest) {
 		this.id = id;
 		this.ownerSystem = ownerSystem;
 		this.targetSystem = targetSystem;
+		this.serviceDefinition = serviceDefinition;
 		this.expiresAt = expiresAt;
 		this.notifyProtocol = notifyProtocol;
 		this.notifyProperties = notifyProperties;

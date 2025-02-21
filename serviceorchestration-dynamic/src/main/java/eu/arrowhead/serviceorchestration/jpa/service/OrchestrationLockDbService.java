@@ -152,7 +152,7 @@ public class OrchestrationLockDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Optional<OrchestrationLock> changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId, final ZonedDateTime time) {
+	public Optional<OrchestrationLock> changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId, final ZonedDateTime time, final boolean isTemporary) {
 		logger.debug("changeExpiration started...");
 		Assert.isTrue(!Utilities.isEmpty(orchestrationJobId), "Orchestration job id is empty.");
 		Assert.isTrue(!Utilities.isEmpty(serviceInstanceId), "Serice instance id is empty.");
@@ -161,6 +161,7 @@ public class OrchestrationLockDbService {
 			final Optional<OrchestrationLock> optional = lockRepo.findByOrchestrationJobIdAndServiceInstanceId(orchestrationJobId, serviceInstanceId);
 			if (optional.isPresent()) {
 				optional.get().setExpiresAt(time);
+				optional.get().setTemporary(isTemporary);
 				lockRepo.saveAndFlush(optional.get());
 			}
 

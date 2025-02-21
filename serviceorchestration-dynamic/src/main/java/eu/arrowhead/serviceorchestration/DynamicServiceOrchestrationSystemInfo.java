@@ -111,7 +111,8 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationHistoryManagement())
 				.build();
 
-		return List.of(monitor, generalManagement, orchestration, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement);
+		return List.of(generalManagement, orchestration, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement);
+		// TODO: add monitor service when it is specified and implemented
 	}
 
 	//-------------------------------------------------------------------------------------------------

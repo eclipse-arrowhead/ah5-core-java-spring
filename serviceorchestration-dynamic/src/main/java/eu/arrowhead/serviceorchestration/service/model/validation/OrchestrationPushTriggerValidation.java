@@ -42,7 +42,7 @@ public class OrchestrationPushTriggerValidation {
 			throw new InvalidParameterException("Requester system is missing.", origin);
 		}
 
-		if (!Utilities.isEmpty(trigger.getTartgetSystems()) && Utilities.containsNullOrEmpty(trigger.getTartgetSystems())) {
+		if (!Utilities.isEmpty(trigger.getTargetSystems()) && Utilities.containsNullOrEmpty(trigger.getTargetSystems())) {
 			throw new InvalidParameterException("Target system list contains empty element.", origin);
 		}
 
@@ -59,8 +59,8 @@ public class OrchestrationPushTriggerValidation {
 
 		trigger.setRequesterSystem(nameNormalizer.normalize(trigger.getRequesterSystem()));
 
-		if (!Utilities.isEmpty(trigger.getTartgetSystems())) {
-			trigger.setTartgetSystems(trigger.getTartgetSystems().stream().map(sys -> {
+		if (!Utilities.isEmpty(trigger.getTargetSystems())) {
+			trigger.setTargetSystems(trigger.getTargetSystems().stream().map(sys -> {
 				final String normalized = nameNormalizer.normalize(sys);
 				nameValidator.validateName(normalized);
 				return normalized;

@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
@@ -18,8 +18,15 @@ public interface SubscriptionRepository extends RefreshableRepository<Subscripti
 	Optional<Subscription> findByOwnerSystemAndTargetSystemAndServiceDefinition(final String ownerSystem, final String targetSystem, final String serviceDefinition);
 
 	//-------------------------------------------------------------------------------------------------
-	List<Subscription> findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(final List<String> ownerSystem, final List<String> targetSystem, final List<String> serviceDefinition);
+	List<Subscription> findByOwnerSystemIn(final List<String> ownerSystems);
 
 	//-------------------------------------------------------------------------------------------------
-	Page<Subscription> findAllByOwnerSystemInAndTargetSystemInAndServiceDefinitionIn(final List<String> ownerSystem, final List<String> targetSystem, final List<String> serviceDefinition, final Pageable pageble);
+	List<Subscription> findByTargetSystemIn(final List<String> targetSystems);
+
+	//-------------------------------------------------------------------------------------------------
+	List<Subscription> findByServiceDefinitionIn(final List<String> serviceDefinitions);
+
+	//-------------------------------------------------------------------------------------------------
+	Page<Subscription> findByIdIn(final List<UUID> ids, PageRequest pagination);
+
 }

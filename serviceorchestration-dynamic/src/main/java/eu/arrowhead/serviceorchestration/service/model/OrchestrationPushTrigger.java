@@ -10,7 +10,7 @@ public class OrchestrationPushTrigger {
 	// members
 
 	private String requesterSystem;
-	private List<String> tartgetSystems;
+	private List<String> targetSystems;
 	private List<String> subscriptionIds;
 
 	//=================================================================================================
@@ -20,7 +20,7 @@ public class OrchestrationPushTrigger {
 	public OrchestrationPushTrigger(final String requesterSystem, final OrchestrationPushTriggerDTO dto) {
 		this.requesterSystem = requesterSystem;
 		if (dto != null) {
-			this.tartgetSystems = dto.tartgetSystems();
+			this.targetSystems = dto.targetSystems();
 			this.subscriptionIds = dto.subscriptionIds();
 		}
 	}
@@ -39,13 +39,13 @@ public class OrchestrationPushTrigger {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<String> getTartgetSystems() {
-		return tartgetSystems;
+	public List<String> getTargetSystems() {
+		return targetSystems;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setTartgetSystems(final List<String> tartgetSystems) {
-		this.tartgetSystems = tartgetSystems;
+	public void setTargetSystems(final List<String> targetSystems) {
+		this.targetSystems = targetSystems;
 	}
 
 	//-------------------------------------------------------------------------------------------------

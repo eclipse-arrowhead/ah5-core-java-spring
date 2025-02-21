@@ -107,12 +107,12 @@ public class OrchestrationPushManagementService {
 
 		try {
 			List<Subscription> subscriptions;
-			if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTartgetSystems())) {
+			if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTargetSystems())) {
 				subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
 			} else if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
 				subscriptions = subscriptionDbService.get(trigger.getSubscriptionIds().stream().map(id -> UUID.fromString(id)).toList());
 			} else {
-				subscriptions = subscriptionDbService.query(List.of(), trigger.getTartgetSystems(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+				subscriptions = subscriptionDbService.query(List.of(), trigger.getTargetSystems(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
 			}
 
 			final List<OrchestrationJob> existingJobs = new ArrayList<>();
