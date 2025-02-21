@@ -72,13 +72,15 @@ public class OrchestrationLockManagementValidation {
 				} catch (final DateTimeParseException ex) {
 					throw new InvalidParameterException("Invalid expires at format: " + lock.expiresAt(), origin);
 				}
+			} else {
+				throw new InvalidParameterException("Expiration time is missing", origin);
 			}
 		});
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void normalizeQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
-		logger.debug("normalizeQueryService started...");
+	public void validateQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryService started...");
 
 		if (dto == null) {
 			return;
@@ -122,13 +124,12 @@ public class OrchestrationLockManagementValidation {
 	public OrchestrationLockListRequestDTO validateAndNormalizeCreateService(final OrchestrationLockListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateService started...");
 
-		validateAndNormalizeCreateService(dto, origin);
+		validateCreateService(dto, origin);
 
 		final OrchestrationLockListRequestDTO normalized = normalization.normalizeOrchestrationLockListRequestDTO(dto);
 
 		try {
 			normalized.locks().forEach(lock -> {
-				nameValidator.validateName(lock.serviceInstanceId());
 				nameValidator.validateName(lock.owner());
 			});
 
@@ -143,24 +144,25 @@ public class OrchestrationLockManagementValidation {
 	public OrchestrationLockQueryRequestDTO validateAndNormalizeQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeQueryService started...");
 
-		validateAndNormalizeQueryService(dto, origin);
+		validateQueryService(dto, origin);
 
 		final OrchestrationLockQueryRequestDTO normalized = normalization.normalizeOrchestrationLockQueryRequestDTO(dto);
 
 		try {
-			normalized.orchestrationJobIds().forEach(jobId -> {
-				if (!Utilities.isUUID(jobId)) {
-					throw new InvalidParameterException("Invalid orchestration job id: " + jobId);
-				}
-			});
+			if (!Utilities.isEmpty(normalized.orchestrationJobIds())) {
+				normalized.orchestrationJobIds().forEach(jobId -> {
+					if (!Utilities.isUUID(jobId)) {
+						throw new InvalidParameterException("Invalid orchestration job id: " + jobId);
+					}
+				});
 
-			normalized.serviceInstanceIds().forEach(instance -> {
-				nameValidator.validateName(instance);
-			});
+			}
 
-			normalized.owners().forEach(owner -> {
-				nameValidator.validateName(owner);
-			});
+			if (!Utilities.isEmpty(normalized.owners())) {
+				normalized.owners().forEach(owner -> {
+					nameValidator.validateName(owner);
+				});
+			}
 
 			if (!Utilities.isEmpty(normalized.expiresBefore())) {
 				try {
@@ -189,7 +191,7 @@ public class OrchestrationLockManagementValidation {
 	public Pair<String, String> validateAndNormalizeRemoveService(final String serviceInstanceId, final String owner, final String origin) {
 		logger.debug("validateAndNormalizeRemoveService started...");
 
-		validateAndNormalizeRemoveService(serviceInstanceId, owner, origin);
+		validateRemoveService(serviceInstanceId, owner, origin);
 		return Pair.of(normalization.normalizeServiceInstanceId(serviceInstanceId), normalization.normalizeSystemName(owner));
 	}
 }

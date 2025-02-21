@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -14,6 +15,7 @@ import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
+import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 
 @Component
 public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
@@ -81,6 +83,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.serviceDefinition(Constants.SERVICE_DEF_GENERAL_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_GENERAL_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForGeneralManagement())
+				.serviceInterface(getMqttServiceInterfaceForGeneralManagement())
 				.build();
 
 		final ServiceModel orchestration = new ServiceModel.Builder()
@@ -306,6 +309,21 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
 				.basePath(basePath)
 				.operation(Constants.SERVICE_OP_ORCHESTRATION_QUERY, historyQuery)
+				.build();
+	}
+
+	// MQTT Interfaces
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForGeneralManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.topic(DynamicServiceOrchestrationConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
 				.build();
 	}
 }

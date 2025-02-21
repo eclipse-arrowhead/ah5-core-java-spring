@@ -35,6 +35,10 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/history";
 	public static final String HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/lock";
 
+	public static final String MQTT_API_BASE_TOPIC = "arrowhead/serviceorchestration";
+	public static final String MQTT_API_MONITOR_TOPIC = MQTT_API_BASE_TOPIC + "/monitor/";
+	public static final String MQTT_API_GENERAL_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/general/management/";
+
 	public static final String VERSION_MONITOR = "1.0.0";
 	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
 	public static final String VERSION_ORCHESTRATION = "1.0.0";

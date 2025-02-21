@@ -74,7 +74,7 @@ public class CleanerJob implements Job {
 			final ZonedDateTime now = Utilities.utcNow();
 			final List<UUID> toRemove = new ArrayList<>();
 			subscriptionDbService.getAll().forEach(subscription -> {
-				if (subscription.getExpiresAt() != null && subscription.getExpiresAt().isAfter(now)) {
+				if (subscription.getExpiresAt() != null && subscription.getExpiresAt().isBefore(now)) {
 					toRemove.add(subscription.getId());
 				}
 			});
@@ -92,7 +92,7 @@ public class CleanerJob implements Job {
 			final ZonedDateTime now = Utilities.utcNow();
 			final List<Long> toRemove = new ArrayList<>();
 			orchestrationLockDbService.getAll().forEach(lock -> {
-				if (lock.getExpiresAt() != null && lock.getExpiresAt().isAfter(now)) {
+				if (lock.getExpiresAt() != null && lock.getExpiresAt().isBefore(now)) {
 					toRemove.add(lock.getId());
 				}
 			});

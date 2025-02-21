@@ -77,7 +77,10 @@ public class OrchestrationLockManagementService {
 					throw new InvalidParameterException("Already locked: " + alreadyLockedServices.stream().collect(Collectors.joining(", ")), origin);
 				}
 
-				lockDbService.deleteInBatch(expiredLockIds);
+				if (!Utilities.isEmpty(expiredLockIds)) {
+					lockDbService.deleteInBatch(expiredLockIds);
+				}
+
 				final List<OrchestrationLock> candidates = normalized.locks().stream().map(l -> new OrchestrationLock(l.serviceInstanceId(), l.owner(), Utilities.parseUTCStringToZonedDateTime(l.expiresAt()))).toList();
 				final List<OrchestrationLock> saved = lockDbService.create(candidates);
 

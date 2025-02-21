@@ -38,7 +38,7 @@ public class OrchestrationLockManagementNormalization {
 						.map(lock -> new OrchestrationLockRequestDTO(
 								nameNormalizer.normalize(lock.serviceInstanceId()),
 								nameNormalizer.normalize(lock.owner()),
-								Utilities.isEmpty(lock.expiresAt()) ? null : lock.expiresAt().trim()))
+								lock.expiresAt().trim()))
 						.toList());
 	}
 

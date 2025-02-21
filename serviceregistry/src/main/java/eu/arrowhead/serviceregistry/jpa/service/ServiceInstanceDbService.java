@@ -551,16 +551,20 @@ public class ServiceInstanceDbService {
 						}
 
 						// Interface properties
-						if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList())) {
+						if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList()) && Utilities.isEmpty(filters.getAddressTypes())) {
 							interfacePropertyMatch = true;
 						} else {
 							final Map<String, Object> interfaceProps = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 							});
 
-							for (final MetadataRequirementDTO requirement : filters.getInterfacePropertyRequirementsList()) {
-								if (MetadataRequirementsMatcher.isMetadataMatch(interfaceProps, requirement)) {
-									interfacePropertyMatch = true;
-									break;
+							if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList())) {
+								interfacePropertyMatch = true;
+							} else {
+								for (final MetadataRequirementDTO requirement : filters.getInterfacePropertyRequirementsList()) {
+									if (MetadataRequirementsMatcher.isMetadataMatch(interfaceProps, requirement)) {
+										interfacePropertyMatch = true;
+										break;
+									}
 								}
 							}
 
