@@ -87,12 +87,28 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION)
 				.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY)
-				// TODO add onrestricted-discovery: true
 				.serviceInterface(getHttpServiceInterfaceForOrchestration())
 				.build();
 
-		// TODO add the rest
-		return List.of(monitor, generalManagement, orchestration);
+		final ServiceModel orchestrationPushManagement = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_PUSH_MANAGEMENT)
+				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
+				.serviceInterface(getHttpServiceInterfaceForOrchestrationPushManagement())
+				.build();
+
+		final ServiceModel orchestrationLockManagement = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_LOCK_MANAGEMENT)
+				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
+				.serviceInterface(getHttpServiceInterfaceForOrchestrationLockManagement())
+				.build();
+
+		final ServiceModel orchestrationHistoryManagement = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_HISTORY_MANAGEMENT)
+				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_HISTORY_MANAGEMENT)
+				.serviceInterface(getHttpServiceInterfaceForOrchestrationHistoryManagement())
+				.build();
+
+		return List.of(monitor, generalManagement, orchestration, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -144,6 +160,23 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	private InterfaceModel getHttpServiceInterfaceForOrchestration() {
 		return getHttpServiceInterfaceForAnOrchestrationService(DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH);
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForOrchestrationPushManagement() {
+		return getHttpServiceInterfaceForAnOrchestrationPushManagementService(DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForOrchestrationLockManagement() {
+		return getHttpServiceInterfaceForAnOrchestrationLockManagementService(DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForOrchestrationHistoryManagement() {
+		return getHttpServiceInterfaceForAnOrchestrationHistoryManagementService(DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH);
+	}
+
+	// HTTP Interface Operations
 
 	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getHttpServiceInterfaceForAMonitorService(final String basePath) {
@@ -201,9 +234,78 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
 				.basePath(basePath)
 				.operation(Constants.SERVICE_OP_ORCHESTRATION_PULL, pull)
-				.operation(Constants.SERVICE_OP_ORCHESTRATION_PUSH_SUBSCRIBE, pushSubscribe)
-				.operation(Constants.SERVICE_OP_ORCHESTRATION_PUSH_UNSUBSCRIBE, pushUnsubscribe)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE, pushSubscribe)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE, pushUnsubscribe)
 				.build();
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAnOrchestrationPushManagementService(final String basePath) {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel pushSubscribe = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH)
+				.build();
+		final HttpOperationModel pushUnsubscribe = new HttpOperationModel.Builder()
+				.method(HttpMethod.DELETE.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH)
+				.build();
+		final HttpOperationModel pushTrigger = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH)
+				.build();
+		final HttpOperationModel pushQuery = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(basePath)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE, pushSubscribe)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE, pushUnsubscribe)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_TRIGGER, pushTrigger)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_QUERY, pushQuery)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAnOrchestrationLockManagementService(final String basePath) {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel lockQuery = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH)
+				.build();
+		final HttpOperationModel lockRemove = new HttpOperationModel.Builder()
+				.method(HttpMethod.DELETE.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH)
+				.build();
+		final HttpOperationModel lockCreate = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(basePath)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_QUERY, lockQuery)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_REMOVE, lockRemove)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_CREATE, lockCreate)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAnOrchestrationHistoryManagementService(final String basePath) {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel historyQuery = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(basePath)
+				.operation(Constants.SERVICE_OP_ORCHESTRATION_QUERY, historyQuery)
+				.build();
+	}
 }

@@ -34,7 +34,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping(DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH)
+@RequestMapping(DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class OrchestrationPushManagementAPI {
 
@@ -70,7 +70,7 @@ public class OrchestrationPushManagementAPI {
 	public @ResponseBody OrchestrationSubscriptionListResponseDTO pushSubscribe(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSubscriptionListRequestDTO dto) {
 		logger.debug("pushTrigger started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		return pushService.pushSubscribe(requesterSystem, dto, origin);
@@ -94,7 +94,7 @@ public class OrchestrationPushManagementAPI {
 	public OrchestrationPushJobListResponseDTO pushTrigger(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationPushTriggerDTO dto) {
 		logger.debug("pushTrigger started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		return pushService.pushTrigger(requesterSystem, dto, origin);
@@ -117,7 +117,7 @@ public class OrchestrationPushManagementAPI {
 	public void pushUnsubscribe(final HttpServletRequest httpServletRequest, final @RequestParam List<String> ids) {
 		logger.debug("pushUnsubscribe started...");
 
-		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH;
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		pushService.pushUnsubscribe(requesterSystem, ids, origin);
@@ -141,7 +141,7 @@ public class OrchestrationPushManagementAPI {
 	public OrchestrationSubscriptionListResponseDTO queryPushSubscriptions(@RequestBody final OrchestrationSubscriptionQueryRequestDTO dto) {
 		logger.debug("queryPushSubscriptions started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_PUSH_ORCHESTRATION_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
 		return pushService.queryPushSubscriptions(dto, origin);
 	}
 }
