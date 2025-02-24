@@ -75,7 +75,7 @@ public class IdentityDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<System> getSystemsByNames(final List<String> names, final boolean strict) {
-		logger.debug("getSystemsByNamesBeforeUpdate started...");
+		logger.debug("getSystemsByNames started...");
 		Assert.isTrue(!Utilities.isEmpty(names), "names is missing or empty");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "names contains null or empty element");
 
@@ -320,7 +320,7 @@ public class IdentityDbService {
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public ActiveSession createOrUpdateSession(final System system, final String token) {
-		logger.debug("getPasswordAuthenticationBySystem started...");
+		logger.debug("createOrUpdateSession started...");
 		Assert.notNull(system, "system is null");
 		Assert.isTrue(!Utilities.isEmpty(token), "Token is missing or empty");
 
@@ -333,7 +333,7 @@ public class IdentityDbService {
 				final ActiveSession session = sessionOpt.isPresent() ? sessionOpt.get() : new ActiveSession(system, token, now, expirationTime);
 				if (sessionOpt.isPresent()) {
 					if (now.isAfter(session.getExpirationTime())) {
-						// session is already expired, just the record is not removed => re-using it
+						// session is already expired, but the record is not removed yet => re-using it
 						session.setLoginTime(now);
 					}
 

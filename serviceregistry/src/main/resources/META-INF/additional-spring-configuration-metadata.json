@@ -17,7 +17,7 @@
   {
     "name": "authenticator.secret.keys",
     "type": "java.lang.String",
-    "description": "A description for 'authenticator.secret.key'"
+    "description": "A description for 'authenticator.secret.keys'"
   },
   {
     "name": "enable.management.filter",

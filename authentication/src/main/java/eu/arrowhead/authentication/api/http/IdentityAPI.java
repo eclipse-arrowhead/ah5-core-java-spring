@@ -104,7 +104,7 @@ public class IdentityAPI {
 	})
 	@PostMapping(path = AuthenticationConstants.HTTP_API_OP_CHANGE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public void change(@RequestBody final IdentityChangeRequestDTO dto) {
-		logger.debug("logout started...");
+		logger.debug("change started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthenticationConstants.HTTP_API_IDENTITY_PATH + AuthenticationConstants.HTTP_API_OP_CHANGE_PATH;
 		identityService.changeOperation(dto, origin);

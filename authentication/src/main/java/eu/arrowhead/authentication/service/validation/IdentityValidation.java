@@ -85,7 +85,7 @@ public class IdentityValidation {
 	public IdentityChangeRequestDTO validateAndNormalizeChangeServicePhase2(final IdentityChangeRequestDTO dto, final AuthenticationMethod authenticationMethod, final String origin) {
 		logger.debug("validateAndNormalizeChangeServicePhase2 started...");
 
-		// at this point only new credential are not validated or normalized
+		// at this point only new credentials are not validated or normalized
 		final IAuthenticationMethod method = methods.method(authenticationMethod);
 		if (method == null) {
 			throw new InternalServerError("Unsupported authentication method: " + authenticationMethod.name(), origin);

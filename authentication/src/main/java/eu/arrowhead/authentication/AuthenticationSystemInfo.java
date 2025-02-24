@@ -83,12 +83,6 @@ public class AuthenticationSystemInfo extends SystemInfo {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public AuthenticationPolicy getAuthenticationPolicy() {
-		return AuthenticationPolicy.INTERNAL;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
 	public String getIdentityToken() {
 		return specIdentityToken;
 	}
@@ -104,7 +98,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 		}
 
 		if (this.getAuthenticationPolicy() != AuthenticationPolicy.INTERNAL) {
-			throw new InvalidParameterException("'authenticationPolicy' is invalid");
+			throw new InvalidParameterException("'authenticationPolicy' is invalid: must be internal");
 		}
 
 		try {
