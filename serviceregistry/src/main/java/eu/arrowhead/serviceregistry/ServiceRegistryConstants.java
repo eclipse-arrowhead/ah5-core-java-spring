@@ -26,12 +26,12 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 
 	public static final String MQTT_API_BASE_TOPIC = "arrowhead/serviceregistry";
-	public static final String MQTT_API_MONITOR_TOPIC = MQTT_API_BASE_TOPIC + "/monitor";
-	public static final String MQTT_API_DEVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/device-discovery";
-	public static final String MQTT_API_SERVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/service-discovery";
-	public static final String MQTT_API_SYSTEM_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/system-discovery";
-	public static final String MQTT_API_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/management";
-	public static final String MQTT_API_GENERAL_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/general/management";
+	public static final String MQTT_API_MONITOR_TOPIC = MQTT_API_BASE_TOPIC + "/monitor/";
+	public static final String MQTT_API_DEVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/device-discovery/";
+	public static final String MQTT_API_SERVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/service-discovery/";
+	public static final String MQTT_API_SYSTEM_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/system-discovery/";
+	public static final String MQTT_API_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/management/";
+	public static final String MQTT_API_GENERAL_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/general/management/";
 
 	public static final String METADATA_KEY_UNRESTRICTED_DISCOVERY = "unrestricted-discovery";
 

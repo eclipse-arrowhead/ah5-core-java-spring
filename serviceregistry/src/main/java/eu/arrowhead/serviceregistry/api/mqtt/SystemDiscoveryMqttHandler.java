@@ -41,7 +41,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public String topic() {
+	public String baseTopic() {
 		return ServiceRegistryConstants.MQTT_API_SYSTEM_DISCOVERY_TOPIC;
 	}
 
@@ -49,7 +49,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
 		logger.debug("SystemDiscoveryMqttHandler.handle started");
-		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
+		Assert.isTrue(request.getRequestTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
 		MqttStatus responseStatus = MqttStatus.OK;
 		Object responsePayload = null;
@@ -86,7 +86,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	private Pair<SystemResponseDTO, MqttStatus> register(final String identifiedRequester, final SystemRegisterRequestDTO dto) {
 		logger.debug("SystemDiscoveryMqttHandler.register started");
 
-		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), topic());
+		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), baseTopic());
 
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
@@ -95,14 +95,14 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	private SystemListResponseDTO lookup(final SystemLookupRequestDTO dto, final boolean verbose) {
 		logger.debug("SystemDiscoveryMqttHandler.lookup started");
 
-		return sdService.lookupSystem(dto, verbose, topic());
+		return sdService.lookupSystem(dto, verbose, baseTopic());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private MqttStatus revoke(final String systemName) {
 		logger.debug("SystemDiscoveryMqttHandler.revoke started");
 
-		final boolean result = sdService.revokeSystem(systemName, topic());
+		final boolean result = sdService.revokeSystem(systemName, baseTopic());
 
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}

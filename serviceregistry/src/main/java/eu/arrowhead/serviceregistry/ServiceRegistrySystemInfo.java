@@ -345,11 +345,11 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private InterfaceModel getMqttServiceInterfaceForADiscoveryService(final String topic) {
+	private InterfaceModel getMqttServiceInterfaceForADiscoveryService(final String baseTopic) {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
 
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
-				.topic(topic)
+				.baseTopic(baseTopic)
 				.operations(Set.of(Constants.SERVICE_OP_REGISTER, Constants.SERVICE_OP_LOOKUP, Constants.SERVICE_OP_REVOKE))
 				.build();
 	}
@@ -362,7 +362,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
-				.topic(ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC)
+				.baseTopic(ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
 				.build();
 	}
@@ -375,7 +375,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
-				.topic(ServiceRegistryConstants.MQTT_API_MANAGEMENT_TOPIC)
+				.baseTopic(ServiceRegistryConstants.MQTT_API_MANAGEMENT_TOPIC)
 				.operations(Set.of(
 						Constants.SERVICE_OP_DEVICE_QUERY, Constants.SERVICE_OP_DEVICE_CREATE, Constants.SERVICE_OP_DEVICE_UPDATE, Constants.SERVICE_OP_DEVICE_REMOVE,
 						Constants.SERVICE_OP_SYSTEM_QUERY, Constants.SERVICE_OP_SYSTEM_CREATE, Constants.SERVICE_OP_SYSTEM_UPDATE, Constants.SERVICE_OP_SYSTEM_REMOVE,
