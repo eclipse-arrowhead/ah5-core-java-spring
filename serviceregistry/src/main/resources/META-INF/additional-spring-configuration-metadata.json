@@ -88,5 +88,15 @@
     "name": "mqtt.client.password",
     "type": "java.lang.String",
     "description": "A description for 'mqtt.client.password'"
+  },
+  {
+    "name": "force.blacklist.filter",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'force.blacklist.filter'"
+  },
+  {
+    "name": "disable.hostname.verifier",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'disable.hostname.verifier'"
   }
 ]}

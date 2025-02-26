@@ -64,12 +64,13 @@ public final class ServiceRegistryConstants {
 	// Configuration related
 
 	public static final String DISCOVERY_VERBOSE = "discovery.verbose";
-	public static final String $DISCOVERY_VERBOSE_WD = "${" + DISCOVERY_VERBOSE + ":false}";
+	public static final String $DISCOVERY_VERBOSE_WD = "${" + DISCOVERY_VERBOSE + ":" + ServiceRegistryDefaults.DISCOVERY_VERBOSE_DEFAULT + "}";
 	public static final String SERVICE_DISCOVERY_POLICY = "service.discovery.policy";
-	public static final String $SERVICE_DISCOVERY_POLICY_WD = "${" + SERVICE_DISCOVERY_POLICY + ":restricted}";
+	public static final String $SERVICE_DISCOVERY_POLICY_WD = "${" + SERVICE_DISCOVERY_POLICY + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_POLICY_DEFAULT + "}";
 	public static final String SERVICE_DISCOVERY_DIRECT_ACCESS = "service.discovery.direct.access";
+	public static final String $SERVICE_DISCOVERY_DIRECT_ACCESS_WD = "${" + SERVICE_DISCOVERY_DIRECT_ACCESS + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_DIRECT_ACCESS_DEFAULT + "}";
 	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
-	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":restricted}";
+	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_INTERFACE_POLICY_DEFAULT + "}";
 
 	// Forbidden keys (for config service)
 

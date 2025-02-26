@@ -30,7 +30,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Value(ServiceRegistryConstants.$DISCOVERY_VERBOSE_WD)
 	private boolean discoveryVerbose;
 
-	@Value(ServiceRegistryConstants.SERVICE_DISCOVERY_DIRECT_ACCESS)
+	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_DIRECT_ACCESS_WD)
 	private List<String> serviceDiscoveryDirectAccess;
 
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_POLICY_WD)
@@ -138,6 +138,14 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	protected PublicConfigurationKeysAndDefaults getPublicConfigurationKeysAndDefaults() {
+		return new PublicConfigurationKeysAndDefaults(
+				List.of(), // TODO: need keys here
+				ServiceRegistryDefaults.class);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	// HTTP Interfaces
