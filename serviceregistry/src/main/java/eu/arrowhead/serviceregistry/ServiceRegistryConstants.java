@@ -1,7 +1,5 @@
 package eu.arrowhead.serviceregistry;
 
-import java.util.List;
-
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 
 public final class ServiceRegistryConstants {
@@ -71,30 +69,6 @@ public final class ServiceRegistryConstants {
 	public static final String $SERVICE_DISCOVERY_DIRECT_ACCESS_WD = "${" + SERVICE_DISCOVERY_DIRECT_ACCESS + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_DIRECT_ACCESS_DEFAULT + "}";
 	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
 	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_INTERFACE_POLICY_DEFAULT + "}";
-
-	// Forbidden keys (for config service)
-
-	public static final List<String> FORBIDDEN_KEYS = List.of(
-			// database related
-			"spring.datasource.url",
-			"spring.datasource.username",
-			"spring.datasource.password",
-			"spring.datasource.driver-class-name",
-			"spring.jpa.hibernate.ddl-auto",
-			"spring.jpa.show-sql",
-
-			// cert related
-			"authenticator.secret.key",
-			"server.ssl.key-store-type",
-			"server.ssl.key-store",
-			"server.ssl.key-store-password",
-			"server.ssl.key-alias",
-			"server.ssl.key-password",
-			"server.ssl.client-auth",
-			"server.ssl.trust-store-type",
-			"server.ssl.trust-store",
-			"server.ssl.trust-store-password",
-			"disable.hostname.verifier");
 
 	// Property size related
 

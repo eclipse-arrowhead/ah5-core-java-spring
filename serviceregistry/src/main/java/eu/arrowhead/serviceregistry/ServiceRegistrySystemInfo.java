@@ -143,7 +143,23 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	@Override
 	protected PublicConfigurationKeysAndDefaults getPublicConfigurationKeysAndDefaults() {
 		return new PublicConfigurationKeysAndDefaults(
-				List.of(), // TODO: need keys here
+				Set.of(Constants.SERVER_ADDRESS,
+					   Constants.SERVER_PORT,
+					   Constants.MQTT_API_ENABLED,
+					   Constants.DOMAIN_NAME,
+					   Constants.AUTHENTICATION_POLICY,
+					   Constants.ENABLE_MANAGEMENT_FILTER,
+					   Constants.MANAGEMENT_POLICY,
+					   Constants.ENABLE_BLACKLIST_FILTER,
+					   Constants.FORCE_BLACKLIST_FILTER,
+					   Constants.ALLOW_SELF_ADDRESSING,
+					   Constants.ALLOW_NON_ROUTABLE_ADDRESSING,
+					   Constants.MAX_PAGE_SIZE,
+					   Constants.SERVICE_ADDRESS_ALIAS,
+					   ServiceRegistryConstants.SERVICE_DISCOVERY_POLICY,
+					   ServiceRegistryConstants.DISCOVERY_VERBOSE,
+					   ServiceRegistryConstants.SERVICE_DISCOVERY_INTERFACE_POLICY
+						), 
 				ServiceRegistryDefaults.class);
 	}
 
