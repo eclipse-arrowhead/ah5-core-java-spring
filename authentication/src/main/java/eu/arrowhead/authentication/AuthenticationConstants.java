@@ -1,7 +1,5 @@
 package eu.arrowhead.authentication;
 
-import java.util.List;
-
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 
 public final class AuthenticationConstants {
@@ -42,10 +40,10 @@ public final class AuthenticationConstants {
 	public static final String AUTHENTICATION_SECRET_KEY = "authentication.secret.key";
 	public static final String $AUTHENTICATION_SECRET_KEY = "${" + AUTHENTICATION_SECRET_KEY + "}";
 	public static final String IDENTITY_TOKEN_DURATION = "identity.token.duration"; // in seconds
-	public static final String $IDENTITY_TOKEN_DURATION = "${" + IDENTITY_TOKEN_DURATION + ":600}";
+	public static final String $IDENTITY_TOKEN_DURATION = "${" + IDENTITY_TOKEN_DURATION + ":" + AuthenticationDefaults.IDENTITY_TOKEN_DURATION_DEFAULT + "}";
 	public static final int INFINITE_TOKEN_DURATION = 100; // in years
 	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
-	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":30000}";
+	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":" + AuthenticationDefaults.CLEANER_JOB_INTERVAL_DEFAULT + "}";
 
 	// property size related
 	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
@@ -55,33 +53,6 @@ public final class AuthenticationConstants {
 	public static final String CLEANER_JOB = "authenticationCleanerJob";
 
 	// Forbidden keys (for config service)
-
-	public static final List<String> FORBIDDEN_KEYS = List.of(
-			// database related
-			"spring.datasource.url",
-			"spring.datasource.username",
-			"spring.datasource.password",
-			"spring.datasource.driver-class-name",
-			"spring.jpa.hibernate.ddl-auto",
-			"spring.jpa.show-sql",
-
-			// MQTT related
-			"mqtt.client.password",
-
-			// cert related
-			"server.ssl.key-store-type",
-			"server.ssl.key-store",
-			"server.ssl.key-store-password",
-			"server.ssl.key-alias",
-			"server.ssl.key-password",
-			"server.ssl.client-auth",
-			"server.ssl.trust-store-type",
-			"server.ssl.trust-store",
-			"server.ssl.trust-store-password",
-			"disable.hostname.verifier",
-
-			// other
-			"authentication.secret.key");
 
 	//=================================================================================================
 	// assistant methods

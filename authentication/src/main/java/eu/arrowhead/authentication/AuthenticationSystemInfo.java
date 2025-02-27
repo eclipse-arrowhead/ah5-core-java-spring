@@ -3,6 +3,7 @@ package eu.arrowhead.authentication;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -89,6 +90,25 @@ public class AuthenticationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	protected PublicConfigurationKeysAndDefaults getPublicConfigurationKeysAndDefaults() {
+		return new PublicConfigurationKeysAndDefaults(
+				Set.of(Constants.SERVER_ADDRESS,
+						Constants.SERVER_PORT,
+						Constants.SERVICEREGISTRY_ADDRESS,
+						Constants.SERVICEREGISTRY_PORT,
+						Constants.MQTT_API_ENABLED,
+						Constants.DOMAIN_NAME,
+						Constants.AUTHENTICATION_POLICY,
+						Constants.ENABLE_MANAGEMENT_FILTER,
+						Constants.MANAGEMENT_POLICY,
+						Constants.MAX_PAGE_SIZE,
+						AuthenticationConstants.IDENTITY_TOKEN_DURATION,
+						AuthenticationConstants.CLEANER_JOB_INTERVAL),
+				AuthenticationDefaults.class);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override

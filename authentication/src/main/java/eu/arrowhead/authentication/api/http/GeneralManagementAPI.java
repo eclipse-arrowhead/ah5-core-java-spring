@@ -90,6 +90,6 @@ public class GeneralManagementAPI {
 		logger.debug("getConfig started ...");
 
 		final String origin = HttpMethod.GET.name() + " " + AuthenticationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
-		return configService.getConfig(keys, AuthenticationConstants.FORBIDDEN_KEYS, origin);
+		return configService.getConfig(keys, origin);
 	}
 }
