@@ -58,5 +58,10 @@
     "name": "cleaner.job.interval",
     "type": "java.lang.Long",
     "description": "A description for 'cleaner_job_interval'"
+  },
+  {
+    "name": "disable.hostname.verifier",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'disable.hostname.verifier'"
   }
 ]}
