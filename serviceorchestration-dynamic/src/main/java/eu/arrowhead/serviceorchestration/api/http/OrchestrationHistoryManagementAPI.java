@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.api.http;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,7 +58,7 @@ public class OrchestrationHistoryManagementAPI {
 	public @ResponseBody OrchestrationHistoryResponseDTO query(final @RequestBody(required = false) OrchestrationHistoryQueryRequestDTO dto) {
 		logger.debug("query started...");
 
-		final String origin = DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
 		return historyMgmtService.query(dto, origin);
 	}
 

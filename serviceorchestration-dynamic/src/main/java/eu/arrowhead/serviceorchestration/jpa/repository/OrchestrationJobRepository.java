@@ -15,17 +15,17 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 public interface OrchestrationJobRepository extends RefreshableRepository<OrchestrationJob, UUID> {
 
 	//-------------------------------------------------------------------------------------------------
-	Page<OrchestrationJob> findAllByIdIn(final Collection<UUID> ids, final Pageable pageble);
+	public Page<OrchestrationJob> findAllByIdIn(final Collection<UUID> ids, final Pageable pageable);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationJob> findAllByStatusIn(final List<String> statuses);
+	public List<OrchestrationJob> findAllByStatusIn(final List<String> statuses);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationJob> findAllByRequesterSystemIn(final List<String> requesterSystems);
+	public List<OrchestrationJob> findAllByRequesterSystemIn(final List<String> requesterSystems);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationJob> findAllByTargetSystemIn(final List<String> targetSystems);
+	public List<OrchestrationJob> findAllByTargetSystemIn(final List<String> targetSystems);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationJob> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
+	public List<OrchestrationJob> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
 }

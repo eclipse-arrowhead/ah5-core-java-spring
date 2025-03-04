@@ -48,7 +48,7 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
 		logger.debug("DeviceDiscoveryMqttTopicHandler.handle started");
-		Assert.isTrue(request.getRequestTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
+		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
 		MqttStatus responseStatus = MqttStatus.OK;
 		Object responsePayload = null;

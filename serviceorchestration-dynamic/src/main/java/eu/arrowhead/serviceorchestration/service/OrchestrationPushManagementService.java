@@ -47,6 +47,8 @@ public class OrchestrationPushManagementService {
 	//=================================================================================================
 	// members
 
+	private static final String DELIMITER = "#";
+
 	@Autowired
 	private OrchestrationFromContextValidation formContextValidator;
 
@@ -194,7 +196,7 @@ public class OrchestrationPushManagementService {
 		final Set<String> keys = new HashSet<>(subscriptions.size());
 
 		for (final OrchestrationSubscription subsReq : subscriptions) {
-			final String key = subsReq.getOrchestrationForm().getRequesterSystemName() + "-" + subsReq.getOrchestrationForm().getTargetSystemName() + "-" + subsReq.getOrchestrationForm().getServiceDefinition();
+			final String key = subsReq.getOrchestrationForm().getRequesterSystemName() + DELIMITER + subsReq.getOrchestrationForm().getTargetSystemName() + DELIMITER + subsReq.getOrchestrationForm().getServiceDefinition();
 			if (keys.contains(key)) {
 				throw new InvalidParameterException("Duplicate subscription request for: " + key, origin);
 			}

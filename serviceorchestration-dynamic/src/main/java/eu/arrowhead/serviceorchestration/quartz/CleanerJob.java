@@ -52,10 +52,12 @@ public class CleanerJob implements Job {
 	public void execute(final JobExecutionContext context) throws JobExecutionException {
 		logger.debug("execute started...");
 
+		final ZonedDateTime now = Utilities.utcNow();
+
 		try {
-			removeExpiredSubscriptions();
-			removeExpiredOrchestrationLocks();
-			removeOldOrchestrationJobs();
+			removeExpiredSubscriptions(now);
+			removeExpiredOrchestrationLocks(now);
+			removeOldOrchestrationJobs(now);
 
 		} catch (final Exception ex) {
 			logger.debug(ex);
@@ -67,11 +69,10 @@ public class CleanerJob implements Job {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private void removeExpiredSubscriptions() {
+	private void removeExpiredSubscriptions(final ZonedDateTime now) {
 		logger.debug("removeExpiredSubscriptions started..");
 
 		synchronized (LOCK) {
-			final ZonedDateTime now = Utilities.utcNow();
 			final List<UUID> toRemove = new ArrayList<>();
 			subscriptionDbService.getAll().forEach(subscription -> {
 				if (subscription.getExpiresAt() != null && subscription.getExpiresAt().isBefore(now)) {
@@ -85,11 +86,10 @@ public class CleanerJob implements Job {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void removeExpiredOrchestrationLocks() {
+	private void removeExpiredOrchestrationLocks(final ZonedDateTime now) {
 		logger.debug("removeExpiredOrchestrationLocks started...");
 
 		synchronized (logger) {
-			final ZonedDateTime now = Utilities.utcNow();
 			final List<Long> toRemove = new ArrayList<>();
 			orchestrationLockDbService.getAll().forEach(lock -> {
 				if (lock.getExpiresAt() != null && lock.getExpiresAt().isBefore(now)) {
@@ -103,11 +103,10 @@ public class CleanerJob implements Job {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void removeOldOrchestrationJobs() {
+	private void removeOldOrchestrationJobs(final ZonedDateTime now) {
 		logger.debug("removeOldOrchestrationJobs started...");
 
 		synchronized (LOCK) {
-			final ZonedDateTime now = Utilities.utcNow();
 			final List<UUID> toRemove = new ArrayList<>();
 			orchestrationJobDbService.getAllByStatusIn(List.of(OrchestrationJobStatus.DONE, OrchestrationJobStatus.ERROR)).forEach(job -> {
 				final ZonedDateTime expirationTime = job.getFinishedAt().plusDays(sysInfo.getOrchestrationHistoryMaxAge());

@@ -23,7 +23,7 @@ public class CleanerJobConfig {
 	// members
 
 	@Value(DynamicServiceOrchestrationConstants.$CLEANER_JOB_INTERVAL_WD)
-	private int interval;
+	private long interval;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -35,7 +35,7 @@ public class CleanerJobConfig {
 	JobDetailFactoryBean cleanerJobDetail() {
 		final JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
 		jobDetailFactory.setJobClass(CleanerJob.class);
-		jobDetailFactory.setDescription("Removing expired subscriptions and service locks");
+		jobDetailFactory.setDescription("Removing expired subscriptions, service locks and old orchestration jobs");
 		jobDetailFactory.setDurability(true);
 		return jobDetailFactory;
 	}

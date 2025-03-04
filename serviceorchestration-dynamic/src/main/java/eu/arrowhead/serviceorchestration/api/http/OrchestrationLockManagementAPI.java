@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.api.http;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -64,7 +65,7 @@ public class OrchestrationLockManagementAPI {
 	public @ResponseBody OrchestrationLockListResponseDTO create(@RequestBody final OrchestrationLockListRequestDTO dto) {
 		logger.debug("created started...");
 
-		final String origin = DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
 		return lockMgmtService.create(dto, origin);
 	}
 
@@ -86,7 +87,7 @@ public class OrchestrationLockManagementAPI {
 	public @ResponseBody OrchestrationLockListResponseDTO query(@RequestBody(required = false) final OrchestrationLockQueryRequestDTO dto) {
 		logger.debug("query started...");
 
-		final String origin = DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
 		return lockMgmtService.query(dto, origin);
 	}
 
@@ -108,7 +109,7 @@ public class OrchestrationLockManagementAPI {
 	public ResponseEntity<Void> remove(@PathVariable final String instanceId, @PathVariable final String owner) {
 		logger.debug("remove started...");
 
-		final String origin = DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH;
 		boolean result = lockMgmtService.remove(instanceId, owner, origin);
 
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);

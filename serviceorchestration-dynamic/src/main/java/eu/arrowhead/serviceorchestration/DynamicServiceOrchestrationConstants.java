@@ -13,13 +13,13 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
 
 	public static final String ENABLE_AUTHORIZATION = "enable.authorization";
-	public static final String $ENABLE_AUTHORIZATION_WD = "${" + ENABLE_AUTHORIZATION + ":false }";
+	public static final String $ENABLE_AUTHORIZATION_WD = "${" + ENABLE_AUTHORIZATION + ":false}";
 	public static final String ENABLE_TRANSLATION = "enable.translation";
-	public static final String $ENABLE_TRANSLATION_WD = "${" + ENABLE_TRANSLATION + ":false }";
+	public static final String $ENABLE_TRANSLATION_WD = "${" + ENABLE_TRANSLATION + ":false}";
 	public static final String ENABLE_QOS = "enable.qos";
-	public static final String $ENABLE_QOS_WD = "${" + ENABLE_QOS + ":false }";
+	public static final String $ENABLE_QOS_WD = "${" + ENABLE_QOS + ":false}";
 	public static final String ENABLE_INTERCLOUD = "enable.intercloud";
-	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":false }";
+	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":false}";
 	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
 	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":30000}";
 	public static final String ORCHESTRATION_HISTORY_MAX_AGE = "orchestration.history.max.age";
@@ -35,9 +35,9 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/history";
 	public static final String HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/lock";
 
-	public static final String MQTT_API_BASE_TOPIC = "arrowhead/serviceorchestration";
-	public static final String MQTT_API_MONITOR_TOPIC = MQTT_API_BASE_TOPIC + "/monitor/";
-	public static final String MQTT_API_GENERAL_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/general/management/";
+	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/serviceorchestration";
+	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
+	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
 
 	public static final String VERSION_MONITOR = "1.0.0";
 	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
@@ -58,13 +58,11 @@ public final class DynamicServiceOrchestrationConstants {
 
 	// Operation related
 
-	public static final String HTTP_API_OP_ECHO = "/echo";
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
 	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/{id}";
 	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH = "/unsubscribe";
 	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
-	public static final String HTTP_API_OP_GET_CONFIG_PATH = "/get-config";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
 	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/{instanceId}/{owner}";

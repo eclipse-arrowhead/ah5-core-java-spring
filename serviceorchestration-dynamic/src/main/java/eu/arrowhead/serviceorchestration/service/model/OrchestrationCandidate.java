@@ -113,7 +113,7 @@ public class OrchestrationCandidate {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setQoSCompliance(final boolean properQoS) {
+	public void setProperQoS(final boolean properQoS) {
 		this.properQoS = properQoS;
 	}
 

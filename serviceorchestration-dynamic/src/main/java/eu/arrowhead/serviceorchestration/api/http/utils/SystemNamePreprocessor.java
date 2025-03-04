@@ -20,8 +20,6 @@ public class SystemNamePreprocessor {
 	public String process(final HttpServletRequest request, final String origin) throws InvalidParameterException {
 		logger.debug("process started");
 
-		final String name = HttpUtilities.acquireName(request, origin);
-
-		return name;
+		return HttpUtilities.acquireName(request, origin);
 	}
 }

@@ -36,12 +36,12 @@ public class OrchestrationJobDbService {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
-	// members
+	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationJob> create(final List<OrchestrationJob> jobs) {
-		logger.debug("save started...");
+		logger.debug("create started...");
 		Assert.isTrue(!Utilities.isEmpty(jobs), "job list is null");
 
 		try {
@@ -114,35 +114,29 @@ public class OrchestrationJobDbService {
 				// Match against to job ids
 				if (baseFilter != BaseFilter.ID && !Utilities.isEmpty(filter.getIds()) && !filter.getIds().contains(job.getId())) {
 					matching = false;
-				}
 
-				// Match against to job statuses
-				if (matching && baseFilter != BaseFilter.STATUS && !Utilities.isEmpty(filter.getStatuses()) && !filter.getStatuses().contains(OrchestrationJobStatus.valueOf(job.getStatus()))) {
+					// Match against to job statuses
+				} else if (baseFilter != BaseFilter.STATUS && !Utilities.isEmpty(filter.getStatuses()) && !filter.getStatuses().contains(job.getStatus())) {
 					matching = false;
-				}
 
-				// Match against to job type
-				if (matching && filter.getType() != null && !filter.getType().name().equalsIgnoreCase(job.getType())) {
+					// Match against to job type
+				} else if (filter.getType() != null && filter.getType() != job.getType()) {
 					matching = false;
-				}
 
-				// Match against to requester systems
-				if (matching && baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(filter.getRequesterSystems()) && !filter.getRequesterSystems().contains(job.getRequesterSystem())) {
+					// Match against to requester systems
+				} else if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(filter.getRequesterSystems()) && !filter.getRequesterSystems().contains(job.getRequesterSystem())) {
 					matching = false;
-				}
 
-				// Match against to target systems
-				if (matching && baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(filter.getTargetSystems()) && !filter.getTargetSystems().contains(job.getTargetSystem())) {
+					// Match against to target systems
+				} else if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(filter.getTargetSystems()) && !filter.getTargetSystems().contains(job.getTargetSystem())) {
 					matching = false;
-				}
 
-				// Match against to service definitions
-				if (matching && baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(filter.getServiceDefinitions()) && !filter.getServiceDefinitions().contains(job.getServiceDefinition())) {
+					// Match against to service definitions
+				} else if (baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(filter.getServiceDefinitions()) && !filter.getServiceDefinitions().contains(job.getServiceDefinition())) {
 					matching = false;
-				}
 
-				// Match against to subscription ids
-				if (matching && !Utilities.isEmpty(filter.getSubscriptionIds()) && !filter.getSubscriptionIds().contains(job.getSubscriptionId())) {
+					// Match against to subscription ids
+				} else if (!Utilities.isEmpty(filter.getSubscriptionIds()) && !filter.getSubscriptionIds().contains(job.getSubscriptionId())) {
 					matching = false;
 				}
 
@@ -162,14 +156,14 @@ public class OrchestrationJobDbService {
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public OrchestrationJob setStatus(final UUID jobId, final OrchestrationJobStatus status, final String message) {
-		logger.debug("setStartedAt started...");
+		logger.debug("setStatus started...");
 
 		try {
 			final Optional<OrchestrationJob> optional = jobRepo.findById(jobId);
 			Assert.isTrue(optional.isPresent(), "job does not exists: " + jobId);
 			final OrchestrationJob job = optional.get();
 
-			job.setStatus(status.name());
+			job.setStatus(status);
 			if (!Utilities.isEmpty(message)) {
 				job.setMessage(message);
 			}
@@ -185,7 +179,7 @@ public class OrchestrationJobDbService {
 				break;
 
 			default:
-				Assert.isTrue(false, "Unhandled orchestration job status: " + status);
+				throw new IllegalArgumentException("Unhandled orchestration job status: " + status);
 			}
 
 			return jobRepo.saveAndFlush(job);
@@ -200,8 +194,8 @@ public class OrchestrationJobDbService {
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteInBatch(final Collection<UUID> ids) {
-		logger.debug("delete started...");
-		Assert.isTrue(!Utilities.isEmpty(ids), "job id list is empty.");
+		logger.debug("deleteInBatch started...");
+		Assert.isTrue(!Utilities.isEmpty(ids), "job id list is empty");
 
 		try {
 			jobRepo.deleteAllByIdInBatch(ids);

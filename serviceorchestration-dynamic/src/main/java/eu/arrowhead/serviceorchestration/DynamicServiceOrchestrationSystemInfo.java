@@ -188,7 +188,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 		final HttpOperationModel echo = new HttpOperationModel.Builder()
 				.method(HttpMethod.GET.name())
-				.path(DynamicServiceOrchestrationConstants.HTTP_API_OP_ECHO)
+				.path(Constants.HTTP_API_OP_ECHO_PATH)
 				.build();
 
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
@@ -323,7 +323,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
-				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC)
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
 				.build();
 	}

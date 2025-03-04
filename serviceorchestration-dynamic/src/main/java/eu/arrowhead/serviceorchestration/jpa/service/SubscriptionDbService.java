@@ -47,6 +47,7 @@ public class SubscriptionDbService {
 		try {
 			final List<UUID> toRemove = new ArrayList<>();
 			final List<Subscription> toSave = new ArrayList<>(candidates.size());
+			final ZonedDateTime now = Utilities.utcNow();
 			for (final OrchestrationSubscription candidate : candidates) {
 				final Optional<Subscription> optional = subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(
 						candidate.getOrchestrationForm().getRequesterSystemName(),
@@ -57,7 +58,7 @@ public class SubscriptionDbService {
 					toRemove.add(optional.get().getId());
 				}
 
-				final ZonedDateTime expireAt = candidate.getDuration() == null ? null : Utilities.utcNow().plusSeconds(candidate.getDuration());
+				final ZonedDateTime expireAt = candidate.getDuration() == null ? null : now.plusSeconds(candidate.getDuration());
 				toSave.add(new Subscription(
 						UUID.randomUUID(),
 						candidate.getOrchestrationForm().getRequesterSystemName(),
@@ -71,9 +72,7 @@ public class SubscriptionDbService {
 
 			subscriptionRepo.deleteAllById(toRemove);
 			subscriptionRepo.flush();
-			final List<Subscription> saved = subscriptionRepo.saveAll(toSave);
-			subscriptionRepo.flush();
-			return saved;
+			return subscriptionRepo.saveAllAndFlush(toSave);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -169,13 +168,11 @@ public class SubscriptionDbService {
 
 				if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(ownerSystems) && !ownerSystems.contains(subscription.getOwnerSystem())) {
 					matching = false;
-				}
 
-				if (matching && baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(subscription.getTargetSystem())) {
+				} else if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(subscription.getTargetSystem())) {
 					matching = false;
-				}
 
-				if (matching && baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(serviceDefinitions) && !serviceDefinitions.contains(subscription.getServiceDefinition())) {
+				} else if (baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(serviceDefinitions) && !serviceDefinitions.contains(subscription.getServiceDefinition())) {
 					matching = false;
 				}
 

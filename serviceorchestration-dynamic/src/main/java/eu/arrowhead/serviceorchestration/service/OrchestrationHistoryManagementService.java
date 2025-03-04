@@ -40,6 +40,7 @@ public class OrchestrationHistoryManagementService {
 	//=================================================================================================
 	// methods
 
+	//-------------------------------------------------------------------------------------------------
 	public OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
 		logger.debug("query started...");
 

@@ -52,7 +52,7 @@ public class OrchestrationAPI {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the dynamically proceeded orchestration results")
+	@Operation(summary = "Returns the dynamically produced orchestration results")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationResponseDTO.class)) }),
@@ -76,7 +76,7 @@ public class OrchestrationAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns a subscription id. Existing will be overwritten.")
+	@Operation(summary = "Returns a subscription id. Existing subscriptions will be overwritten.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
 					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
@@ -103,7 +103,7 @@ public class OrchestrationAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Removes a the subscription by the given id")
+	@Operation(summary = "Removes the subscription by the given id")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_NO_CONTENT, description = Constants.SWAGGER_HTTP_204_MESSAGE),
@@ -120,10 +120,10 @@ public class OrchestrationAPI {
 	public ResponseEntity<Void> pushUnsubscribe(final HttpServletRequest httpServletRequest, @PathVariable final String id) {
 		logger.debug("pushUnsubscribe started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		boolean result = orchService.pushUnsubscribe(requesterSystem, id, origin);
+		final boolean result = orchService.pushUnsubscribe(requesterSystem, id, origin);
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }

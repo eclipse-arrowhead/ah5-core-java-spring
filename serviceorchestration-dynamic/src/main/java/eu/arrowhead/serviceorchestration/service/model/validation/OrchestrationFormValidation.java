@@ -55,8 +55,8 @@ public class OrchestrationFormValidation {
 		}
 
 		if (!Utilities.isEmpty(form.getOperations())) {
-			form.getOperations().forEach(o -> {
-				if (Utilities.isEmpty(o)) {
+			form.getOperations().forEach(op -> {
+				if (Utilities.isEmpty(op)) {
 					throw new InvalidParameterException("Operation list contains empty element", origin);
 				}
 			});

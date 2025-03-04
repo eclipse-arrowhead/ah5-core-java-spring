@@ -53,8 +53,8 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSubscriptionResponseDTO convertSubscriptionToDTO(final Subscription subscription) {
-		logger.debug("convertSubscriptionListToDTO started...");
-		Assert.notNull(subscription, "subscription list is null");
+		logger.debug("convertSubscriptionToDTO started...");
+		Assert.notNull(subscription, "subscription is null");
 
 		return new OrchestrationSubscriptionResponseDTO(
 				subscription.getId().toString(),
@@ -68,7 +68,7 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationPushJobListResponseDTO convertOrchestrationJobListToDTO(final List<OrchestrationJob> jobs) {
-		logger.debug("convertSubscriptionListToDTO started...");
+		logger.debug("convertOrchestrationJobListToDTO started...");
 		Assert.notNull(jobs, "job list is null");
 
 		return new OrchestrationPushJobListResponseDTO(jobs.stream().map(j -> convertOrchestrationJobToDTO(j)).toList());
@@ -90,8 +90,8 @@ public class DTOConverter {
 
 		return new OrchestrationJobDTO(
 				job.getId().toString(),
-				job.getStatus(),
-				job.getType(),
+				job.getStatus().name(),
+				job.getType().name(),
 				job.getRequesterSystem(),
 				job.getTargetSystem(),
 				job.getServiceDefinition(),
@@ -101,16 +101,16 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(job.getStartedAt()),
 				Utilities.convertZonedDateTimeToUTCString(job.getFinishedAt()));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationLockListResponseDTO converOrchestartionLockListToDTO(final List<OrchestrationLock> locks, final long count ) {
+	public OrchestrationLockListResponseDTO converOrchestartionLockListToDTO(final List<OrchestrationLock> locks, final long count) {
 		logger.debug("converOrchestartionLockListToDTO started...");
 		Assert.notNull(locks, "lock list is null");
-		
+
 		return new OrchestrationLockListResponseDTO(
 				locks.stream().map(l -> converOrchestartionLockToDTO(l)).toList(),
 				count);
-				
+
 	}
 
 	//-------------------------------------------------------------------------------------------------

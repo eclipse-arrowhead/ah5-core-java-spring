@@ -72,7 +72,7 @@ public class GeneralManagementAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Return a list of configurations")
+	@Operation(summary = "Returns a list of configurations")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = KeyValuesDTO.class)) }),

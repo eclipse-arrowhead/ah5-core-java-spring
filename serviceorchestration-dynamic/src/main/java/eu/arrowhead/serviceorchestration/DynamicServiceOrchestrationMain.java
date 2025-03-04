@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.jpa.RefreshableRepositoryImpl;
@@ -13,6 +14,7 @@ import eu.arrowhead.common.jpa.RefreshableRepositoryImpl;
 @ComponentScan(Constants.BASE_PACKAGE)
 @EntityScan(DynamicServiceOrchestrationConstants.DATABASE_ENTITY_PACKAGE)
 @EnableJpaRepositories(basePackages = DynamicServiceOrchestrationConstants.DATABASE_REPOSITORY_PACKAGE, repositoryBaseClass = RefreshableRepositoryImpl.class)
+@EnableScheduling
 public class DynamicServiceOrchestrationMain {
 
 	//=================================================================================================

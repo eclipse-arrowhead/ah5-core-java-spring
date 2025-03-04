@@ -10,6 +10,8 @@ import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 
@@ -26,10 +28,12 @@ public class OrchestrationJob {
 	private UUID id;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
-	private String status;
+	@Enumerated(EnumType.STRING)
+	private OrchestrationJobStatus status;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
-	private String type;
+	@Enumerated(EnumType.STRING)
+	private OrchestrationType type;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String requesterSystem;
@@ -71,8 +75,8 @@ public class OrchestrationJob {
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationJob(final OrchestrationType type, final String requesterSystem, final String targetSystem, final String serviceDefinition, final String subscriptionId) {
 		this.id = UUID.randomUUID();
-		this.type = type.name();
-		this.status = OrchestrationJobStatus.PENDING.name();
+		this.type = type;
+		this.status = OrchestrationJobStatus.PENDING;
 		this.requesterSystem = requesterSystem;
 		this.targetSystem = targetSystem;
 		this.serviceDefinition = serviceDefinition;
@@ -88,27 +92,27 @@ public class OrchestrationJob {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setFinishedAt(final ZonedDateTime finishedAt) {
-		this.finishedAt = finishedAt;
+	public void setId(final UUID id) {
+		this.id = id;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getStatus() {
+	public OrchestrationJobStatus getStatus() {
 		return status;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setStatus(final String status) {
+	public void setStatus(final OrchestrationJobStatus status) {
 		this.status = status;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getType() {
+	public OrchestrationType getType() {
 		return type;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setType(final String type) {
+	public void setType(final OrchestrationType type) {
 		this.type = type;
 	}
 
@@ -142,6 +146,7 @@ public class OrchestrationJob {
 		this.serviceDefinition = serviceDefinition;
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	public String getSubscriptionId() {
 		return subscriptionId;
 	}
@@ -172,11 +177,6 @@ public class OrchestrationJob {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setId(final UUID id) {
-		this.id = id;
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	public ZonedDateTime getStartedAt() {
 		return startedAt;
 	}
@@ -189,5 +189,17 @@ public class OrchestrationJob {
 	//-------------------------------------------------------------------------------------------------
 	public ZonedDateTime getFinishedAt() {
 		return finishedAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setFinishedAt(final ZonedDateTime finishedAt) {
+		this.finishedAt = finishedAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestartionJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition" + serviceDefinition
+				+ ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = " + finishedAt + "]";
 	}
 }

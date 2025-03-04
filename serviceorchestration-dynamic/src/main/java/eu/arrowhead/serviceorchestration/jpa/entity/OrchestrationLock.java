@@ -3,11 +3,8 @@ package eu.arrowhead.serviceorchestration.jpa.entity;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import org.hibernate.type.NumericBooleanConverter;
-
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -38,7 +35,7 @@ public class OrchestrationLock {
 	@Column(nullable = true)
 	private ZonedDateTime expiresAt;
 
-	@Convert(converter = NumericBooleanConverter.class)
+	@Column(nullable = false, columnDefinition = "INT(1)")
 	private boolean temporary = false;
 
 	//=================================================================================================
@@ -125,5 +122,11 @@ public class OrchestrationLock {
 	//-------------------------------------------------------------------------------------------------
 	public void setTemporary(final boolean temporary) {
 		this.temporary = temporary;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestartionLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = " + expiresAt + ", temporary = " + temporary + "]";
 	}
 }

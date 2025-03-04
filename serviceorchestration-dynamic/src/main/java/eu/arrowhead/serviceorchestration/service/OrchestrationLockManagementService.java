@@ -58,13 +58,14 @@ public class OrchestrationLockManagementService {
 
 		final OrchestrationLockListRequestDTO normalized = validator.validateAndNormalizeCreateService(dto, origin);
 		final ZonedDateTime now = Utilities.utcNow();
+		List<OrchestrationLock> saved = null;
 
 		synchronized (LOCK) {
 			try {
 				final List<OrchestrationLock> existingLocks = lockDbService.getByServiceInstanceId(normalized.locks().stream().map(l -> l.serviceInstanceId()).toList());
 				final List<Long> expiredLockIds = new ArrayList<>();
 				final List<String> alreadyLockedServices = new ArrayList<>();
-				for (OrchestrationLock existingLock : existingLocks) {
+				for (final OrchestrationLock existingLock : existingLocks) {
 					if (!Utilities.isEmpty(existingLock.getOrchestrationJobId())
 							&& existingLock.getExpiresAt() != null
 							&& existingLock.getExpiresAt().isBefore(now)) {
@@ -73,23 +74,24 @@ public class OrchestrationLockManagementService {
 						alreadyLockedServices.add(existingLock.getServiceInstanceId());
 					}
 				}
-				if (!Utilities.isEmpty(alreadyLockedServices)) {
-					throw new InvalidParameterException("Already locked: " + alreadyLockedServices.stream().collect(Collectors.joining(", ")), origin);
-				}
 
 				if (!Utilities.isEmpty(expiredLockIds)) {
 					lockDbService.deleteInBatch(expiredLockIds);
 				}
 
-				final List<OrchestrationLock> candidates = normalized.locks().stream().map(l -> new OrchestrationLock(l.serviceInstanceId(), l.owner(), Utilities.parseUTCStringToZonedDateTime(l.expiresAt()))).toList();
-				final List<OrchestrationLock> saved = lockDbService.create(candidates);
+				if (!Utilities.isEmpty(alreadyLockedServices)) {
+					throw new InvalidParameterException("Already locked: " + alreadyLockedServices.stream().collect(Collectors.joining(", ")), origin);
+				}
 
-				return dtoConverter.converOrchestartionLockListToDTO(saved, saved.size());
+				final List<OrchestrationLock> candidates = normalized.locks().stream().map(lock -> new OrchestrationLock(lock.serviceInstanceId(), lock.owner(), Utilities.parseUTCStringToZonedDateTime(lock.expiresAt()))).toList();
+				saved = lockDbService.create(candidates);
 
 			} catch (final InternalServerError ex) {
 				throw new InternalServerError(ex.getMessage(), origin);
 			}
 		}
+
+		return dtoConverter.converOrchestartionLockListToDTO(saved, saved.size());
 	}
 
 	//-------------------------------------------------------------------------------------------------

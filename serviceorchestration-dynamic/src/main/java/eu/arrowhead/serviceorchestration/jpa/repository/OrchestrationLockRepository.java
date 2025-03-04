@@ -15,17 +15,17 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 public interface OrchestrationLockRepository extends RefreshableRepository<OrchestrationLock, Long> {
 
 	//-------------------------------------------------------------------------------------------------
-	Page<OrchestrationLock> findAllByIdIn(final Collection<Long> ids, final Pageable pageble);
+	public Page<OrchestrationLock> findAllByIdIn(final Collection<Long> ids, final Pageable pageable);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationLock> findAllByServiceInstanceIdIn(final List<String> serviceInstanceIds);
+	public List<OrchestrationLock> findAllByServiceInstanceIdIn(final List<String> serviceInstanceIds);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationLock> findAllByOrchestrationJobIdIn(final List<String> orchestrationJobIds);
+	public List<OrchestrationLock> findAllByOrchestrationJobIdIn(final List<String> orchestrationJobIds);
 
 	//-------------------------------------------------------------------------------------------------
-	List<OrchestrationLock> findAllByOwnerIn(final List<String> owners);
+	public List<OrchestrationLock> findAllByOwnerIn(final List<String> owners);
 
 	//-------------------------------------------------------------------------------------------------
-	Optional<OrchestrationLock> findByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId);
+	public Optional<OrchestrationLock> findByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId);
 }
