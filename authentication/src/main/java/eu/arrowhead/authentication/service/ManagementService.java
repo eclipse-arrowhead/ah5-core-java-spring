@@ -164,7 +164,7 @@ public class ManagementService {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void closeSessionsOperation(final List<String> names, final String origin) {
 		logger.debug("closeSessionsOperation started...");
