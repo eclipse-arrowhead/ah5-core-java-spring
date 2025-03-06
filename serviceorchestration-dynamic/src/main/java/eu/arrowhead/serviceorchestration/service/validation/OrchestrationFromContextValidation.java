@@ -27,7 +27,7 @@ public class OrchestrationFromContextValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validate(final OrchestrationForm form, final String origin) {
-		logger.debug("validateNormalizedOrchestrationFormContext started...");
+		logger.debug("validate started...");
 
 		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && !sysInfo.isInterCloudEnabled()) {
 			throw new InvalidParameterException("ONLY_INTERCLOUD flag is present, but intercloud orchestration is not enabled.", origin);
@@ -38,19 +38,19 @@ public class OrchestrationFromContextValidation {
 			throw new InvalidParameterException("ONLY_INTERCLOUD and ALLOW_TRANSLATION flags cannot be present at the same time.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && !Utilities.isEmpty(form.getOperations())) {
-			// The creation of inter-cloud bridges is limited to the actual operations that the requester wants to use.
-			throw new InvalidParameterException("Operations must be defined, when only inter-cloud orchestration is required.", origin);
+		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
+			// The creation of an inter-cloud bridge is limited to exactly one operation that the requester wants to use.
+			throw new InvalidParameterException("Exactly one operation must be defined, when only inter-cloud orchestration is required.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD) && !Utilities.isEmpty(form.getOperations())) {
-			// The creation of inter-cloud bridges is limited to the actual operations that the requester wants to use.
-			throw new InvalidParameterException("Operations must be defined, when inter-cloud orchestration is allowed.", origin);
+		if (form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
+			// The creation of an inter-cloud bridge is limited to exactly one operation that the requester wants to use.
+			throw new InvalidParameterException("Exactly one operation must be defined, when only inter-cloud orchestration is allowed.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && !Utilities.isEmpty(form.getOperations())) {
-			// The creation of translation bridges is limited to the actual operations that the requester wants to use.
-			throw new InvalidParameterException("Operations must be defined, when translation is allowed", origin);
+		if (form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
+			// The creation of a translation bridge is limited to exactly one operation that the requester wants to use.
+			throw new InvalidParameterException("Exactly one operation must be defined, when translation is allowed", origin);
 		}
 
 		if (form.hasFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {

@@ -45,7 +45,7 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC;
+		return ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -81,12 +81,12 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private LogEntryListResponseDTO getLog(final LogRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.getLog started");
-		return logService.getLogEntries(dto, baseTopic());
+		return logService.getLogEntries(dto, baseTopic() + Constants.SERVICE_OP_GET_LOG);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private KeyValuesDTO getConfig(final List<String> dto) {
 		logger.debug("ManagementMqttHandler.getConfig started");
-		return configService.getConfig(dto, ServiceRegistryConstants.FORBIDDEN_KEYS, baseTopic());
+		return configService.getConfig(dto, ServiceRegistryConstants.FORBIDDEN_KEYS, baseTopic() + Constants.SERVICE_OP_GET_CONFIG);
 	}
 }

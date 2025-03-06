@@ -128,7 +128,7 @@ public class PushOrchestrationThread extends Thread {
 
 	//-------------------------------------------------------------------------------------------------
 	private void doPushOrchestration(final UUID jobId) {
-		logger.debug("run started...");
+		logger.debug("doPushOrchestration started...");
 
 		try {
 			final Optional<OrchestrationJob> jobOpt = orchJobDbService.getById(jobId);
@@ -194,7 +194,7 @@ public class PushOrchestrationThread extends Thread {
 
 		final Map<String, String> propsMap = readNotifyProperties(properties);
 		final String address = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS);
-		final int port = Integer.valueOf(propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+		final int port = Integer.parseInt(propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
 		final String method = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD);
 		final String path = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH);
 
@@ -202,7 +202,7 @@ public class PushOrchestrationThread extends Thread {
 			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method), Void.class, result);
 		} catch (final Exception ex) {
 			logger.debug(ex);
-			throw new ArrowheadException("Error occured while sending push orchestration via http to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+			throw new ArrowheadException("Error occured while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
 		}
 	}
 
@@ -226,7 +226,7 @@ public class PushOrchestrationThread extends Thread {
 			mqttClient.publish(propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC), msg);
 		} catch (final Exception ex) {
 			logger.debug(ex);
-			throw new ArrowheadException("Error occured while sending push orchestration via mqtt to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+			throw new ArrowheadException("Error occured while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
 		}
 	}
 

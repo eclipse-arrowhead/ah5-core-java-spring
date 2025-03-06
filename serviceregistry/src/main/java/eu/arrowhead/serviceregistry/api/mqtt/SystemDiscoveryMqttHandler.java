@@ -42,7 +42,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_SYSTEM_DISCOVERY_TOPIC;
+		return ServiceRegistryConstants.MQTT_API_SYSTEM_DISCOVERY_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	private Pair<SystemResponseDTO, MqttStatus> register(final String identifiedRequester, final SystemRegisterRequestDTO dto) {
 		logger.debug("SystemDiscoveryMqttHandler.register started");
 
-		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), baseTopic());
+		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), baseTopic() + Constants.SERVICE_OP_REGISTER);
 
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
@@ -95,14 +95,14 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	private SystemListResponseDTO lookup(final SystemLookupRequestDTO dto, final boolean verbose) {
 		logger.debug("SystemDiscoveryMqttHandler.lookup started");
 
-		return sdService.lookupSystem(dto, verbose, baseTopic());
+		return sdService.lookupSystem(dto, verbose, baseTopic() + Constants.SERVICE_OP_LOOKUP);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private MqttStatus revoke(final String systemName) {
 		logger.debug("SystemDiscoveryMqttHandler.revoke started");
 
-		final boolean result = sdService.revokeSystem(systemName, baseTopic());
+		final boolean result = sdService.revokeSystem(systemName, baseTopic() + Constants.SERVICE_OP_REVOKE);
 
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}

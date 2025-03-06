@@ -30,7 +30,7 @@ public class MonitorMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_MONITOR_TOPIC;
+		return ServiceRegistryConstants.MQTT_API_MONITOR_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------

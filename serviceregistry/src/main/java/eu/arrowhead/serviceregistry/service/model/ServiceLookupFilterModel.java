@@ -61,7 +61,7 @@ public class ServiceLookupFilterModel {
 
 		if (!Utilities.isEmpty(dto.addressTypes())) {
 			for (final String type : dto.addressTypes()) {
-				Assert.isTrue(Utilities.isEnumValue(type, AddressType.class), "Invlid addres type: " + type);
+				Assert.isTrue(Utilities.isEnumValue(type, AddressType.class), "Invalid address type: " + type);
 				addressTypes.add(AddressType.valueOf(type));
 			}
 		}

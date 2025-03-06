@@ -38,7 +38,7 @@ public class OrchestrationHistoryManagementNormalization {
 				Utilities.isEmpty(dto.ids()) ? new ArrayList<String>() : dto.ids().stream().map(id -> id.trim().toUpperCase()).toList(),
 				Utilities.isEmpty(dto.statuses()) ? new ArrayList<String>() : dto.statuses().stream().map(status -> status.trim().toUpperCase()).toList(),
 				Utilities.isEmpty(dto.type()) ? null : dto.type().trim().toUpperCase(),
-				Utilities.isEmpty(dto.requesterSystrems()) ? new ArrayList<String>() : dto.requesterSystrems().stream().map(sys -> nameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.requesterSystems()) ? new ArrayList<String>() : dto.requesterSystems().stream().map(sys -> nameNormalizer.normalize(sys)).toList(),
 				Utilities.isEmpty(dto.targetSystems()) ? new ArrayList<String>() : dto.targetSystems().stream().map(sys -> nameNormalizer.normalize(sys)).toList(),
 				Utilities.isEmpty(dto.serviceDefinitions()) ? new ArrayList<String>() : dto.serviceDefinitions().stream().map(def -> nameNormalizer.normalize(def)).toList(),
 				Utilities.isEmpty(dto.subscriptionIds()) ? new ArrayList<String>() : dto.subscriptionIds().stream().map(id -> id.trim().toUpperCase()).toList());

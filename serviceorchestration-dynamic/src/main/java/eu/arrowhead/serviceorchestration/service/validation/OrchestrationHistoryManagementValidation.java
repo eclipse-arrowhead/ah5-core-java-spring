@@ -55,7 +55,7 @@ public class OrchestrationHistoryManagementValidation {
 			throw new InvalidParameterException("Status list contains empty element.", origin);
 		}
 
-		if (!Utilities.isEmpty(dto.requesterSystrems()) && Utilities.containsNullOrEmpty(dto.requesterSystrems())) {
+		if (!Utilities.isEmpty(dto.requesterSystems()) && Utilities.containsNullOrEmpty(dto.requesterSystems())) {
 			throw new InvalidParameterException("Requester system list contains empty element.", origin);
 		}
 
@@ -98,7 +98,7 @@ public class OrchestrationHistoryManagementValidation {
 		}
 
 		try {
-			normalized.requesterSystrems().forEach(sys -> {
+			normalized.requesterSystems().forEach(sys -> {
 				nameValidator.validateName(sys);
 			});
 

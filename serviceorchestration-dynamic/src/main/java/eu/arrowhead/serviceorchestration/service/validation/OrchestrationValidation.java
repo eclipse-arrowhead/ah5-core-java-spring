@@ -40,7 +40,7 @@ public class OrchestrationValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validatePullService(final OrchestrationForm form, final String origin) {
-		logger.debug("validatePull started...");
+		logger.debug("validatePullService started...");
 
 		orchFormValidator.validateOrchestrationForm(form, origin);
 	}
@@ -69,7 +69,7 @@ public class OrchestrationValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateAndNormalizePullService(final OrchestrationForm form, final String origin) {
-		logger.debug("validatePull started...");
+		logger.debug("validateAndNormalizePullService started...");
 
 		orchFormValidator.validateAndNormalizeOrchestrationForm(form, origin);
 	}

@@ -323,7 +323,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 			return null;
 		}
 
-		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_TOPIC);
+		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_BASE_TOPIC);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -332,7 +332,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 			return null;
 		}
 
-		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_SYSTEM_DISCOVERY_TOPIC);
+		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_SYSTEM_DISCOVERY_BASE_TOPIC);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -341,7 +341,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 			return null;
 		}
 
-		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_TOPIC);
+		return getMqttServiceInterfaceForADiscoveryService(ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_BASE_TOPIC);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -362,7 +362,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
-				.baseTopic(ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC)
+				.baseTopic(ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
 				.build();
 	}
@@ -375,7 +375,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
-				.baseTopic(ServiceRegistryConstants.MQTT_API_MANAGEMENT_TOPIC)
+				.baseTopic(ServiceRegistryConstants.MQTT_API_MANAGEMENT_BASE_TOPIC)
 				.operations(Set.of(
 						Constants.SERVICE_OP_DEVICE_QUERY, Constants.SERVICE_OP_DEVICE_CREATE, Constants.SERVICE_OP_DEVICE_UPDATE, Constants.SERVICE_OP_DEVICE_REMOVE,
 						Constants.SERVICE_OP_SYSTEM_QUERY, Constants.SERVICE_OP_SYSTEM_CREATE, Constants.SERVICE_OP_SYSTEM_UPDATE, Constants.SERVICE_OP_SYSTEM_REMOVE,

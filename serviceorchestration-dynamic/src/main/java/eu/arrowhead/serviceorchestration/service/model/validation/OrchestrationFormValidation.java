@@ -54,32 +54,20 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Service definition is empty", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getOperations())) {
-			form.getOperations().forEach(op -> {
-				if (Utilities.isEmpty(op)) {
-					throw new InvalidParameterException("Operation list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getOperations()) && Utilities.containsNullOrEmpty(form.getOperations())) {
+			throw new InvalidParameterException("Operation list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getVersions())) {
-			form.getVersions().forEach(v -> {
-				if (Utilities.isEmpty(v)) {
-					throw new InvalidParameterException("Version list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getVersions()) && Utilities.containsNullOrEmpty(form.getVersions())) {
+			throw new InvalidParameterException("Version list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
-			form.getOrchestrationFlags().forEach(f -> {
-				if (Utilities.isEmpty(f)) {
-					throw new InvalidParameterException("Orchestration flag list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getOrchestrationFlags()) && Utilities.containsNullOrEmpty(form.getOrchestrationFlags())) {
+			throw new InvalidParameterException("Orchestration flag list contains empty element", origin);
 		}
 
 		if (form.getExclusivityDuration() != null && form.getExclusivityDuration() <= 0) {
-			throw new InvalidParameterException("Exclusivity duration must be grather than 0.", origin);
+			throw new InvalidParameterException("Exclusivity duration must be greater than 0.", origin);
 		}
 
 		if (!Utilities.isEmpty(form.getAlivesAt())) {
@@ -94,40 +82,25 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Metadata requirement list contains null element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
-			form.getInterfaceTemplateNames().forEach(itn -> {
-				if (Utilities.isEmpty(itn)) {
-					throw new InvalidParameterException("Interface template name list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getInterfaceTemplateNames()) && Utilities.containsNullOrEmpty(form.getInterfaceTemplateNames())) {
+			throw new InvalidParameterException("Interface template name list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
-			form.getInterfaceAddressTypes().forEach(iat -> {
-				if (Utilities.isEmpty(iat)) {
-					throw new InvalidParameterException("Interface address type list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getInterfaceAddressTypes()) && Utilities.containsNullOrEmpty(form.getInterfaceAddressTypes())) {
+			throw new InvalidParameterException("Interface address type list contains empty element", origin);
 		}
 
 		if (!Utilities.isEmpty(form.getInterfacePropertyRequirements()) && Utilities.containsNull(form.getInterfacePropertyRequirements())) {
 			throw new InvalidParameterException("Interface property requirement list contains null element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getSecurityPolicies())) {
-			form.getSecurityPolicies().forEach(sp -> {
-				if (Utilities.isEmpty(sp)) {
-					throw new InvalidParameterException("Security policy list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getSecurityPolicies()) && Utilities.containsNullOrEmpty(form.getSecurityPolicies())) {
+			throw new InvalidParameterException("Security policy list contains empty element", origin);
+
 		}
 
-		if (!Utilities.isEmpty(form.getPrefferedProviders())) {
-			form.getPrefferedProviders().forEach(pp -> {
-				if (Utilities.isEmpty(pp)) {
-					throw new InvalidParameterException("Prefferd provider list contains empty element", origin);
-				}
-			});
+		if (!Utilities.isEmpty(form.getPrefferedProviders()) && Utilities.containsNullOrEmpty(form.getPrefferedProviders())) {
+			throw new InvalidParameterException("Prefferd provider list contains empty element", origin);
 		}
 
 		if (!Utilities.isEmpty(form.getQosRequirements())) {

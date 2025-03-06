@@ -70,8 +70,7 @@ public class OrchestrationPushTriggerValidation {
 		if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
 			trigger.setSubscriptionIds(trigger.getSubscriptionIds().stream().map(id -> {
 				try {
-					final String normalized = UUID.fromString(id.trim()).toString();
-					return normalized;
+					return UUID.fromString(id.trim()).toString();
 				} catch (final IllegalArgumentException ex) {
 					throw new InvalidParameterException("Invalid subscription id: " + id, origin);
 				}

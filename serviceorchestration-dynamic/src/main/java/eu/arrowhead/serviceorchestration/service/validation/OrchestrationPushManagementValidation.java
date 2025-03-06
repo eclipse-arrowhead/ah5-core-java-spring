@@ -70,7 +70,7 @@ public class OrchestrationPushManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public void validatePublishUnsubscribeService(final List<String> ids, final String origin) {
-		logger.debug("validateAndNormalizePublishUnsubscribeService started...");
+		logger.debug("validatePublishUnsubscribeService started...");
 
 		if (Utilities.isEmpty(ids)) {
 			throw new InvalidParameterException("ID list is empty", origin);

@@ -41,7 +41,7 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_TOPIC;
+		return ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 	private Pair<DeviceResponseDTO, MqttStatus> register(final DeviceRequestDTO dto) {
 		logger.debug("DeviceDiscoveryMqttHandler.register started");
 
-		final Entry<DeviceResponseDTO, Boolean> result = ddService.registerDevice(dto, baseTopic());
+		final Entry<DeviceResponseDTO, Boolean> result = ddService.registerDevice(dto, baseTopic() + Constants.SERVICE_OP_REGISTER);
 
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
@@ -94,14 +94,14 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 	private DeviceListResponseDTO lookup(final DeviceLookupRequestDTO dto) {
 		logger.debug("DeviceDiscoveryMqttHandler.lookup started");
 
-		return ddService.lookupDevice(dto, baseTopic());
+		return ddService.lookupDevice(dto, baseTopic() + Constants.SERVICE_OP_LOOKUP);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private MqttStatus revoke(final String deviceName) {
 		logger.debug("DeviceDiscoveryMqttHandler.revoke started");
 
-		final boolean result = ddService.revokeDevice(deviceName, baseTopic());
+		final boolean result = ddService.revokeDevice(deviceName, baseTopic() + Constants.SERVICE_OP_REVOKE);
 
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}

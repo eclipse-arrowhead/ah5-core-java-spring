@@ -40,7 +40,7 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_TOPIC;
+		return ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -84,21 +84,21 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 	private ServiceInstanceResponseDTO register(final String identifiedRequester, final ServiceInstanceCreateRequestDTO dto) {
 		logger.debug("ServiceDiscoveryMqttHandler.register started");
 
-		return sdService.registerService(new ServiceInstanceRequestDTO(identifiedRequester, dto.serviceDefinitionName(), dto.version(), dto.expiresAt(), dto.metadata(), dto.interfaces()), baseTopic());
+		return sdService.registerService(new ServiceInstanceRequestDTO(identifiedRequester, dto.serviceDefinitionName(), dto.version(), dto.expiresAt(), dto.metadata(), dto.interfaces()), baseTopic() + Constants.SERVICE_OP_REGISTER);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInstanceListResponseDTO lookup(final ServiceInstanceLookupRequestDTO dto, final boolean verbose, final boolean restricted) {
 		logger.debug("ServiceDiscoveryMqttHandler.lookup started");
 
-		return sdService.lookupServices(dto, verbose, restricted, baseTopic());
+		return sdService.lookupServices(dto, verbose, restricted, baseTopic() + Constants.SERVICE_OP_LOOKUP);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private MqttStatus revoke(final String identifiedRequester, final String instanceId) {
 		logger.debug("ServiceDiscoveryMqttHandler.revoke started");
 
-		final boolean result = sdService.revokeService(identifiedRequester, instanceId, baseTopic());
+		final boolean result = sdService.revokeService(identifiedRequester, instanceId, baseTopic() + Constants.SERVICE_OP_REVOKE);
 
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}

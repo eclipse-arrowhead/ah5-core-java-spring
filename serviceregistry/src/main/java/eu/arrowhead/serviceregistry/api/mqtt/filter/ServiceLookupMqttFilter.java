@@ -34,7 +34,7 @@ public class ServiceLookupMqttFilter implements ArrowheadMqttFilter {
 	@Override
 	public void doFilter(final String authKey, final MqttRequestModel request) {
 		if (sysInfo.getServiceDiscoveryPolicy() == ServiceDiscoveryPolicy.RESTRICTED
-				&& ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_TOPIC.equals(request.getBaseTopic())
+				&& ServiceRegistryConstants.MQTT_API_SERVICE_DISCOVERY_BASE_TOPIC.equals(request.getBaseTopic())
 				&& Constants.SERVICE_OP_LOOKUP.equals(request.getOperation())) {
 			final Boolean isRestricted = !(request.isSysOp() || sysInfo.hasClientDirectAccess(request.getRequester()));
 			request.setAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP, isRestricted.toString());

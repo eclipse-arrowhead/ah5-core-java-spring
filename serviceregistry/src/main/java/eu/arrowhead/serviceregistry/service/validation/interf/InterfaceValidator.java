@@ -170,7 +170,7 @@ public class InterfaceValidator {
 
 		final List<String> normalizedAndValidAddresses = new ArrayList<>();
 		addressData.addresses().forEach(address -> {
-			String normalized = addressNormalizer.normalize(address);
+			final String normalized = addressNormalizer.normalize(address);
 			final AddressType type = addressValidator.detectType(normalized);
 			addressValidator.validateNormalizedAddress(type, address);
 			normalizedAndValidAddresses.add(normalized);

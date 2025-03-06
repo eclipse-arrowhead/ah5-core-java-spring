@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
@@ -84,17 +85,16 @@ public class OrchestrationSubscriptionValidation {
 		subscription.setNotifyProperties(normalizedNotifyProps);
 
 		if (subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())
-				|| subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())) {
+				|| subscription.getNotifyProtocol().equals(NotifyProtocol.HTTPS.name())) {
 			validateNormalizedNotifyPropertiesForHTTP(subscription.getNotifyProperties(), origin);
 		}
 
 		if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
 				|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
-			validateNormalizedNotifyPropertiesForMQTT(subscription.getNotifyProperties(), origin);
-
 			if (!sysInfo.isMqttApiEnabled()) {
 				throw new InvalidParameterException("MQTT notify protocol required, but MQTT is not enabled.", origin);
 			}
+			validateNormalizedNotifyPropertiesForMQTT(subscription.getNotifyProperties(), origin);
 		}
 	}
 
@@ -103,34 +103,37 @@ public class OrchestrationSubscriptionValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	private void validateNormalizedNotifyPropertiesForHTTP(final Map<String, String> props, final String origin) {
-		logger.debug("validateNormalizedNotifyPropertiesForHTTP...");
+		logger.debug("validateNormalizedNotifyPropertiesForHTTP started...");
 
 		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS)) {
-			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " member.", origin);
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " property.", origin);
 		}
 
 		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT)) {
-			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT + " member.", origin);
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT + " property.", origin);
 		}
 
 		try {
-			Integer.valueOf(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+			int port = Integer.parseInt(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+			if (port < Constants.MIN_PORT || port > Constants.MAX_PORT) {
+				throw new InvalidParameterException("Notify port is out of the valid range.");
+			}
 		} catch (final NumberFormatException ex) {
-			throw new InvalidParameterException("Notify port is not a number", origin);
+			throw new InvalidParameterException("Notify port is not a number.", origin);
 		}
 
 		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD)) {
-			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD + " member.", origin);
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD + " property.", origin);
 		}
 
 		if (!props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.POST.name())
 				|| !props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PUT.name())
 				|| !props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PATCH.name())) {
-			throw new InvalidParameterException("Unsupported notify http method: " + props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD), origin);
+			throw new InvalidParameterException("Unsupported notify HTTP method: " + props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD + "."), origin);
 		}
 
 		if (!props.containsKey(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH)) {
-			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH + " member.", origin);
+			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH + " property.", origin);
 		}
 	}
 

@@ -43,7 +43,7 @@ public class OrchestrationJobFilter {
 		this.ids = Utilities.isEmpty(dto.ids()) ? ids : dto.ids().stream().map(id -> UUID.fromString(id)).toList();
 		this.statuses = Utilities.isEmpty(dto.statuses()) ? statuses : dto.statuses().stream().map(s -> OrchestrationJobStatus.valueOf(s)).toList();
 		this.type = Utilities.isEmpty(dto.type()) ? null : OrchestrationType.valueOf(dto.type());
-		this.requesterSystems = Utilities.isEmpty(dto.requesterSystrems()) ? requesterSystems : dto.requesterSystrems();
+		this.requesterSystems = Utilities.isEmpty(dto.requesterSystems()) ? requesterSystems : dto.requesterSystems();
 		this.targetSystems = Utilities.isEmpty(dto.targetSystems()) ? targetSystems : dto.targetSystems();
 		this.serviceDefinitions = Utilities.isEmpty(dto.serviceDefinitions()) ? serviceDefinitions : dto.serviceDefinitions();
 		this.subscriptionIds = Utilities.isEmpty(dto.subscriptionIds()) ? subscriptionIds : dto.subscriptionIds();

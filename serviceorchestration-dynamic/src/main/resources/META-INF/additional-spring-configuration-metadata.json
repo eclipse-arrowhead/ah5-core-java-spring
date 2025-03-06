@@ -86,7 +86,7 @@
   },
   {
     "name": "cleaner.job.interval",
-    "type": "java.lang.Integer",
+    "type": "java.lang.Long",
     "description": "A description for 'cleaner.job.interval'"
   },
   {
