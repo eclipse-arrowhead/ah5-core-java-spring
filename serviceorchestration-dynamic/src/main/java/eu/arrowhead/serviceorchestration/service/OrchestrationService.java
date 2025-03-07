@@ -119,7 +119,7 @@ public class OrchestrationService {
 	private OrchestrationResponseDTO orchestrate(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("orchestrate started...");
 
-		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
+		if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		}
 

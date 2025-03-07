@@ -62,8 +62,12 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Version list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getOrchestrationFlags()) && Utilities.containsNullOrEmpty(form.getOrchestrationFlags())) {
-			throw new InvalidParameterException("Orchestration flag list contains empty element", origin);
+		if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
+			form.getOrchestrationFlags().forEach((k, v) -> {
+				if (v == null) {
+					throw new InvalidParameterException("Orchestration flag map contains null value", origin);
+				}
+			});
 		}
 
 		if (form.getExclusivityDuration() != null && form.getExclusivityDuration() <= 0) {
@@ -124,7 +128,7 @@ public class OrchestrationFormValidation {
 			nameValidator.validateName(form.getServiceDefinition());
 
 			if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
-				form.getOrchestrationFlags().forEach(f -> {
+				form.getOrchestrationFlags().keySet().forEach(f -> {
 					if (!Utilities.isEnumValue(f, OrchestrationFlag.class)) {
 						throw new InvalidParameterException("Invalid orchestration flag: " + f);
 					}
@@ -177,7 +181,9 @@ public class OrchestrationFormValidation {
 		form.setServiceDefinition(nameNormalizer.normalize(form.getServiceDefinition()));
 
 		if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
-			form.setOrchestrationFlags(form.getOrchestrationFlags().stream().map(f -> f.trim().toUpperCase()).toList());
+			final Map<String, Boolean> normalizedFlags = new HashMap<>();
+			form.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
+			form.setOrchestrationFlags(normalizedFlags);
 		}
 
 		if (!Utilities.isEmpty(form.getOperations())) {

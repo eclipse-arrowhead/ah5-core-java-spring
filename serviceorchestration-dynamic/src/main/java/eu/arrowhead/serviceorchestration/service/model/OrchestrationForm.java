@@ -1,6 +1,6 @@
 package eu.arrowhead.serviceorchestration.service.model;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +17,7 @@ public class OrchestrationForm {
 
 	private String requesterSystemName;
 	private String targetSystemName;
-	private List<String> orchestrationFlags = new ArrayList<String>();
+	private Map<String, Boolean> orchestrationFlags = new HashMap<>();
 	private Map<String, String> qosRequirements;
 	private Integer exclusivityDuration;
 
@@ -47,7 +47,7 @@ public class OrchestrationForm {
 		this.targetSystemName = targetSystemName;
 
 		if (dto != null) {
-			this.orchestrationFlags.addAll(dto.orchestrationFlags() == null ? List.of() : dto.orchestrationFlags());
+			this.orchestrationFlags.putAll(dto.orchestrationFlags() == null ? Map.of() : dto.orchestrationFlags());
 			this.qosRequirements = dto.qosRequirements();
 			this.exclusivityDuration = dto.exclusivityDuration();
 
@@ -67,10 +67,10 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean hasFlag(final OrchestrationFlag flag) {
-		for (final String rawFlag : orchestrationFlags) {
+	public boolean getFlag(final OrchestrationFlag flag) {
+		for (final String rawFlag : orchestrationFlags.keySet()) {
 			if (rawFlag.equalsIgnoreCase(flag.name())) {
-				return true;
+				return orchestrationFlags.get(rawFlag);
 			}
 		}
 
@@ -78,9 +78,9 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean addFlag(final OrchestrationFlag flag) {
-		if (!hasFlag(flag)) {
-			orchestrationFlags.add(flag.name());
+	public boolean addFlag(final OrchestrationFlag flag, final boolean value) {
+		if (!getFlag(flag)) {
+			orchestrationFlags.put(flag.name(), value);
 			return true;
 		}
 		return false;
@@ -122,7 +122,7 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<String> getOrchestrationFlags() {
+	public Map<String, Boolean> getOrchestrationFlags() {
 		return orchestrationFlags;
 	}
 
@@ -217,7 +217,7 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setOrchestrationFlags(final List<String> orchestrationFlags) {
+	public void setOrchestrationFlags(final Map<String, Boolean> orchestrationFlags) {
 		this.orchestrationFlags = orchestrationFlags;
 	}
 

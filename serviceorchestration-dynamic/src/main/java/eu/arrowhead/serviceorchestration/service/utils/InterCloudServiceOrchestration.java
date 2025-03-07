@@ -32,7 +32,7 @@ public class InterCloudServiceOrchestration {
 		final Set<String> warnings = new HashSet<>();
 		warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_INTER_CLOUD);
 
-		if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+		if (form.addFlag(OrchestrationFlag.MATCHMAKING, true)) {
 			warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 		}
 

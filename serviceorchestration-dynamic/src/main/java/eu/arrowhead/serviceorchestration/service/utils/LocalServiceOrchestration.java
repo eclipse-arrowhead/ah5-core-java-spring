@@ -90,8 +90,8 @@ public class LocalServiceOrchestration {
 			final Set<String> warnings = new HashSet<>();
 
 			// Service Discovery
-			final boolean translationAllowed = form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
-			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.hasFlag(OrchestrationFlag.ONLY_PREFERRED));
+			final boolean translationAllowed = form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
+			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.getFlag(OrchestrationFlag.ONLY_PREFERRED));
 			candidates = filterOutLockedOnes(jobId, candidates);
 
 			if (Utilities.isEmpty(candidates)) {
@@ -103,9 +103,9 @@ public class LocalServiceOrchestration {
 				markExclusivityIfFeasible(candidates);
 			}
 
-			if (form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
+			if (form.getFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
 				candidates = filterOutWhereExclusivityIsNotPossible(candidates);
-				if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+				if (form.addFlag(OrchestrationFlag.MATCHMAKING, true)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
 			}
@@ -150,7 +150,7 @@ public class LocalServiceOrchestration {
 					candidates = filterOutNonNativeOnes(candidates);
 				} else {
 					candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
-					if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+					if (form.addFlag(OrchestrationFlag.MATCHMAKING, true)) {
 						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 					}
 				}
@@ -161,10 +161,10 @@ public class LocalServiceOrchestration {
 			}
 
 			// Dealing with preferences
-			if (form.exclusivityIsPreferred() && !form.hasFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
+			if (form.exclusivityIsPreferred() && !form.getFlag(OrchestrationFlag.ONLY_EXCLUSIVE)) {
 				if (containsReservable(candidates)) {
 					candidates = filterOutWhereExclusivityIsNotPossible(candidates);
-					if (form.addFlag(OrchestrationFlag.MATCHMAKING)) {
+					if (form.addFlag(OrchestrationFlag.MATCHMAKING, true)) {
 						warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 					}
 				} else {
@@ -172,7 +172,7 @@ public class LocalServiceOrchestration {
 				}
 			}
 
-			if (form.hasPreferredProviders() && !form.hasFlag(OrchestrationFlag.ONLY_PREFERRED)) {
+			if (form.hasPreferredProviders() && !form.getFlag(OrchestrationFlag.ONLY_PREFERRED)) {
 				if (searchForPreferredProviders(form, candidates)) {
 					candidates = filterOutNonPreferredProviders(form, candidates);
 				}
@@ -183,7 +183,7 @@ public class LocalServiceOrchestration {
 				return doInterCloudOrReturn(jobId, form);
 			}
 
-			if (form.hasFlag(OrchestrationFlag.MATCHMAKING)) {
+			if (form.getFlag(OrchestrationFlag.MATCHMAKING)) {
 				final OrchestrationCandidate match = matchmaking(form, candidates);
 				if (form.exclusivityIsPreferred()) {
 					reserve(jobId, form.getRequesterSystemName(), match, form.getExclusivityDuration());
@@ -204,7 +204,7 @@ public class LocalServiceOrchestration {
 			}
 
 			// Create translation bridge if necessary
-			if (form.hasFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isNonNative()) {
+			if (form.getFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isNonNative()) {
 				buildTranslationBridge(candidates.get(0));
 			}
 
@@ -565,7 +565,7 @@ public class LocalServiceOrchestration {
 	private OrchestrationResponseDTO doInterCloudOrReturn(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("doInterCloudOrReturn started...");
 
-		if (sysInfo.isInterCloudEnabled() && form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
+		if (sysInfo.isInterCloudEnabled() && form.getFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");

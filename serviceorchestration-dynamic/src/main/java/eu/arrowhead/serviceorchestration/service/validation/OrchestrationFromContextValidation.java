@@ -29,31 +29,31 @@ public class OrchestrationFromContextValidation {
 	public void validate(final OrchestrationForm form, final String origin) {
 		logger.debug("validate started...");
 
-		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && !sysInfo.isInterCloudEnabled()) {
+		if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD) && !sysInfo.isInterCloudEnabled()) {
 			throw new InvalidParameterException("ONLY_INTERCLOUD flag is present, but intercloud orchestration is not enabled.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION)) {
+		if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD) && form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION)) {
 			// Inter-cloud translation is not supported
 			throw new InvalidParameterException("ONLY_INTERCLOUD and ALLOW_TRANSLATION flags cannot be present at the same time.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
+		if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
 			// The creation of an inter-cloud bridge is limited to exactly one operation that the requester wants to use.
 			throw new InvalidParameterException("Exactly one operation must be defined, when only inter-cloud orchestration is required.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ALLOW_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
+		if (form.getFlag(OrchestrationFlag.ALLOW_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
 			// The creation of an inter-cloud bridge is limited to exactly one operation that the requester wants to use.
 			throw new InvalidParameterException("Exactly one operation must be defined, when only inter-cloud orchestration is allowed.", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ALLOW_TRANSLATION) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
+		if (form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
 			// The creation of a translation bridge is limited to exactly one operation that the requester wants to use.
 			throw new InvalidParameterException("Exactly one operation must be defined, when translation is allowed", origin);
 		}
 
-		if (form.hasFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {
+		if (form.getFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {
 			throw new InvalidParameterException("ONLY_PREFERRED falg is present, but no preferred provider is defined.", origin);
 		}
 

@@ -160,7 +160,7 @@ public class PushOrchestrationThread extends Thread {
 			final OrchestrationForm orchestrationForm = new OrchestrationForm(job.getRequesterSystem(), job.getTargetSystem(), orchestrationRequest);
 
 			final OrchestrationResponseDTO result;
-			if (orchestrationForm.hasFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
+			if (orchestrationForm.getFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
 				result = interCloudOrch.doInterCloudServiceOrchestration(jobId, orchestrationForm);
 			} else {
 				result = localOrch.doLocalServiceOrchestration(jobId, orchestrationForm);
