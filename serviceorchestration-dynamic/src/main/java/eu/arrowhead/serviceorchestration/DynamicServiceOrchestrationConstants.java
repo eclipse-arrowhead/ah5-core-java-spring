@@ -63,7 +63,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
-	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/{instanceId}/{owner}";
+	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/{owner}";
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";

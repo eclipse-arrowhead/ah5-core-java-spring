@@ -113,28 +113,25 @@ public class OrchestrationLockManagementService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean remove(final String serviceInstanceId, final String owner, final String origin) {
+	public void remove(final String owner, final List<String> serviceInstanceIds, final String origin) {
 		logger.debug("remove started...");
 
-		final Pair<String, String> normalized = validator.validateAndNormalizeRemoveService(serviceInstanceId, owner, origin);
+		final Pair<String, List<String>> normalized = validator.validateAndNormalizeRemoveService(owner, serviceInstanceIds, origin);
 
 		try {
 			synchronized (LOCK) {
 				final List<Long> removeIds = new ArrayList<>();
-				final List<OrchestrationLock> records = lockDbService.getByServiceInstanceId(List.of(normalized.getLeft()));
+				final List<OrchestrationLock> records = lockDbService.getByServiceInstanceId(normalized.getRight());
 				for (final OrchestrationLock record : records) {
 					if (Utilities.isEmpty(record.getOrchestrationJobId())
-							&& record.getOwner().equals(normalized.getRight())) {
+							&& record.getOwner().equals(normalized.getLeft())) {
 						removeIds.add(record.getId());
 					}
 				}
 
 				if (!Utilities.isEmpty(removeIds)) {
 					lockDbService.deleteInBatch(removeIds);
-					return true;
 				}
-
-				return false;
 			}
 
 		} catch (final InternalServerError ex) {

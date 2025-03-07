@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration.service.normalization;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,11 +63,11 @@ public class OrchestrationLockManagementNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String normalizeServiceInstanceId(final String instanceId) {
-		logger.debug("normalizeServiceInstanceId started...");
-		Assert.isTrue(!Utilities.isEmpty(instanceId), "Service instance id is empty");
+	public List<String> normalizeServiceInstanceIds(final List<String> instanceIds) {
+		logger.debug("normalizeServiceInstanceIds started...");
+		Assert.isTrue(!Utilities.isEmpty(instanceIds), "Service instance id list is empty");
 
-		return nameNormalizer.normalize(instanceId);
+		return instanceIds.stream().map(id -> nameNormalizer.normalize(id)).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------

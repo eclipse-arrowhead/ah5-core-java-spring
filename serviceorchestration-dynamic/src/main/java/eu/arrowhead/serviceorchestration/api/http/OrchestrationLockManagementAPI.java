@@ -1,17 +1,19 @@
 package eu.arrowhead.serviceorchestration.api.http;
 
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -92,7 +94,7 @@ public class OrchestrationLockManagementAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Deletes the lock entry if exists")
+	@Operation(summary = "Deletes the existing lock entries")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_NO_CONTENT, description = Constants.SWAGGER_HTTP_204_MESSAGE),
@@ -106,12 +108,10 @@ public class OrchestrationLockManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@DeleteMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH)
-	public ResponseEntity<Void> remove(@PathVariable final String instanceId, @PathVariable final String owner) {
+	public void remove(@PathVariable final String owner, @RequestParam final List<String> instanceIds) {
 		logger.debug("remove started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH;
-		boolean result = lockMgmtService.remove(instanceId, owner, origin);
-
-		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
+		lockMgmtService.remove(owner, instanceIds, origin);
 	}
 }

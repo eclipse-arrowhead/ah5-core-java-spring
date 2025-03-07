@@ -89,7 +89,7 @@ public class CleanerJob implements Job {
 	private void removeExpiredOrchestrationLocks(final ZonedDateTime now) {
 		logger.debug("removeExpiredOrchestrationLocks started...");
 
-		synchronized (logger) {
+		synchronized (LOCK) {
 			final List<Long> toRemove = new ArrayList<>();
 			orchestrationLockDbService.getAll().forEach(lock -> {
 				if (lock.getExpiresAt() != null && lock.getExpiresAt().isBefore(now)) {

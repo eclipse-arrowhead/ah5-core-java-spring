@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import java.time.DateTimeException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -106,15 +107,19 @@ public class OrchestrationLockManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveService(final String serviceInstanceId, final String owner, final String origin) {
+	public void validateRemoveService(final List<String> serviceInstanceIds, final String owner, final String origin) {
 		logger.debug("validateRemoveService started...");
 
-		if (Utilities.isEmpty(serviceInstanceId)) {
-			throw new InvalidParameterException("Service instance id is missing", origin);
+		if (Utilities.isEmpty(serviceInstanceIds)) {
+			throw new InvalidParameterException("Service instance id list empty.", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(serviceInstanceIds)) {
+			throw new InvalidParameterException("Service instance id list contains empty element.", origin);
 		}
 
 		if (Utilities.isEmpty(owner)) {
-			throw new InvalidParameterException("Owner is missing", origin);
+			throw new InvalidParameterException("Owner is missing.", origin);
 		}
 	}
 
@@ -188,10 +193,10 @@ public class OrchestrationLockManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, String> validateAndNormalizeRemoveService(final String serviceInstanceId, final String owner, final String origin) {
+	public Pair<String, List<String>> validateAndNormalizeRemoveService(final String owner, final List<String> serviceInstanceIds, final String origin) {
 		logger.debug("validateAndNormalizeRemoveService started...");
 
-		validateRemoveService(serviceInstanceId, owner, origin);
-		return Pair.of(normalization.normalizeServiceInstanceId(serviceInstanceId), normalization.normalizeSystemName(owner));
+		validateRemoveService(serviceInstanceIds, owner, origin);
+		return Pair.of(normalization.normalizeSystemName(owner), normalization.normalizeServiceInstanceIds(serviceInstanceIds));
 	}
 }

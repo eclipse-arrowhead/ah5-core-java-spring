@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
@@ -42,8 +43,18 @@ public class OrchestrationPushTriggerValidation {
 			throw new InvalidParameterException("Requester system is missing.", origin);
 		}
 
+		if (trigger.getRequesterSystem().length() > ArrowheadEntity.VARCHAR_SMALL) {
+			throw new InvalidParameterException("Requester system name is too long", origin);
+		}
+
 		if (!Utilities.isEmpty(trigger.getTargetSystems()) && Utilities.containsNullOrEmpty(trigger.getTargetSystems())) {
 			throw new InvalidParameterException("Target system list contains empty element.", origin);
+		}
+
+		for (final String targetSystem : trigger.getTargetSystems()) {
+			if (targetSystem.length() > ArrowheadEntity.VARCHAR_SMALL) {
+				throw new InvalidParameterException("Target system name is too long: " + targetSystem, origin);
+			}
 		}
 
 		if (!Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.containsNullOrEmpty(trigger.getSubscriptionIds())) {
