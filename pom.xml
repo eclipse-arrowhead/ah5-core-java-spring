@@ -27,6 +27,7 @@
 	<modules>
 		<module>serviceregistry</module>
 		<module>serviceorchestration-dynamic</module>
+		<module>authentication</module>
 	</modules>
 	
 	<dependencies>

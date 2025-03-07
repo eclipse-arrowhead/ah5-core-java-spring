@@ -8,3 +8,5 @@
 /serviceorchestration-dynamic/*.log
 .checkstyle
 *.lck
+/authentication/.factorypath
+/authentication/authentication.log

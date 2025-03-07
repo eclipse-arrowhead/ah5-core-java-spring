@@ -87,6 +87,7 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private KeyValuesDTO getConfig(final List<String> dto) {
 		logger.debug("ManagementMqttHandler.getConfig started");
-		return configService.getConfig(dto, ServiceRegistryConstants.FORBIDDEN_KEYS, baseTopic() + Constants.SERVICE_OP_GET_CONFIG);
+		return configService.getConfig(dto, baseTopic() + Constants.SERVICE_OP_GET_CONFIG);
+
 	}
 }

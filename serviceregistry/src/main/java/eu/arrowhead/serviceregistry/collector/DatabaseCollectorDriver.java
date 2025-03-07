@@ -127,8 +127,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 				.serviceDefinition(instance.getServiceDefinition().getName())
 				.version(instance.getVersion())
 				.serviceInterfaces(interfaceModelList)
-				.metadata(Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>()
-				{
+				.metadata(Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
 				}))
 				.build();
 
