@@ -1,7 +1,5 @@
 package eu.arrowhead.serviceorchestration;
 
-import java.util.List;
-
 public final class DynamicServiceOrchestrationConstants {
 
 	//=================================================================================================
@@ -13,19 +11,19 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
 
 	public static final String ENABLE_AUTHORIZATION = "enable.authorization";
-	public static final String $ENABLE_AUTHORIZATION_WD = "${" + ENABLE_AUTHORIZATION + ":false}";
+	public static final String $ENABLE_AUTHORIZATION_WD = "${" + ENABLE_AUTHORIZATION + ":" + DynamicServiceOrchestrationDefaults.ENABLE_AUTHORIZATION_DEFAULT + "}";
 	public static final String ENABLE_TRANSLATION = "enable.translation";
-	public static final String $ENABLE_TRANSLATION_WD = "${" + ENABLE_TRANSLATION + ":false}";
+	public static final String $ENABLE_TRANSLATION_WD = "${" + ENABLE_TRANSLATION + ":" + DynamicServiceOrchestrationDefaults.ENABLE_TRANSLATION_DEFAULT + "}";
 	public static final String ENABLE_QOS = "enable.qos";
-	public static final String $ENABLE_QOS_WD = "${" + ENABLE_QOS + ":false}";
+	public static final String $ENABLE_QOS_WD = "${" + ENABLE_QOS + ":" + DynamicServiceOrchestrationDefaults.ENABLE_QOS_DEFAULT + "}";
 	public static final String ENABLE_INTERCLOUD = "enable.intercloud";
-	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":false}";
+	public static final String $ENABLE_INTERCLOUD_WD = "${" + ENABLE_INTERCLOUD + ":" + DynamicServiceOrchestrationDefaults.ENABLE_INTERCLOUD_DEFAULT + "}";
 	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
-	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":30000}";
+	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":" + DynamicServiceOrchestrationDefaults.CLEANER_JOB_INTERVAL_DEFAULT + "}";
 	public static final String ORCHESTRATION_HISTORY_MAX_AGE = "orchestration.history.max.age";
-	public static final String $ORCHESTRATION_HISTORY_MAX_AGE_WD = "${" + ORCHESTRATION_HISTORY_MAX_AGE + ":15}";
+	public static final String $ORCHESTRATION_HISTORY_MAX_AGE_WD = "${" + ORCHESTRATION_HISTORY_MAX_AGE + ":" + DynamicServiceOrchestrationDefaults.ORCHESTRATION_HISTORY_MAX_AGE_DEFAULT + "}";
 	public static final String PUSH_ORCHESTRATION_MAX_THREAD = "push.orchestration.max.thread";
-	public static final String $PUSH_ORCHESTRATION_MAX_THREAD_WD = "${" + PUSH_ORCHESTRATION_MAX_THREAD + ":5}";
+	public static final String $PUSH_ORCHESTRATION_MAX_THREAD_WD = "${" + PUSH_ORCHESTRATION_MAX_THREAD + ":" + DynamicServiceOrchestrationDefaults.PUSH_ORCHESTRATION_MAX_THREAD_DEFAULT + "}";
 
 	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
@@ -66,29 +64,6 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
 	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/{instanceId}/{owner}";
-
-	// Forbidden keys (for config service)
-
-	public static final List<String> FORBIDDEN_KEYS = List.of(
-			// database related
-			"spring.datasource.url",
-			"spring.datasource.username",
-			"spring.datasource.password",
-			"spring.datasource.driver-class-name",
-			"spring.jpa.hibernate.ddl-auto",
-			"spring.jpa.show-sql",
-
-			// cert related
-			"server.ssl.key-store-type",
-			"server.ssl.key-store",
-			"server.ssl.key-store-password",
-			"server.ssl.key-alias",
-			"server.ssl.key-password",
-			"server.ssl.client-auth",
-			"server.ssl.trust-store-type",
-			"server.ssl.trust-store",
-			"server.ssl.trust-store-password",
-			"disable.hostname.verifier");
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";
