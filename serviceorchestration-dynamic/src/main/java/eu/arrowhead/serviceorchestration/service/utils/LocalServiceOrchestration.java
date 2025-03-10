@@ -240,7 +240,7 @@ public class LocalServiceOrchestration {
 				.interfaceTemplateNames(withoutInterace ? null : form.getInterfaceTemplateNames())
 				.interfacePropertyRequirementsList(withoutInterace ? null : form.getInterfacePropertyRequirements())
 				.addressTypes(withoutInterace ? null : form.getInterfaceAddressTypes())
-				.providerNames(onlyPreferred ? form.getPrefferedProviders() : null)
+				.providerNames(onlyPreferred ? form.getPreferredProviders() : null)
 				.build();
 
 		final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>(Map.of(Constants.VERBOSE, List.of(Boolean.FALSE.toString())));
@@ -465,7 +465,7 @@ public class LocalServiceOrchestration {
 
 		boolean hasPreferred = false;
 		for (final OrchestrationCandidate candidate : candidates) {
-			if (form.getPrefferedProviders().contains(candidate.getServiceInstance().provider().name())) {
+			if (form.getPreferredProviders().contains(candidate.getServiceInstance().provider().name())) {
 				hasPreferred = true;
 				candidate.setPreferred(true);
 			}

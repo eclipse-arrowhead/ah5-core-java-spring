@@ -186,7 +186,7 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<String> getPrefferedProviders() {
+	public List<String> getPreferredProviders() {
 		return preferredProviders;
 	}
 
@@ -261,8 +261,8 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setPrefferedProviders(final List<String> prefferedProviders) {
-		this.preferredProviders = prefferedProviders;
+	public void setPreferredProviders(final List<String> preferredProviders) {
+		this.preferredProviders = preferredProviders;
 	}
 
 }

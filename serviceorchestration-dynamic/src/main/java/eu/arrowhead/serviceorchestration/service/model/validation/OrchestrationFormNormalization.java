@@ -58,8 +58,8 @@ public class OrchestrationFormNormalization {
 			form.setSecurityPolicies(form.getSecurityPolicies().stream().map(sp -> sp.trim().toUpperCase()).toList());
 		}
 
-		if (!Utilities.isEmpty(form.getPrefferedProviders())) {
-			form.setPrefferedProviders(form.getPrefferedProviders().stream().map(pp -> nameNormalizer.normalize(pp)).toList());
+		if (!Utilities.isEmpty(form.getPreferredProviders())) {
+			form.setPreferredProviders(form.getPreferredProviders().stream().map(pp -> nameNormalizer.normalize(pp)).toList());
 		}
 
 		if (!Utilities.isEmpty(form.getQosRequirements())) {

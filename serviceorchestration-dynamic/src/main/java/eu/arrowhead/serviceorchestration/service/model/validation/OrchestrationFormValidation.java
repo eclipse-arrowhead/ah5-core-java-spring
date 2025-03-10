@@ -112,7 +112,7 @@ public class OrchestrationFormValidation {
 
 		}
 
-		if (!Utilities.isEmpty(form.getPrefferedProviders()) && Utilities.containsNullOrEmpty(form.getPrefferedProviders())) {
+		if (!Utilities.isEmpty(form.getPreferredProviders()) && Utilities.containsNullOrEmpty(form.getPreferredProviders())) {
 			throw new InvalidParameterException("Preferred provider list contains empty element", origin);
 		}
 
@@ -166,8 +166,8 @@ public class OrchestrationFormValidation {
 				});
 			}
 
-			if (!Utilities.isEmpty(form.getPrefferedProviders())) {
-				form.getPrefferedProviders().forEach(pp -> {
+			if (!Utilities.isEmpty(form.getPreferredProviders())) {
+				form.getPreferredProviders().forEach(pp -> {
 					nameValidator.validateName(pp);
 				});
 			}
