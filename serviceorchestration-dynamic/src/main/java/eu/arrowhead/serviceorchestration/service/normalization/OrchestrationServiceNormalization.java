@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceorchestration.service.normalization;
 
+import java.util.UUID;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,11 +27,11 @@ public class OrchestrationServiceNormalization {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, String> normalizePushUnsubscribe(final String requesterSystem, final String subscriptionId) {
+	public Pair<String, UUID> normalizePushUnsubscribe(final String requesterSystem, final String subscriptionId) {
 		logger.debug("normalizePushUnsubscribe started...");
 		Assert.isTrue(!Utilities.isEmpty(requesterSystem), "requesterSystem is empty");
 		Assert.isTrue(!Utilities.isEmpty(subscriptionId), "subscriptionId is empty");
 
-		return Pair.of(nameNormalizer.normalize(requesterSystem), subscriptionId.trim());
+		return Pair.of(nameNormalizer.normalize(requesterSystem), UUID.fromString(subscriptionId.trim()));
 	}
 }

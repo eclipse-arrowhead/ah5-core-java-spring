@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.OrchestrationLockListRequestDTO;
@@ -60,8 +61,16 @@ public class OrchestrationLockManagementValidation {
 				throw new InvalidParameterException("Service instance id is missing", origin);
 			}
 
+			if (lock.serviceInstanceId().length() > ArrowheadEntity.VARCHAR_MEDIUM) {
+				throw new InvalidParameterException("Service instance id is too long", origin);
+			}
+
 			if (Utilities.isEmpty(lock.owner())) {
 				throw new InvalidParameterException("Owner is missing", origin);
+			}
+
+			if (lock.owner().length() > ArrowheadEntity.VARCHAR_SMALL) {
+				throw new InvalidParameterException("Owner name is too long", origin);
 			}
 
 			if (!Utilities.isEmpty(lock.expiresAt())) {

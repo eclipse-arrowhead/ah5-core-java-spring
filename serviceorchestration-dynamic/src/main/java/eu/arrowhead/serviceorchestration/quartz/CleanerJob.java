@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationLockDbService;
@@ -39,8 +40,6 @@ public class CleanerJob implements Job {
 
 	@Autowired
 	private OrchestrationJobDbService orchestrationJobDbService;
-
-	private static final Object LOCK = new Object();
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -72,7 +71,7 @@ public class CleanerJob implements Job {
 	private void removeExpiredSubscriptions(final ZonedDateTime now) {
 		logger.debug("removeExpiredSubscriptions started..");
 
-		synchronized (LOCK) {
+		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
 			final List<UUID> toRemove = new ArrayList<>();
 			subscriptionDbService.getAll().forEach(subscription -> {
 				if (subscription.getExpiresAt() != null && subscription.getExpiresAt().isBefore(now)) {
@@ -89,7 +88,7 @@ public class CleanerJob implements Job {
 	private void removeExpiredOrchestrationLocks(final ZonedDateTime now) {
 		logger.debug("removeExpiredOrchestrationLocks started...");
 
-		synchronized (LOCK) {
+		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
 			final List<Long> toRemove = new ArrayList<>();
 			orchestrationLockDbService.getAll().forEach(lock -> {
 				if (lock.getExpiresAt() != null && lock.getExpiresAt().isBefore(now)) {
@@ -106,17 +105,15 @@ public class CleanerJob implements Job {
 	private void removeOldOrchestrationJobs(final ZonedDateTime now) {
 		logger.debug("removeOldOrchestrationJobs started...");
 
-		synchronized (LOCK) {
-			final List<UUID> toRemove = new ArrayList<>();
-			orchestrationJobDbService.getAllByStatusIn(List.of(OrchestrationJobStatus.DONE, OrchestrationJobStatus.ERROR)).forEach(job -> {
-				final ZonedDateTime expirationTime = job.getFinishedAt().plusDays(sysInfo.getOrchestrationHistoryMaxAge());
-				if (expirationTime.isBefore(now)) {
-					toRemove.add(job.getId());
-				}
-			});
-			if (!Utilities.isEmpty(toRemove)) {
-				orchestrationJobDbService.deleteInBatch(toRemove);
+		final List<UUID> toRemove = new ArrayList<>();
+		orchestrationJobDbService.getAllByStatusIn(List.of(OrchestrationJobStatus.DONE, OrchestrationJobStatus.ERROR)).forEach(job -> {
+			final ZonedDateTime expirationTime = job.getFinishedAt().plusDays(sysInfo.getOrchestrationHistoryMaxAge());
+			if (expirationTime.isBefore(now)) {
+				toRemove.add(job.getId());
 			}
+		});
+		if (!Utilities.isEmpty(toRemove)) {
+			orchestrationJobDbService.deleteInBatch(toRemove);
 		}
 	}
 }

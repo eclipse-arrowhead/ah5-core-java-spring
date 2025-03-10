@@ -15,6 +15,7 @@ import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
@@ -84,15 +85,17 @@ public class OrchestrationService {
 		validator.validateAndNormalizePushSubscribeService(subscription, origin);
 		formContextValidator.validate(subscription.getOrchestrationForm(), origin);
 
-		final Optional<Subscription> recordOpt = subscriptionDbService.get(
-				subscription.getOrchestrationForm().getRequesterSystemName(),
-				subscription.getOrchestrationForm().getTargetSystemName(),
-				subscription.getOrchestrationForm().getServiceDefinition());
+		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+			final Optional<Subscription> recordOpt = subscriptionDbService.get(
+					subscription.getOrchestrationForm().getRequesterSystemName(),
+					subscription.getOrchestrationForm().getTargetSystemName(),
+					subscription.getOrchestrationForm().getServiceDefinition());
 
-		final boolean isOverride = recordOpt.isPresent();
+			final boolean isOverride = recordOpt.isPresent();
 
-		final List<Subscription> result = subscriptionDbService.create(List.of(subscription));
-		return Pair.of(isOverride, result.getFirst().getId().toString());
+			final List<Subscription> result = subscriptionDbService.create(List.of(subscription));
+			return Pair.of(isOverride, result.getFirst().getId().toString());
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -101,15 +104,17 @@ public class OrchestrationService {
 
 		final Pair<String, UUID> normalized = validator.validateAndNormalizePushUnsubscribeService(requesterSystem, subscriptionId, origin);
 
-		final Optional<Subscription> recordOpt = subscriptionDbService.get(normalized.getRight());
-		if (recordOpt.isPresent()) {
-			if (!recordOpt.get().getOwnerSystem().equals(normalized.getLeft())) {
-				throw new ForbiddenException(requesterSystem + " is not the subscription owner.", origin);
+		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+			final Optional<Subscription> recordOpt = subscriptionDbService.get(normalized.getRight());
+			if (recordOpt.isPresent()) {
+				if (!recordOpt.get().getOwnerSystem().equals(normalized.getLeft())) {
+					throw new ForbiddenException(requesterSystem + " is not the subscription owner.", origin);
+				}
+				subscriptionDbService.deleteById(normalized.getRight());
+				return true;
 			}
-			subscriptionDbService.deleteById(normalized.getRight());
-			return true;
+			return false;
 		}
-		return false;
 	}
 
 	//=================================================================================================

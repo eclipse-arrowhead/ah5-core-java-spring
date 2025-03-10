@@ -1,9 +1,9 @@
 package eu.arrowhead.serviceorchestration.service.utils.matchmaker;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -55,58 +55,32 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 			scoredCandidates.add(new Scored(candidate, score));
 		}
 
-		scoredCandidates.sort(Comparator.comparingInt(Scored::getScore).reversed());
+		scoredCandidates.sort(Comparator.comparingInt(Scored::score).reversed());
 
-		final int highestScore = scoredCandidates.getFirst().getScore();
-		List<Scored> bestCandidates = scoredCandidates.stream().filter(s -> s.getScore() == highestScore).collect(Collectors.toList());
+		final int highestScore = scoredCandidates.getFirst().score();
+		List<Scored> bestCandidates = scoredCandidates.stream().filter(s -> s.score() == highestScore).collect(Collectors.toList());
 		if (bestCandidates.size() == 1) {
-			return bestCandidates.getFirst().getCandidate();
+			return bestCandidates.getFirst().candidate();
 		}
 
 		if (form.exclusivityIsPreferred()
 				&& bestCandidates.getFirst().candidate.getExclusivityDuration() < form.getExclusivityDuration()) {
 			// all of them can be exclusive, but not full-time
-			bestCandidates.sort(Comparator.comparingInt((final Scored s) -> s.getCandidate().getExclusivityDuration()).reversed());
-			final int bestExclusivityDuration = bestCandidates.getFirst().getCandidate().getExclusivityDuration();
-			bestCandidates = bestCandidates.stream().filter(s -> s.getCandidate().getExclusivityDuration() == bestExclusivityDuration).toList();
+			bestCandidates.sort(Comparator.comparingInt((final Scored s) -> s.candidate().getExclusivityDuration()).reversed());
+			final int bestExclusivityDuration = bestCandidates.getFirst().candidate().getExclusivityDuration();
+			bestCandidates = bestCandidates.stream().filter(s -> s.candidate().getExclusivityDuration() == bestExclusivityDuration).toList();
 			if (bestCandidates.size() == 1) {
-				return bestCandidates.getFirst().getCandidate();
+				return bestCandidates.getFirst().candidate();
 			}
 		}
 
-		final Random rng = new Random(System.currentTimeMillis());
-		return bestCandidates.get(rng.nextInt(bestCandidates.size())).getCandidate();
+		final SecureRandom rng = new SecureRandom();
+		return bestCandidates.get(rng.nextInt(bestCandidates.size())).candidate();
 	}
 
 	//=================================================================================================
-	// nested class
+	// nested record
 
-	private final class Scored {
-
-		//=================================================================================================
-		// members
-
-		private final OrchestrationCandidate candidate;
-
-		private final int score;
-
-		//=================================================================================================
-		// methods
-
-		//-------------------------------------------------------------------------------------------------
-		private Scored(final OrchestrationCandidate candidate, final int score) {
-			this.candidate = candidate;
-			this.score = score;
-		}
-
-		//-------------------------------------------------------------------------------------------------
-		public OrchestrationCandidate getCandidate() {
-			return candidate;
-		}
-
-		//-------------------------------------------------------------------------------------------------
-		public int getScore() {
-			return score;
-		}
+	private record Scored(OrchestrationCandidate candidate, int score) {
 	}
 }

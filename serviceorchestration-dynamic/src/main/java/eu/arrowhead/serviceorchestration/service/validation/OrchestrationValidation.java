@@ -63,6 +63,10 @@ public class OrchestrationValidation {
 		if (Utilities.isEmpty(subscriptionId)) {
 			throw new InvalidParameterException("Subscription id system is missing.", origin);
 		}
+
+		if (!Utilities.isUUID(subscriptionId)) {
+			throw new InvalidParameterException("Invalid subscription id.", origin);
+		}
 	}
 
 	// VALIDATION AND NORMALIZATION
@@ -86,13 +90,6 @@ public class OrchestrationValidation {
 		logger.debug("validateAndNormalizePushUnsubscribeService started...");
 
 		validatePushUnsubscribeService(requesterSystem, subscriptionId, origin);
-		final Pair<String, String> normalized = normalization.normalizePushUnsubscribe(requesterSystem, subscriptionId);
-
-		if (!Utilities.isUUID(normalized.getRight())) {
-			throw new InvalidParameterException("Invalid subscription id.", origin);
-		}
-
-		return Pair.of(normalized.getLeft(), UUID.fromString(normalized.getRight()));
-
+		return normalization.normalizePushUnsubscribe(requesterSystem, subscriptionId);
 	}
 }

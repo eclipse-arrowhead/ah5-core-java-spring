@@ -7,5 +7,9 @@ import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 public interface ServiceInstanceMatchmaker {
 
-	OrchestrationCandidate doMatchmaking(final OrchestrationForm form, List<OrchestrationCandidate> candidates);
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationCandidate doMatchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates);
 }

@@ -91,7 +91,10 @@ public class OrchestrationPushManagementService {
 		subscriptions.forEach(s -> formContextValidator.validate(s.getOrchestrationForm(), origin));
 
 		try {
-			final List<Subscription> result = subscriptionDbService.create(subscriptions);
+			final List<Subscription> result;
+			synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+				result = subscriptionDbService.create(subscriptions);
+			}
 			return dtoConverter.convertSubscriptionListToDTO(result, result.size());
 
 		} catch (final InternalServerError ex) {
@@ -156,14 +159,16 @@ public class OrchestrationPushManagementService {
 		final List<UUID> subscriptionIds = normalized.stream().map(id -> UUID.fromString(id)).toList();
 
 		try {
-			final List<Subscription> subscriptions = subscriptionDbService.get(subscriptionIds);
-			for (final Subscription subscription : subscriptions) {
-				if (!subscription.getOwnerSystem().equals(requesterSystem)) {
-					throw new ForbiddenException(subscription.getId().toString() + " is not owned by the requester.", origin);
+			synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+				final List<Subscription> subscriptions = subscriptionDbService.get(subscriptionIds);
+				for (final Subscription subscription : subscriptions) {
+					if (!subscription.getOwnerSystem().equals(requesterSystem)) {
+						throw new ForbiddenException(subscription.getId().toString() + " is not owned by the requester.", origin);
+					}
 				}
-			}
 
-			subscriptionDbService.deleteInBatch(subscriptionIds);
+				subscriptionDbService.deleteInBatch(subscriptionIds);
+			}
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

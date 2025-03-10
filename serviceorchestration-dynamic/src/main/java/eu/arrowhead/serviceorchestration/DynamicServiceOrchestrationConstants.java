@@ -50,6 +50,9 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
 	public static final String SERVICE_INSTANCE_MATCHMAKER = "serviceInstanceMatchmaker";
 
+	public static final Object SYNC_LOCK_SUBSCRIPTION = new Object();
+	public static final Object SYNC_LOCK_ORCH_LOCK = new Object();
+
 	// Quartz related
 	public static final String CLEANER_TRIGGER = "dynamicOrchestrationCleanerTrigger";
 	public static final String CLEANER_JOB = "dynamicOrchestrationCleanerJob";

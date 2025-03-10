@@ -21,6 +21,7 @@ import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.OrchestrationLockListRequestDTO;
 import eu.arrowhead.dto.OrchestrationLockListResponseDTO;
 import eu.arrowhead.dto.OrchestrationLockQueryRequestDTO;
+import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationLockDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
@@ -60,7 +61,7 @@ public class OrchestrationLockManagementService {
 		final ZonedDateTime now = Utilities.utcNow();
 		List<OrchestrationLock> saved = null;
 
-		synchronized (LOCK) {
+		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
 			try {
 				final List<OrchestrationLock> existingLocks = lockDbService.getByServiceInstanceId(normalized.locks().stream().map(l -> l.serviceInstanceId()).toList());
 				final List<Long> expiredLockIds = new ArrayList<>();
@@ -119,7 +120,7 @@ public class OrchestrationLockManagementService {
 		final Pair<String, List<String>> normalized = validator.validateAndNormalizeRemoveService(owner, serviceInstanceIds, origin);
 
 		try {
-			synchronized (LOCK) {
+			synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
 				final List<Long> removeIds = new ArrayList<>();
 				final List<OrchestrationLock> records = lockDbService.getByServiceInstanceId(normalized.getRight());
 				for (final OrchestrationLock record : records) {

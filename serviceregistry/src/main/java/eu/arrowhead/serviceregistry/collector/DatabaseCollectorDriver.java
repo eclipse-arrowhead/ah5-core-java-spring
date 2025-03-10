@@ -24,8 +24,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
-import eu.arrowhead.common.intf.properties.PropertyValidatorType;
-import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.intf.properties.validators.HttpOperationsValidator;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
@@ -54,7 +53,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	private ServiceInstanceDbService instanceDbService;
 
 	@Autowired
-	private PropertyValidators validators;
+	private HttpOperationsValidator httpOperationsValidator;
 
 	private final List<String> supportedInterfaces = List.of(
 			Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME,
@@ -173,7 +172,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 
 		// operations
 		final Map<String, HttpOperationModel> operations = properties.containsKey(HttpInterfaceModel.PROP_NAME_OPERATIONS)
-				? (Map<String, HttpOperationModel>) validators.getValidator(PropertyValidatorType.HTTP_OPERATIONS).validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS))
+				? (Map<String, HttpOperationModel>) httpOperationsValidator.validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS))
 				: Map.of();
 
 		// create the interface model
@@ -197,8 +196,8 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		// access port
 		final int accessPort = (int) properties.get(MqttInterfaceModel.PROP_NAME_ACCESS_PORT);
 
-		// topic
-		final String topic = (String) properties.get(MqttInterfaceModel.PROP_NAME_BASE_TOPIC);
+		// base topic
+		final String baseTopic = (String) properties.get(MqttInterfaceModel.PROP_NAME_BASE_TOPIC);
 
 		// operations
 		final Set<String> operations = properties.containsKey(MqttInterfaceModel.PROP_NAME_OPERATIONS)
@@ -209,7 +208,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final MqttInterfaceModel model = new MqttInterfaceModel.Builder(templateName)
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
-				.baseTopic(topic)
+				.baseTopic(baseTopic)
 				.operations(operations)
 				.build();
 
