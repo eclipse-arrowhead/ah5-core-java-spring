@@ -168,7 +168,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 						DynamicServiceOrchestrationConstants.ENABLE_AUTHORIZATION,
 						DynamicServiceOrchestrationConstants.ENABLE_INTERCLOUD,
 						DynamicServiceOrchestrationConstants.ENABLE_QOS,
-						DynamicServiceOrchestrationConstants.$ENABLE_TRANSLATION_WD),
+						DynamicServiceOrchestrationConstants.ENABLE_TRANSLATION),
 				DynamicServiceOrchestrationDefaults.class);
 	}
 

@@ -31,7 +31,7 @@ public class OrchestrationForm {
 	private List<String> interfaceAddressTypes;
 	private List<MetadataRequirementDTO> interfacePropertyRequirements;
 	private List<String> securityPolicies;
-	private List<String> prefferedProviders;
+	private List<String> preferredProviders;
 
 	//=================================================================================================
 	// methods
@@ -61,7 +61,7 @@ public class OrchestrationForm {
 				this.interfaceAddressTypes = dto.serviceRequirement().interfaceAddressTypes();
 				this.interfacePropertyRequirements = dto.serviceRequirement().interfacePropertyRequirements();
 				this.securityPolicies = dto.serviceRequirement().securityPolicies();
-				this.prefferedProviders = dto.serviceRequirement().prefferedProviders();
+				this.preferredProviders = dto.serviceRequirement().preferredProviders();
 			}
 		}
 	}
@@ -79,11 +79,15 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean addFlag(final OrchestrationFlag flag, final boolean value) {
-		if (!getFlag(flag)) {
-			orchestrationFlags.put(flag.name(), value);
-			return true;
+		boolean changed = false;
+		for (final String rawFlag : orchestrationFlags.keySet()) {
+			if (rawFlag.equalsIgnoreCase(flag.name())) {
+				changed = orchestrationFlags.get(rawFlag) != value;
+				break;
+			}
 		}
-		return false;
+		orchestrationFlags.put(flag.name(), value);
+		return changed;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -93,7 +97,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasPreferredProviders() {
-		return !Utilities.isEmpty(prefferedProviders);
+		return !Utilities.isEmpty(preferredProviders);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -104,7 +108,7 @@ public class OrchestrationForm {
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationRequestDTO extractOrchestrationRequestDTO() {
 		final OrchestrationServiceRequirementDTO serviceReq = new OrchestrationServiceRequirementDTO(serviceDefinition, operations, versions, alivesAt, metadataRequirements, interfaceTemplateNames, interfaceAddressTypes,
-				interfacePropertyRequirements, securityPolicies, prefferedProviders);
+				interfacePropertyRequirements, securityPolicies, preferredProviders);
 		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qosRequirements, exclusivityDuration);
 	}
 
@@ -183,7 +187,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> getPrefferedProviders() {
-		return prefferedProviders;
+		return preferredProviders;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -258,7 +262,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public void setPrefferedProviders(final List<String> prefferedProviders) {
-		this.prefferedProviders = prefferedProviders;
+		this.preferredProviders = prefferedProviders;
 	}
 
 }

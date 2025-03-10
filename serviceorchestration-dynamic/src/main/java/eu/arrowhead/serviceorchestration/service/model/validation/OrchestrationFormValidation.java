@@ -26,7 +26,7 @@ public class OrchestrationFormValidation {
 	private NameValidator nameValidator;
 
 	@Autowired
-	private OrchestrationFormNormalization normalizator;
+	private OrchestrationFormNormalization normalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -113,7 +113,7 @@ public class OrchestrationFormValidation {
 		}
 
 		if (!Utilities.isEmpty(form.getPrefferedProviders()) && Utilities.containsNullOrEmpty(form.getPrefferedProviders())) {
-			throw new InvalidParameterException("Prefferd provider list contains empty element", origin);
+			throw new InvalidParameterException("Preferred provider list contains empty element", origin);
 		}
 
 		if (!Utilities.isEmpty(form.getQosRequirements())) {
@@ -129,7 +129,7 @@ public class OrchestrationFormValidation {
 	public void validateAndNormalizeOrchestrationForm(final OrchestrationForm form, final String origin) {
 		logger.debug("validateAndNormalizeOrchestrationForm...");
 
-		normalizator.normalizeOrchestrationForm(form);
+		normalizer.normalizeOrchestrationForm(form);
 
 		try {
 			nameValidator.validateName(form.getRequesterSystemName());

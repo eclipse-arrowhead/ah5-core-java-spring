@@ -61,12 +61,14 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
-	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/{id}";
+	public static final String HTTP_HTTP_PARAM_ID = "{id}";
+	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/" + HTTP_HTTP_PARAM_ID;
 	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH = "/unsubscribe";
 	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
-	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/{owner}";
+	public static final String HTTP_HTTP_PARAM_OWNER = "{owner}";
+	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_HTTP_PARAM_OWNER;
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";
