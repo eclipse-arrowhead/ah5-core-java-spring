@@ -42,7 +42,7 @@ public class SubscriptionDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<Subscription> create(final List<OrchestrationSubscription> candidates) {
 		logger.debug("create started..");
-		Assert.notNull(candidates, "subscription candidate list is null");
+		Assert.isTrue(!Utilities.containsNull(candidates), "subscription candidate list is null");
 
 		try {
 			final List<UUID> toRemove = new ArrayList<>();
@@ -220,6 +220,24 @@ public class SubscriptionDbService {
 		try {
 			subscriptionRepo.deleteAllByIdInBatch(ids);
 			subscriptionRepo.flush();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteInBatchByExpiredBefore(final ZonedDateTime time) {
+		logger.debug("deleteInBatchByExpiredBefore started...");
+
+		try {
+			final List<Subscription> toDelete = subscriptionRepo.findAllByExpiresAtBefore(time);
+			if (!Utilities.isEmpty(toDelete)) {
+				subscriptionRepo.deleteAllInBatch(toDelete);
+			}
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

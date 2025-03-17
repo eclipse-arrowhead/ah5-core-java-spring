@@ -121,7 +121,7 @@ public class OrchestrationAPI {
 		logger.debug("pushUnsubscribe started...");
 
 		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH
-				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH.replace(DynamicServiceOrchestrationConstants.HTTP_HTTP_PARAM_ID, id);
+				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH.replace(DynamicServiceOrchestrationConstants.HTTP_PATH_PARAM_ID, id);
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		final boolean result = orchService.pushUnsubscribe(requesterSystem, id, origin);

@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.jpa.repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,4 +30,6 @@ public interface SubscriptionRepository extends RefreshableRepository<Subscripti
 	//-------------------------------------------------------------------------------------------------
 	public Page<Subscription> findByIdIn(final List<UUID> ids, final Pageable pagination);
 
+	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> findAllByExpiresAtBefore(final ZonedDateTime time);
 }

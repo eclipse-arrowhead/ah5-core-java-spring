@@ -127,6 +127,6 @@ public class OrchestrationLock {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "OrchestartionLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = " + expiresAt + ", temporary = " + temporary + "]";
+		return "OrchestrationLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = " + expiresAt + ", temporary = " + temporary + "]";
 	}
 }

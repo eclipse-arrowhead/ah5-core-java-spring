@@ -299,14 +299,14 @@ public class LocalServiceOrchestration {
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
 			final List<OrchestrationCandidate> freeCandidates = filterOutLockedOnes(jobId, candidates);
 			if (!Utilities.isEmpty(freeCandidates)) {
-				final String jonIdStr = jobId.toString();
+				final String jobIdStr = jobId.toString();
 				final ZonedDateTime tempLockExpiresAt = Utilities.utcNow().plusSeconds(TEMPORARY_LOCK_DURATION);
 
 				final List<OrchestrationLock> toLock = new ArrayList<>(freeCandidates.size());
 				for (final OrchestrationCandidate candidate : freeCandidates) {
 					if (candidate.canBeExclusive()) {
 						candidate.setLocked(true);
-						toLock.add(new OrchestrationLock(jonIdStr, candidate.getServiceInstance().instanceId(), consumerSystem, tempLockExpiresAt, true));
+						toLock.add(new OrchestrationLock(jobIdStr, candidate.getServiceInstance().instanceId(), consumerSystem, tempLockExpiresAt, true));
 					}
 				}
 
@@ -570,7 +570,7 @@ public class LocalServiceOrchestration {
 	private OrchestrationResponseDTO doInterCloudOrReturn(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("doInterCloudOrReturn started...");
 
-		if (sysInfo.isInterCloudEnabled() && form.getFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
+		if (sysInfo.isIntercloudEnabled() && form.getFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");

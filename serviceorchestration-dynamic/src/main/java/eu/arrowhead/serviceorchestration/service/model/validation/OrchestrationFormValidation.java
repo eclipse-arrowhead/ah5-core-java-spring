@@ -7,9 +7,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
@@ -43,7 +43,7 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Requester system name is empty", origin);
 		}
 
-		if (form.getRequesterSystemName().length() > ArrowheadEntity.VARCHAR_SMALL) {
+		if (form.getRequesterSystemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Requester system name is too long", origin);
 		}
 
@@ -51,7 +51,7 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Target system name is empty", origin);
 		}
 
-		if (form.getTargetSystemName().length() > ArrowheadEntity.VARCHAR_SMALL) {
+		if (form.getTargetSystemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Target system name is too long", origin);
 		}
 
@@ -59,7 +59,7 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Service definition is empty", origin);
 		}
 
-		if (form.getServiceDefinition().length() > ArrowheadEntity.VARCHAR_SMALL) {
+		if (form.getServiceDefinition().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Service definition is too long", origin);
 		}
 
@@ -129,6 +129,7 @@ public class OrchestrationFormValidation {
 	public void validateAndNormalizeOrchestrationForm(final OrchestrationForm form, final String origin) {
 		logger.debug("validateAndNormalizeOrchestrationForm...");
 
+		validateOrchestrationForm(form, origin);
 		normalizer.normalizeOrchestrationForm(form);
 
 		try {

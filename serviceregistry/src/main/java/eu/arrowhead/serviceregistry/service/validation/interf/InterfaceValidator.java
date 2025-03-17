@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.intf.properties.IPropertyValidator;
@@ -68,7 +69,7 @@ public class InterfaceValidator {
 		interfaces.forEach(interfaceInstance -> {
 			nameValidator.validateName(interfaceInstance.templateName());
 
-			if (interfaceInstance.templateName().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_NAME_LENGTH) {
+			if (interfaceInstance.templateName().length() > Constants.INTERFACE_TEMPLATE_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface template name is too long");
 			}
 
@@ -78,12 +79,12 @@ public class InterfaceValidator {
 					throw new InvalidParameterException("Interface protocol is missing");
 				}
 
-				if (interfaceInstance.protocol().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_PROTOCOL_LENGTH) {
+				if (interfaceInstance.protocol().length() > Constants.INTERFACE_TEMPLATE_PROTOCOL_MAX_LENGTH) {
 					throw new InvalidParameterException("Interface protocol is too long");
 				}
 
 				interfaceInstance.properties().keySet().forEach(propName -> {
-					if (propName.length() > ServiceRegistryConstants.INTERFACE_PROPERTY_NAME_LENGTH) {
+					if (propName.length() > Constants.INTERFACE_PROPERTY_NAME_MAX_LENGTH) {
 						throw new InvalidParameterException("Interface property name is too long");
 					}
 				});
@@ -135,16 +136,16 @@ public class InterfaceValidator {
 		templates.forEach(template -> {
 			nameValidator.validateName(template.name());
 
-			if (template.name().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_NAME_LENGTH) {
+			if (template.name().length() > Constants.INTERFACE_TEMPLATE_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface template name is too long");
 			}
 
-			if (template.protocol().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_PROTOCOL_LENGTH) {
+			if (template.protocol().length() > Constants.INTERFACE_TEMPLATE_PROTOCOL_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface protocol is too long");
 			}
 
 			template.propertyRequirements().forEach(prop -> {
-				if (prop.name().length() > ServiceRegistryConstants.INTERFACE_PROPERTY_NAME_LENGTH) {
+				if (prop.name().length() > Constants.INTERFACE_PROPERTY_NAME_MAX_LENGTH) {
 					throw new InvalidParameterException("Interface property name is too long");
 				}
 

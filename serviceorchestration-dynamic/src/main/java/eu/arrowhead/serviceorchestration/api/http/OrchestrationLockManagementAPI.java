@@ -112,7 +112,7 @@ public class OrchestrationLockManagementAPI {
 		logger.debug("remove started...");
 
 		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH
-				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH.replace(DynamicServiceOrchestrationConstants.HTTP_HTTP_PARAM_OWNER, owner);
+				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_REMOVE_LOCK_PATH.replace(DynamicServiceOrchestrationConstants.HTTP_PATH_PARAM_OWNER, owner);
 		lockMgmtService.remove(owner, instanceIds, origin);
 	}
 }

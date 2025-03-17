@@ -42,7 +42,7 @@ public class OrchestrationJobDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationJob> create(final List<OrchestrationJob> jobs) {
 		logger.debug("create started...");
-		Assert.isTrue(!Utilities.isEmpty(jobs), "job list is null");
+		Assert.isTrue(!Utilities.containsNull(jobs), "job list is null");
 
 		try {
 			return jobRepo.saveAllAndFlush(jobs);

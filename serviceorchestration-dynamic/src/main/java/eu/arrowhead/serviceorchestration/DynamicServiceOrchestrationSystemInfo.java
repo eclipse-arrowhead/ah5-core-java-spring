@@ -131,7 +131,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean isInterCloudEnabled() {
+	public boolean isIntercloudEnabled() {
 		return enableIntercloud;
 	}
 

@@ -91,15 +91,15 @@ public class OrchestrationPushManagementValidation {
 
 		pageValidator.validatePageParameter(dto.pagination(), Subscription.SORTABLE_FIELDS_BY, origin);
 
-		if (!Utilities.isEmpty(dto.ownerSystems()) && Utilities.containsNull(dto.ownerSystems())) {
+		if (!Utilities.isEmpty(dto.ownerSystems()) && Utilities.containsNullOrEmpty(dto.ownerSystems())) {
 			throw new InvalidParameterException("Owner system list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(dto.targetSystems()) && Utilities.containsNull(dto.targetSystems())) {
+		if (!Utilities.isEmpty(dto.targetSystems()) && Utilities.containsNullOrEmpty(dto.targetSystems())) {
 			throw new InvalidParameterException("Target system list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNull(dto.serviceDefinitions())) {
+		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
 			throw new InvalidParameterException("Service definition list contains empty element", origin);
 		}
 	}

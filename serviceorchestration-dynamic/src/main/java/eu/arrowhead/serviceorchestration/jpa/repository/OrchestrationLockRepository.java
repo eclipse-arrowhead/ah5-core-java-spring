@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceorchestration.jpa.repository;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +29,7 @@ public interface OrchestrationLockRepository extends RefreshableRepository<Orche
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<OrchestrationLock> findByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationLock> findAllByExpiresAtBefore(final ZonedDateTime time);
 }

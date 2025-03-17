@@ -92,7 +92,7 @@ public class OrchestrationLockManagementService {
 			}
 		}
 
-		return dtoConverter.converOrchestartionLockListToDTO(saved, saved.size());
+		return dtoConverter.convertOrchestrationLockListToDTO(saved, saved.size());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ public class OrchestrationLockManagementService {
 
 		try {
 			final Page<OrchestrationLock> results = lockDbService.query(filter, pageRequest);
-			return dtoConverter.converOrchestartionLockListToDTO(results.getContent(), results.getTotalElements());
+			return dtoConverter.convertOrchestrationLockListToDTO(results.getContent(), results.getTotalElements());
 
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

@@ -82,7 +82,7 @@ public class OrchestrationHistoryManagementValidation {
 		final OrchestrationHistoryQueryRequestDTO normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto);
 
 		normalized.ids().forEach(id -> {
-			if (!Utilities.isUUID(id.trim())) {
+			if (!Utilities.isUUID(id)) {
 				throw new InvalidParameterException("Invalid id: " + id, origin);
 			}
 		});

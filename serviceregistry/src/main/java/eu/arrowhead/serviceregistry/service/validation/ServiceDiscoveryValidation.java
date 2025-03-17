@@ -21,7 +21,6 @@ import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
@@ -67,7 +66,7 @@ public class ServiceDiscoveryValidation {
 			throw new InvalidParameterException("Service definition name is empty", origin);
 		}
 
-		if (dto.serviceDefinitionName().length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+		if (dto.serviceDefinitionName().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Service definition name is too long", origin);
 		}
 

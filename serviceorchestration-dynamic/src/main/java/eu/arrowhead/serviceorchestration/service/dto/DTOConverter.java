@@ -103,19 +103,19 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationLockListResponseDTO converOrchestartionLockListToDTO(final List<OrchestrationLock> locks, final long count) {
-		logger.debug("converOrchestartionLockListToDTO started...");
+	public OrchestrationLockListResponseDTO convertOrchestrationLockListToDTO(final List<OrchestrationLock> locks, final long count) {
+		logger.debug("convertOrchestrationLockListToDTO started...");
 		Assert.notNull(locks, "lock list is null");
 
 		return new OrchestrationLockListResponseDTO(
-				locks.stream().map(l -> converOrchestartionLockToDTO(l)).toList(),
+				locks.stream().map(l -> convertOrchestrationLockToDTO(l)).toList(),
 				count);
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationLockResponseDTO converOrchestartionLockToDTO(final OrchestrationLock lock) {
-		logger.debug("converOrchestartionLockToDTO started...");
+	public OrchestrationLockResponseDTO convertOrchestrationLockToDTO(final OrchestrationLock lock) {
+		logger.debug("convertOrchestrationLockToDTO started...");
 		Assert.notNull(lock, "lock is null");
 
 		return new OrchestrationLockResponseDTO(

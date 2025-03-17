@@ -72,15 +72,7 @@ public class CleanerJob implements Job {
 		logger.debug("removeExpiredSubscriptions started..");
 
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
-			final List<UUID> toRemove = new ArrayList<>();
-			subscriptionDbService.getAll().forEach(subscription -> {
-				if (subscription.getExpiresAt() != null && subscription.getExpiresAt().isBefore(now)) {
-					toRemove.add(subscription.getId());
-				}
-			});
-			if (!Utilities.isEmpty(toRemove)) {
-				subscriptionDbService.deleteInBatch(toRemove);
-			}
+			subscriptionDbService.deleteInBatchByExpiredBefore(now);
 		}
 	}
 
@@ -89,15 +81,7 @@ public class CleanerJob implements Job {
 		logger.debug("removeExpiredOrchestrationLocks started...");
 
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
-			final List<Long> toRemove = new ArrayList<>();
-			orchestrationLockDbService.getAll().forEach(lock -> {
-				if (lock.getExpiresAt() != null && lock.getExpiresAt().isBefore(now)) {
-					toRemove.add(lock.getId());
-				}
-			});
-			if (!Utilities.isEmpty(toRemove)) {
-				orchestrationLockDbService.deleteInBatch(toRemove);
-			}
+			orchestrationLockDbService.deleteInBatchByExpiredBefore(now);
 		}
 	}
 

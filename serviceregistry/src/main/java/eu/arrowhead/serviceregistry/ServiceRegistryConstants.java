@@ -1,7 +1,5 @@
 package eu.arrowhead.serviceregistry;
 
-import eu.arrowhead.common.jpa.ArrowheadEntity;
-
 public final class ServiceRegistryConstants {
 
 	//=================================================================================================
@@ -67,17 +65,6 @@ public final class ServiceRegistryConstants {
 	public static final String $SERVICE_DISCOVERY_DIRECT_ACCESS_WD = "${" + SERVICE_DISCOVERY_DIRECT_ACCESS + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_DIRECT_ACCESS_DEFAULT + "}";
 	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
 	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_INTERFACE_POLICY_DEFAULT + "}";
-
-	// Property size related
-
-	public static final int DEVICE_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
-	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
-	public static final int INTERFACE_TEMPLATE_NAME_LENGTH = ArrowheadEntity.VARCHAR_MEDIUM;
-	public static final int INTERFACE_TEMPLATE_PROTOCOL_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int INTERFACE_PROPERTY_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	// Others
 

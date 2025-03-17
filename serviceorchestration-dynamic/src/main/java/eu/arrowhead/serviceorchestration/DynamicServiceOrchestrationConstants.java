@@ -29,9 +29,10 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
-	public static final String HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/push";
-	public static final String HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/history";
-	public static final String HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/orchestration/mgmt/lock";
+	public static final String HTTP_API_ORCHESTRATION_MGMT_PREFIX = HTTP_API_ORCHESTRATION_PATH + "/mgmt";
+	public static final String HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/push";
+	public static final String HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/history";
+	public static final String HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/lock";
 
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/serviceorchestration";
 	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
@@ -61,14 +62,14 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 	public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
-	public static final String HTTP_HTTP_PARAM_ID = "{id}";
-	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/" + HTTP_HTTP_PARAM_ID;
+	public static final String HTTP_PATH_PARAM_ID = "{id}";
+	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/" + HTTP_PATH_PARAM_ID;
 	public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH = "/unsubscribe";
 	public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
-	public static final String HTTP_HTTP_PARAM_OWNER = "{owner}";
-	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_HTTP_PARAM_OWNER;
+	public static final String HTTP_PATH_PARAM_OWNER = "{owner}";
+	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_PATH_PARAM_OWNER;
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";

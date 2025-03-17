@@ -7,9 +7,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
@@ -43,7 +43,7 @@ public class OrchestrationPushTriggerValidation {
 			throw new InvalidParameterException("Requester system is missing.", origin);
 		}
 
-		if (trigger.getRequesterSystem().length() > ArrowheadEntity.VARCHAR_SMALL) {
+		if (trigger.getRequesterSystem().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Requester system name is too long", origin);
 		}
 
@@ -52,7 +52,7 @@ public class OrchestrationPushTriggerValidation {
 		}
 
 		for (final String targetSystem : trigger.getTargetSystems()) {
-			if (targetSystem.length() > ArrowheadEntity.VARCHAR_SMALL) {
+			if (targetSystem.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Target system name is too long: " + targetSystem, origin);
 			}
 		}

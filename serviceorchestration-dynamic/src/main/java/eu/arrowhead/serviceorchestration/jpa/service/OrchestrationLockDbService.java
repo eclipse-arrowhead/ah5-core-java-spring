@@ -41,7 +41,7 @@ public class OrchestrationLockDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationLock> create(final List<OrchestrationLock> candidates) {
 		logger.debug("create started...");
-		Assert.isTrue(!Utilities.isEmpty(candidates), "Orchestration lock list is empty");
+		Assert.isTrue(!Utilities.containsNull(candidates), "Orchestration lock list is empty");
 
 		try {
 			return lockRepo.saveAllAndFlush(candidates);
@@ -179,6 +179,24 @@ public class OrchestrationLockDbService {
 		try {
 			lockRepo.deleteAllByIdInBatch(ids);
 			lockRepo.flush();
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteInBatchByExpiredBefore(final ZonedDateTime time) {
+		logger.debug("deleteInBatchByExpiredBefore started...");
+
+		try {
+			final List<OrchestrationLock> toDelete = lockRepo.findAllByExpiresAtBefore(time);
+			if (!Utilities.isEmpty(toDelete)) {
+				lockRepo.deleteAllInBatch(toDelete);
+			}
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
