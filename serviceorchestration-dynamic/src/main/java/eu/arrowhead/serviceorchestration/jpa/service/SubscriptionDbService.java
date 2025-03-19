@@ -42,7 +42,8 @@ public class SubscriptionDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<Subscription> create(final List<OrchestrationSubscription> candidates) {
 		logger.debug("create started..");
-		Assert.isTrue(!Utilities.containsNull(candidates), "subscription candidate list is null");
+		Assert.isTrue(!Utilities.isEmpty(candidates), "subscription candidate list is empty");
+		Assert.isTrue(!Utilities.containsNull(candidates), "subscription candidate list contains null element");
 
 		try {
 			final List<UUID> toRemove = new ArrayList<>();

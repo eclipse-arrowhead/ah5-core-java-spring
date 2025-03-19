@@ -41,7 +41,8 @@ public class OrchestrationLockDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationLock> create(final List<OrchestrationLock> candidates) {
 		logger.debug("create started...");
-		Assert.isTrue(!Utilities.containsNull(candidates), "Orchestration lock list is empty");
+		Assert.isTrue(!Utilities.isEmpty(candidates), "Orchestration lock is empty");
+		Assert.isTrue(!Utilities.containsNull(candidates), "Orchestration lock list contains null element");
 
 		try {
 			return lockRepo.saveAllAndFlush(candidates);
