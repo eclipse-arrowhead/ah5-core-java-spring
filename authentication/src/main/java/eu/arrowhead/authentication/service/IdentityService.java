@@ -139,6 +139,7 @@ public class IdentityService {
 			normalized = validator.validateAndNormalizeChangeServicePhase2(normalized, methodType, origin);
 		} catch (final ArrowheadException ex) {
 			method.service().rollbackCredentialsVerification(data.system(), normalized.credentials(), ex.getMessage());
+			throw ex;
 		}
 
 		// changing credentials
