@@ -1,12 +1,13 @@
 package eu.arrowhead.serviceregistry.service.validation.version;
 
 import java.util.regex.Pattern;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 
 @Component
 public class VersionValidator {
@@ -31,7 +32,7 @@ public class VersionValidator {
 		logger.debug("Validate version started: {}", version);
 
 		// check size
-		if (version.length() > ServiceRegistryConstants.SYSTEM_VERSION_LENGTH) {
+		if (version.length() > Constants.SYSTEM_VERSION_MAX_LENGTH) {
 			throw new InvalidParameterException(ERROR_MSG_PREFIX + "version length is too long");
 		}
 

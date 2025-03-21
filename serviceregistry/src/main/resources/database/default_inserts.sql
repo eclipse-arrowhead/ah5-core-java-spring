@@ -75,14 +75,14 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 
 INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`) VALUES (
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
-	'topic',
+	'baseTopic',
 	1
 ); 
 
 INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtt'),
 	'operations',
-	0,
+	1,
 	'NOT_EMPTY_STRING_SET|NAME'
 );
 
@@ -104,13 +104,13 @@ INSERT IGNORE INTO `service_interface_template_property` (`service_interface_tem
 
 INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`) VALUES (
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
-	'topic',
+	'baseTopic',
 	1
 ); 
 
 INSERT IGNORE INTO `service_interface_template_property` (`service_interface_template_id`, `property_name`, `mandatory`, `validator`) VALUES (
 	(SELECT `id` FROM `service_interface_template` WHERE `name` = 'generic-mqtts'),
 	'operations',
-	0,
+	1,
 	'NOT_EMPTY_STRING_SET|NAME'
 );

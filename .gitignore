@@ -4,6 +4,8 @@
 .settings/
 /serviceregistry/.factorypath
 /serviceregistry/*.log
+/serviceorchestration-dynamic/.factorypath
+/serviceorchestration-dynamic/*.log
 .checkstyle
 *.lck
 /authentication/.factorypath

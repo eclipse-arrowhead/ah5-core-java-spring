@@ -12,6 +12,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 public class ServiceLookupFilterModel {
@@ -25,6 +26,7 @@ public class ServiceLookupFilterModel {
 	private final Set<String> versions = new HashSet<>();
 	private final ZonedDateTime alivesAt;
 	private final List<MetadataRequirementDTO> metadataRequirementsList = new ArrayList<>();
+	private final List<AddressType> addressTypes = new ArrayList<>();
 	private final Set<String> interfaceTemplateNames = new HashSet<>();
 	private final List<MetadataRequirementDTO> interfacePropertyRequirementsList = new ArrayList<>();
 	private final Set<ServiceInterfacePolicy> policies = new HashSet<>();
@@ -57,6 +59,13 @@ public class ServiceLookupFilterModel {
 			metadataRequirementsList.addAll(dto.metadataRequirementsList());
 		}
 
+		if (!Utilities.isEmpty(dto.addressTypes())) {
+			for (final String type : dto.addressTypes()) {
+				Assert.isTrue(Utilities.isEnumValue(type, AddressType.class), "Invalid address type: " + type);
+				addressTypes.add(AddressType.valueOf(type));
+			}
+		}
+
 		if (!Utilities.isEmpty(dto.interfaceTemplateNames())) {
 			interfaceTemplateNames.addAll(dto.interfaceTemplateNames());
 		}
@@ -78,6 +87,7 @@ public class ServiceLookupFilterModel {
 				|| !Utilities.isEmpty(versions)
 				|| alivesAt != null
 				|| !Utilities.isEmpty(metadataRequirementsList)
+				|| !Utilities.isEmpty(addressTypes)
 				|| !Utilities.isEmpty(interfaceTemplateNames)
 				|| !Utilities.isEmpty(interfacePropertyRequirementsList)
 				|| !Utilities.isEmpty(policies);
@@ -114,6 +124,11 @@ public class ServiceLookupFilterModel {
 	//-------------------------------------------------------------------------------------------------
 	public List<MetadataRequirementDTO> getMetadataRequirementsList() {
 		return metadataRequirementsList;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AddressType> getAddressTypes() {
+		return addressTypes;
 	}
 
 	//-------------------------------------------------------------------------------------------------

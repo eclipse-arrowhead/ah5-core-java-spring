@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.authentication.jpa.entity.ActiveSession;
 import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.method.AuthenticationMethods;
@@ -22,6 +21,7 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
@@ -72,7 +72,7 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Requester name is missing or empty", origin);
 		}
 
-		if (requester.length() > AuthenticationConstants.SYSTEM_NAME_LENGTH) {
+		if (requester.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Requester name is too long: " + requester, origin);
 		}
 
@@ -356,7 +356,7 @@ public class ManagementValidation {
 			throw new InvalidParameterException("System name is missing or empty", origin);
 		}
 
-		if (identity.systemName().length() > AuthenticationConstants.SYSTEM_NAME_LENGTH) {
+		if (identity.systemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("System name is too long: " + identity.systemName(), origin);
 		}
 
