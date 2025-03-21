@@ -1,7 +1,5 @@
 package eu.arrowhead.authentication;
 
-import eu.arrowhead.common.jpa.ArrowheadEntity;
-
 public final class AuthenticationConstants {
 
 	//=================================================================================================
@@ -22,6 +20,12 @@ public final class AuthenticationConstants {
 	public static final String HTTP_API_IDENTITY_PATH = HTTP_API_BASE_PATH + "/identity";
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
+
+	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/authentication";
+	public static final String MQTT_API_IDENTITY_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/identity/";
+	public static final String MQTT_API_MANAGEMENT_BASE_TOPIC = MQTT_API_IDENTITY_BASE_TOPIC + "management/";
+	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
+	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
 
 	// operation related
 

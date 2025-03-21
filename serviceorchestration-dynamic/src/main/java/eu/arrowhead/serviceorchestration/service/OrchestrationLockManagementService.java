@@ -46,8 +46,6 @@ public class OrchestrationLockManagementService {
 	@Autowired
 	private DTOConverter dtoConverter;
 
-	private static final Object LOCK = new Object();
-
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
