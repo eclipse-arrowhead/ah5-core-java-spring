@@ -232,6 +232,7 @@ public class ManagementNormalization {
 				Utilities.isEmpty(dto.versions()) ? new ArrayList<>() : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).toList(),
 				Utilities.isEmpty(dto.alivesAt()) ? "" : dto.alivesAt().trim(),
 				Utilities.isEmpty(dto.metadataRequirementsList()) ? new ArrayList<>() : dto.metadataRequirementsList(),
+				Utilities.isEmpty(dto.addressTypes()) ?  new ArrayList<>() : dto.addressTypes().stream().map(at -> at.trim().toUpperCase()).toList(),
 				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> nameNormalizer.normalize(i)).toList(),
 				Utilities.isEmpty(dto.interfacePropertyRequirementsList()) ? new ArrayList<>() : dto.interfacePropertyRequirementsList(),
 				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList());

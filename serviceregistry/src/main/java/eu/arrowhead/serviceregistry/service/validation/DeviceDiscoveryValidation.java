@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
@@ -13,7 +14,6 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.DeviceDiscoveryNormalization;
 
@@ -51,7 +51,7 @@ public class DeviceDiscoveryValidation {
 			throw new InvalidParameterException("Device name is empty", origin);
 		}
 
-		if (dto.name().length() > ServiceRegistryConstants.DEVICE_NAME_LENGTH) {
+		if (dto.name().length() > Constants.DEVICE_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Device name is too long", origin);
 		}
 
@@ -64,7 +64,7 @@ public class DeviceDiscoveryValidation {
 				throw new InvalidParameterException("Address is missing", origin);
 			}
 
-			if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+			if (address.trim().length() > Constants.ADDRESS_MAX_LENGTH) {
 				throw new InvalidParameterException("Address is too long", origin);
 			}
 		}

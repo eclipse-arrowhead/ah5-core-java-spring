@@ -29,15 +29,15 @@ public class MonitorMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public String topic() {
-		return ServiceRegistryConstants.MQTT_API_MONITOR_TOPIC;
+	public String baseTopic() {
+		return ServiceRegistryConstants.MQTT_API_MONITOR_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
 		logger.debug("MonitorMqttHandler.handle started");
-		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
+		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
 		final MqttStatus responseStatus = MqttStatus.OK;
 		Object responsePayload = null;

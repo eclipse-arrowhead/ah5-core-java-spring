@@ -1,7 +1,5 @@
 package eu.arrowhead.serviceregistry;
 
-import eu.arrowhead.common.jpa.ArrowheadEntity;
-
 public final class ServiceRegistryConstants {
 
 	//=================================================================================================
@@ -23,13 +21,13 @@ public final class ServiceRegistryConstants {
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 
-	public static final String MQTT_API_BASE_TOPIC = "arrowhead/serviceregistry";
-	public static final String MQTT_API_MONITOR_TOPIC = MQTT_API_BASE_TOPIC + "/monitor";
-	public static final String MQTT_API_DEVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/device-discovery";
-	public static final String MQTT_API_SERVICE_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/service-discovery";
-	public static final String MQTT_API_SYSTEM_DISCOVERY_TOPIC = MQTT_API_BASE_TOPIC + "/system-discovery";
-	public static final String MQTT_API_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/management";
-	public static final String MQTT_API_GENERAL_MANAGEMENT_TOPIC = MQTT_API_BASE_TOPIC + "/general/management";
+	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/serviceregistry";
+	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
+	public static final String MQTT_API_DEVICE_DISCOVERY_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/device-discovery/";
+	public static final String MQTT_API_SERVICE_DISCOVERY_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/service-discovery/";
+	public static final String MQTT_API_SYSTEM_DISCOVERY_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/system-discovery/";
+	public static final String MQTT_API_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/management/";
+	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
 
 	public static final String VERSION_DEVICE_DISCOVERY = "1.0.0";
 	public static final String VERSION_SYSTEM_DISCOVERY = "1.0.0";
@@ -67,17 +65,6 @@ public final class ServiceRegistryConstants {
 	public static final String $SERVICE_DISCOVERY_DIRECT_ACCESS_WD = "${" + SERVICE_DISCOVERY_DIRECT_ACCESS + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_DIRECT_ACCESS_DEFAULT + "}";
 	public static final String SERVICE_DISCOVERY_INTERFACE_POLICY = "service.discovery.interface.policy";
 	public static final String $SERVICE_DISCOVERY_INTERFACE_POLICY_WD = "${" + SERVICE_DISCOVERY_INTERFACE_POLICY + ":" + ServiceRegistryDefaults.SERVICE_DISCOVERY_INTERFACE_POLICY_DEFAULT + "}";
-
-	// Property size related
-
-	public static final int DEVICE_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int SYSTEM_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int SYSTEM_VERSION_LENGTH = ArrowheadEntity.VARCHAR_TINY;
-	public static final int SERVICE_DEFINITION_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int ADDRESS_LENGTH = ArrowheadEntity.VARCHAR_LARGE;
-	public static final int INTERFACE_TEMPLATE_NAME_LENGTH = ArrowheadEntity.VARCHAR_MEDIUM;
-	public static final int INTERFACE_TEMPLATE_PROTOCOL_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
-	public static final int INTERFACE_PROPERTY_NAME_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	// Others
 

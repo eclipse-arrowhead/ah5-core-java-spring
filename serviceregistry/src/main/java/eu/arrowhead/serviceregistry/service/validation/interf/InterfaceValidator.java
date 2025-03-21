@@ -13,14 +13,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.intf.properties.IPropertyValidator;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor.AddressData;
+import eu.arrowhead.common.service.validation.address.AddressNormalizer;
+import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
@@ -40,6 +46,15 @@ public class InterfaceValidator {
 	@Autowired
 	private PropertyValidators interfacePropertyValidator;
 
+	@Autowired
+	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
+
+	@Autowired
+	private AddressNormalizer addressNormalizer;
+
+	@Autowired
+	private AddressValidator addressValidator;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -54,7 +69,7 @@ public class InterfaceValidator {
 		interfaces.forEach(interfaceInstance -> {
 			nameValidator.validateName(interfaceInstance.templateName());
 
-			if (interfaceInstance.templateName().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_NAME_LENGTH) {
+			if (interfaceInstance.templateName().length() > Constants.INTERFACE_TEMPLATE_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface template name is too long");
 			}
 
@@ -64,15 +79,17 @@ public class InterfaceValidator {
 					throw new InvalidParameterException("Interface protocol is missing");
 				}
 
-				if (interfaceInstance.protocol().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_PROTOCOL_LENGTH) {
+				if (interfaceInstance.protocol().length() > Constants.INTERFACE_TEMPLATE_PROTOCOL_MAX_LENGTH) {
 					throw new InvalidParameterException("Interface protocol is too long");
 				}
 
 				interfaceInstance.properties().keySet().forEach(propName -> {
-					if (propName.length() > ServiceRegistryConstants.INTERFACE_PROPERTY_NAME_LENGTH) {
+					if (propName.length() > Constants.INTERFACE_PROPERTY_NAME_MAX_LENGTH) {
 						throw new InvalidParameterException("Interface property name is too long");
 					}
 				});
+
+				discoverAndNormalizeAndValidateAddressProperty(interfaceInstance.properties());
 
 				normalized.add(interfaceInstance);
 			} else {
@@ -91,7 +108,11 @@ public class InterfaceValidator {
 
 							if (instanceProp != null && !Utilities.isEmpty(templateProp.getValidator())) {
 								final String[] validatorWithArgs = templateProp.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
-								final IPropertyValidator validator = interfacePropertyValidator.getValidator(PropertyValidatorType.valueOf(validatorWithArgs[0]));
+								final PropertyValidatorType propertyValidatorType = PropertyValidatorType.valueOf(validatorWithArgs[0]);
+								if (propertyValidatorType != PropertyValidatorType.NOT_EMPTY_ADDRESS_LIST) {
+									discoverAndNormalizeAndValidateAddressProperty(interfaceInstance.properties());
+								}
+								final IPropertyValidator validator = interfacePropertyValidator.getValidator(propertyValidatorType);
 								if (validator != null) {
 									final Object normalizedProp = validator.validateAndNormalize(
 											instanceProp,
@@ -115,16 +136,16 @@ public class InterfaceValidator {
 		templates.forEach(template -> {
 			nameValidator.validateName(template.name());
 
-			if (template.name().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_NAME_LENGTH) {
+			if (template.name().length() > Constants.INTERFACE_TEMPLATE_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface template name is too long");
 			}
 
-			if (template.protocol().length() > ServiceRegistryConstants.INTERFACE_TEMPLATE_PROTOCOL_LENGTH) {
+			if (template.protocol().length() > Constants.INTERFACE_TEMPLATE_PROTOCOL_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface protocol is too long");
 			}
 
 			template.propertyRequirements().forEach(prop -> {
-				if (prop.name().length() > ServiceRegistryConstants.INTERFACE_PROPERTY_NAME_LENGTH) {
+				if (prop.name().length() > Constants.INTERFACE_PROPERTY_NAME_MAX_LENGTH) {
 					throw new InvalidParameterException("Interface property name is too long");
 				}
 
@@ -133,5 +154,33 @@ public class InterfaceValidator {
 				}
 			});
 		});
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void discoverAndNormalizeAndValidateAddressProperty(final Map<String, Object> props) {
+		logger.debug("discoverAndNormalizeAndValidateAddressProperty started..");
+
+		final AddressData addressData = interfaceAddressPropertyProcessor.findAddresses(props);
+
+		if (Utilities.isEmpty(addressData.addresses())) {
+			return;
+		}
+
+		final List<String> normalizedAndValidAddresses = new ArrayList<>();
+		addressData.addresses().forEach(address -> {
+			final String normalized = addressNormalizer.normalize(address);
+			final AddressType type = addressValidator.detectType(normalized);
+			addressValidator.validateNormalizedAddress(type, normalized);
+			normalizedAndValidAddresses.add(normalized);
+		});
+
+		if (addressData.isList()) {
+			props.put(addressData.addressKey(), normalizedAndValidAddresses);
+		} else {
+			props.put(addressData.addressKey(), normalizedAndValidAddresses.getFirst());
+		}
 	}
 }

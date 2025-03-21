@@ -335,6 +335,7 @@ public class DTOConverter {
 				dto.versions(),
 				dto.alivesAt(),
 				dto.metadataRequirementsList(),
+				dto.addressTypes(),
 				dto.interfaceTemplateNames(),
 				dto.interfacePropertyRequirementsList(),
 				dto.policies()));

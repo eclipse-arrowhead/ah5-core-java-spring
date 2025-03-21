@@ -40,15 +40,15 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public String topic() {
-		return ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_TOPIC;
+	public String baseTopic() {
+		return ServiceRegistryConstants.MQTT_API_DEVICE_DISCOVERY_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
 		logger.debug("DeviceDiscoveryMqttTopicHandler.handle started");
-		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
+		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
 		MqttStatus responseStatus = MqttStatus.OK;
 		Object responsePayload = null;
@@ -85,7 +85,7 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 	private Pair<DeviceResponseDTO, MqttStatus> register(final DeviceRequestDTO dto) {
 		logger.debug("DeviceDiscoveryMqttHandler.register started");
 
-		final Entry<DeviceResponseDTO, Boolean> result = ddService.registerDevice(dto, topic());
+		final Entry<DeviceResponseDTO, Boolean> result = ddService.registerDevice(dto, baseTopic() + Constants.SERVICE_OP_REGISTER);
 
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}
@@ -94,14 +94,14 @@ public class DeviceDiscoveryMqttHandler extends MqttTopicHandler {
 	private DeviceListResponseDTO lookup(final DeviceLookupRequestDTO dto) {
 		logger.debug("DeviceDiscoveryMqttHandler.lookup started");
 
-		return ddService.lookupDevice(dto, topic());
+		return ddService.lookupDevice(dto, baseTopic() + Constants.SERVICE_OP_LOOKUP);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private MqttStatus revoke(final String deviceName) {
 		logger.debug("DeviceDiscoveryMqttHandler.revoke started");
 
-		final boolean result = ddService.revokeDevice(deviceName, topic());
+		final boolean result = ddService.revokeDevice(deviceName, baseTopic() + Constants.SERVICE_OP_REVOKE);
 
 		return result ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 	}

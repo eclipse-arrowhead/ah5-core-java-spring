@@ -27,6 +27,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
@@ -76,6 +77,9 @@ public class ServiceInstanceDbService {
 
 	@Autowired
 	private ServiceInterfaceTemplatePropertyRepository serviceInterfaceTemplatePropsRepo;
+
+	@Autowired
+	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
 
 	private static final Object LOCK = new Object();
 
@@ -547,15 +551,27 @@ public class ServiceInstanceDbService {
 						}
 
 						// Interface properties
-						if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList())) {
+						if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList()) && Utilities.isEmpty(filters.getAddressTypes())) {
 							interfacePropertyMatch = true;
 						} else {
 							final Map<String, Object> interfaceProps = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 							});
-							for (final MetadataRequirementDTO requirement : filters.getInterfacePropertyRequirementsList()) {
-								if (MetadataRequirementsMatcher.isMetadataMatch(interfaceProps, requirement)) {
-									interfacePropertyMatch = true;
-									break;
+
+							if (Utilities.isEmpty(filters.getInterfacePropertyRequirementsList())) {
+								interfacePropertyMatch = true;
+							} else {
+								for (final MetadataRequirementDTO requirement : filters.getInterfacePropertyRequirementsList()) {
+									if (MetadataRequirementsMatcher.isMetadataMatch(interfaceProps, requirement)) {
+										interfacePropertyMatch = true;
+										break;
+									}
+								}
+							}
+
+							if (interfacePropertyMatch && !Utilities.isEmpty(filters.getAddressTypes())) {
+								interfacePropertyMatch = interfaceAddressPropertyProcessor.filterOnAddressTypes(interfaceProps, filters.getAddressTypes().stream().map(at -> at.name()).toList());
+								if (interfacePropertyMatch) {
+									interf.setProperties(Utilities.toJson(interfaceProps));
 								}
 							}
 						}
