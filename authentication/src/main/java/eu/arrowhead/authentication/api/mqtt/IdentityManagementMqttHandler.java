@@ -44,7 +44,7 @@ public class IdentityManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return AuthenticationConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC;
+		return AuthenticationConstants.MQTT_API_MANAGEMENT_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------

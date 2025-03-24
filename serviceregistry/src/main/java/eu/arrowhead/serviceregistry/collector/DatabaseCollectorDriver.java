@@ -111,6 +111,10 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 			});
 
+			if (!interfaceTemplateName.equals(templateName)) {
+				continue;
+			}
+
 			// HTTP or HTTPS
 			if (templateName.contains(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME)) {
 				interfaceModelList.add(createHttpInterfaceModel(templateName, properties));

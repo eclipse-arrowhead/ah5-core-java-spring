@@ -161,7 +161,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.operation(Constants.SERVICE_OP_IDENTITY_VERIFY, verify)
 				.build();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getMqttServiceInterfaceForIdentity() {
 		if (!isMqttApiEnabled()) {
@@ -172,9 +172,9 @@ public class AuthenticationSystemInfo extends SystemInfo {
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.baseTopic(AuthenticationConstants.MQTT_API_IDENTITY_BASE_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_IDENTITY_LOGIN,
-								   Constants.SERVICE_OP_IDENTITY_LOGOUT,
-								   Constants.SERVICE_OP_IDENTITY_CHANGE,
-								   Constants.SERVICE_OP_IDENTITY_VERIFY))
+						Constants.SERVICE_OP_IDENTITY_LOGOUT,
+						Constants.SERVICE_OP_IDENTITY_CHANGE,
+						Constants.SERVICE_OP_IDENTITY_VERIFY))
 				.build();
 	}
 
@@ -217,7 +217,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.operation(Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_QUERY, querySessions)
 				.build();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getMqttServiceInterfaceForIdentityManagement() {
 		if (!isMqttApiEnabled()) {
@@ -228,11 +228,11 @@ public class AuthenticationSystemInfo extends SystemInfo {
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.baseTopic(AuthenticationConstants.MQTT_API_MANAGEMENT_BASE_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_IDENTITY_MGMT_CREATE,
-								   Constants.SERVICE_OP_IDENTITY_MGMT_UPDATE,
-								   Constants.SERVICE_OP_IDENTITY_MGMT_REMOVE,
-								   Constants.SERVICE_OP_IDENTITY_MGMT_QUERY,
-								   Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_CLOSE,
-								   Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_QUERY))
+						Constants.SERVICE_OP_IDENTITY_MGMT_UPDATE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_REMOVE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_QUERY,
+						Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_CLOSE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_QUERY))
 				.build();
 	}
 
@@ -255,7 +255,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.operation(Constants.SERVICE_OP_GET_CONFIG, config)
 				.build();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getMqttServiceInterfaceForGeneralManagement() {
 		if (!isMqttApiEnabled()) {
