@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
@@ -41,7 +42,6 @@ import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
@@ -113,7 +113,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Device name is empty", origin);
 			}
 
-			if (device.name().length() > ServiceRegistryConstants.DEVICE_NAME_LENGTH) {
+			if (device.name().length() > Constants.DEVICE_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Device name is too long", origin);
 			}
 
@@ -132,7 +132,7 @@ public class ManagementValidation {
 					throw new InvalidParameterException("Address is missing", origin);
 				}
 
-				if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+				if (address.trim().length() > Constants.ADDRESS_MAX_LENGTH) {
 					throw new InvalidParameterException("Address is too long", origin);
 				}
 			}
@@ -279,7 +279,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
 
-			if (name.length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+			if (name.length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 
@@ -356,7 +356,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Duplicated system name: " + system.name(), origin);
 			}
 
-			if (system.name().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
+			if (system.name().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("System name is too long: " + system.name(), origin);
 			}
 
@@ -368,7 +368,7 @@ public class ManagementValidation {
 						throw new InvalidParameterException("Address value is missing", origin);
 					}
 
-					if (address.trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+					if (address.trim().length() > Constants.ADDRESS_MAX_LENGTH) {
 						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
@@ -511,7 +511,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("System name is empty", origin);
 			}
 
-			if (instance.systemName().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
+			if (instance.systemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("System name is too long: " + instance.systemName(), origin);
 			}
 
@@ -520,7 +520,7 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Service definition name is empty", origin);
 			}
 
-			if (instance.serviceDefinitionName().length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+			if (instance.serviceDefinitionName().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
 				throw new InvalidParameterException("Service definition name is too long: " + instance.serviceDefinitionName(), origin);
 			}
 
@@ -706,6 +706,18 @@ public class ManagementValidation {
 			// metadataRequirementsList
 			if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
 				throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+			}
+
+			if (!Utilities.isEmpty(dto.addressTypes())) {
+				for (final String type : dto.addressTypes()) {
+					if (Utilities.isEmpty(type)) {
+						throw new InvalidParameterException("Address type list contains null or empty element", origin);
+					}
+
+					if (!Utilities.isEnumValue(type.toUpperCase(), AddressType.class)) {
+						throw new InvalidParameterException("Address type list contains invalid element: " + type, origin);
+					}
+				}
 			}
 
 			// interfaceTemplateNames
@@ -947,7 +959,7 @@ public class ManagementValidation {
 		logger.debug("validateNormalizedAddress started");
 		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
 
-		if (dto.address().trim().length() > ServiceRegistryConstants.ADDRESS_LENGTH) {
+		if (dto.address().trim().length() > Constants.ADDRESS_MAX_LENGTH) {
 			throw new InvalidParameterException("Address is too long", origin);
 		}
 

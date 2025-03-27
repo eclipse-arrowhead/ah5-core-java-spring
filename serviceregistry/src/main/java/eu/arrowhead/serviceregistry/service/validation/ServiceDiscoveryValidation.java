@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
@@ -18,8 +19,8 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
@@ -65,7 +66,7 @@ public class ServiceDiscoveryValidation {
 			throw new InvalidParameterException("Service definition name is empty", origin);
 		}
 
-		if (dto.serviceDefinitionName().length() > ServiceRegistryConstants.SERVICE_DEFINITION_NAME_LENGTH) {
+		if (dto.serviceDefinitionName().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Service definition name is too long", origin);
 		}
 
@@ -153,6 +154,18 @@ public class ServiceDiscoveryValidation {
 			throw new InvalidParameterException("Metadata requirements list contains null element", origin);
 		}
 
+		if (!Utilities.isEmpty(dto.addressTypes())) {
+			for (final String type : dto.addressTypes()) {
+				if (Utilities.isEmpty(type)) {
+					throw new InvalidParameterException("Address type list contains null or empty element", origin);
+				}
+
+				if (!Utilities.isEnumValue(type.toUpperCase(), AddressType.class)) {
+					throw new InvalidParameterException("Address type list contains invalid element: " + type, origin);
+				}
+			}
+		}
+
 		if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
 			throw new InvalidParameterException("Interface template list contains null or empty element", origin);
 		}
@@ -201,6 +214,16 @@ public class ServiceDiscoveryValidation {
 		try {
 			versionValidator.validateNormalizedVersion(normalizedInstance.version());
 			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
+
+			if (normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
+				try {
+					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+					Integer.parseInt(str);
+
+				} catch (final ClassCastException | NumberFormatException ex) {
+					throw new InvalidParameterException(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata must have integer value.");
+				}
+			}
 
 			return new ServiceInstanceRequestDTO(
 					normalizedInstance.systemName(),

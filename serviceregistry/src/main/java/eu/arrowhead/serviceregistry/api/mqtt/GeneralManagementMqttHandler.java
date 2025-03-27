@@ -44,15 +44,15 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public String topic() {
-		return ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_TOPIC;
+	public String baseTopic() {
+		return ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
 		logger.debug("ManagementMqttHandler.handle started");
-		Assert.isTrue(request.getRequestTopic().equals(topic()), "MQTT topic-handler mismatch");
+		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
 		MqttStatus responseStatus = MqttStatus.OK;
 		Object responsePayload = null;
@@ -81,12 +81,13 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private LogEntryListResponseDTO getLog(final LogRequestDTO dto) {
 		logger.debug("ManagementMqttHandler.getLog started");
-		return logService.getLogEntries(dto, topic());
+		return logService.getLogEntries(dto, baseTopic() + Constants.SERVICE_OP_GET_LOG);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private KeyValuesDTO getConfig(final List<String> dto) {
 		logger.debug("ManagementMqttHandler.getConfig started");
-		return configService.getConfig(dto, ServiceRegistryConstants.FORBIDDEN_KEYS, topic());
+		return configService.getConfig(dto, baseTopic() + Constants.SERVICE_OP_GET_CONFIG);
+
 	}
 }

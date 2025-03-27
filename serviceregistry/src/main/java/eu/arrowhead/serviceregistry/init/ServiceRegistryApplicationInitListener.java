@@ -10,11 +10,13 @@ import org.springframework.stereotype.Component;
 import eu.arrowhead.common.init.ApplicationInitListener;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
+import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryService;
 import eu.arrowhead.serviceregistry.service.SystemDiscoveryService;
 
@@ -31,6 +33,9 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 
 	@Autowired
 	private ServiceDiscoveryService sdService;
+
+	@Autowired
+	private ServiceInterfaceAddressPropertyProcessor serviceInterfaceAddressPropertyProcessor;
 
 	//=================================================================================================
 	// assistant methods
@@ -58,6 +63,10 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 				registerService(serviceModel);
 			}
 		}
+
+		// Init service interface address type filter
+		final ServiceRegistrySystemInfo srSysInfo = (ServiceRegistrySystemInfo) sysInfo;
+		serviceInterfaceAddressPropertyProcessor.setAddressAliasNames(srSysInfo.getServiceAddressAliases());
 
 		logger.info("System {} published {} service(s).", sysInfo.getSystemName(), registeredServices.size());
 	}

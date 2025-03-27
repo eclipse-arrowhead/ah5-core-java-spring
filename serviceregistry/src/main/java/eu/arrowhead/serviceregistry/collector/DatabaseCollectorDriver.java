@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,8 +24,7 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
-import eu.arrowhead.common.intf.properties.PropertyValidatorType;
-import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.intf.properties.validators.HttpOperationsValidator;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
@@ -53,7 +53,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	private ServiceInstanceDbService instanceDbService;
 
 	@Autowired
-	private PropertyValidators validators;
+	private HttpOperationsValidator httpOperationsValidator;
 
 	private final List<String> supportedInterfaces = List.of(
 			Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME,
@@ -72,7 +72,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName) throws ArrowheadException {
+	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName, final String providerName) throws ArrowheadException {
 		logger.debug("DatabaseCollectorDriver.acquireService started: service definition: {}, interface template: {}", serviceDefinitionName, interfaceTemplateName);
 
 		if (!supportedInterfaces.contains(interfaceTemplateName)) {
@@ -85,9 +85,23 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			return null;
 		}
 
-		// only the first instance entry will be returned
-		final ServiceInstance instance = instanceEntries.getContent().getFirst().getKey();
-		final List<ServiceInstanceInterface> interfaces = instanceEntries.getContent().getFirst().getValue();
+		// only the first instance or the first matching system name entry will be returned
+		ServiceInstance instance = null;
+		List<ServiceInstanceInterface> interfaces = null;
+		if (Utilities.isEmpty(providerName)) {
+			instance = instanceEntries.getContent().getFirst().getKey();
+			interfaces = instanceEntries.getContent().getFirst().getValue();
+		} else {
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> matchingProvider = instanceEntries.stream().filter(ie -> ie.getKey().getSystem().getName().equalsIgnoreCase(providerName)).toList();
+			if (!Utilities.isEmpty(matchingProvider)) {
+				instance = matchingProvider.getFirst().getKey();
+				interfaces = matchingProvider.getFirst().getValue();
+			}
+		}
+
+		if (instance == null) {
+			return null;
+		}
 
 		// create the list of interface models
 		final List<InterfaceModel> interfaceModelList = new ArrayList<>();
@@ -108,8 +122,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			}
 		}
 
-		final ServiceModel serviceModel = new ServiceModel
-				.Builder()
+		final ServiceModel serviceModel = new ServiceModel.Builder()
 				.serviceDefinition(instance.getServiceDefinition().getName())
 				.version(instance.getVersion())
 				.serviceInterfaces(interfaceModelList)
@@ -135,11 +148,10 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final PageRequest pagination = PageRequest.of(0, 1, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
 
 		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(
-				new ServiceInstanceLookupRequestDTO
-				.Builder()
-				.serviceDefinitionName(nServiceDefinitionName)
-				.interfaceTemplateName(nInterfaceTemplateName)
-				.build());
+				new ServiceInstanceLookupRequestDTO.Builder()
+						.serviceDefinitionName(nServiceDefinitionName)
+						.interfaceTemplateName(nInterfaceTemplateName)
+						.build());
 
 		// get the instances from the database
 		return instanceDbService.getPageByFilters(pagination, filterModel);
@@ -160,12 +172,11 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 
 		// operations
 		final Map<String, HttpOperationModel> operations = properties.containsKey(HttpInterfaceModel.PROP_NAME_OPERATIONS)
-				? (Map<String, HttpOperationModel>) validators.getValidator(PropertyValidatorType.HTTP_OPERATIONS).validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS))
+				? (Map<String, HttpOperationModel>) httpOperationsValidator.validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS))
 				: Map.of();
 
 		// create the interface model
-		final HttpInterfaceModel model = new HttpInterfaceModel
-				.Builder(templateName)
+		final HttpInterfaceModel model = new HttpInterfaceModel.Builder(templateName)
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
 				.basePath(basePath)
@@ -185,19 +196,19 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		// access port
 		final int accessPort = (int) properties.get(MqttInterfaceModel.PROP_NAME_ACCESS_PORT);
 
-		// topic
-		final String topic = (String) properties.get(MqttInterfaceModel.PROP_NAME_TOPIC);
+		// base topic
+		final String baseTopic = (String) properties.get(MqttInterfaceModel.PROP_NAME_BASE_TOPIC);
 
 		// operations
 		final Set<String> operations = properties.containsKey(MqttInterfaceModel.PROP_NAME_OPERATIONS)
-				? new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS)) : Set.of();
+				? new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS))
+				: Set.of();
 
 		// create the interface model
-		MqttInterfaceModel model = new MqttInterfaceModel
-				.Builder(templateName)
+		final MqttInterfaceModel model = new MqttInterfaceModel.Builder(templateName)
 				.accessAddresses(accessAddresses)
 				.accessPort(accessPort)
-				.topic(topic)
+				.baseTopic(baseTopic)
 				.operations(operations)
 				.build();
 

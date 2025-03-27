@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
@@ -13,7 +14,6 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
@@ -55,7 +55,7 @@ public class SystemDiscoveryValidation {
 			throw new InvalidParameterException("System name is empty", origin);
 		}
 
-		if (dto.name().length() > ServiceRegistryConstants.SYSTEM_NAME_LENGTH) {
+		if (dto.name().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("System name is too long", origin);
 		}
 
