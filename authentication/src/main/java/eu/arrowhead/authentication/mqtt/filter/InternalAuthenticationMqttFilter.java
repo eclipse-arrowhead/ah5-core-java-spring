@@ -18,10 +18,6 @@ public class InternalAuthenticationMqttFilter implements ArrowheadMqttFilter {
 
 	//=================================================================================================
 	// members
-	
-	private static final String AUTH_KEY_DELIMITER = Constants.HTTP_HEADER_AUTHORIZATION_DELIMITER;
-	private static final String AUTH_KEY_PREFIX_IDENTITY_TOKEN = Constants.HTTP_HEADER_AUTHORIZATION_PREFIX_IDENTITY_TOKEN;
-
 
 	private static final List<String> tokenlessOperations = List.of(
 			Constants.SERVICE_OP_IDENTITY_LOGIN,
@@ -95,8 +91,8 @@ public class InternalAuthenticationMqttFilter implements ArrowheadMqttFilter {
 			throw new AuthException("No authentication info has been provided");
 		}
 
-		final String[] split = authKey.split(AUTH_KEY_DELIMITER);
-		if (split.length != 2 || !split[0].equals(AUTH_KEY_PREFIX_IDENTITY_TOKEN)) {
+		final String[] split = authKey.split(Constants.AUTHENTICATION_KEY_DELIMITER);
+		if (split.length != 2 || !split[0].equals(Constants.AUTHENTICATION_PREFIX_IDENTITY_TOKEN)) {
 			throw new AuthException("Invalid authentication info");
 		}
 

@@ -1,4 +1,4 @@
-package eu.arrowhead.authentication.api.http;
+package eu.arrowhead.authentication.api.mqtt;
 
 import java.security.InvalidParameterException;
 

@@ -94,12 +94,12 @@ public class InternalAuthenticationFilter extends ArrowheadFilter implements IAu
 		}
 
 		String[] split = authHeader.trim().split(" ");
-		if (split.length != 2 || !split[0].equals(Constants.HTTP_HEADER_AUTHORIZATION_SCHEMA)) {
+		if (split.length != 2 || !split[0].equals(Constants.AUTHENTICATION_SCHEMA)) {
 			throw new AuthException("Invalid authorization header");
 		}
 
-		split = split[1].split(Constants.HTTP_HEADER_AUTHORIZATION_DELIMITER);
-		if (split.length != 2 || !split[0].equals(Constants.HTTP_HEADER_AUTHORIZATION_PREFIX_IDENTITY_TOKEN)) {
+		split = split[1].split(Constants.AUTHENTICATION_KEY_DELIMITER);
+		if (split.length != 2 || !split[0].equals(Constants.AUTHENTICATION_PREFIX_IDENTITY_TOKEN)) {
 			throw new AuthException("Invalid authorization header");
 		}
 
