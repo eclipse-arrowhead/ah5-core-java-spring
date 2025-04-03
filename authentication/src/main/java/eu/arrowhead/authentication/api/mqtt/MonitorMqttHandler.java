@@ -1,41 +1,26 @@
-package eu.arrowhead.serviceregistry.api.mqtt;
+package eu.arrowhead.authentication.api.mqtt;
 
 import java.security.InvalidParameterException;
-import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
+import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
-import eu.arrowhead.common.service.ConfigService;
-import eu.arrowhead.common.service.LogService;
-import eu.arrowhead.dto.KeyValuesDTO;
-import eu.arrowhead.dto.LogEntryListResponseDTO;
-import eu.arrowhead.dto.LogRequestDTO;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 
 @Service
 @ConditionalOnProperty(name = Constants.MQTT_API_ENABLED, matchIfMissing = false)
-public class GeneralManagementMqttHandler extends MqttTopicHandler {
+public class MonitorMqttHandler extends MqttTopicHandler {
 
 	//=================================================================================================
 	// members
-
-	@Autowired
-	private LogService logService;
-
-	@Autowired
-	private ConfigService configService;
 
 	private final Logger logger = LogManager.getLogger(getClass());
 
@@ -45,27 +30,21 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC;
+		return AuthenticationConstants.MQTT_API_MONITOR_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
-		logger.debug("GeneralManagementMqttHandler.handle started");
+		logger.debug("MonitorMqttHandler.handle started");
 		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
-		MqttStatus responseStatus = MqttStatus.OK;
+		final MqttStatus responseStatus = MqttStatus.OK;
 		Object responsePayload = null;
 
 		switch (request.getOperation()) {
-		case Constants.SERVICE_OP_GET_LOG:
-			final LogRequestDTO getLogDTO = readPayload(request.getPayload(), LogRequestDTO.class);
-			responsePayload = getLog(getLogDTO);
-			break;
-
-		case Constants.SERVICE_OP_GET_CONFIG:
-			final List<String> getConfigDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
-			responsePayload = getConfig(getConfigDTO);
+		case Constants.SERVICE_OP_ECHO:
+			responsePayload = echo();
 			break;
 
 		default:
@@ -79,15 +58,9 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private LogEntryListResponseDTO getLog(final LogRequestDTO dto) {
-		logger.debug("GeneralManagementMqttHandler.getLog started");
-		return logService.getLogEntries(dto, baseTopic() + Constants.SERVICE_OP_GET_LOG);
-	}
+	private String echo() {
+		logger.debug("MonitorMqttHandler.echo started");
 
-	//-------------------------------------------------------------------------------------------------
-	private KeyValuesDTO getConfig(final List<String> dto) {
-		logger.debug("GeneralManagementMqttHandler.getConfig started");
-		return configService.getConfig(dto, baseTopic() + Constants.SERVICE_OP_GET_CONFIG);
-
+		return "Got it";
 	}
 }

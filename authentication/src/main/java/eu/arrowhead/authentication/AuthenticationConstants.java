@@ -1,7 +1,5 @@
 package eu.arrowhead.authentication;
 
-import eu.arrowhead.common.jpa.ArrowheadEntity;
-
 public final class AuthenticationConstants {
 
 	//=================================================================================================
@@ -23,6 +21,12 @@ public final class AuthenticationConstants {
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 
+	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/authentication";
+	public static final String MQTT_API_IDENTITY_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/identity/";
+	public static final String MQTT_API_MANAGEMENT_BASE_TOPIC = MQTT_API_IDENTITY_BASE_TOPIC + "management/";
+	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
+	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
+
 	// operation related
 
 	public static final String HTTP_API_OP_LOGIN_PATH = "/login";
@@ -30,7 +34,7 @@ public final class AuthenticationConstants {
 	public static final String HTTP_API_OP_CHANGE_PATH = "/change";
 	public static final String HTTP_API_OP_VERIFY_BASE_PATH = "/verify";
 	public static final String HTTP_PARAM_TOKEN = "{token}";
-	public static final String HTTP_API_OP_VERIFY_PATH = "/" + HTTP_PARAM_TOKEN;
+	public static final String HTTP_API_OP_VERIFY_PATH = HTTP_API_OP_VERIFY_BASE_PATH + "/" + HTTP_PARAM_TOKEN;
 	public static final String HTTP_API_OP_IDENTITIES_PATH = "/identities";
 	public static final String HTTP_API_OP_IDENTITIES_QUERY_PATH = HTTP_API_OP_IDENTITIES_PATH + "/query";
 	public static final String HTTP_API_OP_SESSION_PATH = "/sessions";

@@ -20,6 +20,7 @@ import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
+import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.common.security.SecurityUtilities;
 
 @Component
@@ -65,18 +66,21 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.version(AuthenticationConstants.VERSION_IDENTITY)
 				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForIdentity())
+				.serviceInterface(getMqttServiceInterfaceForIdentity())
 				.build();
 
 		final ServiceModel identityManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_IDENTITY_MANAGEMENT)
 				.version(AuthenticationConstants.VERSION_IDENTITY_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForIdentityManagement())
+				.serviceInterface(getMqttServiceInterfaceForIdentityManagement())
 				.build();
 
 		final ServiceModel generalManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_GENERAL_MANAGEMENT)
 				.version(AuthenticationConstants.VERSION_GENERAL_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForGeneralManagement())
+				.serviceInterface(getMqttServiceInterfaceForGeneralManagement())
 				.build();
 
 		return List.of(identity, identityManagement, generalManagement);
@@ -159,6 +163,22 @@ public class AuthenticationSystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForIdentity() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(AuthenticationConstants.MQTT_API_IDENTITY_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_IDENTITY_LOGIN,
+						Constants.SERVICE_OP_IDENTITY_LOGOUT,
+						Constants.SERVICE_OP_IDENTITY_CHANGE,
+						Constants.SERVICE_OP_IDENTITY_VERIFY))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getHttpServiceInterfaceForIdentityManagement() {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
@@ -199,6 +219,24 @@ public class AuthenticationSystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForIdentityManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(AuthenticationConstants.MQTT_API_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_IDENTITY_MGMT_CREATE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_UPDATE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_REMOVE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_QUERY,
+						Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_CLOSE,
+						Constants.SERVICE_OP_IDENTITY_MGMT_SESSION_QUERY))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getHttpServiceInterfaceForGeneralManagement() {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
@@ -215,6 +253,19 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.basePath(AuthenticationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
 				.operation(Constants.SERVICE_OP_GET_LOG, log)
 				.operation(Constants.SERVICE_OP_GET_CONFIG, config)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForGeneralManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(AuthenticationConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
 				.build();
 	}
 }

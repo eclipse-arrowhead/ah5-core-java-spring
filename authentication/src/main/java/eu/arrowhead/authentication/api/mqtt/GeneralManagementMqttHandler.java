@@ -1,4 +1,4 @@
-package eu.arrowhead.serviceregistry.api.mqtt;
+package eu.arrowhead.authentication.api.mqtt;
 
 import java.security.InvalidParameterException;
 import java.util.List;
@@ -12,6 +12,7 @@ import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.mqtt.MqttStatus;
@@ -22,7 +23,6 @@ import eu.arrowhead.common.service.LogService;
 import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.LogEntryListResponseDTO;
 import eu.arrowhead.dto.LogRequestDTO;
-import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 
 @Service
 @ConditionalOnProperty(name = Constants.MQTT_API_ENABLED, matchIfMissing = false)
@@ -45,7 +45,7 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String baseTopic() {
-		return ServiceRegistryConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC;
+		return AuthenticationConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC;
 	}
 
 	//-------------------------------------------------------------------------------------------------
