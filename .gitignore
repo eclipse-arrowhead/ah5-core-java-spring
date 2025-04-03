@@ -10,3 +10,4 @@
 *.lck
 /authentication/.factorypath
 /authentication/authentication.log
+/consumer-authorization/.factorypath

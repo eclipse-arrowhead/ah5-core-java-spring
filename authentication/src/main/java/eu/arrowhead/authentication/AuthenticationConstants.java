@@ -53,8 +53,6 @@ public final class AuthenticationConstants {
 	public static final String CLEANER_TRIGGER = "authenticationCleanerTrigger";
 	public static final String CLEANER_JOB = "authenticationCleanerJob";
 
-	// Forbidden keys (for config service)
-
 	//=================================================================================================
 	// assistant methods
 

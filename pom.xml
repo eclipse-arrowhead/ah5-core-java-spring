@@ -28,6 +28,7 @@
 		<module>serviceregistry</module>
 		<module>serviceorchestration-dynamic</module>
 		<module>authentication</module>
+		<module>consumer-authorization</module>
 	</modules>
 	
 	<dependencies>

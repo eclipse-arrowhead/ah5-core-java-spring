@@ -17,7 +17,7 @@ import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 
-@Component
+@Component(Constants.BEAN_NAME_SYSTEM_INFO)
 public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 	//=================================================================================================

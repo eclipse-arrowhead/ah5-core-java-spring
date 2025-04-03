@@ -21,7 +21,7 @@ import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
 
-@Component
+@Component(Constants.BEAN_NAME_SYSTEM_INFO)
 public class ServiceRegistrySystemInfo extends SystemInfo {
 
 	//=================================================================================================
