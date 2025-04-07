@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `auth_provider_policy_header` (
 
 CREATE TABLE IF NOT EXISTS `auth_policy` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
-	`header_type` varchar(30) NOT NULL,
+	`level` varchar(30) NOT NULL,
 	`header_id` bigint(20) NOT NULL,
 	`scope` varchar(63) NOT NULL DEFAULT '*',
 	`policy_type` varchar(30) NOT NULL,

@@ -2,7 +2,7 @@ package eu.arrowhead.authorization.jpa.entity;
 
 import eu.arrowhead.authorization.AuthorizationDefaults;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
-import eu.arrowhead.dto.enums.AuthorizationHeaderType;
+import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationPolicyType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +24,7 @@ public class AuthPolicy {
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
-	private AuthorizationHeaderType headerType;
+	private AuthorizationLevel level;
 
 	@Column(nullable = false)
 	private long headerId; // can't be a foreign key because it can references a record from one of two tables
@@ -48,12 +48,12 @@ public class AuthPolicy {
 
 	//-------------------------------------------------------------------------------------------------
 	public AuthPolicy(
-			final AuthorizationHeaderType headerType,
+			final AuthorizationLevel level,
 			final long headerId,
 			final String scope,
 			final AuthorizationPolicyType policyType,
 			final String policy) {
-		this.headerType = headerType;
+		this.level = level;
 		this.headerId = headerId;
 		this.scope = scope;
 		this.policyType = policyType;
@@ -63,7 +63,7 @@ public class AuthPolicy {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "AuthPolicy [id=" + id + ", headerType=" + headerType + ", headerId=" + headerId + ", scope=" + scope + ", policyType=" + policyType + ", policy=" + policy + "]";
+		return "AuthPolicy [id=" + id + ", level=" + level + ", headerId=" + headerId + ", scope=" + scope + ", policyType=" + policyType + ", policy=" + policy + "]";
 	}
 
 	//=================================================================================================
@@ -80,13 +80,13 @@ public class AuthPolicy {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationHeaderType getHeaderType() {
-		return headerType;
+	public AuthorizationLevel getLevel() {
+		return level;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setHeaderType(final AuthorizationHeaderType headerType) {
-		this.headerType = headerType;
+	public void setLevel(final AuthorizationLevel level) {
+		this.level = level;
 	}
 
 	//-------------------------------------------------------------------------------------------------
