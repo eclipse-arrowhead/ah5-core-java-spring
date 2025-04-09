@@ -16,6 +16,7 @@ import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
 @Service
 public class AuthorizationValidation {
@@ -34,6 +35,9 @@ public class AuthorizationValidation {
 
 	@Autowired
 	private CloudIdentifierNormalizer cloudIdentifierNormalizer;
+
+	@Autowired
+	private AuthorizationPolicyRequestValidator policyRequestValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -55,7 +59,15 @@ public class AuthorizationValidation {
 			throw new InvalidParameterException("System name is too long: " + systemName, origin);
 		}
 
-		nameValidator.validateName(systemName);
+		try {
+			nameValidator.validateName(systemName);
+		} catch (final InvalidParameterException ex) {
+			if (Utilities.isEmpty(ex.getOrigin())) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
+
+			throw ex;
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -67,7 +79,51 @@ public class AuthorizationValidation {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
-		// TODO: continue validation
+		try {
+			// cloud
+			if (!Utilities.isEmpty(dto.cloud())) {
+				if (dto.cloud().length() > Constants.CLOUD_IDENTIFIER_MAX_LENGTH) {
+					throw new InvalidParameterException("Cloud identifier is too long: " + dto.cloud(), origin);
+				}
+
+				cloudIdentitiferValidator.validateCloudIdentifier(dto.cloud());
+			}
+
+			// target type
+			if (Utilities.isEmpty(dto.targetType())) {
+				throw new InvalidParameterException("Target type is missing", origin);
+			}
+
+			final String targetTypeName = dto.targetType().trim().toUpperCase();
+
+			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
+				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+			}
+
+			// target
+			if (Utilities.isEmpty(dto.target())) {
+				throw new InvalidParameterException("Target is missing", origin);
+			}
+
+			final int threshold = AuthorizationTargetType.SERVICE_DEF.name().equals(targetTypeName) ? Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH : Constants.EVENT_TYPE_NAME_MAX_LENGTH;
+			if (dto.target().length() > threshold) {
+				throw new InvalidParameterException("Target is too long: " + dto.cloud(), origin);
+			}
+
+			nameValidator.validateName(dto.target());
+
+			// default policy
+			policyRequestValidator.validateAuthorizationPolicy(dto.defaultPolicy(), true, origin);
+
+			// scoped policies
+			// TODO: continue
+		} catch (final InvalidParameterException ex) {
+			if (Utilities.isEmpty(ex.getOrigin())) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
+
+			throw ex;
+		}
 	}
 
 	// VALIDATION AND NORMALIZATION

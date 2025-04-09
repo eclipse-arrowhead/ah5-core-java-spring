@@ -19,7 +19,7 @@ public class NormalizedGrantRequest {
 	private AuthorizationTargetType targetType;
 	private String target;
 	private String description;
-	private Map<String, NormalizedAuthorizationPolicy> policies;
+	private Map<String, NormalizedAuthorizationRequestPolicy> policies;
 
 	//=================================================================================================
 	// methods
@@ -30,7 +30,7 @@ public class NormalizedGrantRequest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void addPolicy(final String scope, final NormalizedAuthorizationPolicy policy) {
+	public void addPolicy(final String scope, final NormalizedAuthorizationRequestPolicy policy) {
 		if (policy != null) {
 			if (this.policies == null) {
 				this.policies = new HashMap<>();
@@ -95,12 +95,12 @@ public class NormalizedGrantRequest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Map<String, NormalizedAuthorizationPolicy> policies() {
+	public Map<String, NormalizedAuthorizationRequestPolicy> policies() {
 		return policies;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setPolicies(final Map<String, NormalizedAuthorizationPolicy> policies) {
+	public void setPolicies(final Map<String, NormalizedAuthorizationRequestPolicy> policies) {
 		this.policies = policies;
 	}
 
