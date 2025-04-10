@@ -91,24 +91,28 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION)
 				.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY)
 				.serviceInterface(getHttpServiceInterfaceForOrchestration())
+				.serviceInterface(getMqttServiceInterfaceForOrchestration())
 				.build();
 
 		final ServiceModel orchestrationPushManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_PUSH_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationPushManagement())
+				.serviceInterface(getMqttServiceInterfaceForOrchestrationPushManagement())
 				.build();
 
 		final ServiceModel orchestrationLockManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_LOCK_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationLockManagement())
+				.serviceInterface(getMqttServiceInterfaceForOrchestrationLockManagement())
 				.build();
 
 		final ServiceModel orchestrationHistoryManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_HISTORY_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_HISTORY_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationHistoryManagement())
+				.serviceInterface(getMqttServiceInterfaceForOrchestrationHistoryManagement())
 				.build();
 
 		return List.of(generalManagement, orchestration, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement);
@@ -349,6 +353,58 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestration() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_PULL, Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE, Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestrationPushManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_PUSH_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE, Constants.SERVICE_OP_ORCHESTRATION_TRIGGER, Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE, Constants.SERVICE_OP_ORCHESTRATION_QUERY))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestrationLockManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_LOCK_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_CREATE, Constants.SERVICE_OP_ORCHESTRATION_QUERY, Constants.SERVICE_OP_ORCHESTRATION_REMOVE))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestrationHistoryManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_HISTORY_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_QUERY))
 				.build();
 	}
 }
