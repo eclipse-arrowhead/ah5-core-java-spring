@@ -1,13 +1,18 @@
 package eu.arrowhead.authorization.service.validation;
 
+import java.util.Map.Entry;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
+import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyRequestNormalizer;
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
@@ -15,6 +20,7 @@ import eu.arrowhead.common.service.validation.cloud.CloudIdentifierValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
+import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
@@ -38,6 +44,9 @@ public class AuthorizationValidation {
 
 	@Autowired
 	private AuthorizationPolicyRequestValidator policyRequestValidator;
+
+	@Autowired
+	private AuthorizationPolicyRequestNormalizer policyRequestNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -116,7 +125,16 @@ public class AuthorizationValidation {
 			policyRequestValidator.validateAuthorizationPolicy(dto.defaultPolicy(), true, origin);
 
 			// scoped policies
-			// TODO: continue
+			if (dto.scopedPolicies() != null) {
+				dto.scopedPolicies().entrySet().forEach(e -> {
+					if (e.getKey().length() > Constants.SCOPE_MAX_LENGTH) {
+						throw new InvalidParameterException("Scope is too long: " + e.getKey(), origin);
+					}
+
+					nameValidator.validateName(e.getKey());
+					policyRequestValidator.validateAuthorizationPolicy(e.getValue(), false, origin);
+				});
+			}
 		} catch (final InvalidParameterException ex) {
 			if (Utilities.isEmpty(ex.getOrigin())) {
 				throw new InvalidParameterException(ex.getMessage(), origin);
@@ -146,8 +164,31 @@ public class AuthorizationValidation {
 
 		final NormalizedGrantRequest result = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
 		result.setProvider(normalizedProvider);
-		// TODO: continue normalization
+		normalizeGrantRequest(dto, result);
 
 		return result;
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void normalizeGrantRequest(final AuthorizationGrantRequestDTO dto, final NormalizedGrantRequest result) {
+		logger.debug("normalizeGrantRequest started...");
+
+		result.setCloud(Utilities.isEmpty(dto.cloud()) ? Defaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(dto.cloud()));
+		result.setTargetType(AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()));
+		result.setTarget(nameNormalizer.normalize(dto.target()));
+		result.setDescription(dto.description());
+
+		if (!Utilities.isEmpty(dto.scopedPolicies())) {
+			for (final Entry<String, AuthorizationPolicyRequestDTO> entry : dto.scopedPolicies().entrySet()) {
+				final String scope = nameNormalizer.normalize(entry.getKey());
+				final NormalizedAuthorizationPolicyRequest normalized = policyRequestNormalizer.normalize(entry.getValue());
+				result.addPolicy(scope, normalized);
+			}
+		}
+
+		result.addPolicy(Defaults.DEFAULT_AUTHORIZATION_SCOPE, policyRequestNormalizer.normalize(dto.defaultPolicy()));
 	}
 }

@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -71,5 +74,31 @@ public class AuthorizationAPI {
 		final String provider = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		return authService.grantOperation(provider, dto, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Deletes policy instance entry if exists")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_NO_CONTENT, description = Constants.SWAGGER_HTTP_204_MESSAGE),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@DeleteMapping(path = AuthorizationConstants.HTTP_API_OP_SERVICE_REVOKE_PATH)
+	public ResponseEntity<Void> revoke(final HttpServletRequest httpServletRequest, @PathVariable(required = true) final String instanceId) {
+		logger.debug("revoke started");
+
+		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_PATH
+				+ AuthorizationConstants.HTTP_API_OP_SERVICE_REVOKE_PATH.replace(AuthorizationConstants.HTTP_PARAM_INSTANCE_ID, instanceId);
+		final String identifiedSystemName = sysNamePreprocessor.process(httpServletRequest, origin);
+		final boolean result = authService.revokeOperation(identifiedSystemName, instanceId, origin);
+
+		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }

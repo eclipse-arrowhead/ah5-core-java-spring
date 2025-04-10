@@ -18,6 +18,8 @@ public class AuthPolicy {
 	//=================================================================================================
 	// members
 
+	public static final String LIST_POLICY_DELIMITER = ",";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;

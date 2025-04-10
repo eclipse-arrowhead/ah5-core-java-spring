@@ -65,8 +65,8 @@ public class AuthProviderPolicyHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "AuthMgmtPolicyHeader [instanceId=" + instanceId + ", targetType=" + targetType + ", cloud=" + cloud + ", provider=" + provider + ", target=" + target + ", description=" + description
-				+ ", id=" + id + ", createdAt=" + createdAt + "]";
+		return "AuthProviderPolicyHeader [instanceId=" + instanceId + ", targetType=" + targetType + ", cloud=" + cloud + ", provider=" + provider + ", target=" + target
+				+ ", description=" + description + ", id=" + id + ", createdAt=" + createdAt + "]";
 	}
 
 	//=================================================================================================
