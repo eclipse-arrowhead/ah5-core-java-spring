@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
@@ -82,6 +83,11 @@ public class OrchestrationService {
 		logger.debug("pushSubscribe started...");
 
 		final OrchestrationSubscription subscription = new OrchestrationSubscription(requesterSystem, dto);
+
+		if (Utilities.isEmpty(subscription.getOrchestrationForm().getTargetSystemName())) {
+			subscription.getOrchestrationForm().setTargetSystemName(requesterSystem);
+		}
+
 		validator.validateAndNormalizePushSubscribeService(subscription, origin);
 		formContextValidator.validate(subscription.getOrchestrationForm(), origin);
 
