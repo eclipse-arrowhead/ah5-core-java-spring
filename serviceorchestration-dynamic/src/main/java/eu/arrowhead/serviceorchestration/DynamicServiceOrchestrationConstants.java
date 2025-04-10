@@ -37,6 +37,11 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/serviceorchestration";
 	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
 	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
+	public static final String MQTT_API_ORCHESTRATION_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/orchestration/";
+	public static final String MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX = MQTT_API_ORCHESTRATION_BASE_TOPIC + "management";
+	public static final String MQTT_API_ORCHESTRATION_PUSH_MANAGEMENT_BASE_TOPIC = MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX + "/push/";
+	public static final String MQTT_API_ORCHESTRATION_HISTORY_MANAGEMENT_BASE_TOPIC = MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX + "/history/";
+	public static final String MQTT_API_ORCHESTRATION_LOCK_MANAGEMENT_BASE_TOPIC = MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX + "/lock/";
 
 	public static final String VERSION_MONITOR = "1.0.0";
 	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
