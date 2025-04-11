@@ -90,6 +90,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION)
 				.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForOrchestration())
 				.build();
 

@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +29,7 @@ import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestr
 import eu.arrowhead.serviceorchestration.service.utils.LocalServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationFromContextValidation;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
+import jakarta.annotation.Resource;
 
 @Service
 public class OrchestrationService {
@@ -46,6 +48,9 @@ public class OrchestrationService {
 
 	@Autowired
 	private OrchestrationJobDbService orchJobDbService;
+
+	@Resource(name = DynamicServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
+	private BlockingQueue<UUID> pushOrchJobQueue;
 
 	@Autowired
 	private OrchestrationValidation validator;
@@ -79,7 +84,7 @@ public class OrchestrationService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final String origin) {
+	public Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final boolean trigger, final String origin) {
 		logger.debug("pushSubscribe started...");
 
 		final OrchestrationSubscription subscription = new OrchestrationSubscription(requesterSystem, dto);
@@ -91,6 +96,7 @@ public class OrchestrationService {
 		validator.validateAndNormalizePushSubscribeService(subscription, origin);
 		formContextValidator.validate(subscription.getOrchestrationForm(), origin);
 
+		Pair<Boolean, String> response = null;
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
 			final Optional<Subscription> recordOpt = subscriptionDbService.get(
 					subscription.getOrchestrationForm().getRequesterSystemName(),
@@ -100,8 +106,16 @@ public class OrchestrationService {
 			final boolean isOverride = recordOpt.isPresent();
 
 			final List<Subscription> result = subscriptionDbService.create(List.of(subscription));
-			return Pair.of(isOverride, result.getFirst().getId().toString());
+			response = Pair.of(isOverride, result.getFirst().getId().toString());
 		}
+
+		if (trigger) {
+			final OrchestrationJob orchestrationJob = new OrchestrationJob(OrchestrationType.PUSH, requesterSystem, requesterSystem, dto.orchestrationRequest().serviceRequirement().serviceDefinition(), response.getValue());
+			orchJobDbService.create(List.of(orchestrationJob));
+			pushOrchJobQueue.add(orchestrationJob.getId());
+		}
+
+		return response;
 	}
 
 	//-------------------------------------------------------------------------------------------------
