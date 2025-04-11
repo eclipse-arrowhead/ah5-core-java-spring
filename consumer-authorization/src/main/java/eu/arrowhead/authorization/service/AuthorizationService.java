@@ -14,11 +14,16 @@ import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.authorization.jpa.service.AuthorizationPolicyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.authorization.service.utils.InstanceIdUtils;
 import eu.arrowhead.authorization.service.validation.AuthorizationValidation;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
+import eu.arrowhead.dto.AuthorizationLookupRequestDTO;
+import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
 
 @Service
@@ -63,11 +68,30 @@ public class AuthorizationService {
 	//-------------------------------------------------------------------------------------------------
 	public boolean revokeOperation(final String identifiedSystemName, final String instanceId, final String origin) {
 		logger.debug("revokeOperation started...");
-		Assert.isTrue(!Utilities.isEmpty(identifiedSystemName), "identifiedSystemName is empty");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		// TODO: continue
+		final Pair<String, String> normalized = validator.validateAndNormalizeRevokeInput(identifiedSystemName, instanceId, origin);
 
-		return false;
+		if (!InstanceIdUtils.retrieveProviderName(normalized.getSecond()).equals(normalized.getFirst())) {
+			throw new ForbiddenException("Revoking other systems' policy is forbidden", origin);
+		}
+
+		try {
+			return dbService.deleteProviderLevelPolicyByInstanceId(instanceId);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationPolicyListResponseDTO lookupOperation(final String provider, final AuthorizationLookupRequestDTO dto, final String origin) {
+		logger.debug("lookupOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final String normalizedProvider = validator.validateAndNormalizeSystemName(provider, origin);
+		final NormalizedLookupRequest normalized = validator.validateAndNormalizedLookupRequest(normalizedProvider, dto, origin);
+
+		// TODO: continue
+		return null;
 	}
 }

@@ -89,6 +89,33 @@ public class AuthorizationPolicyDbService {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public boolean deleteProviderLevelPolicyByInstanceId(final String instanceId) {
+		logger.debug("deleteProviderLevelPolicyByInstanceId started");
+		Assert.isTrue(!Utilities.isEmpty(instanceId), "instanceId is empty");
+
+		try {
+			final Optional<AuthProviderPolicyHeader> headerOpt = providerHeaderRepository.findByInstanceId(instanceId);
+			if (headerOpt.isPresent()) {
+				final AuthProviderPolicyHeader header = headerOpt.get();
+
+				providerHeaderRepository.delete(header);
+				providerHeaderRepository.flush();
+				authPolicyRepository.deleteByHeaderId(header.getId());
+				authPolicyRepository.flush();
+
+				return true;
+			}
+
+			return false;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
 	//=================================================================================================
 	// assistant methods
 

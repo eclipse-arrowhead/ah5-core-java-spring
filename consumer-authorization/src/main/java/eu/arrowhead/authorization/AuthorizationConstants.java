@@ -20,6 +20,7 @@ public final class AuthorizationConstants {
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
 	public static final String HTTP_PARAM_INSTANCE_ID = "{instanceId}";
 	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_INSTANCE_ID;
+	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/consumer-authorization";
 	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";

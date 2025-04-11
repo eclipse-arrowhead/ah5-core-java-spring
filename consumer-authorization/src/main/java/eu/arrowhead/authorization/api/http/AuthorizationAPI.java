@@ -21,8 +21,11 @@ import eu.arrowhead.authorization.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.authorization.service.AuthorizationService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
+import eu.arrowhead.dto.AuthorizationLookupRequestDTO;
+import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -100,5 +103,31 @@ public class AuthorizationAPI {
 		final boolean result = authService.revokeOperation(identifiedSystemName, instanceId, origin);
 
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the requester created authorization policies according to the given filters")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ServiceInstanceListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody AuthorizationPolicyListResponseDTO lookup(
+			final HttpServletRequest httpServletRequest,
+			@RequestBody final AuthorizationLookupRequestDTO dto) {
+		logger.debug("lookup started");
+
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_PATH + AuthorizationConstants.HTTP_API_OP_LOOKUP_PATH;
+		final String provider = sysNamePreprocessor.process(httpServletRequest, origin);
+
+		return authService.lookupOperation(provider, dto, origin);
 	}
 }

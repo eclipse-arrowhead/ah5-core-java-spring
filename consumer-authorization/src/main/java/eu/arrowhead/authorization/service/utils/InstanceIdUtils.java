@@ -28,6 +28,16 @@ public final class InstanceIdUtils {
 		return String.join(DELIMITER, level.getPrefix(), cloud, provider, targetType.name(), target);
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public static String retrieveProviderName(final String instanceId) {
+		Assert.isTrue(!Utilities.isEmpty(instanceId), "Instance id is null or empty");
+
+		final String[] split = instanceId.split(DELIMITER);
+		Assert.isTrue(split.length == PARTS, "Invalid instance id");
+
+		return split[2];
+	}
+
 	//=================================================================================================
 	// assistant methods
 

@@ -16,4 +16,7 @@ public interface AuthProviderPolicyHeaderRepository extends RefreshableRepositor
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<AuthProviderPolicyHeader> findByCloudAndProviderAndTargetTypeAndTarget(final String cloud, final String provider, final AuthorizationTargetType targetType, final String target);
+
+	//-------------------------------------------------------------------------------------------------
+	public Optional<AuthProviderPolicyHeader> findByInstanceId(final String instanceId);
 }

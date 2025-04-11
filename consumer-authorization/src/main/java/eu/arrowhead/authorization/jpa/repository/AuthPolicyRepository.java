@@ -7,4 +7,10 @@ import eu.arrowhead.common.jpa.RefreshableRepository;
 
 @Repository
 public interface AuthPolicyRepository extends RefreshableRepository<AuthPolicy, Long> {
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public void deleteByHeaderId(final long headerId);
 }
