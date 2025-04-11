@@ -59,7 +59,8 @@ public class OrchestrationMqttHandler extends MqttTopicHandler {
 
 		case Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE:
 			final OrchestrationSubscriptionRequestDTO subscribeReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionRequestDTO.class);
-			final Pair<Boolean, String> subscribeResult = pushSubscribe(request.getRequester(), subscribeReqDTO);
+			final String triggerStr = request.getParams().getOrDefault("trigger", Boolean.FALSE.toString());
+			final Pair<Boolean, String> subscribeResult = pushSubscribe(request.getRequester(), subscribeReqDTO, Boolean.valueOf(triggerStr));
 			responseStatus = subscribeResult.getLeft() ? MqttStatus.CREATED : MqttStatus.OK;
 			responsePayload = subscribeResult.getRight();
 			break;
@@ -87,9 +88,9 @@ public class OrchestrationMqttHandler extends MqttTopicHandler {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto) {
+	private Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final boolean trigger) {
 		logger.debug("OrchestrationMqttHandler.pushSubscribe started");
-		return orchService.pushSubscribe(requesterSystem, dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE);
+		return orchService.pushSubscribe(requesterSystem, dto, trigger, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE);
 	}
 
 	//-------------------------------------------------------------------------------------------------
