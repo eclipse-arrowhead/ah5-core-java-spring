@@ -5,6 +5,9 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -15,6 +18,7 @@ import eu.arrowhead.authorization.jpa.service.AuthorizationPolicyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.utils.InstanceIdUtils;
 import eu.arrowhead.authorization.service.validation.AuthorizationValidation;
 import eu.arrowhead.common.Utilities;
@@ -25,6 +29,7 @@ import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
 import eu.arrowhead.dto.AuthorizationLookupRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
+import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
 
 @Service
 public class AuthorizationService {
@@ -37,6 +42,9 @@ public class AuthorizationService {
 
 	@Autowired
 	private AuthorizationPolicyDbService dbService;
+
+	@Autowired
+	private AuthorizationPolicyEngine policyEngine;
 
 	@Autowired
 	private DTOConverter dtoConverter;
@@ -89,9 +97,27 @@ public class AuthorizationService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedProvider = validator.validateAndNormalizeSystemName(provider, origin);
-		final NormalizedLookupRequest normalized = validator.validateAndNormalizedLookupRequest(normalizedProvider, dto, origin);
+		final NormalizedLookupRequest normalized = validator.validateAndNormalizeLookupRequest(normalizedProvider, dto, origin);
 
-		// TODO: continue
-		return null;
+		try {
+			final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(
+					PageRequest.of(0, Integer.MAX_VALUE, Direction.ASC, AuthProviderPolicyHeader.DEFAULT_SORT_FIELD),
+					normalized);
+
+			return dtoConverter.convertProviderLevelPolicyPageToResponse(result);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean verifyOperation(final String requester, final AuthorizationVerifyRequestDTO dto, final String origin) {
+		logger.debug("verifyOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final String normalizedRequester = validator.validateAndNormalizeSystemName(requester, origin);
+		final NormalizedVerifyRequest normalized = validator.validateAndNormalizeVerifyRequest(normalizedRequester, dto, origin);
+
+		return policyEngine.isAccessGranted(normalized);
 	}
 }

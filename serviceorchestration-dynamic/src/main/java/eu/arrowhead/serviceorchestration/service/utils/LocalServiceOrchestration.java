@@ -585,6 +585,7 @@ public class LocalServiceOrchestration {
 		final List<OrchestrationResultDTO> results = candidates.stream()
 				.map(c -> new OrchestrationResultDTO(
 						c.getServiceInstance().instanceId(),
+						null, // local cloud
 						c.getServiceInstance().provider().name(),
 						c.getServiceInstance().serviceDefinition().name(),
 						c.getServiceInstance().version(),

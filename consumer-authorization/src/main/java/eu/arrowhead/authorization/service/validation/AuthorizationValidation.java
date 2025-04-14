@@ -12,10 +12,12 @@ import org.springframework.util.Assert;
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyRequestNormalizer;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierValidator;
@@ -24,6 +26,8 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
 import eu.arrowhead.dto.AuthorizationLookupRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
+import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
+import eu.arrowhead.dto.DTODefaults;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
@@ -198,6 +202,68 @@ public class AuthorizationValidation {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validateVerifyRequest(final AuthorizationVerifyRequestDTO dto, final String origin) {
+		logger.debug("validateVerifyRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		try {
+
+			// provider or consumer must be not null
+			if (Utilities.isEmpty(dto.provider()) && Utilities.isEmpty(dto.consumer())) {
+				throw new InvalidParameterException("Either provider or consumer must be specified", origin);
+			}
+
+			// provider
+			if (!Utilities.isEmpty(dto.provider())) {
+				nameValidator.validateName(dto.provider());
+			}
+
+			// consumer
+			if (!Utilities.isEmpty(dto.consumer())) {
+				nameValidator.validateName(dto.consumer());
+			}
+
+			// cloud
+			if (!Utilities.isEmpty(dto.cloud())) {
+				cloudIdentitiferValidator.validateCloudIdentifier(dto.cloud());
+			}
+
+			// target type
+			if (Utilities.isEmpty(dto.targetType())) {
+				throw new InvalidParameterException("Target type is missing", origin);
+			}
+
+			final String targetTypeName = dto.targetType().trim().toUpperCase();
+
+			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
+				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+			}
+
+			// target
+			if (Utilities.isEmpty(dto.target())) {
+				throw new InvalidParameterException("Target is missing", origin);
+			}
+
+			nameValidator.validateName(dto.target());
+
+			if (!Utilities.isEmpty(dto.scope())) {
+				nameValidator.validateName(dto.scope());
+			}
+		} catch (final InvalidParameterException ex) {
+			if (Utilities.isEmpty(ex.getOrigin())) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
+
+			throw ex;
+		}
+
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -234,8 +300,8 @@ public class AuthorizationValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public NormalizedLookupRequest validateAndNormalizedLookupRequest(final String normalizedProvider, final AuthorizationLookupRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizedLookupRequest started...");
+	public NormalizedLookupRequest validateAndNormalizeLookupRequest(final String normalizedProvider, final AuthorizationLookupRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeLookupRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateLookupRequest(dto, origin);
@@ -245,6 +311,16 @@ public class AuthorizationValidation {
 		normalizeLookupRequest(dto, result);
 
 		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedVerifyRequest validateAndNormalizeVerifyRequest(final String normalizedRequester, final AuthorizationVerifyRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeVerifyRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateVerifyRequest(dto, origin);
+
+		return normalizeVerifyRequest(normalizedRequester, dto, origin);
 	}
 
 	//=================================================================================================
@@ -296,5 +372,25 @@ public class AuthorizationValidation {
 						.toList());
 
 		result.setTargetType(Utilities.isEmpty(dto.targetType()) ? null : AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private NormalizedVerifyRequest normalizeVerifyRequest(final String normalizedRequester, final AuthorizationVerifyRequestDTO dto, final String origin) {
+		logger.debug("normalizeVerifyRequest started...");
+
+		final String normalizedProvider = Utilities.isEmpty(dto.provider()) ? normalizedRequester : nameNormalizer.normalize(dto.provider());
+		final String normalizedConsumer = Utilities.isEmpty(dto.consumer()) ? normalizedRequester : nameNormalizer.normalize(dto.consumer());
+
+		if (!normalizedProvider.equals(normalizedRequester) && !normalizedConsumer.equals(normalizedRequester)) {
+			throw new ForbiddenException("Only the related provider or consumer can use this operaiton", origin);
+		}
+
+		return new NormalizedVerifyRequest(
+				normalizedProvider,
+				normalizedConsumer,
+				Utilities.isEmpty(dto.cloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(dto.cloud()),
+				AuthorizationTargetType.valueOf(dto.targetType()),
+				nameNormalizer.normalize(dto.target()),
+				Utilities.isEmpty(dto.scope()) ? null : nameNormalizer.normalize(dto.scope()));
 	}
 }

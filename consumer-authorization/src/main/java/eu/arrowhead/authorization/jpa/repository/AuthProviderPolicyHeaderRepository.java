@@ -1,7 +1,11 @@
 package eu.arrowhead.authorization.jpa.repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
@@ -19,4 +23,17 @@ public interface AuthProviderPolicyHeaderRepository extends RefreshableRepositor
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<AuthProviderPolicyHeader> findByInstanceId(final String instanceId);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AuthProviderPolicyHeader> findByInstanceIdIn(final List<String> instanceIds);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AuthProviderPolicyHeader> findByCloudIn(final List<String> clouds);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AuthProviderPolicyHeader> findByTargetIn(final List<String> targets);
+
+	//-------------------------------------------------------------------------------------------------
+	public Page<AuthProviderPolicyHeader> findAllByIdIn(final Collection<Long> ids, final Pageable pageble);
+
 }

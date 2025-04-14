@@ -2,6 +2,7 @@ package eu.arrowhead.authorization.service.dto;
 
 import java.util.List;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
 public class NormalizedLookupRequest {
@@ -20,6 +21,15 @@ public class NormalizedLookupRequest {
 
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedLookupRequest() {
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasFilter() {
+		return !Utilities.isEmpty(provider)
+				|| !Utilities.isEmpty(instanceIds)
+				|| !Utilities.isEmpty(cloudIdentifiers)
+				|| !Utilities.isEmpty(targetNames)
+				|| targetType != null;
 	}
 
 	//=================================================================================================
