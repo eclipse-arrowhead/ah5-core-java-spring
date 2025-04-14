@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -17,6 +18,7 @@ import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AuthorizationPolicyDTO;
+import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
@@ -31,6 +33,19 @@ public class DTOConverter {
 
 	//=================================================================================================
 	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationPolicyListResponseDTO convertProviderLevelPolicyPageToResponse(final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> page) {
+		logger.debug("convertProviderLevelPolicyToResponse started...");
+		Assert.notNull(page, "page is null");
+
+		final List<AuthorizationPolicyResponseDTO> convertedList = page
+				.stream()
+				.map(e -> convertProviderLevelPolicyToResponse(e))
+				.toList();
+
+		return new AuthorizationPolicyListResponseDTO(convertedList, page.getTotalElements());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationPolicyResponseDTO convertProviderLevelPolicyToResponse(final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> entities) {

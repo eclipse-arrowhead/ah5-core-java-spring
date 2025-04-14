@@ -1,5 +1,7 @@
 package eu.arrowhead.authorization.jpa.repository;
 
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
@@ -13,4 +15,7 @@ public interface AuthPolicyRepository extends RefreshableRepository<AuthPolicy, 
 
 	//-------------------------------------------------------------------------------------------------
 	public void deleteByHeaderId(final long headerId);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AuthPolicy> findByHeaderId(final long headerId);
 }
