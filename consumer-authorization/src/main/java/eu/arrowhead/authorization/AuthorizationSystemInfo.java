@@ -17,6 +17,12 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	//=================================================================================================
 	// members
 	
+	@Value(AuthorizationConstants.$SIMPLE_TOKEN_BYTE_SIZE_WD)
+	private int simpleTokenByteSize;
+	
+	@Value(AuthorizationConstants.$SIMPLE_TOKEN_USAGE_LIMIT_WD)
+	private int simpleTokenUsageLimit;
+	
 	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY_WD)
 	private String secretCryptographerKey;
 
@@ -56,6 +62,16 @@ public class AuthorizationSystemInfo extends SystemInfo {
 		return List.of();
 	}
 		
+	//-------------------------------------------------------------------------------------------------
+	public int getSimpleTokenByteSize() {
+		return simpleTokenByteSize;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public int getSimpleTokenUsageLimit() {
+		return simpleTokenUsageLimit;
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public String getSecretCryptographerKey() {
 		return secretCryptographerKey;

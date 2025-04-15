@@ -25,6 +25,10 @@ public final class AuthorizationConstants {
 	
 	// Configuration related
 
+	public static final String SIMPLE_TOKEN_BYTE_SIZE = "simple.token.byte.size";
+	public static final String $SIMPLE_TOKEN_BYTE_SIZE_WD = "${" + SIMPLE_TOKEN_BYTE_SIZE + ":" + AuthorizationDefaults.DEFAULT_SIMPLE_TOKEN_BYTE_SIZE + "}";
+	public static final String SIMPLE_TOKEN_USAGE_LIMIT = "simple.token.usage.limit";
+	public static final String $SIMPLE_TOKEN_USAGE_LIMIT_WD = "${" + SIMPLE_TOKEN_USAGE_LIMIT + ":" + AuthorizationDefaults.DEFAULT_SIMPLE_TOKEN_USAGE_LIMIT + "}";
 	public static final String SECRET_CRYPTOGRAPHER_KEY = "secret.cryptographer.key";
 	public static final String $SECRET_CRYPTOGRAPHER_KEY_WD = "${" + SECRET_CRYPTOGRAPHER_KEY + ":" + AuthorizationDefaults.DEFAULT_SECRET_CRYPTOGRAPHER_KEY + "}";
 

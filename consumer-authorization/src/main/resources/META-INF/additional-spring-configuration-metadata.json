@@ -75,6 +75,16 @@
     "description": "A description for 'disable.hostname.verifier'"
   },
   {
+    "name": "simple.token.byte.size",
+    "type": "java.lang.Integer",
+    "description": "A description for 'simple.token.byte.size'"
+  },
+  {
+    "name": "simple.token.usage.limit",
+    "type": "java.lang.Integer",
+    "description": "A description for 'simple.token.usage.limit'"
+  },
+  {
     "name": "secret.cryptographer.key",
     "type": "java.lang.String",
     "description": "A description for 'secret.cryptographer.key'"

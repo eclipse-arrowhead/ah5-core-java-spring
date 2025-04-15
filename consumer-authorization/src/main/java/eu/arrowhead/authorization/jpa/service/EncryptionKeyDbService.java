@@ -68,7 +68,7 @@ public class EncryptionKeyDbService {
 				toSave.setIv(ivRecord);
 				override = true;
 			}
-			return Pair.of(keyRepo.saveAndFlush(toSave), override);
+			return Pair.of(keyRepo.saveAndFlush(toSave), !override);
 			
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
