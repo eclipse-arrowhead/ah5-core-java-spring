@@ -73,5 +73,10 @@
     "name": "disable.hostname.verifier",
     "type": "java.lang.Boolean",
     "description": "A description for 'disable.hostname.verifier'"
+  },
+  {
+    "name": "secret.cryptographer.key",
+    "type": "java.lang.String",
+    "description": "A description for 'secret.cryptographer.key'"
   }
 ]}

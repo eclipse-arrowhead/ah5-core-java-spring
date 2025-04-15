@@ -3,6 +3,7 @@ package eu.arrowhead.authorization;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.arrowhead.common.Constants;
@@ -15,6 +16,9 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// members
+	
+	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY_WD)
+	private String secretCryptographerKey;
 
 	private SystemModel systemModel;
 
@@ -51,9 +55,15 @@ public class AuthorizationSystemInfo extends SystemInfo {
 		// TODO implement this
 		return List.of();
 	}
+		
+	//-------------------------------------------------------------------------------------------------
+	public String getSecretCryptographerKey() {
+		return secretCryptographerKey;
+	}
 
 	//=================================================================================================
 	// assistant methods
+
 
 	//-------------------------------------------------------------------------------------------------
 	@Override

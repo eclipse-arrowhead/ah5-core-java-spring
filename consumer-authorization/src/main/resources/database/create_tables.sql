@@ -57,12 +57,35 @@ CREATE TABLE IF NOT EXISTS `auth_policy` (
 	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Cryptographer IV
+
+CREATE TABLE IF NOT EXISTS `cryptographer_iv` (
+	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
+	`iv` varchar(63) NOT NULL,
+	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Encryption Key
+
+CREATE TABLE IF NOT EXISTS `encryption_key` (
+	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
+	`system_name` varchar(63) NOT NULL,
+	`key` mediumtext NOT NULL,
+	`iv_id` bigint(20) NOT NULL,
+	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `unique_ek_system_name` (`system_name`),
+	CONSTRAINT `fk_ek_iv_id` FOREIGN KEY (`iv_id`) REFERENCES `cryptographer_iv` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Token Headers
 
 CREATE TABLE IF NOT EXISTS `token_header` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
 	`token_type` varchar(30) NOT NULL,
 	`token` mediumtext NOT NULL,
+	`iv_id` bigint(20) NOT NULL,
 	`consumer_cloud` varchar(255) NOT NULL DEFAULT 'LOCAL',
 	`consumer` varchar(63) NOT NULL,
 	`provider` varchar(63) NOT NULL,
@@ -70,7 +93,8 @@ CREATE TABLE IF NOT EXISTS `token_header` (
 	`service_operation` varchar(63) NULL,
 	`requester` varchar(63) NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	CONSTRAINT `fk_iv_id` FOREIGN KEY (`iv_id`) REFERENCES `cryptographer_iv` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Time Limited Tokens

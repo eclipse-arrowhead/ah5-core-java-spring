@@ -10,6 +10,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 
 @Entity
 public class TokenHeader extends UnmodifiableArrowheadEntity {
@@ -26,6 +29,10 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 
 	@Column(nullable = false)
 	private String token;
+	
+	@OneToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "ivId", referencedColumnName = "id", nullable = false)
+	private CryptographerIV iv;
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String requester;
@@ -58,6 +65,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	public TokenHeader(
 			final AuthorizationTokenType tokenType,
 			final String token,
+			final CryptographerIV iv,
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
@@ -66,6 +74,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 			final String serviceOperation) {
 		this.tokenType = tokenType;
 		this.token = token;
+		this.iv = iv;
 		this.requester = requester;
 		this.consumerCloud = consumerCloud;
 		this.consumer = consumer;
@@ -77,7 +86,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "TokenHeader [tokenType=" + tokenType + ", token=" + token + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
+		return "TokenHeader [tokenType=" + tokenType + ", token=" + token + ", iv=" + iv + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
 				+ ", serviceDefinition=" + serviceDefinition + ", serviceOperation=" + serviceOperation + ", id=" + id + ", createdAt=" + createdAt + "]";
 	}
 
@@ -102,6 +111,16 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	public void setToken(final String token) {
 		this.token = token;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public CryptographerIV getIv() {
+		return iv;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setIv(final CryptographerIV iv) {
+		this.iv = iv;
 	}
 
 	//-------------------------------------------------------------------------------------------------

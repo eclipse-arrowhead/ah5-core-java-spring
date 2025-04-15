@@ -22,6 +22,11 @@ public final class AuthorizationConstants {
 
 	public static final String INSTANCE_ID_PREFIX_MGMT = "MGMT";
 	public static final String INSTANCE_ID_PREFIX_PR = "PR";
+	
+	// Configuration related
+
+	public static final String SECRET_CRYPTOGRAPHER_KEY = "secret.cryptographer.key";
+	public static final String $SECRET_CRYPTOGRAPHER_KEY_WD = "${" + SECRET_CRYPTOGRAPHER_KEY + ":" + AuthorizationDefaults.DEFAULT_SECRET_CRYPTOGRAPHER_KEY + "}";
 
 	//=================================================================================================
 	// assistant methods
