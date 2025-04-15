@@ -19,9 +19,16 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	@Column(nullable = false)
 	private String key;
 	
+	@Column(nullable = false, length = VARCHAR_SMALL)
+	private String algorithm;
+	
 	@OneToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "ivId", referencedColumnName = "id", nullable = false)
-	private CryptographerIV iv;
+	@JoinColumn(name = "internal_auxiliary_id", referencedColumnName = "id", nullable = false)
+	private CryptographerAuxiliary internalAuxiliary;
+	
+	@OneToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "external_auxiliary_id", referencedColumnName = "id", nullable = true)
+	private CryptographerAuxiliary externalAuxiliary;
 
 	//=================================================================================================
 	// methods
@@ -32,16 +39,18 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public EncryptionKey(final String systemName, final String key, final CryptographerIV iv) {
+	public EncryptionKey(final String systemName, final String key, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
 		this.systemName = systemName;
 		this.key = key;
-		this.iv = iv;
+		this.algorithm = algorithm;
+		this.internalAuxiliary = internalAuxiliary;
+		this.externalAuxiliary = externalAuxiliary;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", key=" + key + ", iv=" + iv + ", createdAt=" + createdAt + "]";
+		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", key=" + key+ ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary + ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
 	}
 	
 	//=================================================================================================
@@ -68,12 +77,32 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public CryptographerIV getIv() {
-		return iv;
+	public String getAlgorithm() {
+		return algorithm;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setIv(final CryptographerIV iv) {
-		this.iv = iv;
+	public void setAlgorithm(final String algorithm) {
+		this.algorithm = algorithm;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public CryptographerAuxiliary getInternalAuxiliary() {
+		return internalAuxiliary;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setInternalAuxiliary(final CryptographerAuxiliary internalAuxiliary) {
+		this.internalAuxiliary = internalAuxiliary;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public CryptographerAuxiliary getExternalAuxiliary() {
+		return externalAuxiliary;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setExternalAuxiliary(final CryptographerAuxiliary externalAuxiliary) {
+		this.externalAuxiliary = externalAuxiliary;
 	}
 }

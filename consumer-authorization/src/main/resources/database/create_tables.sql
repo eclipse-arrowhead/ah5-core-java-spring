@@ -59,9 +59,9 @@ CREATE TABLE IF NOT EXISTS `auth_policy` (
 
 -- Cryptographer IV
 
-CREATE TABLE IF NOT EXISTS `cryptographer_iv` (
+CREATE TABLE IF NOT EXISTS `cryptographer_auxiliary` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
-	`iv` varchar(63) NOT NULL,
+	`auxiliary` varchar(255) NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -72,11 +72,14 @@ CREATE TABLE IF NOT EXISTS `encryption_key` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
 	`system_name` varchar(63) NOT NULL,
 	`key` mediumtext NOT NULL,
-	`iv_id` bigint(20) NOT NULL,
+	`algorithm` varchar(63) NOT NULL,
+	`internal_auxiliary_id` bigint(20) NOT NULL,
+	`external_auxiliary_id` bigint(20),
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `unique_ek_system_name` (`system_name`),
-	CONSTRAINT `fk_ek_iv_id` FOREIGN KEY (`iv_id`) REFERENCES `cryptographer_iv` (`id`) ON DELETE CASCADE
+	CONSTRAINT `fk_ek_ica_id` FOREIGN KEY (`internal_auxiliary_id`) REFERENCES `cryptographer_auxiliary` (`id`) ON DELETE CASCADE,
+	CONSTRAINT `fk_ek_eca_id` FOREIGN KEY (`external_auxiliary_id`) REFERENCES `cryptographer_auxiliary` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Token Headers
@@ -85,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `token_header` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
 	`token_type` varchar(30) NOT NULL,
 	`token` mediumtext NOT NULL,
-	`iv_id` bigint(20) NOT NULL,
+	`internal_auxiliary_id` bigint(20) NOT NULL,
 	`consumer_cloud` varchar(255) NOT NULL DEFAULT 'LOCAL',
 	`consumer` varchar(63) NOT NULL,
 	`provider` varchar(63) NOT NULL,
@@ -94,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `token_header` (
 	`requester` varchar(63) NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`),
-	CONSTRAINT `fk_iv_id` FOREIGN KEY (`iv_id`) REFERENCES `cryptographer_iv` (`id`) ON DELETE CASCADE
+	CONSTRAINT `fk_th_ica_id` FOREIGN KEY (`internal_auxiliary_id`) REFERENCES `cryptographer_auxiliary` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Time Limited Tokens

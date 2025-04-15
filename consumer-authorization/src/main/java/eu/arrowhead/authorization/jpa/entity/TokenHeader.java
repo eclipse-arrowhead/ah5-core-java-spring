@@ -29,10 +29,10 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 
 	@Column(nullable = false)
 	private String token;
-	
+
 	@OneToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "ivId", referencedColumnName = "id", nullable = false)
-	private CryptographerIV iv;
+	@JoinColumn(name = "internalAuxiliaryId", referencedColumnName = "id", nullable = false)
+	private CryptographerAuxiliary internalAuxiliary;
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String requester;
@@ -65,7 +65,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	public TokenHeader(
 			final AuthorizationTokenType tokenType,
 			final String token,
-			final CryptographerIV iv,
+			final CryptographerAuxiliary internalAuxiliary,
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
@@ -74,7 +74,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 			final String serviceOperation) {
 		this.tokenType = tokenType;
 		this.token = token;
-		this.iv = iv;
+		this.internalAuxiliary = internalAuxiliary;
 		this.requester = requester;
 		this.consumerCloud = consumerCloud;
 		this.consumer = consumer;
@@ -86,7 +86,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "TokenHeader [tokenType=" + tokenType + ", token=" + token + ", iv=" + iv + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
+		return "TokenHeader [tokenType=" + tokenType + ", token=" + token + ", internalAuxiliary=" + internalAuxiliary + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
 				+ ", serviceDefinition=" + serviceDefinition + ", serviceOperation=" + serviceOperation + ", id=" + id + ", createdAt=" + createdAt + "]";
 	}
 
@@ -114,13 +114,13 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public CryptographerIV getIv() {
-		return iv;
+	public CryptographerAuxiliary getInternalAuxiliary() {
+		return internalAuxiliary;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setIv(final CryptographerIV iv) {
-		this.iv = iv;
+	public void setInternalAuxiliary(final CryptographerAuxiliary internalAuxiliary) {
+		this.internalAuxiliary = internalAuxiliary;
 	}
 
 	//-------------------------------------------------------------------------------------------------

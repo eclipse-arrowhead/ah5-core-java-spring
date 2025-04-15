@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.authorization.jpa.entity.CryptographerIV;
+import eu.arrowhead.authorization.jpa.entity.CryptographerAuxiliary;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
-import eu.arrowhead.authorization.jpa.repository.CryptographerIVRepository;
+import eu.arrowhead.authorization.jpa.repository.CryptographerAuxiliaryRepository;
 import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
 import eu.arrowhead.authorization.jpa.repository.UsageLimitedTokenRepository;
 import eu.arrowhead.common.Utilities;
@@ -34,7 +34,7 @@ public class UsageLimitedTokenDbService {
 	private TokenHeaderRepository tokenHeaderRepo;
 
 	@Autowired
-	private CryptographerIVRepository ivRepo;
+	private CryptographerAuxiliaryRepository ivRepo;
 	
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -76,7 +76,7 @@ public class UsageLimitedTokenDbService {
 				}
 			}
 			
-			final CryptographerIV ivRecord = ivRepo.saveAndFlush(new CryptographerIV(ivBase64));
+			final CryptographerAuxiliary ivRecord = ivRepo.saveAndFlush(new CryptographerAuxiliary(ivBase64));
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, ivRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
 			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
 			return Pair.of(tokenRecord, !override);
