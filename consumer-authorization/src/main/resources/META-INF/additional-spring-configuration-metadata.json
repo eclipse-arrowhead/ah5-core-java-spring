@@ -75,6 +75,11 @@
     "description": "A description for 'disable.hostname.verifier'"
   },
   {
+    "name": "token.time.limit",
+    "type": "java.lang.Integer",
+    "description": "A description for 'token.time.limit'"
+  },
+  {
     "name": "simple.token.byte.size",
     "type": "java.lang.Integer",
     "description": "A description for 'simple.token.byte.size'"

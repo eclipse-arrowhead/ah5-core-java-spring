@@ -6,7 +6,6 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,13 +13,16 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
+import eu.arrowhead.authorization.jpa.entity.TimeLimitedToken;
 import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
+import eu.arrowhead.authorization.jpa.service.TimeLimitedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.UsageLimitedTokenDbService;
-import eu.arrowhead.authorization.service.model.JWTPayload;
+import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenGenerator;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
 import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
@@ -50,6 +52,9 @@ public class AuthorizationtTokenService {
 	@Autowired
 	private UsageLimitedTokenDbService usageLimitedTokenDbService;
 
+	@Autowired
+	private TimeLimitedTokenDbService timeLimitedTokenDbService;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -60,18 +65,20 @@ public class AuthorizationtTokenService {
 		logger.debug("generate started...");
 
 		final AuthorizationTokenGenerationRequestDTO normalized = dto; // TODO validate and normalize
+		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalized.tokenType());
+		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalized.serviceInstanceId());
 
 		// Generate token
-		Pair<String, Boolean> tokenResult = generateToken(requesterSystem, normalized, origin);
+		Pair<String, Boolean> tokenResult = generateToken(requesterSystem, tokenType, serviceInstanceIdParts, normalized.serviceOperation(), origin);
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalized.tokenType()));
-		if (authorizationTokenType == AuthorizationTokenType.JSON_WEB_TOKEN) {
-			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(requesterSystem);
+		if (authorizationTokenType == AuthorizationTokenType.JSON_WEB_TOKEN) { // TODO or any other self contained token
+			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(serviceInstanceIdParts.systemName());
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKey(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
+					final String plainEncriptionKey = secretCryptographer.decryptInternal(encryptionKeyRecord.getKey(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
 					final String plainToken = tokenResult.getLeft();
 
 					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
@@ -101,15 +108,14 @@ public class AuthorizationtTokenService {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> generateToken(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO normalized, final String origin) {
+	public Pair<String, Boolean> generateToken(final String requesterSystem, ServiceInterfacePolicy tokenType, final ServiceInstanceIdParts serviceInstanceIdParts, final String operation, final String origin) {
 		logger.debug("generateToken started...");
 
-		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalized.serviceInstanceId());
-
 		try {
-			final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalized.tokenType());
 			String token = null;
 			Pair<String, String> encryptedToSave = null;
+
+			// SIMMPLE USAGE LIMITED TOKEN
 
 			if (tokenType == ServiceInterfacePolicy.USAGE_LIMITED_TOKEN_AUTH) {
 				token = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
@@ -123,35 +129,57 @@ public class AuthorizationtTokenService {
 						requesterSystem,
 						serviceInstanceIdParts.systemName(),
 						serviceInstanceIdParts.serviceDefinition(),
-						normalized.serviceOperation(),
+						operation,
 						sysInfo.getSimpleTokenUsageLimit());
 				return Pair.of(usageLimitTokenResult.getLeft().getHeader().getToken(), usageLimitTokenResult.getRight());
 			}
 
-			final Integer duration = null; // TODO config
+			// SIMMPLE TIME LIMITED TOKEN
+
+			final Integer durationSec = sysInfo.getTokenTimeLimit();
 
 			if (tokenType == ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH) {
 				token = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				// TODO encode and save into DB
-				return null;
+				encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P(token, sysInfo.getSecretCryptographerKey());
+				final Pair<TimeLimitedToken, Boolean> timeLimitTokenResult = timeLimitedTokenDbService.save(
+						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
+						encryptedToSave.getLeft(),
+						encryptedToSave.getRight(),
+						requesterSystem,
+						"LOCAL",
+						requesterSystem,
+						serviceInstanceIdParts.systemName(),
+						serviceInstanceIdParts.serviceDefinition(),
+						operation,
+						Utilities.utcNow().plusSeconds(durationSec));
+				return Pair.of(timeLimitTokenResult.getLeft().getHeader().getToken(), timeLimitTokenResult.getRight());
 			}
+
+			//SIMPLE SELF CONTAINED PAYLOAD
+			
+			final SelfContainedTokenPayload jwtPayload = new SelfContainedTokenPayload(serviceInstanceIdParts.systemName(), requesterSystem, "LOCAL", AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(), operation);
+
+			// TODO time limited, but not signed			
+			
+			// JSON WEB TOKEN
 
 			final PrivateKey privateKey = null; // TODO
-			final String encriptionKey = null; // TODO from DB and decode it
-			final JWTPayload jwtPayload = new JWTPayload(serviceInstanceIdParts.systemName(), requesterSystem, "LOCAL", AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(), normalized.serviceOperation());
 
-			if (tokenType == ServiceInterfacePolicy.RSASHA256_AES128GCM_JSON_WEB_TOKEN_AUTH) {
-				token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, ContentEncryptionAlgorithmIdentifiers.AES_128_GCM, encriptionKey, duration, jwtPayload);
-				// TODO encode and save into DB
+			if (tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
+				token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, durationSec, jwtPayload);
 			}
-			if (tokenType == ServiceInterfacePolicy.RSASHA256_AES256GCM_JSON_WEB_TOKEN_AUTH) {
-				token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, ContentEncryptionAlgorithmIdentifiers.AES_256_GCM, encriptionKey, duration, jwtPayload);
-				// TODO encode and save into DB
+			if (tokenType == ServiceInterfacePolicy.RSA_SHA256_JSON_WEB_TOKEN_AUTH) {
+				token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, durationSec, jwtPayload);
 			}
+
+			// TODO encode and save into DB
 
 			Assert.isTrue(!Utilities.isEmpty(token), "Unhandled token type: " + tokenType);
 
 			return null;
+
+		} catch (final DataNotFoundException ex) {
+			throw ex;
 
 		} catch (final InternalServerError ex) {
 			throw ex;

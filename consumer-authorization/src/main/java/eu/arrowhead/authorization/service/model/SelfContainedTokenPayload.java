@@ -2,7 +2,7 @@ package eu.arrowhead.authorization.service.model;
 
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
-public record JWTPayload(
+public record SelfContainedTokenPayload(
 				String provider,
 				String consumer,
 				String cloud,

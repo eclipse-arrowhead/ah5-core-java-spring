@@ -25,6 +25,8 @@ public final class AuthorizationConstants {
 	
 	// Configuration related
 
+	public static final String TOKEN_TIME_LIMIT = "token.time.limit";
+	public static final String $TOKEN_TIME_LIMIT_WD = "${" + TOKEN_TIME_LIMIT + ":" + AuthorizationDefaults.DEFAULT_TOKEN_TIME_LIMIT + "}";
 	public static final String SIMPLE_TOKEN_BYTE_SIZE = "simple.token.byte.size";
 	public static final String $SIMPLE_TOKEN_BYTE_SIZE_WD = "${" + SIMPLE_TOKEN_BYTE_SIZE + ":" + AuthorizationDefaults.DEFAULT_SIMPLE_TOKEN_BYTE_SIZE + "}";
 	public static final String SIMPLE_TOKEN_USAGE_LIMIT = "simple.token.usage.limit";

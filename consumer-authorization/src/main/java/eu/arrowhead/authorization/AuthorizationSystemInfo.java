@@ -17,6 +17,9 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	//=================================================================================================
 	// members
 	
+	@Value(AuthorizationConstants.$TOKEN_TIME_LIMIT_WD)
+	private int tokenTimeLimit;
+	
 	@Value(AuthorizationConstants.$SIMPLE_TOKEN_BYTE_SIZE_WD)
 	private int simpleTokenByteSize;
 	
@@ -62,6 +65,11 @@ public class AuthorizationSystemInfo extends SystemInfo {
 		return List.of();
 	}
 		
+	//-------------------------------------------------------------------------------------------------
+	public int getTokenTimeLimit() {
+		return tokenTimeLimit;
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public int getSimpleTokenByteSize() {
 		return simpleTokenByteSize;

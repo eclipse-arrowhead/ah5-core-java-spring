@@ -35,6 +35,13 @@ public class SecretCryptographer {
 	//=================================================================================================
 	// methods
 	
+	// ENCRYPTION
+	
+	//-------------------------------------------------------------------------------------------------
+	public Pair<String, String> encryptInternal(final String plainSecret, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		return encryptAESCBCPKCS5P(plainSecret, key,  generateIV());
+	}
+	
 	//-------------------------------------------------------------------------------------------------
 	public Pair<String, String> encryptAESCBCPKCS5P(final String plainSecret, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		return encryptAESCBCPKCS5P(plainSecret, key,  generateIV());
@@ -58,6 +65,26 @@ public class SecretCryptographer {
 		final String encryptedBase64 = encryptAESCBCPKCS5P(plainSecret, key, getIvParameterSpec(ivBase64));
 		return Pair.of(encryptedBase64, ivBase64);
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public String encryptHMACSHA256(final String plainSecret, final String key) throws NoSuchAlgorithmException, InvalidKeyException {
+		Assert.isTrue(!Utilities.isEmpty(plainSecret), "plainSecret is empty");
+		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
+		
+		Mac sha256_HMAC = Mac.getInstance(HMAC_ALGORITHM);
+		SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), HMAC_ALGORITHM);
+        sha256_HMAC.init(keySpec);
+        
+        byte[] hash = sha256_HMAC.doFinal(plainSecret.getBytes());
+        return Base64.getEncoder().encodeToString(hash);
+	}
+	
+	// DECRIPTION
+	
+	//-------------------------------------------------------------------------------------------------
+	public String decryptInternal(final String encryptedSecretBase64, final String ivBase64, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		return decryptAESCBCPKCS5P(encryptedSecretBase64, ivBase64, key);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String decryptAESCBCPKCS5P(final String encryptedSecretBase64, final String ivBase64, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
@@ -74,19 +101,6 @@ public class SecretCryptographer {
 	    byte[] encryptedBytes = Base64.getDecoder().decode(encryptedSecretBase64);
 	    byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
 	    return new String(decryptedBytes);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public String encryptHMACSHA256(final String plainSecret, final String key) throws NoSuchAlgorithmException, InvalidKeyException {
-		Assert.isTrue(!Utilities.isEmpty(plainSecret), "plainSecret is empty");
-		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
-		
-		Mac sha256_HMAC = Mac.getInstance(HMAC_ALGORITHM);
-		SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), HMAC_ALGORITHM);
-        sha256_HMAC.init(keySpec);
-        
-        byte[] hash = sha256_HMAC.doFinal(plainSecret.getBytes());
-        return Base64.getEncoder().encodeToString(hash);
 	}
 	
 	//=================================================================================================

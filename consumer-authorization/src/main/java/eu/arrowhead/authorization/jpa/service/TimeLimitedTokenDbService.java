@@ -1,5 +1,6 @@
 package eu.arrowhead.authorization.jpa.service;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -11,24 +12,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.jpa.entity.CryptographerAuxiliary;
+import eu.arrowhead.authorization.jpa.entity.TimeLimitedToken;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
-import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.authorization.jpa.repository.CryptographerAuxiliaryRepository;
+import eu.arrowhead.authorization.jpa.repository.TimeLimitedTokenRepository;
 import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
-import eu.arrowhead.authorization.jpa.repository.UsageLimitedTokenRepository;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 @Service
-public class UsageLimitedTokenDbService {
+public class TimeLimitedTokenDbService {
 
 	//=================================================================================================
 	// members
 	
 	@Autowired
-	private UsageLimitedTokenRepository tokenRepo;
+	private TimeLimitedTokenRepository tokenRepo;
 	
 	@Autowired
 	private TokenHeaderRepository tokenHeaderRepo;
@@ -44,7 +45,7 @@ public class UsageLimitedTokenDbService {
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:parameternumber")
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Pair<UsageLimitedToken, Boolean> save(
+	public Pair<TimeLimitedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
 			final String token,
 			final String internalAuxiliary,
@@ -54,7 +55,7 @@ public class UsageLimitedTokenDbService {
 			final String provider,
 			final String serviceDefinition,
 			final String serviceOperation,
-			final int usageLimit) {
+			final ZonedDateTime expiresAt) {
 		Assert.notNull(tokenType, "tokenType is null");
 		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
 		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
@@ -64,12 +65,13 @@ public class UsageLimitedTokenDbService {
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
 		Assert.isTrue(!Utilities.isEmpty(serviceOperation), "serviceOperation is empty");
-
+		Assert.notNull(expiresAt, "expiresAt is null");
+		
 		try {
 			boolean override = false;
 			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndServiceDefinition(consumerCloud, consumer, provider, serviceDefinition);
 			if (tokenHeaderOpt.isPresent()) {
-				final Optional<UsageLimitedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
+				final Optional<TimeLimitedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
 				if (tokenOpt.isPresent()) {
 					tokenRepo.delete(tokenOpt.get());
 					override = true;
@@ -78,7 +80,7 @@ public class UsageLimitedTokenDbService {
 			
 			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, auxiliaryRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
-			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
+			final TimeLimitedToken tokenRecord = tokenRepo.saveAndFlush(new TimeLimitedToken(tokenHeaderRecord, expiresAt));
 			return Pair.of(tokenRecord, !override);
 			
 		} catch (final Exception ex) {
