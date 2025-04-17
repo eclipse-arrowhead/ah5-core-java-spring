@@ -26,16 +26,16 @@ public class UsageLimitedTokenDbService {
 
 	//=================================================================================================
 	// members
-	
+
 	@Autowired
 	private UsageLimitedTokenRepository tokenRepo;
-	
+
 	@Autowired
 	private TokenHeaderRepository tokenHeaderRepo;
 
 	@Autowired
 	private CryptographerAuxiliaryRepository auxiliaryRepo;
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -55,6 +55,7 @@ public class UsageLimitedTokenDbService {
 			final String serviceDefinition,
 			final String serviceOperation,
 			final int usageLimit) {
+		logger.debug("save started...");
 		Assert.notNull(tokenType, "tokenType is null");
 		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
 		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
@@ -75,16 +76,40 @@ public class UsageLimitedTokenDbService {
 					override = true;
 				}
 			}
-			
+
 			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, auxiliaryRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
 			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
 			return Pair.of(tokenRecord, !override);
-			
+
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Optional<UsageLimitedToken> getByHeader(final TokenHeader header) {
+		logger.debug("getByHeader started...");
+		Assert.notNull(header, "header is null");
+
+		return tokenRepo.findByHeader(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public Optional<UsageLimitedToken> decrease(final long id) {
+		logger.debug("decrease started...");
+
+		final Optional<UsageLimitedToken> optional = tokenRepo.findById(id);
+		if (optional.isEmpty()) {
+			return optional;
+		}
+
+		final UsageLimitedToken usageLimitedToken = optional.get();
+		usageLimitedToken.setUsageLeft(usageLimitedToken.getUsageLeft() - 1);
+		final UsageLimitedToken result = tokenRepo.saveAndFlush(usageLimitedToken);
+		return Optional.of(result);
 	}
 }

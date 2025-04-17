@@ -51,9 +51,9 @@ public class EncryptionKeyDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Pair<EncryptionKey, Boolean> save(final String systemName, final String keyBase64, final String algorithm, final String internalAuxiliary, final String externalAuxiliary) {
+	public Pair<EncryptionKey, Boolean> save(final String systemName, final String key, final String algorithm, final String internalAuxiliary, final String externalAuxiliary) {
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
-		Assert.isTrue(!Utilities.isEmpty(keyBase64), "keyBase64 is empty");
+		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		Assert.isTrue(!Utilities.isEmpty(algorithm), "algorithm is empty");
 		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
 
@@ -65,10 +65,10 @@ public class EncryptionKeyDbService {
 			EncryptionKey toSave = null;
 			final Optional<EncryptionKey> optional = keyRepo.findBySystemName(systemName);
 			if (optional.isEmpty()) {
-				toSave = new EncryptionKey(systemName, keyBase64, algorithm, internalAuxiliaryRecord, externalAuxiliaryRecord);
+				toSave = new EncryptionKey(systemName, key, algorithm, internalAuxiliaryRecord, externalAuxiliaryRecord);
 			} else {
 				toSave = optional.get();
-				toSave.setKey(keyBase64);
+				toSave.setKey(key);
 				toSave.setAlgorithm(algorithm);
 				toSave.setInternalAuxiliary(internalAuxiliaryRecord);
 				toSave.setExternalAuxiliary(externalAuxiliaryRecord);

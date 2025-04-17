@@ -14,5 +14,8 @@ public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader
 	// methods
 	
 	//-------------------------------------------------------------------------------------------------
+	public Optional<TokenHeader> findByProviderAndToken(final String provider, final String token);
+	
+	//-------------------------------------------------------------------------------------------------
 	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndServiceDefinition(final String consumerCloud, final String counsumer, final String provider, final String serviceDefinition);
 }

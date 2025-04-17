@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.service.AuthorizationtTokenService;
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequest;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
@@ -34,6 +35,18 @@ public class AuthorizationTokenAPI {
 	
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenVerifyResponseDTO verify(final String token) {
+		// TODO
+		return null;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public String publicKey() {
+		// TODO
+		return null;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public String registerEncryptionKey(final AuthorizationEncryptionKeyRegistrationRequest dto) {
 		// TODO
 		return null;
 	}

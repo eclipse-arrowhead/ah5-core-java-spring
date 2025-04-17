@@ -16,10 +16,12 @@ import eu.arrowhead.authorization.AuthorizationSystemInfo;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
 import eu.arrowhead.authorization.jpa.entity.TimeLimitedToken;
+import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
 import eu.arrowhead.authorization.jpa.service.SelfContainedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TimeLimitedTokenDbService;
+import eu.arrowhead.authorization.jpa.service.TokenHeaderDbService;
 import eu.arrowhead.authorization.jpa.service.UsageLimitedTokenDbService;
 import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
@@ -28,9 +30,12 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
 import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
+import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequest;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
@@ -62,7 +67,10 @@ public class AuthorizationtTokenService {
 
 	@Autowired
 	private SelfContainedTokenDbService selfContainedTokenDbService;
-	
+
+	@Autowired
+	private TokenHeaderDbService tokenHeaderDbService;
+
 	@Resource(name = Constants.ARROWHEAD_CONTEXT)
 	protected Map<String, Object> arrowheadContext;
 
@@ -115,11 +123,71 @@ public class AuthorizationtTokenService {
 		return tokenResult;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenVerifyResponseDTO verify(final String requesterSystem, final String token, final String origin) {
+		logger.debug("verify started...");
+
+		final String normalizedRequester = requesterSystem; // TODO validate and normalize
+
+		Optional<TokenHeader> optional = tokenHeaderDbService.find(normalizedRequester, token);
+		if (optional.isEmpty()) {
+			return new AuthorizationTokenVerifyResponseDTO(false, null, null, null, null);
+		}
+		final TokenHeader tokenHeader = optional.get();
+
+		if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
+			throw new InvalidParameterException("Self contained tokens can't be verified this way.", origin);
+		}
+
+		if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {
+			final UsageLimitedToken usageLimitedToken = usageLimitedTokenDbService.getByHeader(tokenHeader).get();
+			final boolean verified = usageLimitedToken.getUsageLeft() > 0;
+			if (verified) {
+				usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
+			}
+			return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
+		}
+
+		// TODO TIME LIMITED
+
+		return null;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public String publicKey(final String origin) {
+		// TODO
+		return null;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Pair<String, Boolean> registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequest dto, final String origin) {
+		logger.debug("registerEncryptionKey started...");
+
+		final AuthorizationEncryptionKeyRegistrationRequest normalized = dto; // TODO validate and normalize
+
+		String externalAuxiliary = "";
+		if (normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+			externalAuxiliary = secretCryptographer.generateInitializationVectorBase64();
+		}
+
+		Pair<String, String> encryptedToSave = null;
+		try {
+			encryptedToSave = secretCryptographer.encryptInternal(normalized.key(), sysInfo.getSecretCryptographerKey());
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Secret encryption failed!", origin);
+		}
+
+		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(requesterSystem, encryptedToSave.getLeft(), normalized.algorithm(), encryptedToSave.getRight(), externalAuxiliary);
+		return Pair.of(externalAuxiliary, result.getRight());
+	}
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> generateToken(final String requesterSystem, ServiceInterfacePolicy tokenType, final ServiceInstanceIdParts serviceInstanceIdParts, final String operation, final String origin) {
+	public Pair<String, Boolean> generateToken(final String requesterSystem, final ServiceInterfacePolicy tokenType, final ServiceInstanceIdParts serviceInstanceIdParts, final String operation, final String origin) {
 		logger.debug("generateToken started...");
 
 		try {
@@ -167,7 +235,7 @@ public class AuthorizationtTokenService {
 			}
 
 			// SELF CONTAINED TOKENS
-			
+
 			// -- BASE64 SELF CONTAINED TOKEN
 
 			final SelfContainedTokenPayload tokenPayload = new SelfContainedTokenPayload(serviceInstanceIdParts.systemName(), requesterSystem, Defaults.DEFAULT_CLOUD, AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(),

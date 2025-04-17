@@ -56,6 +56,7 @@ public class TimeLimitedTokenDbService {
 			final String serviceDefinition,
 			final String serviceOperation,
 			final ZonedDateTime expiresAt) {
+		logger.debug("save started...");
 		Assert.notNull(tokenType, "tokenType is null");
 		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
 		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
@@ -88,5 +89,13 @@ public class TimeLimitedTokenDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<TimeLimitedToken> getByHeader(final TokenHeader header) {
+		logger.debug("getByHeader started...");
+		Assert.notNull(header, "header is null");
+		
+		return tokenRepo.findByHeader(header);
 	}
 }
