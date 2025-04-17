@@ -1,6 +1,7 @@
 package eu.arrowhead.authorization.service;
 
 import java.security.PrivateKey;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,16 +14,19 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
+import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
 import eu.arrowhead.authorization.jpa.entity.TimeLimitedToken;
 import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
+import eu.arrowhead.authorization.jpa.service.SelfContainedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TimeLimitedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.UsageLimitedTokenDbService;
 import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenGenerator;
+import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
 import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
@@ -30,6 +34,7 @@ import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import jakarta.annotation.Resource;
 
 @Service
 public class AuthorizationtTokenService {
@@ -55,6 +60,12 @@ public class AuthorizationtTokenService {
 	@Autowired
 	private TimeLimitedTokenDbService timeLimitedTokenDbService;
 
+	@Autowired
+	private SelfContainedTokenDbService selfContainedTokenDbService;
+	
+	@Resource(name = Constants.ARROWHEAD_CONTEXT)
+	protected Map<String, Object> arrowheadContext;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -73,7 +84,7 @@ public class AuthorizationtTokenService {
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalized.tokenType()));
-		if (authorizationTokenType == AuthorizationTokenType.JSON_WEB_TOKEN) { // TODO or any other self contained token
+		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
 			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(serviceInstanceIdParts.systemName());
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
@@ -119,13 +130,13 @@ public class AuthorizationtTokenService {
 
 			if (tokenType == ServiceInterfacePolicy.USAGE_LIMITED_TOKEN_AUTH) {
 				token = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P(token, sysInfo.getSecretCryptographerKey());
+				encryptedToSave = secretCryptographer.encryptInternal(token, sysInfo.getSecretCryptographerKey());
 				final Pair<UsageLimitedToken, Boolean> usageLimitTokenResult = usageLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 						encryptedToSave.getLeft(),
 						encryptedToSave.getRight(),
 						requesterSystem,
-						"LOCAL",
+						Defaults.DEFAULT_CLOUD,
 						requesterSystem,
 						serviceInstanceIdParts.systemName(),
 						serviceInstanceIdParts.serviceDefinition(),
@@ -134,19 +145,19 @@ public class AuthorizationtTokenService {
 				return Pair.of(usageLimitTokenResult.getLeft().getHeader().getToken(), usageLimitTokenResult.getRight());
 			}
 
-			// SIMMPLE TIME LIMITED TOKEN
+			// SIMPLE TIME LIMITED TOKEN
 
 			final Integer durationSec = sysInfo.getTokenTimeLimit();
 
 			if (tokenType == ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH) {
 				token = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P(token, sysInfo.getSecretCryptographerKey());
+				encryptedToSave = secretCryptographer.encryptInternal(token, sysInfo.getSecretCryptographerKey());
 				final Pair<TimeLimitedToken, Boolean> timeLimitTokenResult = timeLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 						encryptedToSave.getLeft(),
 						encryptedToSave.getRight(),
 						requesterSystem,
-						"LOCAL",
+						Defaults.DEFAULT_CLOUD,
 						requesterSystem,
 						serviceInstanceIdParts.systemName(),
 						serviceInstanceIdParts.serviceDefinition(),
@@ -155,31 +166,45 @@ public class AuthorizationtTokenService {
 				return Pair.of(timeLimitTokenResult.getLeft().getHeader().getToken(), timeLimitTokenResult.getRight());
 			}
 
-			//SIMPLE SELF CONTAINED PAYLOAD
+			// SELF CONTAINED TOKENS
 			
-			final SelfContainedTokenPayload jwtPayload = new SelfContainedTokenPayload(serviceInstanceIdParts.systemName(), requesterSystem, "LOCAL", AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(), operation);
+			// -- BASE64 SELF CONTAINED TOKEN
 
-			// TODO time limited, but not signed			
-			
-			// JSON WEB TOKEN
+			final SelfContainedTokenPayload tokenPayload = new SelfContainedTokenPayload(serviceInstanceIdParts.systemName(), requesterSystem, Defaults.DEFAULT_CLOUD, AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(),
+					operation);
 
-			final PrivateKey privateKey = null; // TODO
+			if (tokenType == ServiceInterfacePolicy.BASE64_SELF_CONTAINED_AUTH_TOKEN) {
+				token = tokenGenerator.generateBas64SelfSignedToken(durationSec, tokenPayload);
 
-			if (tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
-				token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, durationSec, jwtPayload);
+			} else {
+				//  -- JSON WEB TOKEN
+
+				final PrivateKey privateKey = (PrivateKey) arrowheadContext.get(Constants.SERVER_PRIVATE_KEY);
+
+				if (tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
+					token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, durationSec, tokenPayload);
+				}
+				if (tokenType == ServiceInterfacePolicy.RSA_SHA256_JSON_WEB_TOKEN_AUTH) {
+					token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA256, privateKey, durationSec, tokenPayload);
+				}
 			}
-			if (tokenType == ServiceInterfacePolicy.RSA_SHA256_JSON_WEB_TOKEN_AUTH) {
-				token = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, durationSec, jwtPayload);
-			}
-
-			// TODO encode and save into DB
 
 			Assert.isTrue(!Utilities.isEmpty(token), "Unhandled token type: " + tokenType);
 
-			return null;
-
-		} catch (final DataNotFoundException ex) {
-			throw ex;
+			encryptedToSave = secretCryptographer.encryptInternal(token, sysInfo.getSecretCryptographerKey());
+			final Pair<SelfContainedToken, Boolean> selfContainedTokenResult = selfContainedTokenDbService.save(
+					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
+					encryptedToSave.getLeft(),
+					encryptedToSave.getRight(),
+					requesterSystem,
+					Defaults.DEFAULT_CLOUD,
+					requesterSystem,
+					serviceInstanceIdParts.systemName(),
+					serviceInstanceIdParts.serviceDefinition(),
+					operation,
+					tokenType.name(),
+					Utilities.utcNow().plusSeconds(durationSec));
+			return Pair.of(selfContainedTokenResult.getLeft().getHeader().getToken(), selfContainedTokenResult.getRight());
 
 		} catch (final InternalServerError ex) {
 			throw ex;

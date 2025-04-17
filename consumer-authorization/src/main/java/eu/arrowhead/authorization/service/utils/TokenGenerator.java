@@ -19,37 +19,60 @@ import eu.arrowhead.common.Utilities;
 
 @Service
 public class TokenGenerator {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	@Autowired
 	private AuthorizationSystemInfo sysInfo;
-	
-	
+
 	private final SecureRandom secureRandom = new SecureRandom();
-	
-	private final Encoder base64Encoder = Base64.getUrlEncoder().withoutPadding();
-	
+
+	private final Encoder base64Encoder = Base64.getUrlEncoder();
+
+	private static final String BASE64_SELF_CONTAINED_TOKEN_DELIMITER = "::";
+
 	private static final String JWT_PAYLOAD_KEY_PROVIDER_SYSTEM_NAME = "psn";
 	private static final String JWT_PAYLOAD_KEY_CONSUMER_SYSTEM_NAME = "csn";
 	private static final String JWT_PAYLOAD_KEY_CONSUMER_CLOUD_NAME = "ccn";
 	private static final String JWT_PAYLOAD_KEY_TARGET_TYPE = "tat";
 	private static final String JWT_PAYLOAD_KEY_TARGET_NAME = "tan";
 	private static final String JWT_PAYLOAD_KEY_SCOPE = "sco";
-	
+
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public String generateSimpleToken(final int byteLength) {
-		Assert.isTrue(byteLength >=  16, "Minimum byte length for token is 16");
-		
+		Assert.isTrue(byteLength >= 16, "Minimum byte length for token is 16");
+
 		final byte[] randomBytes = new byte[byteLength];
-        secureRandom.nextBytes(randomBytes);
-        return base64Encoder.encodeToString(randomBytes);
+		secureRandom.nextBytes(randomBytes);
+		return base64Encoder.encodeToString(randomBytes);
 	}
-	
+
+	//-------------------------------------------------------------------------------------------------
+	public String generateBas64SelfSignedToken(final Integer durationSec, final SelfContainedTokenPayload payload) {
+		Assert.notNull(payload, "JWT payload is null");
+		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "provider is empty");
+		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "consumer is empty");
+		Assert.isTrue(!Utilities.isEmpty(payload.cloud()), "cloud is empty");
+		Assert.notNull(payload.targetType(), "targetType is null");
+		Assert.isTrue(!Utilities.isEmpty(payload.target()), "target is empty");
+		Assert.isTrue(!Utilities.isEmpty(payload.scope()), "scope is empty");
+
+		final String content = payload.cloud() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
+				payload.consumer() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
+				payload.provider() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
+				payload.target() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
+				payload.scope() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
+				payload.targetType().name() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
+				durationSec == null ? "" : Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusSeconds(durationSec.longValue()))
+								.toLowerCase();
+
+		return base64Encoder.encodeToString(content.getBytes());
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public String generateJsonWebToken(final String signAlgorithm, final PrivateKey privateKey, final Integer durationSec, final SelfContainedTokenPayload payload) throws JoseException {
 		Assert.isTrue(!Utilities.isEmpty(signAlgorithm), "signAlgorithm is empty");
@@ -58,19 +81,19 @@ public class TokenGenerator {
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "consumer is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.cloud()), "cloud is empty");
-		Assert.notNull(payload.targetType(), "JWT payload is null");
+		Assert.notNull(payload.targetType(), "targetType is null");
 		Assert.isTrue(!Utilities.isEmpty(payload.target()), "target is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.scope()), "scope is empty");
-		
-		final JwtClaims claims = createJWTClaims(durationSec, payload);		
-		final String jwt = signJWT(signAlgorithm, privateKey, claims);        
-        return jwt;
-        
+
+		final JwtClaims claims = createJWTClaims(durationSec, payload);
+		final String jwt = signJWT(signAlgorithm, privateKey, claims);
+		return jwt;
+
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private JwtClaims createJWTClaims(final Integer durationSec, final SelfContainedTokenPayload payload) {
 		final JwtClaims claims = new JwtClaims();
@@ -89,22 +112,22 @@ public class TokenGenerator {
 		claims.setStringClaim(JWT_PAYLOAD_KEY_SCOPE, payload.scope());
 		return claims;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private String signJWT(final String signAlgorithm, final PrivateKey privateKey, final JwtClaims claims) throws JoseException {
 		final JsonWebSignature jws = new JsonWebSignature();
 		jws.setHeader("typ", "JWT");
-        jws.setPayload(claims.toJson());
-        jws.setKey(privateKey);
-        
-        if (signAlgorithm.equalsIgnoreCase(AlgorithmIdentifiers.RSA_USING_SHA512)
-        		|| signAlgorithm.equalsIgnoreCase(AlgorithmIdentifiers.RSA_USING_SHA256)) {
-        	jws.setAlgorithmHeaderValue(signAlgorithm);		
-			
+		jws.setPayload(claims.toJson());
+		jws.setKey(privateKey);
+
+		if (signAlgorithm.equalsIgnoreCase(AlgorithmIdentifiers.RSA_USING_SHA512)
+				|| signAlgorithm.equalsIgnoreCase(AlgorithmIdentifiers.RSA_USING_SHA256)) {
+			jws.setAlgorithmHeaderValue(signAlgorithm);
+
 		} else {
 			throw new JoseException("Unsupported sign algorithm: " + signAlgorithm);
-		}        
-        
-        return jws.getCompactSerialization();
+		}
+
+		return jws.getCompactSerialization();
 	}
 }

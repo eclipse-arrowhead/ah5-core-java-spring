@@ -1,0 +1,94 @@
+package eu.arrowhead.authorization.jpa.service;
+
+import java.time.ZonedDateTime;
+import java.util.Optional;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+
+import eu.arrowhead.authorization.jpa.entity.CryptographerAuxiliary;
+import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
+import eu.arrowhead.authorization.jpa.entity.TokenHeader;
+import eu.arrowhead.authorization.jpa.repository.CryptographerAuxiliaryRepository;
+import eu.arrowhead.authorization.jpa.repository.SelfContainedTokenRepository;
+import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.dto.enums.AuthorizationTokenType;
+
+@Service
+public class SelfContainedTokenDbService {
+
+	//=================================================================================================
+	// members
+
+	@Autowired
+	private SelfContainedTokenRepository tokenRepo;
+
+	@Autowired
+	private TokenHeaderRepository tokenHeaderRepo;
+
+	@Autowired
+	private CryptographerAuxiliaryRepository auxiliaryRepo;
+
+	private final Logger logger = LogManager.getLogger(this.getClass());
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:parameternumber")
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public Pair<SelfContainedToken, Boolean> save(
+			final AuthorizationTokenType tokenType,
+			final String token,
+			final String internalAuxiliary,
+			final String requester,
+			final String consumerCloud,
+			final String consumer,
+			final String provider,
+			final String serviceDefinition,
+			final String serviceOperation,
+			final String selfContainedtype,
+			final ZonedDateTime expiresAt) {
+		Assert.notNull(tokenType, "tokenType is null");
+		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
+		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
+		Assert.isTrue(!Utilities.isEmpty(requester), "requester is empty");
+		Assert.isTrue(!Utilities.isEmpty(consumerCloud), "consumerCloud is empty");
+		Assert.isTrue(!Utilities.isEmpty(consumer), "consumer is empty");
+		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
+		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
+		Assert.isTrue(!Utilities.isEmpty(serviceOperation), "serviceOperation is empty");
+		Assert.isTrue(!Utilities.isEmpty(selfContainedtype), "selfContainedtype is empty");
+		Assert.notNull(expiresAt, "expiresAt is null");
+
+		try {
+			boolean override = false;
+			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndServiceDefinition(consumerCloud, consumer, provider, serviceDefinition);
+			if (tokenHeaderOpt.isPresent()) {
+				final Optional<SelfContainedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
+				if (tokenOpt.isPresent()) {
+					tokenRepo.delete(tokenOpt.get());
+					override = true;
+				}
+			}
+
+			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, auxiliaryRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
+			final SelfContainedToken tokenRecord = tokenRepo.saveAndFlush(new SelfContainedToken(tokenHeaderRecord, selfContainedtype, expiresAt));
+			return Pair.of(tokenRecord, !override);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+}

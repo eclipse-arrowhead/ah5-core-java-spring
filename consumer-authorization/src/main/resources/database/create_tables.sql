@@ -123,9 +123,10 @@ CREATE TABLE IF NOT EXISTS `usage_limited_token` (
 
 -- JSON Web Tokens
 
-CREATE TABLE IF NOT EXISTS `json_web_token` (
+CREATE TABLE IF NOT EXISTS `self_contained_token` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
 	`header_id` bigint(20) NOT NULL,
+	`type` varchar(63) NOT NULL,
 	`expires_at` timestamp NOT NULL,
 	PRIMARY KEY (`id`),
 	CONSTRAINT `fk_token_header_id3` FOREIGN KEY (`header_id`) REFERENCES `token_header` (`id`) ON DELETE CASCADE
