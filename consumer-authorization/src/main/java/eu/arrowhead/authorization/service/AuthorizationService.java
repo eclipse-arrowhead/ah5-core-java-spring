@@ -30,6 +30,7 @@ import eu.arrowhead.dto.AuthorizationLookupRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
+import eu.arrowhead.dto.enums.AuthorizationLevel;
 
 @Service
 public class AuthorizationService {
@@ -65,7 +66,7 @@ public class AuthorizationService {
 		try {
 			final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> result = dbService.createProviderLevelPolicy(normalized);
 
-			return dtoConverter.convertProviderLevelPolicyToResponse(result);
+			return dtoConverter.convertPolicyToResponse(AuthorizationLevel.PROVIDER, result);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {

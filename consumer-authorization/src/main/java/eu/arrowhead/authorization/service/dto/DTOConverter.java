@@ -13,7 +13,9 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.authorization.jpa.entity.AuthMgmtPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
+import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
@@ -36,25 +38,53 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationPolicyListResponseDTO convertProviderLevelPolicyPageToResponse(final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> page) {
-		logger.debug("convertProviderLevelPolicyToResponse started...");
+		logger.debug("convertProviderLevelPolicyPageToResponse started...");
 		Assert.notNull(page, "page is null");
 
 		final List<AuthorizationPolicyResponseDTO> convertedList = page
 				.stream()
-				.map(e -> convertProviderLevelPolicyToResponse(e))
+				.map(e -> convertPolicyToResponse(AuthorizationLevel.PROVIDER, e))
 				.toList();
 
 		return new AuthorizationPolicyListResponseDTO(convertedList, page.getTotalElements());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationPolicyResponseDTO convertProviderLevelPolicyToResponse(final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> entities) {
-		logger.debug("convertProviderLevelPolicyToResponse started...");
+	public AuthorizationPolicyListResponseDTO convertMgmtLevelPolicyListToResponse(final List<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> policies) {
+		logger.debug("convertMgmtLevelPolicyListToResponse started...");
+		Assert.isTrue(!Utilities.isEmpty(policies), "policies is missing");
+		Assert.isTrue(!Utilities.containsNull(policies), "policies list contains null element");
+
+		final List<AuthorizationPolicyResponseDTO> convertedList = policies
+				.stream()
+				.map(e -> convertPolicyToResponse(AuthorizationLevel.MGMT, e))
+				.toList();
+
+		return new AuthorizationPolicyListResponseDTO(convertedList, policies.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationPolicyListResponseDTO convertMgmtLevelPolicyPageToResponse(final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> page) {
+		logger.debug("convertMgmtLevelPolicyPageToResponse started...");
+		Assert.notNull(page, "page is null");
+
+		final List<AuthorizationPolicyResponseDTO> convertedList = page
+				.stream()
+				.map(e -> convertPolicyToResponse(AuthorizationLevel.MGMT, e))
+				.toList();
+
+		return new AuthorizationPolicyListResponseDTO(convertedList, page.getTotalElements());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationPolicyResponseDTO convertPolicyToResponse(final AuthorizationLevel level, final Pair<? extends AuthPolicyHeader, List<AuthPolicy>> entities) {
+		logger.debug("convertPolicyToResponse started...");
+		Assert.notNull(level, "level is null");
 		Assert.notNull(entities, "entities is null");
 		Assert.notNull(entities.getFirst(), "header is null");
 		Assert.isTrue(!Utilities.isEmpty(entities.getSecond()), "list is missing");
 
-		final AuthProviderPolicyHeader header = entities.getFirst();
+		final AuthPolicyHeader header = entities.getFirst();
 		final List<AuthPolicy> policies = entities.getSecond();
 
 		AuthorizationPolicyDTO defaultPolicy = null;
@@ -68,9 +98,11 @@ public class DTOConverter {
 			}
 		}
 
+		final String createdBy = level == AuthorizationLevel.PROVIDER ? header.getProvider() : ((AuthMgmtPolicyHeader) header).getCreatedBy();
+
 		return new AuthorizationPolicyResponseDTO(
 				header.getInstanceId(),
-				AuthorizationLevel.PROVIDER,
+				level,
 				header.getCloud(),
 				header.getProvider(),
 				header.getTargetType(),
@@ -78,7 +110,7 @@ public class DTOConverter {
 				header.getDescription(),
 				defaultPolicy,
 				scopedPolicies,
-				header.getProvider(),
+				createdBy,
 				Utilities.convertZonedDateTimeToUTCString(header.getCreatedAt()));
 	}
 
@@ -113,5 +145,22 @@ public class DTOConverter {
 				policy.getPolicyType(),
 				list,
 				metadataRequirement);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedLookupRequest convertQueryRequestToLookupRequest(final NormalizedQueryRequest queryRequest) {
+		logger.debug("convertQueryRequestToLookupRequest started...");
+
+		if (queryRequest == null) {
+			return null;
+		}
+
+		final NormalizedLookupRequest result = new NormalizedLookupRequest();
+		// provider stays null intentionally
+		result.setCloudIdentifiers(queryRequest.cloudIdentifiers());
+		result.setInstanceIds(queryRequest.instanceIds());
+		result.setTargetNames(queryRequest.targetNames());
+		result.setTargetType(queryRequest.targetType());
+		return result;
 	}
 }

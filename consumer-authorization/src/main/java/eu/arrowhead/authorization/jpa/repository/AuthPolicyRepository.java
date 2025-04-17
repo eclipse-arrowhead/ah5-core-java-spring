@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
 import eu.arrowhead.common.jpa.RefreshableRepository;
+import eu.arrowhead.dto.enums.AuthorizationLevel;
 
 @Repository
 public interface AuthPolicyRepository extends RefreshableRepository<AuthPolicy, Long> {
@@ -15,11 +16,14 @@ public interface AuthPolicyRepository extends RefreshableRepository<AuthPolicy, 
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void deleteByHeaderId(final long headerId);
+	public void deleteByLevelAndHeaderId(final AuthorizationLevel level, final long headerId);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<AuthPolicy> findByHeaderId(final long headerId);
+	public void deleteByLevelAndHeaderIdIn(final AuthorizationLevel level, final Collection<Long> headerIds);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<AuthPolicy> findByHeaderIdAndScopeIn(final long headerId, final Collection<String> scopes);
+	public List<AuthPolicy> findByLevelAndHeaderId(final AuthorizationLevel level, final long headerId);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<AuthPolicy> findByLevelAndHeaderIdAndScopeIn(final AuthorizationLevel level, final long headerId, final Collection<String> scopes);
 }

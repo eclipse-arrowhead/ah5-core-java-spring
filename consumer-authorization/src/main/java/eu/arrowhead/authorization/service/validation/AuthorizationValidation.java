@@ -44,7 +44,7 @@ public class AuthorizationValidation {
 	private NameNormalizer nameNormalizer;
 
 	@Autowired
-	private CloudIdentifierValidator cloudIdentitiferValidator;
+	private CloudIdentifierValidator cloudIdentifierValidator;
 
 	@Autowired
 	private CloudIdentifierNormalizer cloudIdentifierNormalizer;
@@ -102,7 +102,7 @@ public class AuthorizationValidation {
 					throw new InvalidParameterException("Cloud identifier is too long: " + dto.cloud(), origin);
 				}
 
-				cloudIdentitiferValidator.validateCloudIdentifier(dto.cloud());
+				cloudIdentifierValidator.validateCloudIdentifier(dto.cloud());
 			}
 
 			// target type
@@ -230,7 +230,7 @@ public class AuthorizationValidation {
 
 			// cloud
 			if (!Utilities.isEmpty(dto.cloud())) {
-				cloudIdentitiferValidator.validateCloudIdentifier(dto.cloud());
+				cloudIdentifierValidator.validateCloudIdentifier(dto.cloud());
 			}
 
 			// target type

@@ -30,6 +30,7 @@ import eu.arrowhead.authorization.jpa.repository.AuthProviderPolicyHeaderReposit
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.utils.InstanceIdUtils;
 import eu.arrowhead.common.Defaults;
@@ -74,7 +75,7 @@ public class AuthorizationPolicyDbService {
 					request.target());
 
 			if (existing.isPresent()) {
-				throw new InvalidParameterException("A policy is already existing for this cloud / provider / target type / target combination: "
+				throw new InvalidParameterException("A provider level policy is already existing for this cloud / provider / target type / target combination: "
 						+ request.cloud() + " / "
 						+ request.provider() + " / "
 						+ request.targetType().name() + " / "
@@ -91,7 +92,7 @@ public class AuthorizationPolicyDbService {
 					request.description());
 
 			header = providerHeaderRepository.saveAndFlush(header);
-			final List<AuthPolicy> policies = createAuthPoliciesForProvider(header, request.policies());
+			final List<AuthPolicy> policies = createAuthPolicies(AuthorizationLevel.PROVIDER, header, request.policies());
 
 			return Pair.of(header, policies);
 		} catch (final InvalidParameterException ex) {
@@ -116,7 +117,7 @@ public class AuthorizationPolicyDbService {
 
 				providerHeaderRepository.delete(header);
 				providerHeaderRepository.flush();
-				authPolicyRepository.deleteByHeaderId(header.getId());
+				authPolicyRepository.deleteByLevelAndHeaderId(AuthorizationLevel.PROVIDER, header.getId());
 				authPolicyRepository.flush();
 
 				return true;
@@ -149,6 +150,23 @@ public class AuthorizationPolicyDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
+	public Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> getMgmtLevelPoliciesByFilters(final Pageable pagination, final NormalizedQueryRequest request) {
+		logger.debug("getMgmtLevelPoliciesByFilters started...");
+		Assert.notNull(pagination, "pagination is null");
+		Assert.notNull(request, "request is null");
+		Assert.isTrue(request.level() == AuthorizationLevel.MGMT, "Can't use this method for provider level filtering");
+
+		try {
+			return request.hasAnyOptionalFilter() ? findMgmtLevelPoliciesByFilters(pagination, request) : findAllMgmtLevelPolicies(pagination);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
 	public Optional<Pair<? extends AuthPolicyHeader, List<AuthPolicy>>> findRelevantPolicies(final AuthorizationLevel level, final NormalizedVerifyRequest request) {
 		logger.debug("findRelevantPolicies started...");
 		Assert.notNull(level, "level is null");
@@ -163,11 +181,112 @@ public class AuthorizationPolicyDbService {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> createMgmtLevelPoliciesInBulk(final String requester, final List<NormalizedGrantRequest> requestList) {
+		logger.debug("createMgmtLevelPolicies started...");
+		Assert.isTrue(!Utilities.isEmpty(requester), "requester is missing");
+		Assert.isTrue(!Utilities.isEmpty(requestList), "requestList is missing");
+		Assert.isTrue(!Utilities.containsNull(requestList), "requestList contains null element");
+
+		try {
+			return requestList
+					.stream()
+					.map(request -> createMgmtLevelPolicy(requester, request))
+					.toList();
+		} catch (final InvalidParameterException ex) {
+			throw ex;
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deletePoliciesByInstanceIds(final List<String> instanceIds) {
+		logger.debug("deletePoliciesByInstanceIds started...");
+		Assert.isTrue(!Utilities.isEmpty(instanceIds), "instanceIds is missing");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(instanceIds), "instanceIds contains null or empty element");
+
+		try {
+			// delete from MGMT level
+			final List<AuthMgmtPolicyHeader> referencedMgmtHeaders = mgmtHeaderRepository.findByInstanceIdIn(instanceIds);
+			if (!referencedMgmtHeaders.isEmpty()) {
+				final List<Long> ids = referencedMgmtHeaders
+						.stream()
+						.map(h -> h.getId())
+						.toList();
+
+				mgmtHeaderRepository.deleteAll(referencedMgmtHeaders);
+				mgmtHeaderRepository.flush();
+
+				authPolicyRepository.deleteByLevelAndHeaderIdIn(AuthorizationLevel.MGMT, ids);
+			}
+
+			// delete from Provider level
+			List<AuthProviderPolicyHeader> referencedProviderHeaders = providerHeaderRepository.findByInstanceIdIn(instanceIds);
+			if (!referencedProviderHeaders.isEmpty()) {
+				final List<Long> ids = referencedProviderHeaders
+						.stream()
+						.map(h -> h.getId())
+						.toList();
+
+				providerHeaderRepository.deleteAll(referencedProviderHeaders);
+				providerHeaderRepository.flush();
+
+				authPolicyRepository.deleteByLevelAndHeaderIdIn(AuthorizationLevel.PROVIDER, ids);
+			}
+
+			authPolicyRepository.flush();
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private List<AuthPolicy> createAuthPoliciesForProvider(final AuthProviderPolicyHeader header, final Map<String, NormalizedAuthorizationPolicyRequest> policies) {
+	public Pair<AuthMgmtPolicyHeader, List<AuthPolicy>> createMgmtLevelPolicy(final String requester, final NormalizedGrantRequest request) {
+		logger.debug("createMgmtLevelPolicy started...");
+
+		// check existing record
+		final Optional<AuthMgmtPolicyHeader> existing = mgmtHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget(
+				request.cloud(),
+				request.provider(),
+				request.targetType(),
+				request.target());
+
+		if (existing.isPresent()) {
+			throw new InvalidParameterException("A management level policy is already existing for this cloud / provider / target type / target combination: "
+					+ request.cloud() + " / "
+					+ request.provider() + " / "
+					+ request.targetType().name() + " / "
+					+ request.target());
+		}
+
+		// create header
+		AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				InstanceIdUtils.calculateInstanceId(request.level(), request.cloud(), request.provider(), request.targetType(), request.target()),
+				request.targetType(),
+				request.cloud(),
+				request.provider(),
+				request.target(),
+				request.description(),
+				requester);
+
+		header = mgmtHeaderRepository.saveAndFlush(header);
+		final List<AuthPolicy> policies = createAuthPolicies(AuthorizationLevel.MGMT, header, request.policies());
+
+		return Pair.of(header, policies);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<AuthPolicy> createAuthPolicies(final AuthorizationLevel level, final AuthPolicyHeader header, final Map<String, NormalizedAuthorizationPolicyRequest> policies) {
 		logger.debug("createAuthPolicies started...");
 
 		final List<AuthPolicy> result = new ArrayList<>(policies.size());
@@ -175,7 +294,7 @@ public class AuthorizationPolicyDbService {
 			final String scope = policyRequest.getKey();
 			final NormalizedAuthorizationPolicyRequest policy = policyRequest.getValue();
 			result.add(new AuthPolicy(
-					AuthorizationLevel.PROVIDER,
+					level,
 					header.getId(),
 					scope,
 					policy.policyType(),
@@ -217,7 +336,7 @@ public class AuthorizationPolicyDbService {
 				.stream()
 				.map(h -> Pair.of(
 						h,
-						authPolicyRepository.findByHeaderId(h.getId())))
+						authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, h.getId())))
 				.toList();
 
 		return new PageImpl<>(
@@ -231,18 +350,18 @@ public class AuthorizationPolicyDbService {
 		logger.debug("findProviderLevelPoliciesByFilters started...");
 		Assert.notNull(request, "request is null");
 
-		ProviderLevelBaseFilter baseFilter = ProviderLevelBaseFilter.NONE;
+		BaseFilter baseFilter = BaseFilter.NONE;
 		List<AuthProviderPolicyHeader> toFilter = new ArrayList<>();
 
 		if (!Utilities.isEmpty(request.instanceIds())) {
 			toFilter = providerHeaderRepository.findByInstanceIdIn(request.instanceIds());
-			baseFilter = ProviderLevelBaseFilter.INSTANCE_ID;
+			baseFilter = BaseFilter.INSTANCE_ID;
 		} else if (!Utilities.isEmpty(request.targetNames())) {
 			toFilter = providerHeaderRepository.findByTargetIn(request.targetNames());
-			baseFilter = ProviderLevelBaseFilter.TARGET;
+			baseFilter = BaseFilter.TARGET;
 		} else if (!Utilities.isEmpty(request.cloudIdentifiers())) {
 			toFilter = providerHeaderRepository.findByCloudIn(request.cloudIdentifiers());
-			baseFilter = ProviderLevelBaseFilter.CLOUD;
+			baseFilter = BaseFilter.CLOUD;
 		} else {
 			toFilter = providerHeaderRepository.findAll();
 		}
@@ -252,17 +371,17 @@ public class AuthorizationPolicyDbService {
 
 		for (final AuthProviderPolicyHeader header : toFilter) {
 			// Match against instance id requirements
-			if (baseFilter != ProviderLevelBaseFilter.INSTANCE_ID && !Utilities.isEmpty(request.instanceIds()) && !request.instanceIds().contains(header.getInstanceId())) {
+			if (baseFilter != BaseFilter.INSTANCE_ID && !Utilities.isEmpty(request.instanceIds()) && !request.instanceIds().contains(header.getInstanceId())) {
 				continue;
 			}
 
 			// Match against target requirements
-			if (baseFilter != ProviderLevelBaseFilter.TARGET && !Utilities.isEmpty(request.targetNames()) && !request.targetNames().contains(header.getTarget())) {
+			if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(request.targetNames()) && !request.targetNames().contains(header.getTarget())) {
 				continue;
 			}
 
 			// Match against cloud requirements
-			if (baseFilter != ProviderLevelBaseFilter.CLOUD && !Utilities.isEmpty(request.cloudIdentifiers()) && !request.cloudIdentifiers().contains(header.getCloud())) {
+			if (baseFilter != BaseFilter.CLOUD && !Utilities.isEmpty(request.cloudIdentifiers()) && !request.cloudIdentifiers().contains(header.getCloud())) {
 				continue;
 			}
 
@@ -276,7 +395,7 @@ public class AuthorizationPolicyDbService {
 				continue;
 			}
 
-			final List<AuthPolicy> policies = authPolicyRepository.findByHeaderId(header.getId());
+			final List<AuthPolicy> policies = authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, header.getId());
 			if (!Utilities.isEmpty(policies)) {
 				matchingIds.add(header.getId());
 				authPolicyMap.put(header.getId(), policies);
@@ -285,6 +404,89 @@ public class AuthorizationPolicyDbService {
 
 		final Page<AuthProviderPolicyHeader> page = providerHeaderRepository.findAllByIdIn(matchingIds, pagination);
 		final List<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> entries = page
+				.stream()
+				.map(h -> Pair.of(
+						h,
+						authPolicyMap.get(h.getId())))
+				.toList();
+
+		return new PageImpl<>(
+				entries,
+				pagination,
+				page.getTotalElements());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> findAllMgmtLevelPolicies(final Pageable pagination) {
+		logger.debug("findAllMgmtLevelPolicies started...");
+
+		final Page<AuthMgmtPolicyHeader> headers = mgmtHeaderRepository.findAll(pagination);
+		final List<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> entries = headers
+				.stream()
+				.map(h -> Pair.of(
+						h,
+						authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, h.getId())))
+				.toList();
+
+		return new PageImpl<>(
+				entries,
+				pagination,
+				headers.getTotalElements());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> findMgmtLevelPoliciesByFilters(final Pageable pagination, final NormalizedQueryRequest request) {
+		logger.debug("findMgmtLevelPoliciesByFilters started...");
+
+		BaseFilter baseFilter = BaseFilter.NONE;
+		List<AuthMgmtPolicyHeader> toFilter = new ArrayList<>();
+
+		if (!Utilities.isEmpty(request.instanceIds())) {
+			toFilter = mgmtHeaderRepository.findByInstanceIdIn(request.instanceIds());
+			baseFilter = BaseFilter.INSTANCE_ID;
+		} else if (!Utilities.isEmpty(request.targetNames())) {
+			toFilter = mgmtHeaderRepository.findByTargetIn(request.targetNames());
+			baseFilter = BaseFilter.TARGET;
+		} else if (!Utilities.isEmpty(request.cloudIdentifiers())) {
+			toFilter = mgmtHeaderRepository.findByCloudIn(request.cloudIdentifiers());
+			baseFilter = BaseFilter.CLOUD;
+		} else {
+			toFilter = mgmtHeaderRepository.findAll();
+		}
+
+		final Set<Long> matchingIds = new HashSet<>();
+		final Map<Long, List<AuthPolicy>> authPolicyMap = new HashMap<>();
+
+		for (final AuthMgmtPolicyHeader header : toFilter) {
+			// Match against instance id requirements
+			if (baseFilter != BaseFilter.INSTANCE_ID && !Utilities.isEmpty(request.instanceIds()) && !request.instanceIds().contains(header.getInstanceId())) {
+				continue;
+			}
+
+			// Match against target requirements
+			if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(request.targetNames()) && !request.targetNames().contains(header.getTarget())) {
+				continue;
+			}
+
+			// Match against cloud requirements
+			if (baseFilter != BaseFilter.CLOUD && !Utilities.isEmpty(request.cloudIdentifiers()) && !request.cloudIdentifiers().contains(header.getCloud())) {
+				continue;
+			}
+
+			// Match against target type requirement
+			if (request.targetType() != null && request.targetType() != header.getTargetType()) {
+				continue;
+			}
+
+			final List<AuthPolicy> policies = authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, header.getId());
+			if (!Utilities.isEmpty(policies)) {
+				matchingIds.add(header.getId());
+				authPolicyMap.put(header.getId(), policies);
+			}
+		}
+
+		final Page<AuthMgmtPolicyHeader> page = mgmtHeaderRepository.findAllByIdIn(matchingIds, pagination);
+		final List<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> entries = page
 				.stream()
 				.map(h -> Pair.of(
 						h,
@@ -317,10 +519,13 @@ public class AuthorizationPolicyDbService {
 		List<AuthPolicy> policies;
 		if (request.scope() == null) {
 			// if scope is not specified => both default and all scoped policies must check
-			policies = authPolicyRepository.findByHeaderId(header.getId());
+			policies = authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, header.getId());
 		} else {
 			// if scope is specified => scope-specific policy (if exists) or default policy (if there is no scope-specific policy) must check
-			final List<AuthPolicy> candidates = authPolicyRepository.findByHeaderIdAndScopeIn(header.getId(), Set.of(request.scope(), Defaults.AUTHENTICATION_POLICY_DEFAULT));
+			final List<AuthPolicy> candidates = authPolicyRepository.findByLevelAndHeaderIdAndScopeIn(
+					AuthorizationLevel.MGMT,
+					header.getId(),
+					Set.of(request.scope(), Defaults.AUTHENTICATION_POLICY_DEFAULT));
 
 			if (Utilities.isEmpty(candidates)) {
 				// zombie header (should not happen)
@@ -368,10 +573,13 @@ public class AuthorizationPolicyDbService {
 		List<AuthPolicy> policies;
 		if (request.scope() == null) {
 			// if scope is not specified => both default and all scoped policies must check
-			policies = authPolicyRepository.findByHeaderId(header.getId());
+			policies = authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, header.getId());
 		} else {
 			// if scope is specified => scope-specific policy (if exists) or default policy (if there is no scope-specific policy) must check
-			final List<AuthPolicy> candidates = authPolicyRepository.findByHeaderIdAndScopeIn(header.getId(), Set.of(request.scope(), Defaults.AUTHENTICATION_POLICY_DEFAULT));
+			final List<AuthPolicy> candidates = authPolicyRepository.findByLevelAndHeaderIdAndScopeIn(
+					AuthorizationLevel.PROVIDER,
+					header.getId(),
+					Set.of(request.scope(), Defaults.AUTHENTICATION_POLICY_DEFAULT));
 
 			if (Utilities.isEmpty(candidates)) {
 				// zombie header (should not happen)
@@ -403,7 +611,7 @@ public class AuthorizationPolicyDbService {
 	// nested structures
 
 	//-------------------------------------------------------------------------------------------------
-	private enum ProviderLevelBaseFilter {
+	private enum BaseFilter {
 		NONE, INSTANCE_ID, CLOUD, TARGET
 	}
 }

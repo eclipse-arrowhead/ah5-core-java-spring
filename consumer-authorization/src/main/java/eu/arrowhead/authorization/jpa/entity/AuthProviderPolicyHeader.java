@@ -13,7 +13,6 @@ public class AuthProviderPolicyHeader extends AuthPolicyHeader {
 	// members
 
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "instanceId", "createdAt", "targetType", "cloud", "provider", "target", "createdBy");
-	public static final String DEFAULT_SORT_FIELD = "instanceId";
 
 	//=================================================================================================
 	// methods

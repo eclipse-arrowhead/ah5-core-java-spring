@@ -14,6 +14,8 @@ public abstract class AuthPolicyHeader extends UnmodifiableArrowheadEntity {
 	//=================================================================================================
 	// members
 
+	public static final String DEFAULT_SORT_FIELD = "instanceId";
+
 	@Column(nullable = false, unique = true, length = VARCHAR_LARGE)
 	protected String instanceId;
 
