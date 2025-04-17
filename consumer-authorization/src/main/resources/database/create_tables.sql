@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `token_header` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
 	`token_type` varchar(30) NOT NULL,
 	`token` mediumtext NOT NULL,
-	`internal_auxiliary_id` bigint(20) NOT NULL,
+	`internal_auxiliary_id` bigint(20),
 	`consumer_cloud` varchar(255) NOT NULL DEFAULT 'LOCAL',
 	`consumer` varchar(63) NOT NULL,
 	`provider` varchar(63) NOT NULL,

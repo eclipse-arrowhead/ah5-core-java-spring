@@ -47,7 +47,6 @@ public class UsageLimitedTokenDbService {
 	public Pair<UsageLimitedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
 			final String token,
-			final String internalAuxiliary,
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
@@ -57,7 +56,6 @@ public class UsageLimitedTokenDbService {
 			final int usageLimit) {
 		logger.debug("save started...");
 		Assert.notNull(tokenType, "tokenType is null");
-		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
 		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
 		Assert.isTrue(!Utilities.isEmpty(requester), "requester is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumerCloud), "consumerCloud is empty");
@@ -77,8 +75,7 @@ public class UsageLimitedTokenDbService {
 				}
 			}
 
-			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, auxiliaryRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, null, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
 			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
 			return Pair.of(tokenRecord, !override);
 

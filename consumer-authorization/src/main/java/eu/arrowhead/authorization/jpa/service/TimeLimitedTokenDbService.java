@@ -47,8 +47,7 @@ public class TimeLimitedTokenDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Pair<TimeLimitedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
-			final String token,
-			final String internalAuxiliary,
+			final String token,			
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
@@ -58,7 +57,6 @@ public class TimeLimitedTokenDbService {
 			final ZonedDateTime expiresAt) {
 		logger.debug("save started...");
 		Assert.notNull(tokenType, "tokenType is null");
-		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
 		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
 		Assert.isTrue(!Utilities.isEmpty(requester), "requester is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumerCloud), "consumerCloud is empty");
@@ -79,8 +77,7 @@ public class TimeLimitedTokenDbService {
 				}
 			}
 			
-			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, auxiliaryRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, null, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
 			final TimeLimitedToken tokenRecord = tokenRepo.saveAndFlush(new TimeLimitedToken(tokenHeaderRecord, expiresAt));
 			return Pair.of(tokenRecord, !override);
 			

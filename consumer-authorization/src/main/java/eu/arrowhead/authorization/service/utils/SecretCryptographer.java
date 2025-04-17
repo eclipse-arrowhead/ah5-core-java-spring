@@ -43,11 +43,6 @@ public class SecretCryptographer {
 	// ENCRYPTION
 	
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, String> encryptInternal(final String plainSecret, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		return encryptAESCBCPKCS5P(plainSecret, key,  generateIV());
-	}
-	
-	//-------------------------------------------------------------------------------------------------
 	public Pair<String, String> encryptAESCBCPKCS5P(final String plainSecret, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		return encryptAESCBCPKCS5P(plainSecret, key,  generateIV());
 	}
@@ -85,11 +80,6 @@ public class SecretCryptographer {
 	}
 	
 	// DECRIPTION
-	
-	//-------------------------------------------------------------------------------------------------
-	public String decryptInternal(final String encryptedSecretBase64, final String ivBase64, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		return decryptAESCBCPKCS5P(encryptedSecretBase64, ivBase64, key);
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String decryptAESCBCPKCS5P(final String encryptedSecretBase64, final String ivBase64, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {

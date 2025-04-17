@@ -31,7 +31,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	private String token;
 
 	@OneToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "internalAuxiliaryId", referencedColumnName = "id", nullable = false)
+	@JoinColumn(name = "internalAuxiliaryId", referencedColumnName = "id", nullable = true)
 	private CryptographerAuxiliary internalAuxiliary;
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
