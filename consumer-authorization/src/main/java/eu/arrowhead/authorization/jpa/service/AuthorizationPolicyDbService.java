@@ -385,8 +385,8 @@ public class AuthorizationPolicyDbService {
 				continue;
 			}
 
-			// Match against provider requirement
-			if (!Utilities.isEmpty(request.provider()) && !request.provider().equals(header.getProvider())) {
+			// Match against provider requirements
+			if (!Utilities.isEmpty(request.providers()) && !request.providers().contains(header.getProvider())) {
 				continue;
 			}
 
@@ -470,6 +470,11 @@ public class AuthorizationPolicyDbService {
 
 			// Match against cloud requirements
 			if (baseFilter != BaseFilter.CLOUD && !Utilities.isEmpty(request.cloudIdentifiers()) && !request.cloudIdentifiers().contains(header.getCloud())) {
+				continue;
+			}
+
+			// Match against provider requirements
+			if (!Utilities.isEmpty(request.providers()) && !request.providers().contains(header.getProvider())) {
 				continue;
 			}
 

@@ -22,6 +22,8 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AuthorizationPolicyDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
+import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
+import eu.arrowhead.dto.AuthorizationVerifyResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 
@@ -148,19 +150,32 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public NormalizedLookupRequest convertQueryRequestToLookupRequest(final NormalizedQueryRequest queryRequest) {
-		logger.debug("convertQueryRequestToLookupRequest started...");
+	public AuthorizationVerifyListResponseDTO convertCheckResultListToResponse(final List<Pair<NormalizedVerifyRequest, Boolean>> result) {
+		logger.debug("convertCheckResultListToResponse started...");
+		Assert.notNull(result, "result is null");
 
-		if (queryRequest == null) {
-			return null;
-		}
+		final List<AuthorizationVerifyResponseDTO> convertedList = result
+				.stream()
+				.map(e -> convertCheckResultToResponse(e.getFirst(), e.getSecond()))
+				.toList();
 
-		final NormalizedLookupRequest result = new NormalizedLookupRequest();
-		// provider stays null intentionally
-		result.setCloudIdentifiers(queryRequest.cloudIdentifiers());
-		result.setInstanceIds(queryRequest.instanceIds());
-		result.setTargetNames(queryRequest.targetNames());
-		result.setTargetType(queryRequest.targetType());
-		return result;
+		return new AuthorizationVerifyListResponseDTO(convertedList, result.size());
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private AuthorizationVerifyResponseDTO convertCheckResultToResponse(final NormalizedVerifyRequest input, final boolean output) {
+		logger.debug("convertCheckResultToResponse started...");
+
+		return new AuthorizationVerifyResponseDTO(
+				input.provider(),
+				input.consumer(),
+				input.cloud(),
+				input.targetType(),
+				input.target(),
+				input.scope(),
+				output);
 	}
 }

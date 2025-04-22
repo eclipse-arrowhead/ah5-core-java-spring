@@ -20,6 +20,7 @@ import eu.arrowhead.authorization.jpa.service.AuthorizationPolicyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.validation.AuthorizationManagementValidation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -28,6 +29,8 @@ import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.AuthorizationMgmtGrantListRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
+import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
+import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 
 @Service
@@ -43,8 +46,12 @@ public class AuthorizationManagementService {
 	private AuthorizationPolicyDbService dbService;
 
 	@Autowired
+	private AuthorizationPolicyEngine policyEngine;
+
+	@Autowired
 	private DTOConverter dtoConverter;
 
+	@Autowired
 	private PageService pageService;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
@@ -106,10 +113,26 @@ public class AuthorizationManagementService {
 			} else {
 				final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(
 						pageRequest,
-						dtoConverter.convertQueryRequestToLookupRequest(normalized));
+						normalized);
 
 				return dtoConverter.convertProviderLevelPolicyPageToResponse(result);
 			}
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationVerifyListResponseDTO checkPoliciesOperation(final AuthorizationVerifyListRequestDTO dto, final String origin) {
+		logger.debug("checkPoliciesOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		final List<NormalizedVerifyRequest> normalized = validator.validateAndNormalizeVerifyListRequest(dto, origin);
+
+		try {
+			final List<Pair<NormalizedVerifyRequest, Boolean>> result = policyEngine.checkAccess(normalized);
+
+			return dtoConverter.convertCheckResultListToResponse(result);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

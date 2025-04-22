@@ -68,6 +68,18 @@ public class AuthorizationPolicyEngine {
 		return result.toBoolean();
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public List<Pair<NormalizedVerifyRequest, Boolean>> checkAccess(final List<NormalizedVerifyRequest> requestList) {
+		logger.debug("checkAccess started...");
+		Assert.isTrue(!Utilities.isEmpty(requestList), "Request list is missing");
+		Assert.isTrue(!Utilities.containsNull(requestList), "Request list contains null element");
+
+		return requestList
+				.stream()
+				.map(request -> Pair.of(request, isAccessGranted(request)))
+				.toList();
+	}
+
 	//=================================================================================================
 	// assistant methods
 

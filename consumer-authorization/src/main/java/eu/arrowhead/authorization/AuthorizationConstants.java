@@ -33,6 +33,7 @@ public final class AuthorizationConstants {
 	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 	public static final String HTTP_API_OP_VERIFY_PATH = "/verify";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
+	public static final String HTTP_API_OP_CHECK_PATH = "/check";
 
 	//=================================================================================================
 	// assistant methods

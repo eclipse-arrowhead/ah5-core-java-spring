@@ -10,11 +10,11 @@ public class NormalizedLookupRequest {
 	//=================================================================================================
 	// members
 
-	private String provider;
-	private List<String> instanceIds;
-	private List<String> cloudIdentifiers;
-	private List<String> targetNames;
-	private AuthorizationTargetType targetType;
+	protected List<String> providers;
+	protected List<String> instanceIds;
+	protected List<String> cloudIdentifiers;
+	protected List<String> targetNames;
+	protected AuthorizationTargetType targetType;
 
 	//=================================================================================================
 	// methods
@@ -25,7 +25,7 @@ public class NormalizedLookupRequest {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasFilter() {
-		return !Utilities.isEmpty(provider)
+		return !Utilities.isEmpty(providers)
 				|| !Utilities.isEmpty(instanceIds)
 				|| !Utilities.isEmpty(cloudIdentifiers)
 				|| !Utilities.isEmpty(targetNames)
@@ -36,13 +36,13 @@ public class NormalizedLookupRequest {
 	// boilerplate code
 
 	//-------------------------------------------------------------------------------------------------
-	public String provider() {
-		return provider;
+	public List<String> providers() {
+		return providers;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setProvider(final String provider) {
-		this.provider = provider;
+	public void setProviders(final List<String> providers) {
+		this.providers = providers;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -85,9 +85,10 @@ public class NormalizedLookupRequest {
 		this.targetType = targetType;
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "NormalizedLookupRequest [provider=" + provider + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
+		return "NormalizedLookupRequest [providers=" + providers + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
 				+ ", targetType=" + targetType + "]";
 	}
 }

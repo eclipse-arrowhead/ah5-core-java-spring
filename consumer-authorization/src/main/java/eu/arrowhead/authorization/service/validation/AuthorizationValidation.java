@@ -1,5 +1,6 @@
 package eu.arrowhead.authorization.service.validation;
 
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
@@ -261,7 +262,6 @@ public class AuthorizationValidation {
 
 			throw ex;
 		}
-
 	}
 
 	// VALIDATION AND NORMALIZATION
@@ -307,7 +307,7 @@ public class AuthorizationValidation {
 		validateLookupRequest(dto, origin);
 
 		final NormalizedLookupRequest result = new NormalizedLookupRequest();
-		result.setProvider(normalizedProvider);
+		result.setProviders(List.of(normalizedProvider));
 		normalizeLookupRequest(dto, result);
 
 		return result;
