@@ -23,7 +23,7 @@ import eu.arrowhead.common.model.SystemModel;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.common.security.SecurityUtilities;
 
-@Component
+@Component(Constants.BEAN_NAME_SYSTEM_INFO)
 public class AuthenticationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
