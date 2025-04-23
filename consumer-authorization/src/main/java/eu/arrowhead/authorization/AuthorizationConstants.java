@@ -17,7 +17,7 @@ public final class AuthorizationConstants {
 	public static final String HTTP_API_BASE_PATH = "/consumerauthorization";
 	public static final String HTTP_API_AUTHORIZATION_PATH = HTTP_API_BASE_PATH + "/authorization";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
-	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/mgmt";
+	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_AUTHORIZATION_PATH + "/mgmt";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/consumer-authorization";

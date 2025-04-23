@@ -54,11 +54,18 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	@Override
 	public List<ServiceModel> getServices() {
 		final ServiceModel authorization = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_IDENTITY)
+				.serviceDefinition(Constants.SERVICE_DEF_AUTHORIZATION)
 				.version(AuthorizationConstants.VERSION_AUTHORIZATION)
 				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForAuthorization())
 				.serviceInterface(getMqttServiceInterfaceForAuthorization())
+				.build();
+
+		final ServiceModel authorizationManagement = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT)
+				.version(AuthorizationConstants.VERSION_AUTHORIZATION_MANAGEMENT)
+				.serviceInterface(getHttpServiceInterfaceForAuthorizationManagement())
+				.serviceInterface(getMqttServiceInterfaceForAuthorizationManagement())
 				.build();
 
 		final ServiceModel generalManagement = new ServiceModel.Builder()
@@ -69,7 +76,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.build();
 
 		// TODO extend this
-		return List.of(authorization, generalManagement);
+		return List.of(authorization, authorizationManagement, generalManagement);
 	}
 
 	//=================================================================================================
@@ -136,6 +143,52 @@ public class AuthorizationSystemInfo extends SystemInfo {
 						Constants.SERVICE_OP_REVOKE,
 						Constants.SERVICE_OP_LOOKUP,
 						Constants.SERVICE_OP_VERIFY))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAuthorizationManagement() {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel grant = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_OP_GRANT_PATH)
+				.build();
+		final HttpOperationModel revoke = new HttpOperationModel.Builder()
+				.method(HttpMethod.DELETE.name())
+				.path(AuthorizationConstants.HTTP_API_OP_REVOKE_PATH)
+				.build();
+		final HttpOperationModel query = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_OP_QUERY_PATH)
+				.build();
+		final HttpOperationModel check = new HttpOperationModel.Builder()
+				.method(HttpMethod.GET.name())
+				.path(AuthorizationConstants.HTTP_API_OP_CHECK_PATH)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(AuthorizationConstants.HTTP_API_MANAGEMENT_PATH)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_GRANT_POLICIES, grant)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_REVOKE_POLICIES, revoke)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_QUERY_POLICIES, query)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES, check)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForAuthorizationManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(AuthorizationConstants.MQTT_API_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_AUTHORIZATION_GRANT_POLICIES,
+						Constants.SERVICE_OP_AUTHORIZATION_REVOKE_POLICIES,
+						Constants.SERVICE_OP_AUTHORIZATION_QUERY_POLICIES,
+						Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES))
 				.build();
 	}
 
