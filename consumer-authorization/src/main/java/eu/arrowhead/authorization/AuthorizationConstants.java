@@ -19,6 +19,14 @@ public final class AuthorizationConstants {
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/consumer-authorization";
 	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
 	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
+	
+	public static final String HTTP_PATH_PARAM_TOKEN = "{token}";
+
+	public static final String HTTP_API_OP_GENERATE_PATH = "/generate";
+	public static final String HTTP_API_OP_VERIFY_PATH = "/verify/" + HTTP_PATH_PARAM_TOKEN;
+	public static final String HTTP_API_OP_PUBLIC_KEY_PATH = "/public-key";
+	public static final String HTTP_API_OP_ENCRYPTION_KEY_PATH = "/encryption-key";
+	
 
 	public static final String INSTANCE_ID_PREFIX_MGMT = "MGMT";
 	public static final String INSTANCE_ID_PREFIX_PR = "PR";

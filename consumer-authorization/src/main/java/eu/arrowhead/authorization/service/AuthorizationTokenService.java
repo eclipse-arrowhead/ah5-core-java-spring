@@ -2,6 +2,7 @@ package eu.arrowhead.authorization.service;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
 import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequest;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
@@ -45,7 +47,7 @@ import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import jakarta.annotation.Resource;
 
 @Service
-public class AuthorizationtTokenService {
+public class AuthorizationTokenService {
 
 	//=================================================================================================
 	// members
@@ -83,7 +85,7 @@ public class AuthorizationtTokenService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
+	public Pair<AuthorizationTokenGenerationResponseDTO, Boolean> generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
 		logger.debug("generate started...");
 
 		final AuthorizationTokenGenerationRequestDTO normalized = dto; // TODO validate and normalize
@@ -91,7 +93,7 @@ public class AuthorizationtTokenService {
 		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalized.serviceInstanceId());
 
 		// Generate token
-		Pair<String, Boolean> tokenResult = generateToken(requesterSystem, tokenType, serviceInstanceIdParts, normalized.serviceOperation(), origin);
+		Pair<AuthorizationTokenGenerationResponseDTO, Boolean> tokenResult = generateToken(requesterSystem, tokenType, serviceInstanceIdParts, normalized.serviceOperation(), origin);
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalized.tokenType()));
@@ -101,15 +103,15 @@ public class AuthorizationtTokenService {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
 					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKey(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
-					final String plainToken = tokenResult.getLeft();
+					final String plainToken = tokenResult.getLeft().token();
 
 					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
 						final String hmacEncryptedToken = secretCryptographer.encryptHMACSHA256(plainToken, plainEncriptionKey);
-						tokenResult = Pair.of(hmacEncryptedToken, tokenResult.getRight());
+						tokenResult = Pair.of(new AuthorizationTokenGenerationResponseDTO(tokenResult.getLeft().tokenType(), hmacEncryptedToken, null, tokenResult.getLeft().expiresAt()), tokenResult.getRight());
 
 					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
 						final String aesEncryptedToken = secretCryptographer.encryptAESCBCPKCS5P(plainToken, plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getLeft();
-						tokenResult = Pair.of(aesEncryptedToken, tokenResult.getRight());
+						tokenResult = Pair.of(new AuthorizationTokenGenerationResponseDTO(tokenResult.getLeft().tokenType(), aesEncryptedToken, null, tokenResult.getLeft().expiresAt()), tokenResult.getRight());
 
 					} else {
 						throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -122,7 +124,7 @@ public class AuthorizationtTokenService {
 				throw new InternalServerError("Token encryption failed!", origin);
 			}
 		}
-
+		
 		return tokenResult;
 	}
 
@@ -166,7 +168,7 @@ public class AuthorizationtTokenService {
 		// TIME LIMITED TOKEN
 		if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
 			final TimeLimitedToken timeLimitedToken = timeLimitedTokenDbService.getByHeader(tokenHeader).get();
-			boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
+			final boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
 			return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
 		}
 
@@ -214,7 +216,7 @@ public class AuthorizationtTokenService {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> generateToken(final String requesterSystem, final ServiceInterfacePolicy tokenType, final ServiceInstanceIdParts serviceInstanceIdParts, final String operation, final String origin) {
+	private Pair<AuthorizationTokenGenerationResponseDTO, Boolean> generateToken(final String requesterSystem, final ServiceInterfacePolicy tokenType, final ServiceInstanceIdParts serviceInstanceIdParts, final String operation, final String origin) {
 		logger.debug("generateToken started...");
 
 		try {
@@ -236,7 +238,7 @@ public class AuthorizationtTokenService {
 						serviceInstanceIdParts.serviceDefinition(),
 						operation,
 						sysInfo.getSimpleTokenUsageLimit());
-				return Pair.of(token, usageLimitTokenResult.getRight());
+				return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), token, sysInfo.getSimpleTokenUsageLimit(), null), usageLimitTokenResult.getRight());
 			}
 
 			// SIMPLE TIME LIMITED TOKEN
@@ -246,6 +248,7 @@ public class AuthorizationtTokenService {
 			if (tokenType == ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH) {
 				token = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
 				encryptedToSaveHMAC = secretCryptographer.encryptHMACSHA256(token, sysInfo.getSecretCryptographerKey());
+				final ZonedDateTime expiresAt = Utilities.utcNow().plusSeconds(durationSec);
 				final Pair<TimeLimitedToken, Boolean> timeLimitTokenResult = timeLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 						encryptedToSaveHMAC,
@@ -255,8 +258,8 @@ public class AuthorizationtTokenService {
 						serviceInstanceIdParts.systemName(),
 						serviceInstanceIdParts.serviceDefinition(),
 						operation,
-						Utilities.utcNow().plusSeconds(durationSec));
-				return Pair.of(token, timeLimitTokenResult.getRight());
+						expiresAt);
+				return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), token, null, Utilities.convertZonedDateTimeToUTCString(expiresAt)), timeLimitTokenResult.getRight());
 			}
 
 			// SELF CONTAINED TOKENS
@@ -287,6 +290,7 @@ public class AuthorizationtTokenService {
 			Assert.isTrue(!Utilities.isEmpty(token), "Unhandled token type: " + tokenType);
 
 			encryptedToSaveAES = secretCryptographer.encryptAESCBCPKCS5P(token, sysInfo.getSecretCryptographerKey());
+			final ZonedDateTime expiresAt = Utilities.utcNow().plusSeconds(durationSec);
 			final Pair<SelfContainedToken, Boolean> selfContainedTokenResult = selfContainedTokenDbService.save(
 					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 					encryptedToSaveAES.getLeft(),
@@ -299,7 +303,7 @@ public class AuthorizationtTokenService {
 					operation,
 					tokenType.name(),
 					Utilities.utcNow().plusSeconds(durationSec));
-			return Pair.of(token, selfContainedTokenResult.getRight());
+			return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), token, null, Utilities.convertZonedDateTimeToUTCString(expiresAt)), selfContainedTokenResult.getRight());
 
 		} catch (final InternalServerError ex) {
 			throw ex;
