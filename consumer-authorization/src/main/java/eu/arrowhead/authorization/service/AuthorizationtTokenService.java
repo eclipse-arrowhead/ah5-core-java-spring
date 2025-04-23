@@ -1,6 +1,8 @@
 package eu.arrowhead.authorization.service;
 
 import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,6 +31,7 @@ import eu.arrowhead.authorization.service.utils.TokenGenerator;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
@@ -172,8 +175,15 @@ public class AuthorizationtTokenService {
 
 	//-------------------------------------------------------------------------------------------------
 	public String publicKey(final String origin) {
-		// TODO
-		return null;
+		logger.debug("registerEncryptionKey started...");
+		
+		final Optional<Object> pubKeyOpt = Optional.ofNullable(arrowheadContext.get(Constants.SERVER_PUBLIC_KEY));
+		if (pubKeyOpt.isEmpty()) {
+			throw new DataNotFoundException("Public key is not available", origin);
+		}
+		
+		final PublicKey pubKey = (PublicKey) pubKeyOpt.get();
+		return Base64.getEncoder().encodeToString(pubKey.getEncoded());
 	}
 
 	//-------------------------------------------------------------------------------------------------
