@@ -97,7 +97,7 @@ public class OrchestrationPushManagementMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationPushJobListResponseDTO pushTrigger(final String requesterSystem, final OrchestrationPushTriggerDTO dto) {
-		logger.debug("OrchestrationPushManagementService.pushSubscribe started");
+		logger.debug("OrchestrationPushManagementService.pushTrigger started");
 		return pushService.pushTrigger(requesterSystem, dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_TRIGGER);
 	}
 
