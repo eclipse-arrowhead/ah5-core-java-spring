@@ -252,6 +252,7 @@ public class AuthorizationValidation {
 
 			nameValidator.validateName(dto.target());
 
+			// scope
 			if (!Utilities.isEmpty(dto.scope())) {
 				nameValidator.validateName(dto.scope());
 			}
