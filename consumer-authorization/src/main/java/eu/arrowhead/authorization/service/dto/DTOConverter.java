@@ -143,7 +143,6 @@ public class DTOConverter {
 		}
 
 		return new AuthorizationPolicyDTO(
-				policy.getScope(),
 				policy.getPolicyType(),
 				list,
 				metadataRequirement);

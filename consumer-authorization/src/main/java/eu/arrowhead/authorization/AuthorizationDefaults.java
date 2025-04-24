@@ -1,6 +1,8 @@
 package eu.arrowhead.authorization;
 
-public final class AuthorizationDefaults {
+import eu.arrowhead.common.Defaults;
+
+public final class AuthorizationDefaults extends Defaults {
 
 	//=================================================================================================
 	// members
