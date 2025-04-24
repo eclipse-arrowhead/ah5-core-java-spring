@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +26,7 @@ import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -92,13 +94,16 @@ public class OrchestrationAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> pushSubscribe(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSubscriptionRequestDTO dto) {
+	public ResponseEntity<String> pushSubscribe(
+			final HttpServletRequest httpServletRequest,
+			@RequestBody final OrchestrationSubscriptionRequestDTO dto,
+			@Parameter(name = "trigger", description = "Set to true in order to initiate a push orchestration after the successful subscription.") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
 		logger.debug("pushSubscribe started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
 
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, origin);
+		final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, trigger, origin);
 		return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
