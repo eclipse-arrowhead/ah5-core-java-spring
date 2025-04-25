@@ -11,6 +11,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.serviceorchestration.service.normalization.SimpleStoreManagementServiceNormalization;
@@ -24,7 +25,10 @@ public class SimpleStoreManagementServiceValidation {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
 	@Autowired
-	private SimpleStoreManagementServiceNormalization normalizator;
+	private SimpleStoreManagementServiceNormalization normalizer;
+	
+	@Autowired
+	private NameValidator nameValidator;
 
 	//=================================================================================================
 	// methods
@@ -41,11 +45,11 @@ public class SimpleStoreManagementServiceValidation {
 			throw new InvalidParameterException("Request payload contains null element", origin);
 		}
 		
-		List<OrchestrationSimpleStoreRequestDTO> normalized = new ArrayList<OrchestrationSimpleStoreRequestDTO>(dto.candidates().size());
+		final List<OrchestrationSimpleStoreRequestDTO> normalized = new ArrayList<OrchestrationSimpleStoreRequestDTO>(dto.candidates().size());
 		
 		try {
 			dto.candidates().forEach(c -> normalized.add(validateAndNormalizeCreate(c)));
-		} catch (InvalidParameterException ex) {
+		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 		
@@ -61,7 +65,13 @@ public class SimpleStoreManagementServiceValidation {
 		
 		validateCreate(dto);
 		
-		return null; //todo
+		final OrchestrationSimpleStoreRequestDTO normalizedDto = normalizer.normalizeCreate(dto);
+		
+		nameValidator.validateName(dto.consumer());
+		nameValidator.validateName(dto.serviceDefinition());
+		nameValidator.validateServiceInstanceId(dto.serviceInstanceId());
+		
+		return normalizedDto; 
 	}
 	
 	//-------------------------------------------------------------------------------------------------

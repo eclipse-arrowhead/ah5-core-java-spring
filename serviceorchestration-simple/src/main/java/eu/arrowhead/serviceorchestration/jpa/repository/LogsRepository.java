@@ -7,4 +7,5 @@ import eu.arrowhead.serviceorchestration.jpa.entity.Logs;
 
 @Repository
 public interface LogsRepository extends LogEntityRepository<Logs> {
+	
 }

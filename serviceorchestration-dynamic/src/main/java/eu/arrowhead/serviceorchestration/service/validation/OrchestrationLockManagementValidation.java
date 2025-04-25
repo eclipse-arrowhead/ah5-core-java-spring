@@ -145,6 +145,7 @@ public class OrchestrationLockManagementValidation {
 		try {
 			normalized.locks().forEach(lock -> {
 				nameValidator.validateName(lock.owner());
+				nameValidator.validateServiceInstanceId(lock.serviceInstanceId());
 			});
 
 		} catch (final InvalidParameterException ex) {

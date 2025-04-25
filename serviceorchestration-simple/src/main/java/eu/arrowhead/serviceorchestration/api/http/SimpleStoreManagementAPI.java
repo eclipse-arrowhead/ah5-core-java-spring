@@ -2,6 +2,7 @@ package eu.arrowhead.serviceorchestration.api.http;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.serviceorchestration.SimpleServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.service.SimpleStoreManagementService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.OrchestrationLockListResponseDTO;
@@ -35,10 +37,13 @@ public class SimpleStoreManagementAPI {
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
+	@Autowired
+	private SimpleStoreManagementService mgmtService;
+	
 	//=================================================================================================
 	// methods
 
-	// query
+	// query input: OrchestrationSimpleStoreQueryDTO
 	
 	// create
 
@@ -62,7 +67,7 @@ public class SimpleStoreManagementAPI {
 		logger.debug("create started...");
 
 		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
-		return null; // todo
+		return mgmtService.createSimpleStoreEntries(dto, origin); // todo: add requester!
 	}
 	
 	// remove

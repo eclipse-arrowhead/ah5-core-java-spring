@@ -1,12 +1,16 @@
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -40,6 +44,12 @@ public class OrchestrationStore {
 	
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String updatedBy;
+
+	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	private ZonedDateTime createdAt;
+	
+	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+	private ZonedDateTime updatedAt;
 	
 	//=================================================================================================
 	// methods
@@ -52,7 +62,20 @@ public class OrchestrationStore {
 	@Override
 	public String toString() {
 		return "ServiceInstance [id = " + id + ", serviceDefinition = " + serviceDefinition + ", serviceInstanceId = " + serviceInstanceId + ", priority = " + priority
-				+ ", createdBy = " + createdBy + ", updatedBy = " + updatedBy + "]";
+				+ ", createdBy = " + createdBy + ", updatedBy = " + updatedBy + " createdAt " + createdAt + " updatedAt " + updatedAt + "]";
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@PrePersist
+	public void onCreate() {
+		this.createdAt = Utilities.utcNow();
+		this.updatedAt = this.createdAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@PreUpdate
+	public void onUpdate() {
+		this.updatedAt = Utilities.utcNow();
 	}
 	
 	//=================================================================================================
@@ -128,6 +151,24 @@ public class OrchestrationStore {
 		this.updatedBy = updatedBy;
 	}
 	
-	
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setCreatedAt(ZonedDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setUpdatedAt(ZonedDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
 	
 }
