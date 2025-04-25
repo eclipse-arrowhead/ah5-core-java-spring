@@ -19,11 +19,11 @@ CREATE TABLE IF NOT EXISTS `orchestration_store` (
   `consumer` varchar(63) NOT NULL,
   `service_definition` varchar(63) NOT NULL,
   `service_instance_id` varchar(255) NOT NULL,
-  `priority` INT UNSIGNED NOT NULL,
+  `priority` INT NOT NULL,
   `created_by` varchar(63) NOT NULL,
   `updated_by` varchar(63) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `subscription_uk` (`consumer`, `service_definition`, `priority`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;  

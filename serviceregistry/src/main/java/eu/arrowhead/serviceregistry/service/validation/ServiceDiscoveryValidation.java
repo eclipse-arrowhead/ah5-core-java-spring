@@ -16,6 +16,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
@@ -23,7 +24,6 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ServiceDiscoveryValidation {

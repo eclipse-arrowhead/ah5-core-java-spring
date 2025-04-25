@@ -21,6 +21,7 @@ import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
@@ -52,7 +53,6 @@ import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalizatio
 import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ManagementValidation {

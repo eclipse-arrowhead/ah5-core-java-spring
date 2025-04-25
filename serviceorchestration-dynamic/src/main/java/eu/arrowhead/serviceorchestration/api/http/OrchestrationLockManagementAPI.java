@@ -65,7 +65,7 @@ public class OrchestrationLockManagementAPI {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody OrchestrationLockListResponseDTO create(@RequestBody final OrchestrationLockListRequestDTO dto) {
-		logger.debug("created started...");
+		logger.debug("create started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
 		return lockMgmtService.create(dto, origin);

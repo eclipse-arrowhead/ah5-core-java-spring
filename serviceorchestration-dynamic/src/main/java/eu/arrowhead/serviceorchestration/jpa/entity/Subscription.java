@@ -80,7 +80,7 @@ public class Subscription {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "System [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt + ", notifyProtocol = " + notifyProtocol
+		return "Subscription [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt + ", notifyProtocol = " + notifyProtocol
 				+ ", notifyProperties = " + notifyProperties + ", orchestrationRequest = " + orchestrationRequest + ", createdAt = " + createdAt + "]";
 	}
 

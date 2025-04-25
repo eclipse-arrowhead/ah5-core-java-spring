@@ -15,6 +15,13 @@ public final class SimpleServiceOrchestrationConstants {
 	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
 	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
+	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
+	public static final String HTTP_API_ORCHESTRATION_MGMT_PREFIX = HTTP_API_ORCHESTRATION_PATH + "/mgmt";
+	public static final String HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/simple-store";
+	
+	// operation
+	public static final String HTTP_API_OP_CREATE_PATH = "/create";
+	
 
 	//=================================================================================================
 	// assistant methods

@@ -11,12 +11,12 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class SystemDiscoveryValidation {
