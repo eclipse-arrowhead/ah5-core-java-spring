@@ -383,14 +383,14 @@ public class AuthorizationValidation {
 		final String normalizedConsumer = Utilities.isEmpty(dto.consumer()) ? normalizedRequester : nameNormalizer.normalize(dto.consumer());
 
 		if (!normalizedProvider.equals(normalizedRequester) && !normalizedConsumer.equals(normalizedRequester)) {
-			throw new ForbiddenException("Only the related provider or consumer can use this operaiton", origin);
+			throw new ForbiddenException("Only the related provider or consumer can use this operation", origin);
 		}
 
 		return new NormalizedVerifyRequest(
 				normalizedProvider,
 				normalizedConsumer,
 				Utilities.isEmpty(dto.cloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(dto.cloud()),
-				AuthorizationTargetType.valueOf(dto.targetType()),
+				AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()),
 				nameNormalizer.normalize(dto.target()),
 				Utilities.isEmpty(dto.scope()) ? null : nameNormalizer.normalize(dto.scope()));
 	}

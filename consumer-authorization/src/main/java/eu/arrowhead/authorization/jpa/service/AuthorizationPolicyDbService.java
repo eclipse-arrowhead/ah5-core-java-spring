@@ -584,7 +584,7 @@ public class AuthorizationPolicyDbService {
 			final List<AuthPolicy> candidates = authPolicyRepository.findByLevelAndHeaderIdAndScopeIn(
 					AuthorizationLevel.PROVIDER,
 					header.getId(),
-					Set.of(request.scope(), Defaults.AUTHENTICATION_POLICY_DEFAULT));
+					Set.of(request.scope(), Defaults.DEFAULT_AUTHORIZATION_SCOPE));
 
 			if (Utilities.isEmpty(candidates)) {
 				// zombie header (should not happen)
@@ -597,7 +597,7 @@ public class AuthorizationPolicyDbService {
 			candidates
 					.stream()
 					.forEach(p -> {
-						if (p.getScope() == Defaults.DEFAULT_AUTHORIZATION_SCOPE) {
+						if (p.getScope().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
 							defaultPolicy.add(p);
 						} else {
 							scopedPolicies.add(p);

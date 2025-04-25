@@ -473,7 +473,7 @@ public class AuthorizationManagementValidation {
 				nameNormalizer.normalize(dto.provider()),
 				nameNormalizer.normalize(dto.consumer()),
 				Utilities.isEmpty(dto.cloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(dto.cloud()),
-				AuthorizationTargetType.valueOf(dto.targetType()),
+				AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()),
 				nameNormalizer.normalize(dto.target()),
 				Utilities.isEmpty(dto.scope()) ? null : nameNormalizer.normalize(dto.scope()));
 	}
