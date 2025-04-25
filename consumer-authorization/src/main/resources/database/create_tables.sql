@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS `auth_policy` (
 	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Cryptographer IV
+-- Cryptographer Auxiliary
 
 CREATE TABLE IF NOT EXISTS `cryptographer_auxiliary` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,	

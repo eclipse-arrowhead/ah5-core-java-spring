@@ -29,7 +29,7 @@ public class CryptographerAuxiliary extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "CryptographerIV [id=" + id + ", auxiliary=" + auxiliary + ", createdAt=" + createdAt + "]";
+		return "CryptographerAuxiliary [id=" + id + ", auxiliary=" + auxiliary + ", createdAt=" + createdAt + "]";
 	}
 
 	//=================================================================================================

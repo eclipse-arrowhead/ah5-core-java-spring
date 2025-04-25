@@ -65,7 +65,6 @@ public class SelfContainedTokenDbService {
 		Assert.isTrue(!Utilities.isEmpty(consumer), "consumer is empty");
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
-		Assert.isTrue(!Utilities.isEmpty(serviceOperation), "serviceOperation is empty");
 		Assert.isTrue(!Utilities.isEmpty(selfContainedtype), "selfContainedtype is empty");
 		Assert.notNull(expiresAt, "expiresAt is null");
 

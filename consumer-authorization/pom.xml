@@ -20,11 +20,6 @@
 		    <artifactId>jose4j</artifactId>
 		    <version>0.9.6</version>
 		</dependency>
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>arrowhead-authentication</artifactId>
-			<version>5.0.0</version>
-		</dependency>
 	</dependencies>
 	
 	<build>
