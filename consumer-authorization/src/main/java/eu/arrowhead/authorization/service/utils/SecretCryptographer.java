@@ -121,7 +121,7 @@ public class SecretCryptographer {
 	//-------------------------------------------------------------------------------------------------
 	private SecretKeySpec getKeyFromStringAESCBCPKCS5P(String key) {
 		byte[] keyBytes = key.getBytes();
-		Assert.isTrue(keyBytes.length != AES_KEY_SIZE, "key size is not " + AES_KEY_SIZE + "byte long");
+		Assert.isTrue(keyBytes.length == AES_KEY_SIZE, "Key size is not " + AES_KEY_SIZE + " byte long");
 		return new SecretKeySpec(keyBytes, AES_KEY_ALGORITHM);
 	}
 	

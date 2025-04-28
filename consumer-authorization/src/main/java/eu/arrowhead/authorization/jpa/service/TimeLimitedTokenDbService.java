@@ -74,6 +74,7 @@ public class TimeLimitedTokenDbService {
 					tokenRepo.delete(tokenOpt.get());
 					override = true;
 				}
+				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 			
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, null, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));

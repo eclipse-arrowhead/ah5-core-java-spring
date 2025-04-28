@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `usage_limited_token` (
 	CONSTRAINT `fk_token_header_id2` FOREIGN KEY (`header_id`) REFERENCES `token_header` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- JSON Web Tokens
+-- Self Contained Tokens
 
 CREATE TABLE IF NOT EXISTS `self_contained_token` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,

@@ -67,8 +67,7 @@ public class TokenGenerator {
 				payload.target() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
 				payload.scope() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
 				payload.targetType().name() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
-				durationSec == null ? "" : Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusSeconds(durationSec.longValue()))
-								.toLowerCase();
+				(durationSec == null ? "" : Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusSeconds(durationSec.longValue())));
 
 		return base64Encoder.encodeToString(content.getBytes());
 	}

@@ -77,6 +77,7 @@ public class SelfContainedTokenDbService {
 					tokenRepo.delete(tokenOpt.get());
 					override = true;
 				}
+				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 
 			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
