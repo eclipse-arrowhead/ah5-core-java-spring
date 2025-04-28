@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
@@ -143,12 +145,16 @@ public class AuthorizationPolicyEngine {
 		logger.debug("acquireConsumerMetadata started...");
 
 		final SystemLookupRequestDTO payload = new SystemLookupRequestDTO(List.of(consumer), null, null, null, null, null);
+		final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>(1);
+		queryParams.put(Constants.VERBOSE, List.of(String.valueOf(false)));
+
 		try {
 			final SystemListResponseDTO response = httpService.consumeService(
 					Constants.SERVICE_DEF_SYSTEM_DISCOVERY,
 					Constants.SERVICE_OP_LOOKUP,
 					SystemListResponseDTO.class,
-					payload);
+					payload,
+					queryParams);
 
 			if (Utilities.isEmpty(response.entries())) {
 				return null;

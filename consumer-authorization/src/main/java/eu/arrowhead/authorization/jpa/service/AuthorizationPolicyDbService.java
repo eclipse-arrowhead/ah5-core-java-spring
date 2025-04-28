@@ -362,6 +362,9 @@ public class AuthorizationPolicyDbService {
 		} else if (!Utilities.isEmpty(request.cloudIdentifiers())) {
 			toFilter = providerHeaderRepository.findByCloudIn(request.cloudIdentifiers());
 			baseFilter = BaseFilter.CLOUD;
+		} else if (!Utilities.isEmpty(request.providers())) {
+			toFilter = providerHeaderRepository.findByProviderIn(request.providers());
+			baseFilter = BaseFilter.PROVIDER;
 		} else {
 			toFilter = providerHeaderRepository.findAll();
 		}
@@ -386,7 +389,7 @@ public class AuthorizationPolicyDbService {
 			}
 
 			// Match against provider requirements
-			if (!Utilities.isEmpty(request.providers()) && !request.providers().contains(header.getProvider())) {
+			if (baseFilter != BaseFilter.PROVIDER && !Utilities.isEmpty(request.providers()) && !request.providers().contains(header.getProvider())) {
 				continue;
 			}
 
@@ -444,6 +447,9 @@ public class AuthorizationPolicyDbService {
 		if (!Utilities.isEmpty(request.instanceIds())) {
 			toFilter = mgmtHeaderRepository.findByInstanceIdIn(request.instanceIds());
 			baseFilter = BaseFilter.INSTANCE_ID;
+		} else if (!Utilities.isEmpty(request.providers())) {
+			toFilter = mgmtHeaderRepository.findByProviderIn(request.providers());
+			baseFilter = BaseFilter.PROVIDER;
 		} else if (!Utilities.isEmpty(request.targetNames())) {
 			toFilter = mgmtHeaderRepository.findByTargetIn(request.targetNames());
 			baseFilter = BaseFilter.TARGET;
@@ -474,7 +480,7 @@ public class AuthorizationPolicyDbService {
 			}
 
 			// Match against provider requirements
-			if (!Utilities.isEmpty(request.providers()) && !request.providers().contains(header.getProvider())) {
+			if (baseFilter != BaseFilter.PROVIDER && !Utilities.isEmpty(request.providers()) && !request.providers().contains(header.getProvider())) {
 				continue;
 			}
 
@@ -530,7 +536,7 @@ public class AuthorizationPolicyDbService {
 			final List<AuthPolicy> candidates = authPolicyRepository.findByLevelAndHeaderIdAndScopeIn(
 					AuthorizationLevel.MGMT,
 					header.getId(),
-					Set.of(request.scope(), Defaults.AUTHENTICATION_POLICY_DEFAULT));
+					Set.of(request.scope(), Defaults.DEFAULT_AUTHORIZATION_SCOPE));
 
 			if (Utilities.isEmpty(candidates)) {
 				// zombie header (should not happen)
@@ -543,7 +549,7 @@ public class AuthorizationPolicyDbService {
 			candidates
 					.stream()
 					.forEach(p -> {
-						if (p.getScope() == Defaults.DEFAULT_AUTHORIZATION_SCOPE) {
+						if (p.getScope().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
 							defaultPolicy.add(p);
 						} else {
 							scopedPolicies.add(p);
@@ -617,6 +623,6 @@ public class AuthorizationPolicyDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	private enum BaseFilter {
-		NONE, INSTANCE_ID, CLOUD, TARGET
+		NONE, INSTANCE_ID, PROVIDER, CLOUD, TARGET
 	}
 }

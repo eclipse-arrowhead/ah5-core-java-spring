@@ -28,6 +28,9 @@ public interface AuthProviderPolicyHeaderRepository extends RefreshableRepositor
 	public List<AuthProviderPolicyHeader> findByInstanceIdIn(final List<String> instanceIds);
 
 	//-------------------------------------------------------------------------------------------------
+	public List<AuthProviderPolicyHeader> findByProviderIn(final List<String> providers);
+
+	//-------------------------------------------------------------------------------------------------
 	public List<AuthProviderPolicyHeader> findByCloudIn(final List<String> clouds);
 
 	//-------------------------------------------------------------------------------------------------
