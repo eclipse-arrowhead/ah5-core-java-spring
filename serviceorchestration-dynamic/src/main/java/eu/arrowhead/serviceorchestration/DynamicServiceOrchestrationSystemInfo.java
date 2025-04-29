@@ -116,7 +116,8 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.serviceInterface(getMqttServiceInterfaceForOrchestrationHistoryManagement())
 				.build();
 
-		return List.of(generalManagement, orchestration, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement);
+		// starting with management services speeds up management filters
+		return List.of(generalManagement, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement, orchestration);
 		// TODO: add monitor service when it is specified and implemented
 	}
 

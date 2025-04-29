@@ -73,7 +73,7 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 				break;
 
 			case AUTHORIZATION:
-				allowed = isSystemOperator(request) || isWhitelisted(normalizedSystemName) || isAuthorized(normalizedSystemName, request.getRequestURI());
+				allowed = isSystemOperator(request) || isWhitelisted(normalizedSystemName) || isAuthorized(normalizedSystemName, request.getRequestURI(), request.getMethod());
 				break;
 
 			default:
@@ -106,11 +106,11 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private boolean isAuthorized(final String systemName, final String path) {
+	private boolean isAuthorized(final String systemName, final String path, final String method) {
 		logger.debug("InternalManagementServiceFilter.isAuthorized started...");
 
 		// finding service definition and operation
-		final Optional<Pair<String, String>> match = findServiceDefinitionAndOperation(path);
+		final Optional<Pair<String, String>> match = findServiceDefinitionAndOperation(path, method);
 		if (match.isEmpty()) { // can't identify the service definition and operation
 			logger.warn("Can't identify service definition and operation for path: {}", path);
 			return false;
@@ -128,7 +128,7 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private Optional<Pair<String, String>> findServiceDefinitionAndOperation(final String path) {
+	private Optional<Pair<String, String>> findServiceDefinitionAndOperation(final String path, final String method) {
 		logger.debug("InternalManagementServiceFilter.findServiceDefinitionAndOperation started...");
 
 		final String templateName = sysInfo.isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
@@ -143,9 +143,9 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 			if (iModelOpt.isPresent()) {
 				final HttpInterfaceModel iModel = (HttpInterfaceModel) iModelOpt.get();
 				for (final Entry<String, HttpOperationModel> opEntry : iModel.operations().entrySet()) {
+					final String candidateMethod = opEntry.getValue().method();
 					final String candidatePath = iModel.basePath() + opEntry.getValue().path();
-					if (path.startsWith(candidatePath)) {
-						// using startsWith to handle path and query parameters
+					if (method.equalsIgnoreCase(candidateMethod) && path.equals(candidatePath)) {
 						serviceDefinition = sModel.serviceDefinition();
 						operation = opEntry.getKey();
 						break OUTER;

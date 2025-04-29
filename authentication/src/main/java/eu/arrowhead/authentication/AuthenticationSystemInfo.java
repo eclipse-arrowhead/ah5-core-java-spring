@@ -83,7 +83,8 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.serviceInterface(getMqttServiceInterfaceForGeneralManagement())
 				.build();
 
-		return List.of(identity, identityManagement, generalManagement);
+		// starting with management services speeds up management filters
+		return List.of(generalManagement, identityManagement, identity);
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -76,7 +76,8 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.build();
 
 		// TODO extend this
-		return List.of(authorization, authorizationManagement, generalManagement);
+		// starting with management services speeds up management filters
+		return List.of(generalManagement, authorizationManagement, authorization);
 	}
 
 	//=================================================================================================
@@ -117,7 +118,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.path(AuthorizationConstants.HTTP_API_OP_LOOKUP_PATH)
 				.build();
 		final HttpOperationModel verify = new HttpOperationModel.Builder()
-				.method(HttpMethod.GET.name())
+				.method(HttpMethod.POST.name())
 				.path(AuthorizationConstants.HTTP_API_OP_VERIFY_PATH)
 				.build();
 
@@ -163,7 +164,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.path(AuthorizationConstants.HTTP_API_OP_QUERY_PATH)
 				.build();
 		final HttpOperationModel check = new HttpOperationModel.Builder()
-				.method(HttpMethod.GET.name())
+				.method(HttpMethod.POST.name())
 				.path(AuthorizationConstants.HTTP_API_OP_CHECK_PATH)
 				.build();
 
