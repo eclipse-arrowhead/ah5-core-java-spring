@@ -24,7 +24,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String consumer;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	@Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String serviceDefinition;
 	
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
@@ -49,6 +49,11 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 		this.createdAt = Utilities.utcNow();
 		this.updatedAt = this.createdAt;
 		this.updatedBy = this.createdBy;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationStore() {
+		
 	}
 
 	//-------------------------------------------------------------------------------------------------

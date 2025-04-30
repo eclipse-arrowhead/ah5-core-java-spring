@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 
@@ -30,7 +31,7 @@ public class SimpleStoreManagementServiceNormalization {
 		
 		return new OrchestrationSimpleStoreRequestDTO(
 				nameNormalizer.normalize(dto.consumer()), 
-				nameNormalizer.normalize(dto.serviceDefinition()), 
+				Utilities.isEmpty(dto.serviceDefinition()) ? null : nameNormalizer.normalize(dto.serviceDefinition()), 
 				nameNormalizer.normalize(dto.serviceInstanceId()), 
 				dto.priority());
 	}

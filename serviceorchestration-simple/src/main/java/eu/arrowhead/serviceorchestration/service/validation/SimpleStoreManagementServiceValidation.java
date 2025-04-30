@@ -3,6 +3,7 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,8 @@ public class SimpleStoreManagementServiceValidation {
 		
 		try {
 			dto.candidates().forEach(c -> normalized.add(validateAndNormalizeCreate(c)));
+			checkDuplicates(normalized);
+			
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -68,7 +71,11 @@ public class SimpleStoreManagementServiceValidation {
 		final OrchestrationSimpleStoreRequestDTO normalizedDto = normalizer.normalizeCreate(dto);
 		
 		nameValidator.validateName(dto.consumer());
-		nameValidator.validateName(dto.serviceDefinition());
+		
+		if (!Utilities.isEmpty(dto.serviceDefinition())) {
+			nameValidator.validateName(dto.serviceDefinition());
+		}
+		
 		nameValidator.validateServiceInstanceId(dto.serviceInstanceId());
 		
 		return normalizedDto; 
@@ -83,11 +90,6 @@ public class SimpleStoreManagementServiceValidation {
 			throw new InvalidParameterException("consumer is null or empty");
 		}
 		
-		// service definition
-		if (Utilities.isEmpty(dto.serviceDefinition())) {
-			throw new InvalidParameterException("serviceDefinition is null or empty");
-		}
-		
 		// service instance id
 		if (Utilities.isEmpty(dto.serviceInstanceId())) {
 			throw new InvalidParameterException("serviceInstanceId is null or empty");
@@ -99,6 +101,21 @@ public class SimpleStoreManagementServiceValidation {
 		}	
 		if (dto.priority() < 0) {
 			throw new InvalidParameterException("priority should be a non-negative integer");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private void checkDuplicates(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
+		// consumer, serviceDefinition and priority must be unique
+		final List<Triple<String, String, Integer>> existing = new ArrayList<Triple<String, String, Integer>>();
+		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
+			final Triple<String, String, Integer> current = Triple.of(candidate.consumer(), candidate.serviceDefinition(), candidate.priority());
+			if (existing.contains(current)) {
+				throw new InvalidParameterException("The following fields must be unique: consumer, serviceDefinition, priority");
+			} 
+			else {
+				existing.add(current);
+			}
 		}
 	}
 	

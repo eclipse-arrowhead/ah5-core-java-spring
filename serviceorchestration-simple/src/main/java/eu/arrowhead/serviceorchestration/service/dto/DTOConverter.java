@@ -48,6 +48,7 @@ public class DTOConverter {
 				entity.getConsumer(),
 				entity.getServiceDefinition(),
 				entity.getServiceInstanceId(),
+				entity.getPriority(),
 				entity.getCreatedBy(),
 				entity.getUpdatedBy(),
 				entity.getCreatedAt().toString(),

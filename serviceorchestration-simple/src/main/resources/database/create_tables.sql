@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `logs` (
 CREATE TABLE IF NOT EXISTS `orchestration_store` (
   `id` binary(16) NOT NULL,
   `consumer` varchar(63) NOT NULL,
-  `service_definition` varchar(63) NOT NULL,
+  `service_definition` varchar(63),
   `service_instance_id` varchar(255) NOT NULL,
   `priority` INT NOT NULL,
   `created_by` varchar(63) NOT NULL,
