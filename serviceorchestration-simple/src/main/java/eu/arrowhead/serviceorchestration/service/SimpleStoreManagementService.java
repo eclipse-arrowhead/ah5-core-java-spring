@@ -2,12 +2,14 @@ package eu.arrowhead.serviceorchestration.service;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
@@ -37,12 +39,22 @@ public class SimpleStoreManagementService {
 	// methods
 	
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationSimpleStoreListResponseDTO createSimpleStoreEntries(OrchestrationSimpleStoreListRequestDTO dto, final String origin) {
+	public OrchestrationSimpleStoreListResponseDTO createSimpleStoreEntries(OrchestrationSimpleStoreListRequestDTO dto, final String requesterName, final String origin) {
 		logger.info("createSimpleStoreEntries started...");
 		
 		final List<OrchestrationSimpleStoreRequestDTO> normalized = validator.validateAndNormalizeCreateBulk(dto, origin);
-		final List<OrchestrationStore> created = dbService.createBulk(normalized);
-		return dtoConverter.convertStoreEntityListToResponseListDTO(created);
+		try {
+			final List<OrchestrationStore> created = dbService.createBulk(normalized
+					.stream().map(n -> new OrchestrationStore(
+							n.consumer(),
+							n.serviceDefinition(),
+							n.serviceInstanceId(),
+							n.priority(),
+							requesterName)).collect(Collectors.toList()));
+			return dtoConverter.convertStoreEntityListToResponseListDTO(created);
+		} catch (InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 	
 	//=================================================================================================

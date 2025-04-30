@@ -1,31 +1,25 @@
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
-import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
+import eu.arrowhead.common.jpa.UUIDArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "consumer", "serviceDefinition", "priority" }) })
-public class OrchestrationStore {
+public class OrchestrationStore extends UUIDArrowheadEntity {
 
 	//=================================================================================================
 	// members
 	
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "consumer", "serviceDefinition", "priority", "serviceInstanceId", "createdAt");
 	public static final String DEFAULT_SORT_FIELD = "id";
-	
-	@Id
-	private UUID id;
 	
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String consumer;
@@ -44,18 +38,27 @@ public class OrchestrationStore {
 	
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String updatedBy;
-
-	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-	private ZonedDateTime createdAt;
-	
-	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-	private ZonedDateTime updatedAt;
 	
 	//=================================================================================================
 	// methods
+	
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	@PrePersist
+	public void onCreate() {
+		this.createdAt = Utilities.utcNow();
+		this.updatedAt = this.createdAt;
+		this.updatedBy = this.createdBy;
+	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationStore() {
+	public OrchestrationStore(final String consumer, final String serviceDefinition, final String serviceInstanceId, final int priority, final String createdBy) {
+		this.consumer = consumer;
+		this.serviceDefinition = serviceDefinition;
+		this.serviceInstanceId = serviceInstanceId;
+		this.priority = priority;
+		this.createdBy = createdBy;
+		
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -65,31 +68,8 @@ public class OrchestrationStore {
 				+ ", createdBy = " + createdBy + ", updatedBy = " + updatedBy + " createdAt " + createdAt + " updatedAt " + updatedAt + "]";
 	}
 	
-	//-------------------------------------------------------------------------------------------------
-	@PrePersist
-	public void onCreate() {
-		this.createdAt = Utilities.utcNow();
-		this.updatedAt = this.createdAt;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@PreUpdate
-	public void onUpdate() {
-		this.updatedAt = Utilities.utcNow();
-	}
-	
 	//=================================================================================================
 	// boilerplate
-	
-	//-------------------------------------------------------------------------------------------------
-	public UUID getId() {
-		return id;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setId(UUID id) {
-		this.id = id;
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String getConsumer() {
@@ -150,25 +130,4 @@ public class OrchestrationStore {
 	public void setUpdatedBy(String updatedBy) {
 		this.updatedBy = updatedBy;
 	}
-	
-	//-------------------------------------------------------------------------------------------------
-	public ZonedDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setCreatedAt(ZonedDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public ZonedDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setUpdatedAt(ZonedDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-	
 }

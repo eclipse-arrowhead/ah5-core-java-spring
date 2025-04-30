@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.serviceorchestration.SimpleServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.SimpleStoreManagementService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
@@ -26,6 +27,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping(SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH)
@@ -39,6 +41,9 @@ public class SimpleStoreManagementAPI {
 	
 	@Autowired
 	private SimpleStoreManagementService mgmtService;
+	
+	@Autowired
+	private SystemNamePreprocessor preprocessor;
 	
 	//=================================================================================================
 	// methods
@@ -63,11 +68,12 @@ public class SimpleStoreManagementAPI {
 	})
 	@ResponseStatus(HttpStatus.CREATED)
 	@PostMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody OrchestrationSimpleStoreListResponseDTO create(@RequestBody final OrchestrationSimpleStoreListRequestDTO dto) {
+	public @ResponseBody OrchestrationSimpleStoreListResponseDTO create(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSimpleStoreListRequestDTO dto) {
 		logger.debug("create started...");
 
 		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
-		return mgmtService.createSimpleStoreEntries(dto, origin); // todo: add requester!
+		final String requesterName = preprocessor.process(httpServletRequest, origin);
+		return mgmtService.createSimpleStoreEntries(dto, requesterName, origin);
 	}
 	
 	// remove
