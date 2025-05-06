@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.authorization.AuthorizationConstants;
+import eu.arrowhead.authorization.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.authorization.service.AuthorizationTokenService;
 import eu.arrowhead.common.Constants;
-import eu.arrowhead.common.http.HttpUtilities;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequest;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
@@ -43,6 +43,9 @@ public class AuthorizationTokenAPI {
 	
 	@Autowired
 	private AuthorizationTokenService authTokenService;
+	
+	@Autowired
+	private SystemNamePreprocessor sysNamePreprocessor;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
@@ -70,7 +73,7 @@ public class AuthorizationTokenAPI {
 		logger.debug("generate started...");
 		
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
-		final String requesterSystem = HttpUtilities.acquireName(httpServletRequest, origin);
+		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		
 		final Pair<AuthorizationTokenGenerationResponseDTO, Boolean> result = authTokenService.generate(requesterSystem, dto, origin);
 		return new ResponseEntity<AuthorizationTokenGenerationResponseDTO>(result.getLeft(), result.getRight() ? HttpStatus.CREATED : HttpStatus.OK);
@@ -95,7 +98,7 @@ public class AuthorizationTokenAPI {
 		logger.debug("verify started...");
 
 		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_VERIFY_TOKEN_PATH.replace(AuthorizationConstants.HTTP_PATH_PARAM_TOKEN, token);
-		final String requesterSystem = HttpUtilities.acquireName(httpServletRequest, origin);
+		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		
 		return authTokenService.verify(requesterSystem, token, origin);
 	}
@@ -145,7 +148,7 @@ public class AuthorizationTokenAPI {
 		logger.debug("registerEncryptionKey started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
-		final String requesterSystem = HttpUtilities.acquireName(httpServletRequest, origin);
+		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		
 		final Pair<String, Boolean> result = authTokenService.registerEncryptionKey(requesterSystem, dto, origin);
 		return new ResponseEntity<String>(result.getLeft(), result.getRight() ? HttpStatus.CREATED : HttpStatus.OK);

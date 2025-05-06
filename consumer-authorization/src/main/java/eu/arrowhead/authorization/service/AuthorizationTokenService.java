@@ -26,6 +26,7 @@ import eu.arrowhead.authorization.jpa.service.SelfContainedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TimeLimitedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TokenHeaderDbService;
 import eu.arrowhead.authorization.jpa.service.UsageLimitedTokenDbService;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenGenerator;
@@ -33,6 +34,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.DataNotFoundException;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
@@ -54,6 +56,9 @@ public class AuthorizationTokenService {
 
 	@Autowired
 	private AuthorizationSystemInfo sysInfo;
+	
+	@Autowired
+	private AuthorizationPolicyEngine policyEngine;
 
 	@Autowired
 	private TokenGenerator tokenGenerator;
@@ -91,9 +96,22 @@ public class AuthorizationTokenService {
 		final AuthorizationTokenGenerationRequestDTO normalized = dto; // TODO validate and normalize
 		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalized.tokenType());
 		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalized.serviceInstanceId());
+		
+		// Check permission
+		boolean isAuthorized = policyEngine.isAccessGranted(new NormalizedVerifyRequest(
+				serviceInstanceIdParts.systemName(),
+				requesterSystem, Defaults.DEFAULT_CLOUD,
+				AuthorizationTargetType.SERVICE_DEF,
+				serviceInstanceIdParts.serviceDefinition(),
+				dto.serviceOperation()));
+		
+		if (!isAuthorized) {
+			throw new ForbiddenException("Requester has no permisson to the service instance and/or operation.", origin);
+		}
 
 		// Generate token
-		Pair<AuthorizationTokenGenerationResponseDTO, Boolean> tokenResult = generateToken(requesterSystem, tokenType, serviceInstanceIdParts, normalized.serviceOperation(), origin);
+		Pair<AuthorizationTokenGenerationResponseDTO, Boolean> tokenResult = generateToken(requesterSystem, tokenType, serviceInstanceIdParts,
+				Utilities.isEmpty(normalized.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalized.serviceOperation(), origin);
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalized.tokenType()));

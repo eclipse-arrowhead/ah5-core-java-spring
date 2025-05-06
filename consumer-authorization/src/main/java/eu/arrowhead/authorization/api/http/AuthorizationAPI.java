@@ -146,13 +146,13 @@ public class AuthorizationAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_VERIFY_TOKEN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_VERIFY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody boolean verify(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final AuthorizationVerifyRequestDTO dto) {
 		logger.debug("verify started");
 
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_PATH + AuthorizationConstants.HTTP_API_OP_VERIFY_TOKEN_PATH;
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_PATH + AuthorizationConstants.HTTP_API_OP_VERIFY_PATH;
 		final String requester = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		return authService.verifyOperation(requester, dto, origin);
