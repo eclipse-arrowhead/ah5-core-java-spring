@@ -685,7 +685,7 @@ public class AuthorizationPolicyDbService {
 		case BLACKLIST:
 		case WHITELIST:
 			// order of the lists is not important
-			return existing.policyList().containsAll(candidate.policyList());
+			return existing.policyList().size() == candidate.policyList().size() && existing.policyList().containsAll(candidate.policyList());
 		case SYS_METADATA:
 			return existing.policyMetadataRequirement().equals(candidate.policyMetadataRequirement());
 		default:
