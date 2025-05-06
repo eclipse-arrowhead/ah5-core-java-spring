@@ -19,6 +19,7 @@ import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
+import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
 import eu.arrowhead.authorization.service.utils.InstanceIdUtils;
 import eu.arrowhead.authorization.service.validation.AuthorizationValidation;
 import eu.arrowhead.common.Utilities;
@@ -56,7 +57,7 @@ public class AuthorizationService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationPolicyResponseDTO grantOperation(final String provider, final AuthorizationGrantRequestDTO dto, final String origin) {
+	public Pair<AuthorizationPolicyResponseDTO, Boolean> grantOperation(final String provider, final AuthorizationGrantRequestDTO dto, final String origin) {
 		logger.debug("grantOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -64,9 +65,11 @@ public class AuthorizationService {
 		final NormalizedGrantRequest normalized = validator.validateAndNormalizeGrantRequest(normalizedProvider, dto, origin);
 
 		try {
-			final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> result = dbService.createProviderLevelPolicy(normalized);
+			final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(normalized);
 
-			return dtoConverter.convertPolicyToResponse(AuthorizationLevel.PROVIDER, result);
+			return Pair.of(
+					dtoConverter.convertPolicyToResponse(AuthorizationLevel.PROVIDER, result.getFirst()),
+					result.getSecond());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {

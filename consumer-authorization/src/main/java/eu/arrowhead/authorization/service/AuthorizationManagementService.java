@@ -21,6 +21,7 @@ import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
+import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationManagementValidation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;

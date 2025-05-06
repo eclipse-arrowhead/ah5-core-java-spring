@@ -19,6 +19,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
@@ -228,7 +229,7 @@ public class LocalServiceOrchestration {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> serviceDiscovery(final OrchestrationForm form, final boolean withoutInterace, final boolean onlyPreferred) {
+	private List<OrchestrationCandidate> serviceDiscovery(final OrchestrationForm form, final boolean withoutInterface, final boolean onlyPreferred) {
 		logger.debug("serviceDiscovery started...");
 
 		final ServiceInstanceLookupRequestDTO lookupDTO = new ServiceInstanceLookupRequestDTO.Builder()
@@ -237,9 +238,9 @@ public class LocalServiceOrchestration {
 				.alivesAt(form.getAlivesAt())
 				.metadataRequirementsList(form.getMetadataRequirements())
 				.policies(form.getSecurityPolicies())
-				.interfaceTemplateNames(withoutInterace ? null : form.getInterfaceTemplateNames())
-				.interfacePropertyRequirementsList(withoutInterace ? null : form.getInterfacePropertyRequirements())
-				.addressTypes(withoutInterace ? null : form.getInterfaceAddressTypes())
+				.interfaceTemplateNames(withoutInterface ? null : form.getInterfaceTemplateNames())
+				.interfacePropertyRequirementsList(withoutInterface ? null : form.getInterfacePropertyRequirements())
+				.addressTypes(withoutInterface ? null : form.getInterfaceAddressTypes())
 				.providerNames(onlyPreferred ? form.getPreferredProviders() : null)
 				.build();
 
@@ -585,7 +586,7 @@ public class LocalServiceOrchestration {
 		final List<OrchestrationResultDTO> results = candidates.stream()
 				.map(c -> new OrchestrationResultDTO(
 						c.getServiceInstance().instanceId(),
-						null, // local cloud
+						Defaults.DEFAULT_CLOUD, // local cloud
 						c.getServiceInstance().provider().name(),
 						c.getServiceInstance().serviceDefinition().name(),
 						c.getServiceInstance().version(),

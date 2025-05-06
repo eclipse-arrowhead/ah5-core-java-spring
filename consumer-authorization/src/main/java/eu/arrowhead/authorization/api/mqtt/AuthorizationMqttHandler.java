@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -55,8 +56,9 @@ public class AuthorizationMqttHandler extends MqttTopicHandler {
 		switch (request.getOperation()) {
 		case Constants.SERVICE_OP_GRANT:
 			final AuthorizationGrantRequestDTO grantDTO = readPayload(request.getPayload(), AuthorizationGrantRequestDTO.class);
-			responsePayload = grant(request.getRequester(), grantDTO);
-			responseStatus = MqttStatus.CREATED;
+			final Pair<AuthorizationPolicyResponseDTO, Boolean> grantResult = grant(request.getRequester(), grantDTO);
+			responsePayload = grantResult.getFirst();
+			responseStatus = grantResult.getSecond() ? MqttStatus.CREATED : MqttStatus.OK;
 			break;
 
 		case Constants.SERVICE_OP_REVOKE:
@@ -85,7 +87,7 @@ public class AuthorizationMqttHandler extends MqttTopicHandler {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private AuthorizationPolicyResponseDTO grant(final String requester, final AuthorizationGrantRequestDTO grantDTO) {
+	private Pair<AuthorizationPolicyResponseDTO, Boolean> grant(final String requester, final AuthorizationGrantRequestDTO grantDTO) {
 		logger.debug("AuthorizationMqttHandler.grant started...");
 
 		return authorizationService.grantOperation(requester, grantDTO, baseTopic() + Constants.SERVICE_OP_GRANT);

@@ -1,4 +1,4 @@
-package eu.arrowhead.authorization.service;
+package eu.arrowhead.authorization.service.engine;
 
 import java.util.List;
 import java.util.Map;
