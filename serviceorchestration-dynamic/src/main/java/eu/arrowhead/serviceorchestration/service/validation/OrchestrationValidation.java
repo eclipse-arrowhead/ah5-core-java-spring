@@ -83,6 +83,10 @@ public class OrchestrationValidation {
 		logger.debug("validateAndNormalizePushSubscribeService started...");
 
 		orchSubsValidator.validateAndNormalizeOrchestrationSubscription(subscription, origin);
+
+		if (!subscription.getOrchestrationForm().getRequesterSystemName().equals(subscription.getOrchestrationForm().getTargetSystemName())) {
+			throw new InvalidParameterException("Target system cannot be different than the requester system.", origin);
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------

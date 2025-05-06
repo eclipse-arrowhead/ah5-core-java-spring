@@ -126,9 +126,9 @@ public class OrchestrationSubscriptionValidation {
 			throw new InvalidParameterException("Notify properties has no " + DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD + " property.", origin);
 		}
 
-		if (!props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.POST.name())
-				|| !props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PUT.name())
-				|| !props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PATCH.name())) {
+		if (!(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.POST.name())
+				|| props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PUT.name())
+				|| props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(HttpMethod.PATCH.name()))) {
 			throw new InvalidParameterException("Unsupported notify HTTP method: " + props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_METHOD + "."), origin);
 		}
 
