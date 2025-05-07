@@ -673,12 +673,11 @@ public class AuthorizationPolicyDbService {
 	private boolean policyDetailsEquals(final AuthPolicy existingEntity, final NormalizedAuthorizationPolicyRequest candidate) {
 		logger.debug("policyDetailsEquals started...");
 
-		final AuthorizationPolicyDTO existing = dtoConverter.convertAuthPolicyToDTO(existingEntity);
-
-		if (existing.policyType() != candidate.policyType()) {
+		if (existingEntity.getPolicyType() != candidate.policyType()) {
 			return false;
 		}
 
+		final AuthorizationPolicyDTO existing = dtoConverter.convertAuthPolicyToDTO(existingEntity);
 		switch (existing.policyType()) {
 		case ALL:
 			return true;
