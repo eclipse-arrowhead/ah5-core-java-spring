@@ -68,7 +68,7 @@ public class EncryptionKeyDbService {
 				toSave = new EncryptionKey(systemName, key, algorithm, internalAuxiliaryRecord, externalAuxiliaryRecord);
 			} else {
 				toSave = optional.get();
-				toSave.setKey(key);
+				toSave.setKeyValue(key);
 				toSave.setAlgorithm(algorithm);
 				toSave.setInternalAuxiliary(internalAuxiliaryRecord);
 				toSave.setExternalAuxiliary(externalAuxiliaryRecord);

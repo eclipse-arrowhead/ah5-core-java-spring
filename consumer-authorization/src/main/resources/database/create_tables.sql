@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `cryptographer_auxiliary` (
 CREATE TABLE IF NOT EXISTS `encryption_key` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
 	`system_name` varchar(63) NOT NULL,
-	`key` mediumtext NOT NULL,
+	`key_value` mediumtext NOT NULL,
 	`algorithm` varchar(63) NOT NULL,
 	`internal_auxiliary_id` bigint(20) NOT NULL,
 	`external_auxiliary_id` bigint(20),

@@ -30,6 +30,7 @@ import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenGenerator;
+import eu.arrowhead.authorization.service.validation.AuthorizationTokenValidation;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
@@ -39,7 +40,7 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
 import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
-import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequest;
+import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
@@ -82,7 +83,10 @@ public class AuthorizationTokenService {
 	private TokenHeaderDbService tokenHeaderDbService;
 
 	@Resource(name = Constants.ARROWHEAD_CONTEXT)
-	protected Map<String, Object> arrowheadContext;
+	private Map<String, Object> arrowheadContext;
+	
+	@Autowired
+	private AuthorizationTokenValidation validator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -93,14 +97,16 @@ public class AuthorizationTokenService {
 	public Pair<AuthorizationTokenGenerationResponseDTO, Boolean> generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
 		logger.debug("generate started...");
 
-		final AuthorizationTokenGenerationRequestDTO normalized = dto; // TODO validate and normalize
-		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalized.tokenType());
-		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalized.serviceInstanceId());
+		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
+		final AuthorizationTokenGenerationRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateRequest(dto, origin);
+		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
+		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalizedDTO.serviceInstanceId());
 		
 		// Check permission
 		boolean isAuthorized = policyEngine.isAccessGranted(new NormalizedVerifyRequest(
 				serviceInstanceIdParts.systemName(),
-				requesterSystem, Defaults.DEFAULT_CLOUD,
+				normalizedRequester,
+				Defaults.DEFAULT_CLOUD,
 				AuthorizationTargetType.SERVICE_DEF,
 				serviceInstanceIdParts.serviceDefinition(),
 				dto.serviceOperation()));
@@ -110,17 +116,17 @@ public class AuthorizationTokenService {
 		}
 
 		// Generate token
-		Pair<AuthorizationTokenGenerationResponseDTO, Boolean> tokenResult = generateToken(requesterSystem, tokenType, serviceInstanceIdParts,
-				Utilities.isEmpty(normalized.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalized.serviceOperation(), origin);
+		Pair<AuthorizationTokenGenerationResponseDTO, Boolean> tokenResult = generateToken(normalizedRequester, tokenType, serviceInstanceIdParts,
+				Utilities.isEmpty(normalizedDTO.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.serviceOperation(), origin);
 
 		// Encrypt token if required
-		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalized.tokenType()));
+		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
 		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
-			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(serviceInstanceIdParts.systemName());
+			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(normalizedRequester);
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKey(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
+					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
 					final String plainToken = tokenResult.getLeft().token();
 
 					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
@@ -150,12 +156,13 @@ public class AuthorizationTokenService {
 	public AuthorizationTokenVerifyResponseDTO verify(final String requesterSystem, final String token, final String origin) {
 		logger.debug("verify started...");
 
-		final String normalizedRequester = requesterSystem; // TODO validate and normalize
+		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
+		final String normalizedToken = validator.validateAndNormalizeToken(token, origin);
 
 		String tokenAsSaved = null;
 		try {
 			// Only the not self contained token can be verified this way and those are encrypted with HMAC (to not to have auxiliary, otherwise we could not find it)
-			tokenAsSaved = secretCryptographer.encryptHMACSHA256(token, sysInfo.getSecretCryptographerKey());
+			tokenAsSaved = secretCryptographer.encryptHMACSHA256(normalizedToken, sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -207,26 +214,27 @@ public class AuthorizationTokenService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequest dto, final String origin) {
+	public Pair<String, Boolean> registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
 		logger.debug("registerEncryptionKey started...");
 
-		final AuthorizationEncryptionKeyRegistrationRequest normalized = dto; // TODO validate and normalize
+		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
+		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.normalizeAndValidateRegisterEncryptionKeyRequest(dto, origin);
 
 		String externalAuxiliary = "";
-		if (normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
 			externalAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 		}
 
 		Pair<String, String> encryptedToSave = null;
 		try {
-			encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P(normalized.key(), sysInfo.getSecretCryptographerKey());
+			encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Secret encryption failed!", origin);
 		}
 
-		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(requesterSystem, encryptedToSave.getLeft(), normalized.algorithm(), encryptedToSave.getRight(), externalAuxiliary);
+		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(normalizedRequester, encryptedToSave.getLeft(), normalizedDTO.algorithm(), encryptedToSave.getRight(), externalAuxiliary);
 		return Pair.of(externalAuxiliary, result.getRight());
 	}
 
@@ -295,6 +303,10 @@ public class AuthorizationTokenService {
 			} else {
 				//  -- JSON WEB TOKEN
 
+				if (!arrowheadContext.containsKey(Constants.SERVER_PRIVATE_KEY)) {
+					throw new InvalidParameterException("JWT is supported only when SSL is enabled.", origin);
+				}
+				
 				final PrivateKey privateKey = (PrivateKey) arrowheadContext.get(Constants.SERVER_PRIVATE_KEY);
 
 				if (tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
@@ -322,8 +334,8 @@ public class AuthorizationTokenService {
 					tokenType.name(),
 					Utilities.utcNow().plusSeconds(durationSec));
 			return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), token, null, Utilities.convertZonedDateTimeToUTCString(expiresAt)), selfContainedTokenResult.getRight());
-
-		} catch (final InternalServerError ex) {
+			
+		} catch (final InternalServerError | InvalidParameterException ex) {
 			throw ex;
 
 		} catch (final Exception ex) {

@@ -17,7 +17,7 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	private String systemName;
 
 	@Column(nullable = false)
-	private String key;
+	private String keyValue;
 	
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String algorithm;
@@ -39,9 +39,9 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public EncryptionKey(final String systemName, final String key, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
+	public EncryptionKey(final String systemName, final String keyValue, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
 		this.systemName = systemName;
-		this.key = key;
+		this.keyValue = keyValue;
 		this.algorithm = algorithm;
 		this.internalAuxiliary = internalAuxiliary;
 		this.externalAuxiliary = externalAuxiliary;
@@ -50,7 +50,7 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", key=" + key+ ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary + ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
+		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", keyValue=" + keyValue+ ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary + ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
 	}
 	
 	//=================================================================================================
@@ -67,13 +67,13 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getKey() {
-		return key;
+	public String getKeyValue() {
+		return keyValue;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setKey(final String key) {
-		this.key = key;
+	public void setKeyValue(final String keyValue) {
+		this.keyValue = keyValue;
 	}
 
 	//-------------------------------------------------------------------------------------------------

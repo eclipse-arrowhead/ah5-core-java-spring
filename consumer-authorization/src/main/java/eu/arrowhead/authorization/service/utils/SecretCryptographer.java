@@ -28,7 +28,7 @@ public class SecretCryptographer {
 
 	public static final String AES_ALOGRITHM = "AES/CBC/PKCS5Padding";
 	private static final String AES_KEY_ALGORITHM = "AES";
-	private static final int AES_KEY_SIZE = 16; // 128 bits
+	public static final int AES_KEY_SIZE = 16; // 128 bits
 	
 	public static final String HMAC_ALGORITHM = "HmacSHA256";
 
@@ -71,11 +71,11 @@ public class SecretCryptographer {
 		Assert.isTrue(!Utilities.isEmpty(plainSecret), "plainSecret is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		
-		Mac sha256_HMAC = Mac.getInstance(HMAC_ALGORITHM);
-		SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), HMAC_ALGORITHM);
-        sha256_HMAC.init(keySpec);
+		final Mac sha256HMAC = Mac.getInstance(HMAC_ALGORITHM);
+		final SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), HMAC_ALGORITHM);
+        sha256HMAC.init(keySpec);
         
-        byte[] hash = sha256_HMAC.doFinal(plainSecret.getBytes());
+        final byte[] hash = sha256HMAC.doFinal(plainSecret.getBytes());
         return Base64.getEncoder().encodeToString(hash);
 	}
 	
@@ -88,13 +88,13 @@ public class SecretCryptographer {
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		
 		final SecretKeySpec keySpec = getKeyFromStringAESCBCPKCS5P(key);
-		byte[] iv = Base64.getDecoder().decode(ivBase64);
+		final byte[] iv = Base64.getDecoder().decode(ivBase64);
 		final IvParameterSpec ivSpec = new IvParameterSpec(iv);
 		final Cipher cipher = Cipher.getInstance(AES_ALOGRITHM);
 		
 	    cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-	    byte[] encryptedBytes = Base64.getDecoder().decode(encryptedSecretBase64);
-	    byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+	    final byte[] encryptedBytes = Base64.getDecoder().decode(encryptedSecretBase64);
+	    final byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
 	    return new String(decryptedBytes);
 	}
 	
@@ -103,24 +103,24 @@ public class SecretCryptographer {
 
 	//-------------------------------------------------------------------------------------------------
 	private byte[] generateIV() {
-		byte[] iv = new byte[16];
+		final byte[] iv = new byte[16];
 		new SecureRandom().nextBytes(iv);
 		return iv;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	private IvParameterSpec getIvParameterSpec(byte[] iv) {
+	private IvParameterSpec getIvParameterSpec(final byte[] iv) {
 		return new IvParameterSpec(iv);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	private IvParameterSpec getIvParameterSpec(String ivBase64) {
+	private IvParameterSpec getIvParameterSpec(final String ivBase64) {
 		return new IvParameterSpec(Base64.getDecoder().decode(ivBase64));
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private SecretKeySpec getKeyFromStringAESCBCPKCS5P(String key) {
-		byte[] keyBytes = key.getBytes();
+	private SecretKeySpec getKeyFromStringAESCBCPKCS5P(final String key) {
+		final byte[] keyBytes = key.getBytes();
 		Assert.isTrue(keyBytes.length == AES_KEY_SIZE, "Key size is not " + AES_KEY_SIZE + " byte long");
 		return new SecretKeySpec(keyBytes, AES_KEY_ALGORITHM);
 	}
@@ -135,7 +135,7 @@ public class SecretCryptographer {
 		final Cipher cipher = Cipher.getInstance(AES_ALOGRITHM);
 
 		cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-		byte[] encrypted = cipher.doFinal(plainSecret.getBytes());
+		final byte[] encrypted = cipher.doFinal(plainSecret.getBytes());
 		return Base64.getEncoder().encodeToString(encrypted);
 	}
 }

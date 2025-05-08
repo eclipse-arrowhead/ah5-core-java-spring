@@ -20,7 +20,7 @@ import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.authorization.service.AuthorizationTokenService;
 import eu.arrowhead.common.Constants;
-import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequest;
+import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
@@ -144,7 +144,7 @@ public class AuthorizationTokenAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> registerEncryptionKey(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationEncryptionKeyRegistrationRequest dto) {
+	public ResponseEntity<String> registerEncryptionKey(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationEncryptionKeyRegistrationRequestDTO dto) {
 		logger.debug("registerEncryptionKey started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
