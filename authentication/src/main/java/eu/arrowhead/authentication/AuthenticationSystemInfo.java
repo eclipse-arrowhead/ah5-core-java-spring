@@ -102,8 +102,8 @@ public class AuthenticationSystemInfo extends SystemInfo {
 		return new PublicConfigurationKeysAndDefaults(
 				Set.of(Constants.SERVER_ADDRESS,
 						Constants.SERVER_PORT,
-						Constants.SERVICEREGISTRY_ADDRESS,
-						Constants.SERVICEREGISTRY_PORT,
+						Constants.SERVICE_REGISTRY_ADDRESS,
+						Constants.SERVICE_REGISTRY_PORT,
 						Constants.MQTT_API_ENABLED,
 						Constants.DOMAIN_NAME,
 						Constants.AUTHENTICATION_POLICY,
