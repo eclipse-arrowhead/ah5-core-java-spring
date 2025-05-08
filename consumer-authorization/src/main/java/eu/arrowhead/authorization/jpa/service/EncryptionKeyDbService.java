@@ -59,22 +59,20 @@ public class EncryptionKeyDbService {
 
 		try {
 			boolean override = false;
+			final Optional<EncryptionKey> optional = keyRepo.findBySystemName(systemName);
+			if (optional.isPresent()) {
+				keyRepo.delete(optional.get());
+				auxiliaryRepo.delete(optional.get().getInternalAuxiliary());
+				if (optional.get().getExternalAuxiliary() != null) {
+					auxiliaryRepo.delete(optional.get().getExternalAuxiliary());
+				}
+				override = true;
+			}			
+			
 			final CryptographerAuxiliary internalAuxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
 			final CryptographerAuxiliary externalAuxiliaryRecord = Utilities.isEmpty(externalAuxiliary) ? null : auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(externalAuxiliary));
+			final EncryptionKey toSave = new EncryptionKey(systemName, key, algorithm, internalAuxiliaryRecord, externalAuxiliaryRecord);			
 
-			EncryptionKey toSave = null;
-			final Optional<EncryptionKey> optional = keyRepo.findBySystemName(systemName);
-			if (optional.isEmpty()) {
-				toSave = new EncryptionKey(systemName, key, algorithm, internalAuxiliaryRecord, externalAuxiliaryRecord);
-			} else {
-				toSave = optional.get();
-				toSave.setKeyValue(key);
-				toSave.setAlgorithm(algorithm);
-				toSave.setInternalAuxiliary(internalAuxiliaryRecord);
-				toSave.setExternalAuxiliary(externalAuxiliaryRecord);
-				override = true;
-
-			}
 			return Pair.of(keyRepo.saveAndFlush(toSave), !override);
 
 		} catch (final Exception ex) {
