@@ -57,7 +57,7 @@ public class AuthorizationTokenService {
 
 	@Autowired
 	private AuthorizationSystemInfo sysInfo;
-	
+
 	@Autowired
 	private AuthorizationPolicyEngine policyEngine;
 
@@ -84,7 +84,7 @@ public class AuthorizationTokenService {
 
 	@Resource(name = Constants.ARROWHEAD_CONTEXT)
 	private Map<String, Object> arrowheadContext;
-	
+
 	@Autowired
 	private AuthorizationTokenValidation validator;
 
@@ -101,7 +101,7 @@ public class AuthorizationTokenService {
 		final AuthorizationTokenGenerationRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateRequest(dto, origin);
 		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
 		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalizedDTO.serviceInstanceId());
-		
+
 		// Check permission
 		boolean isAuthorized = policyEngine.isAccessGranted(new NormalizedVerifyRequest(
 				serviceInstanceIdParts.systemName(),
@@ -110,7 +110,7 @@ public class AuthorizationTokenService {
 				AuthorizationTargetType.SERVICE_DEF,
 				serviceInstanceIdParts.serviceDefinition(),
 				dto.serviceOperation()));
-		
+
 		if (!isAuthorized) {
 			throw new ForbiddenException("Requester has no permisson to the service instance and/or operation.", origin);
 		}
@@ -148,7 +148,7 @@ public class AuthorizationTokenService {
 				throw new InternalServerError("Token encryption failed!", origin);
 			}
 		}
-		
+
 		return tokenResult;
 	}
 
@@ -203,12 +203,12 @@ public class AuthorizationTokenService {
 	//-------------------------------------------------------------------------------------------------
 	public String publicKey(final String origin) {
 		logger.debug("registerEncryptionKey started...");
-		
+
 		final Optional<Object> pubKeyOpt = Optional.ofNullable(arrowheadContext.get(Constants.SERVER_PUBLIC_KEY));
 		if (pubKeyOpt.isEmpty()) {
 			throw new DataNotFoundException("Public key is not available", origin);
 		}
-		
+
 		final PublicKey pubKey = (PublicKey) pubKeyOpt.get();
 		return Base64.getEncoder().encodeToString(pubKey.getEncoded());
 	}
@@ -236,6 +236,14 @@ public class AuthorizationTokenService {
 
 		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(normalizedRequester, encryptedToSave.getLeft(), normalizedDTO.algorithm(), encryptedToSave.getRight(), externalAuxiliary);
 		return Pair.of(externalAuxiliary, result.getRight());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean unregisterEncryptionKey(final String requesterSystem, final String origin) {
+		logger.debug("unregisterEncryptionKey started...");
+
+		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
+		return encryptionKeyDbService.delete(normalizedRequester);
 	}
 
 	//=================================================================================================
@@ -306,7 +314,7 @@ public class AuthorizationTokenService {
 				if (!arrowheadContext.containsKey(Constants.SERVER_PRIVATE_KEY)) {
 					throw new InvalidParameterException("JWT is supported only when SSL is enabled.", origin);
 				}
-				
+
 				final PrivateKey privateKey = (PrivateKey) arrowheadContext.get(Constants.SERVER_PRIVATE_KEY);
 
 				if (tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
@@ -334,7 +342,7 @@ public class AuthorizationTokenService {
 					tokenType.name(),
 					Utilities.utcNow().plusSeconds(durationSec));
 			return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), token, null, Utilities.convertZonedDateTimeToUTCString(expiresAt)), selfContainedTokenResult.getRight());
-			
+
 		} catch (final InternalServerError | InvalidParameterException ex) {
 			throw ex;
 
