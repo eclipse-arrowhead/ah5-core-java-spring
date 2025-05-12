@@ -12,6 +12,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 public interface OrchestrationStoreRepository extends RefreshableRepository<OrchestrationStore, UUID> {
 	
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationStore> findAllByConsumerAndPriority(final String consumer, final int priority);
+	public List<OrchestrationStore> findAllByConsumerAndServiceInstanceIdAndPriority(
+			final String consumer, final String serviceInstanceId, final int priority);
 	
 }
