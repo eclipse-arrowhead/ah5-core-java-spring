@@ -840,8 +840,8 @@ public class ManagementValidation {
 						throw new InvalidParameterException("Interface template property name is empty", origin);
 					}
 
-					if (propertyDTO.name().contains(MetadataValidation.DOT)) {
-						throw new InvalidParameterException("Invalid interface template property name: " + propertyDTO.name() + ", it should not contain " + MetadataValidation.DOT + " character", origin);
+					if (propertyDTO.name().contains(MetadataValidation.METADATA_COMPOSITE_KEY_DELIMITER)) {
+						throw new InvalidParameterException("Invalid interface template property name: " + propertyDTO.name() + ", it should not contain " + MetadataValidation.METADATA_COMPOSITE_KEY_DELIMITER + " character", origin);
 					}
 
 					if (propertyNames.contains(propertyDTO.name().trim())) {
