@@ -93,5 +93,10 @@
     "name": "secret.cryptographer.key",
     "type": "java.lang.String",
     "description": "A description for 'secret.cryptographer.key'"
+  },
+  {
+    "name": "unbounded.token.generation.whitelist",
+    "type": "java.util.List",
+    "description": "A description for 'unbounded.token.generation.whitelist'"
   }
 ]}

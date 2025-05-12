@@ -12,6 +12,7 @@ public final class AuthorizationDefaults extends Defaults {
 	public static final int DEFAULT_SIMPLE_TOKEN_BYTE_SIZE = 32;
 	public static final int DEFAULT_SIMPLE_TOKEN_USAGE_LIMIT = 10;
 	public static final String DEFAULT_SECRET_CRYPTOGRAPHER_KEY = "abcd1234efgh5678";
+	public static final String DEFAULT_UNBOUNDED_TOKEN_GENERATION_WHITELIST = "\"\"";
 
 	//=================================================================================================
 	// assistant methods

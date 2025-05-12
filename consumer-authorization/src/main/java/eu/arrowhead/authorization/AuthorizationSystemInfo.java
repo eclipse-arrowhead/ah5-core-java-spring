@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.SystemInfo;
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
@@ -30,6 +31,9 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	
 	@Value(AuthorizationConstants.$SIMPLE_TOKEN_USAGE_LIMIT_WD)
 	private int simpleTokenUsageLimit;
+	
+	@Value(AuthorizationConstants.$UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD)
+	private List<String> unboundedTokenGenerationWhitelist;
 	
 	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY_WD)
 	private String secretCryptographerKey;
@@ -111,6 +115,14 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	public String getSecretCryptographerKey() {
 		return secretCryptographerKey;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasSystemUnboundedTokenGenerationRight(final String systemName) {
+		if (Utilities.isEmpty(unboundedTokenGenerationWhitelist)) {
+			return false;
+		}
+		return unboundedTokenGenerationWhitelist.contains(systemName);
 	}
 
 	//=================================================================================================

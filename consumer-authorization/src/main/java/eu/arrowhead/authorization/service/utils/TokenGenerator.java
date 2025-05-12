@@ -2,12 +2,14 @@ package eu.arrowhead.authorization.service.utils;
 
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Base64.Encoder;
 
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.NumericDate;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,7 +54,7 @@ public class TokenGenerator {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String generateBas64SelfSignedToken(final Integer durationSec, final SelfContainedTokenPayload payload) {
+	public String generateBas64SelfSignedToken(final ZonedDateTime expiry, final SelfContainedTokenPayload payload) {
 		Assert.notNull(payload, "JWT payload is null");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "consumer is empty");
@@ -67,13 +69,13 @@ public class TokenGenerator {
 				payload.target() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
 				payload.scope() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
 				payload.targetType().name() + BASE64_SELF_CONTAINED_TOKEN_DELIMITER +
-				(durationSec == null ? "" : Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusSeconds(durationSec.longValue())));
+				(expiry == null ? "" : Utilities.convertZonedDateTimeToUTCString(expiry));
 
 		return base64Encoder.encodeToString(content.getBytes());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String generateJsonWebToken(final String signAlgorithm, final PrivateKey privateKey, final Integer durationSec, final SelfContainedTokenPayload payload) throws JoseException {
+	public String generateJsonWebToken(final String signAlgorithm, final PrivateKey privateKey, final ZonedDateTime expiry, final SelfContainedTokenPayload payload) throws JoseException {
 		Assert.isTrue(!Utilities.isEmpty(signAlgorithm), "signAlgorithm is empty");
 		Assert.notNull(privateKey, "privateKey is null");
 		Assert.notNull(payload, "JWT payload is null");
@@ -84,7 +86,7 @@ public class TokenGenerator {
 		Assert.isTrue(!Utilities.isEmpty(payload.target()), "target is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.scope()), "scope is empty");
 
-		final JwtClaims claims = createJWTClaims(durationSec, payload);
+		final JwtClaims claims = createJWTClaims(expiry, payload);
 		final String jwt = signJWT(signAlgorithm, privateKey, claims);
 		return jwt;
 
@@ -94,14 +96,14 @@ public class TokenGenerator {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private JwtClaims createJWTClaims(final Integer durationSec, final SelfContainedTokenPayload payload) {
+	private JwtClaims createJWTClaims(final ZonedDateTime expiry, final SelfContainedTokenPayload payload) {
 		final JwtClaims claims = new JwtClaims();
 		claims.setGeneratedJwtId();
 		claims.setIssuer(sysInfo.getSystemName());
 		claims.setIssuedAtToNow();
 		claims.setNotBeforeMinutesInThePast(1);
-		if (durationSec != null) {
-			claims.setExpirationTimeMinutesInTheFuture(durationSec.floatValue() / 60);
+		if (expiry != null) {
+			claims.setExpirationTime(NumericDate.fromSeconds(expiry.toInstant().getEpochSecond()));
 		}
 		claims.setStringClaim(JWT_PAYLOAD_KEY_PROVIDER_SYSTEM_NAME, payload.provider());
 		claims.setStringClaim(JWT_PAYLOAD_KEY_CONSUMER_SYSTEM_NAME, payload.consumer());
