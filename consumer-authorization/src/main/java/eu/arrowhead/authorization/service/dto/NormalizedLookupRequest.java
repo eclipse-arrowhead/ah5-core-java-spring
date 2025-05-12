@@ -1,0 +1,94 @@
+package eu.arrowhead.authorization.service.dto;
+
+import java.util.List;
+
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
+
+public class NormalizedLookupRequest {
+
+	//=================================================================================================
+	// members
+
+	protected List<String> providers;
+	protected List<String> instanceIds;
+	protected List<String> cloudIdentifiers;
+	protected List<String> targetNames;
+	protected AuthorizationTargetType targetType;
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedLookupRequest() {
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean hasFilter() {
+		return !Utilities.isEmpty(providers)
+				|| !Utilities.isEmpty(instanceIds)
+				|| !Utilities.isEmpty(cloudIdentifiers)
+				|| !Utilities.isEmpty(targetNames)
+				|| targetType != null;
+	}
+
+	//=================================================================================================
+	// boilerplate code
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> providers() {
+		return providers;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setProviders(final List<String> providers) {
+		this.providers = providers;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> instanceIds() {
+		return instanceIds;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setInstanceIds(final List<String> instanceIds) {
+		this.instanceIds = instanceIds;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> cloudIdentifiers() {
+		return cloudIdentifiers;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setCloudIdentifiers(final List<String> cloudIdentifiers) {
+		this.cloudIdentifiers = cloudIdentifiers;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> targetNames() {
+		return targetNames;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setTargetNames(final List<String> targetNames) {
+		this.targetNames = targetNames;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTargetType targetType() {
+		return targetType;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setTargetType(final AuthorizationTargetType targetType) {
+		this.targetType = targetType;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "NormalizedLookupRequest [providers=" + providers + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
+				+ ", targetType=" + targetType + "]";
+	}
+}
