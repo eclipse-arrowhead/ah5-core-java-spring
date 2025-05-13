@@ -86,7 +86,13 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	private Pair<SystemResponseDTO, MqttStatus> register(final String identifiedRequester, final SystemRegisterRequestDTO dto) {
 		logger.debug("SystemDiscoveryMqttHandler.register started");
 
-		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), baseTopic() + Constants.SERVICE_OP_REGISTER);
+		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(
+				identifiedRequester,
+				dto.metadata(),
+				dto.version(),
+				dto.addresses(),
+				dto.deviceName()),
+				baseTopic() + Constants.SERVICE_OP_REGISTER);
 
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}

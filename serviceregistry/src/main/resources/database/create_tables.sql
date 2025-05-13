@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS `service_instance` (
 
 CREATE TABLE IF NOT EXISTS `service_interface_template` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(63) NOT NULL,
   `protocol` varchar(63) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
