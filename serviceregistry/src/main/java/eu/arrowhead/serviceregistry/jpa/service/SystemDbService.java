@@ -523,7 +523,7 @@ public class SystemDbService {
 			final List<System> systems,
 			final List<SystemAddress> addresses,
 			final List<DeviceSystemConnector> deviceConnections) {
-		logger.debug("createTriples started");
+		logger.debug("createTriplets started");
 		Assert.notNull(systems, "systems are null");
 
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>(systems.size());

@@ -15,7 +15,11 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
+import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
@@ -23,7 +27,6 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ServiceDiscoveryValidation {
@@ -41,7 +44,16 @@ public class ServiceDiscoveryValidation {
 	private InterfaceValidator interfaceValidator;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
+
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
+
+	@Autowired
+	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private ServiceInstanceIdentifierValidator serviceInstanceIdentifierValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -69,8 +81,6 @@ public class ServiceDiscoveryValidation {
 		if (dto.serviceDefinitionName().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
 			throw new InvalidParameterException("Service definition name is too long", origin);
 		}
-
-		nameValidator.validateName(dto.serviceDefinitionName());
 
 		if (!Utilities.isEmpty(dto.expiresAt())) {
 			ZonedDateTime expiresAt = null;
@@ -212,6 +222,9 @@ public class ServiceDiscoveryValidation {
 		final ServiceInstanceRequestDTO normalizedInstance = normalizer.normalizeServiceInstanceRequestDTO(dto);
 
 		try {
+			systemNameValidator.validateSystemName(normalizedInstance.systemName());
+			serviceDefNameValidator.validateServiceDefinitionName(normalizedInstance.serviceDefinitionName());
+
 			versionValidator.validateNormalizedVersion(normalizedInstance.version());
 			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
 
@@ -243,7 +256,21 @@ public class ServiceDiscoveryValidation {
 
 		validateLookupService(dto, origin);
 
-		return normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
+		final ServiceInstanceLookupRequestDTO normalized = normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
+
+		if (!Utilities.isEmpty(normalized.providerNames())) {
+			normalized.providerNames().forEach(n -> systemNameValidator.validateSystemName(n));
+		}
+
+		if (!Utilities.isEmpty(normalized.serviceDefinitionNames())) {
+			normalized.serviceDefinitionNames().forEach(n -> serviceDefNameValidator.validateServiceDefinitionName(n));
+		}
+
+		if (!Utilities.isEmpty(normalized.interfaceTemplateNames())) {
+			normalized.interfaceTemplateNames().forEach(n -> interfaceTemplateNameValidator.validateIntefaceTemplateName(n));
+		}
+
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -252,6 +279,12 @@ public class ServiceDiscoveryValidation {
 
 		validateRevokeService(systemName, instanceId, origin);
 
-		return Map.entry(normalizer.normalizeSystemName(systemName), normalizer.normalizeServiceInstanceId(instanceId));
+		final String normalizeSystemName = normalizer.normalizeSystemName(systemName);
+		final String normalizedInstanceId = normalizer.normalizeServiceInstanceId(instanceId);
+
+		systemNameValidator.validateSystemName(normalizeSystemName);
+		serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(normalizedInstanceId);
+
+		return Map.entry(normalizeSystemName, normalizedInstanceId);
 	}
 }

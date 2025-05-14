@@ -97,7 +97,8 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 	private void registerService(final ServiceModel model) {
 		logger.debug("registerService started...");
 
-		final List<ServiceInstanceInterfaceRequestDTO> interfaces = model.interfaces()
+		final List<ServiceInstanceInterfaceRequestDTO> interfaces = model
+				.interfaces()
 				.stream()
 				.map(i -> new ServiceInstanceInterfaceRequestDTO(i.templateName(), i.protocol(), ServiceInterfacePolicy.NONE.name(), i.properties()))
 				.collect(Collectors.toList());

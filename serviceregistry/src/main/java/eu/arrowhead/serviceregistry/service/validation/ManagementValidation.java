@@ -19,8 +19,10 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.DeviceNameNormalizer;
+import eu.arrowhead.common.service.validation.name.DeviceNameValidator;
+import eu.arrowhead.common.service.validation.version.VersionNormalizer;
+import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListRequestDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
@@ -51,8 +53,6 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class ManagementValidation {
@@ -73,10 +73,10 @@ public class ManagementValidation {
 	private InterfaceValidator interfaceValidator;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private DeviceNameValidator deviceNameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer; // for checking duplications
+	private DeviceNameNormalizer deviceNameNormalizer; // for checking duplications
 
 	@Autowired
 	private VersionNormalizer versionNormalizer; // for checking duplications
@@ -117,11 +117,12 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Device name is too long", origin);
 			}
 
-			if (names.contains(nameNormalizer.normalize(device.name()))) {
+			final String normalized = deviceNameNormalizer.normalize(device.name());
+			if (names.contains(normalized)) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
 			}
 
-			names.add(nameNormalizer.normalize(device.name()));
+			names.add(normalized);
 
 			if (Utilities.isEmpty(device.addresses())) {
 				throw new InvalidParameterException("At least one device address is needed for every device", origin);
@@ -197,7 +198,7 @@ public class ManagementValidation {
 		validateCreateDevices(dto, origin);
 
 		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
+		normalized.forEach(n -> validateNormalizedDeviceName(n.name(), origin));
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
 
 		return normalized;
@@ -210,7 +211,7 @@ public class ManagementValidation {
 		validateUpdateDevices(dto, origin);
 
 		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
+		normalized.forEach(n -> validateNormalizedDeviceName(n.name(), origin));
 		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
 
 		return normalized;
@@ -933,11 +934,11 @@ public class ManagementValidation {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private void validateNormalizedName(final String name, final String origin) {
-		logger.debug("validateNormalizedName started");
+	private void validateNormalizedDeviceName(final String name, final String origin) {
+		logger.debug("validateNormalizedDeviceName started");
 
 		try {
-			nameValidator.validateName(name);
+			deviceNameValidator.validateDeviceName(name);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}

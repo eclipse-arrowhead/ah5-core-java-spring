@@ -10,13 +10,14 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.DeviceNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.SystemLookupRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionValidator;
 
 @Service
 public class SystemDiscoveryValidation {
@@ -33,7 +34,10 @@ public class SystemDiscoveryValidation {
 	private AddressValidator addressValidator;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private DeviceNameValidator deviceNameValidator;
 
 	@Autowired
 	private VersionValidator versionValidator;
@@ -124,9 +128,12 @@ public class SystemDiscoveryValidation {
 		final NormalizedSystemRequestDTO normalized = normalizer.normalizeSystemRequestDTO(dto);
 
 		try {
-			nameValidator.validateName(normalized.name());
+			systemNameValidator.validateSystemName(normalized.name());
 			versionValidator.validateNormalizedVersion(normalized.version());
 			normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+			if (!Utilities.isEmpty(normalized.deviceName())) {
+				deviceNameValidator.validateDeviceName(normalized.deviceName());
+			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -143,12 +150,20 @@ public class SystemDiscoveryValidation {
 		final SystemLookupRequestDTO normalized = normalizer.normalizeSystemLookupRequestDTO(dto);
 
 		try {
+			if (!Utilities.isEmpty(normalized.systemNames())) {
+				normalized.systemNames().forEach(n -> systemNameValidator.validateSystemName(n));
+			}
+
 			if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 				normalized.addresses().forEach(a -> addressValidator.validateNormalizedAddress(AddressType.valueOf(normalized.addressType()), a));
 			}
 
 			if (!Utilities.isEmpty(normalized.versions())) {
 				normalized.versions().forEach(v -> versionValidator.validateNormalizedVersion(v));
+			}
+
+			if (!Utilities.isEmpty(normalized.deviceNames())) {
+				normalized.deviceNames().forEach(n -> deviceNameValidator.validateDeviceName(n));
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -172,6 +187,9 @@ public class SystemDiscoveryValidation {
 
 		validateRevokeSystem(name, origin);
 
-		return normalizer.normalizeRevokeSystemName(name);
+		final String normalized = normalizer.normalizeRevokeSystemName(name);
+		systemNameValidator.validateSystemName(normalized);
+
+		return normalized;
 	}
 }

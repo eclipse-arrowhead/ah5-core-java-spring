@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.DeviceNameNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -31,7 +31,7 @@ public class DeviceDiscoveryNormalization {
 	private AddressValidator addressValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private DeviceNameNormalizer deviceNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -71,6 +71,6 @@ public class DeviceDiscoveryNormalization {
 		logger.debug("normalizeDeviceName started");
 		Assert.notNull(name, "Device name is null");
 
-		return nameNormalizer.normalize(name);
+		return deviceNameNormalizer.normalize(name);
 	}
 }

@@ -103,7 +103,7 @@ public class ServiceInstanceDbService {
 			List<ServiceInstanceInterface> instanceInterfaceEntities = new ArrayList<>();
 
 			synchronized (LOCK) {
-				// Deleting current records & Caching necessary entities
+				// Deleting current records & caching necessary entities
 				final Set<String> instanceIdsToDelete = new HashSet<>(candidates.size());
 				final Set<String> systemNames = new HashSet<>();
 				final Set<String> serviceDefinitionNames = new HashSet<>();
@@ -176,9 +176,7 @@ public class ServiceInstanceDbService {
 					} else {
 						// modify the properties (only metadata, expiresAt and interface can be changed)
 						ServiceInstance instance = optionalInstance.get();
-						// set metadata
 						instance.setMetadata(Utilities.toJson(dto.metadata()));
-						// set expires At
 						instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
 
 						// delete old interfaces
@@ -604,6 +602,7 @@ public class ServiceInstanceDbService {
 	//=================================================================================================
 	// nested classes
 
+	//-------------------------------------------------------------------------------------------------
 	private enum BaseFilter {
 		NONE, INSTANCE_ID, SYSTEM_NAME, SERVICE_NAME
 	}

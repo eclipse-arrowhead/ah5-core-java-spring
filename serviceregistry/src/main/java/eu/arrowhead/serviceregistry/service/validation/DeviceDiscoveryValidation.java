@@ -10,7 +10,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.DeviceNameValidator;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -27,7 +27,7 @@ public class DeviceDiscoveryValidation {
 	private AddressValidator addressValidator;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private DeviceNameValidator deviceNameValidator;
 
 	@Autowired
 	private DeviceDiscoveryNormalization normalizer;
@@ -115,7 +115,7 @@ public class DeviceDiscoveryValidation {
 		validateRegisterDevice(dto, origin);
 
 		final NormalizedDeviceRequestDTO normalized = normalizer.normalizeDeviceRequestDTO(dto);
-		nameValidator.validateName(normalized.name());
+		deviceNameValidator.validateDeviceName(normalized.name());
 		normalized.addresses().forEach(address -> addressValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
 
 		return normalized;
@@ -126,7 +126,13 @@ public class DeviceDiscoveryValidation {
 		logger.debug("validateAndNormalizeLookupDevice started");
 
 		validateLookupDevice(dto, origin);
-		final DeviceLookupRequestDTO normalized = dto == null ? new DeviceLookupRequestDTO(null, null, null, null) : normalizer.normalizeDeviceLookupRequestDTO(dto);
+		final DeviceLookupRequestDTO normalized = dto == null
+				? new DeviceLookupRequestDTO(null, null, null, null)
+				: normalizer.normalizeDeviceLookupRequestDTO(dto);
+
+		if (!Utilities.isEmpty(dto.deviceNames())) {
+			normalized.deviceNames().forEach(d -> deviceNameValidator.validateDeviceName(d));
+		}
 
 		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
 			normalized.addresses().forEach(a -> addressValidator.validateNormalizedAddress(AddressType.valueOf(normalized.addressType()), a));
@@ -141,6 +147,9 @@ public class DeviceDiscoveryValidation {
 
 		validateRevokeDevice(name, origin);
 
-		return normalizer.normalizeDeviceName(name);
+		final String normalized = normalizer.normalizeDeviceName(name);
+		deviceNameValidator.validateDeviceName(normalized);
+
+		return normalized;
 	}
 }

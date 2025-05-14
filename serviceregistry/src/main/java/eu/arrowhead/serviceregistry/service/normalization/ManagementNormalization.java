@@ -13,7 +13,8 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.DeviceNameNormalizer;
+import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -26,7 +27,6 @@ import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
-import eu.arrowhead.serviceregistry.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
@@ -51,7 +51,7 @@ public class ManagementNormalization {
 	private InterfaceNormalizer interfaceNormalizer;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private DeviceNameNormalizer deviceNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -130,7 +130,7 @@ public class ManagementNormalization {
 		for (final DeviceRequestDTO device : dtoList) {
 			Assert.isTrue(!Utilities.isEmpty(device.name()), "Device name is empty");
 			normalized.add(new NormalizedDeviceRequestDTO(
-					nameNormalizer.normalize(device.name()),
+					deviceNameNormalizer.normalize(device.name()),
 					device.metadata(),
 					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
 							: device.addresses().stream()
