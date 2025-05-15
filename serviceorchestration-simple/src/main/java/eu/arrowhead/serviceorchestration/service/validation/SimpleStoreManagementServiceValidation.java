@@ -1,6 +1,7 @@
 package eu.arrowhead.serviceorchestration.service.validation;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Triple;
@@ -17,6 +18,7 @@ import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
+import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.service.normalization.SimpleStoreManagementServiceNormalization;
 
@@ -96,6 +98,30 @@ public class SimpleStoreManagementServiceValidation {
 		return normalized;
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	public void validatePriorityMap(PriorityRequestDTO dto, String origin) {
+		logger.info("validatePriorityMap started...");
+		
+		if (dto == null) {
+			throw new InvalidParameterException("Priority map is null!", origin);
+		}
+		
+		if (dto.containsKey(null)) {
+			throw new InvalidParameterException("Priority map conatains null key!", origin);
+		}
+		
+		if (dto.containsValue(null)) {
+			throw new InvalidParameterException("Priority map contains null value!", origin);
+		}
+		
+		final Collection<Integer> priorities = dto.values();
+		for (Integer p : priorities) {
+			if (p < 0) {
+				throw new InvalidParameterException("Invalid priority: " + p);
+			}
+		}
+	}
+	
 	//=================================================================================================
 	// assistant methods
 	
@@ -169,11 +195,11 @@ public class SimpleStoreManagementServiceValidation {
 					+ "ids, consumerNames, serviceDefinitions, serviceInstanceIds, createdBy.");
 		}
 			
-		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNullOrEmpty(dto.ids())) {
+		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNull(dto.ids())) {
 			throw new InvalidParameterException("Id list contains null or empty element!", origin);
 		}
 			
-		if (!Utilities.isEmpty(dto.consumerNames()) && Utilities.containsNullOrEmpty(dto.ids())) {
+		if (!Utilities.isEmpty(dto.consumerNames()) && Utilities.containsNullOrEmpty(dto.consumerNames())) {
 			throw new InvalidParameterException("Consumer name list contains null or empty element!", origin);
 		}
 			
@@ -181,7 +207,7 @@ public class SimpleStoreManagementServiceValidation {
 			throw new InvalidParameterException("Service definition name list contains null or empty element!", origin);
 		}
 			
-		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
+		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceInstanceIds())) {
 			throw new InvalidParameterException("Service instance id list contains null or empty element!", origin);
 		}
 			

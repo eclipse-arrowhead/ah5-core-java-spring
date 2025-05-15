@@ -51,8 +51,7 @@ public class SimpleStoreManagementServiceNormalization {
 				// no need to normalize, because it will happen in the getPageRequest method
 				dto.pagination(),
 				
-				Utilities.isEmpty(dto.ids()) ? null 
-						: dto.ids().stream().map(i -> i.trim()).collect(Collectors.toList()),
+				dto.ids(),
 						
 				//TODO: replace with the new implementation
 				Utilities.isEmpty(dto.consumerNames()) ? null 

@@ -2,6 +2,7 @@ package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +31,8 @@ public class SimpleStoreDbService {
 	
 	@Autowired
 	private OrchestrationStoreRepository storeRepo;
+	
+	private static final Object LOCK = new Object();
 
 	//=================================================================================================
 	// methods
@@ -46,6 +49,8 @@ public class SimpleStoreDbService {
 		try {
 			return storeRepo.saveAllAndFlush(candidates);
 
+		} catch (final InvalidParameterException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -143,15 +148,71 @@ public class SimpleStoreDbService {
 		}
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<OrchestrationStore> setPriorities(final Map<UUID, Integer> priorities, final String requester) {
+		Assert.notNull(priorities, "priorities is null");
+		logger.info("setPriorities started...");
+		
+		try {
+			synchronized (LOCK) {
+				List<OrchestrationStore> toModify = storeRepo.findAllById(priorities.keySet());
+				List<OrchestrationStore> modified = new ArrayList<OrchestrationStore>();
+				
+				for (OrchestrationStore entry : toModify) {
+					
+					final Integer newPriority = priorities.get(entry.getId());
+					
+					// check if the requested <consumer, service instance id, priority> does not exist in the DB
+					final List<OrchestrationStore> existing = storeRepo.findAllByConsumerAndServiceInstanceIdAndPriority(entry.getConsumer(), entry.getServiceInstanceId(), newPriority);
+					if (existing.size() != 0) {
+						
+						// there should be max. 1 existing entry in the DB (since these fields are unique)
+						if (!existing.get(0).getId().equals(entry.getId())) {
+							
+							// case 1: duplication in the user input
+							if (modified.contains(existing.get(0))) {
+								throw new InvalidParameterException("Duplicated fields: consumer name: " + existing.get(0).getConsumer()
+								+ ", serviceInstanceId: " + existing.get(0).getServiceInstanceId() + ", priority: " + existing.get(0).getPriority());
+							}
+							
+							// case 2: the entry was already existing in the database
+							else {
+								throw new InvalidParameterException("There is already an existing entity with consumer name: " +  existing.get(0).getConsumer() + ", service instance id: " 
+										+ existing.get(0).getServiceInstanceId() + ", priority: " + existing.get(0).getPriority());
+							}
+						}
+						else {
+							// no need to modify this entry, because this priority is already set
+							continue;
+						}
+					}
+					
+					entry.setPriority(priorities.get(entry.getId()));
+					entry.setUpdatedBy(requester);
+					modified.add(entry);
+				}
+				
+				return storeRepo.saveAllAndFlush(modified);
+			}
+		} catch (InvalidParameterException ex) {
+			throw ex;
+		} catch (Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
 	//=================================================================================================
-	// assistan methods
+	// assistant methods
 	
 	//-------------------------------------------------------------------------------------------------
+	// Throws exception, if there is an existing entity in the DB with the same unique fields.
 	private void checkUniqueFields(final List<OrchestrationStore> candidates) {
 		Assert.isTrue(!Utilities.isEmpty(candidates), "candidate list is empty");
 		Assert.isTrue(!Utilities.containsNull(candidates), "candidate list contains null element");
-		
-		// unique fields: consumer, service instance id, priority
+	
 		for (final OrchestrationStore candidate : candidates) {
 			
 			// check if there is and existing record

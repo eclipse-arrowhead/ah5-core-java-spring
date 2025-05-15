@@ -15,11 +15,13 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
+import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.service.SimpleStoreDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
@@ -62,6 +64,8 @@ public class SimpleStoreManagementService {
 							n.priority(),
 							requesterName)).collect(Collectors.toList()));
 			return dtoConverter.convertStoreEntityListToResponseListDTO(created);
+		} catch (InvalidParameterException ex){
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -77,7 +81,7 @@ public class SimpleStoreManagementService {
 		try {
 			final Page<OrchestrationStore> results = dbService.getPage(
 					pageRequest, 
-					normalized.ids() == null ? null : normalized.ids().stream().map(id -> UUID.fromString(id)).collect(Collectors.toList()),
+					normalized.ids(),
 					normalized.consumerNames(),
 					normalized.serviceDefinitions(),
 					normalized.serviceInstanceIds(),
@@ -86,12 +90,25 @@ public class SimpleStoreManagementService {
 					normalized.createdBy());
 			
 			return dtoConverter.convertStoreEntityPageToResponseListTO(results);
+			
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
-	
-	//=================================================================================================
-	// assistant methods
-	
+
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationSimpleStoreListResponseDTO modifyPriorities(final PriorityRequestDTO dto, final String requesterName, final String origin) {
+		logger.info("modifyPriorities started...");
+		
+		validator.validatePriorityMap(dto, origin);
+		try {
+			final List<OrchestrationStore> modified = dbService.setPriorities(dto, requesterName);
+			return dtoConverter.convertStoreEntityListToResponseListDTO(modified);
+			
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
 }
