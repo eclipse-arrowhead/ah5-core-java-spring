@@ -51,7 +51,7 @@ public class SimpleStoreManagementAPI {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the simple store records accroding to the filters")
+	@Operation(summary = "Returns the simple store records accroding to the filters.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
@@ -76,7 +76,7 @@ public class SimpleStoreManagementAPI {
 	// create
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the created simple store records")
+	@Operation(summary = "Returns the simple store records that were actually created.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
@@ -103,9 +103,9 @@ public class SimpleStoreManagementAPI {
 	
 	// modify-priorities
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the modified simple store records")
+	@Operation(summary = "Returns the simple store records that were actually updated.")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
