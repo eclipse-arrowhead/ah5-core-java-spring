@@ -47,7 +47,8 @@ public class DeviceDiscoveryNormalization {
 		return new NormalizedDeviceRequestDTO(
 				normalizeDeviceName(dto.name()),
 				dto.metadata(),
-				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
+				Utilities.isEmpty(dto.addresses())
+						? new ArrayList<>()
 						: dto.addresses().stream()
 										 .map(a -> addressNormalizer.normalize(a))
 										 .map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))

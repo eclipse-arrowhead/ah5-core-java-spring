@@ -55,8 +55,10 @@ public class SystemDiscoveryNormalization {
 				systemNameNormalizer.normalize(dto.name()),
 				dto.metadata(),
 				versionNormalizer.normalize(dto.version()),
-				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
-						: dto.addresses().stream()
+				Utilities.isEmpty(dto.addresses())
+						? new ArrayList<>()
+						: dto.addresses()
+								.stream()
 								.map(a -> addressNormalizer.normalize(a))
 								.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
 								.collect(Collectors.toList()),

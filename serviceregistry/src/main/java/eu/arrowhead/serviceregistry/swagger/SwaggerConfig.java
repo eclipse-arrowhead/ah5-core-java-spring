@@ -12,6 +12,6 @@ public class SwaggerConfig extends DefaultSwaggerConfig {
 
 	//-------------------------------------------------------------------------------------------------
 	public SwaggerConfig() {
-		super("Arrowhead Service Registry");
+		super("Arrowhead ServiceRegistry");
 	}
 }

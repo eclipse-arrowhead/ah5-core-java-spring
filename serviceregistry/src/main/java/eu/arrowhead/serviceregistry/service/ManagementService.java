@@ -157,8 +157,9 @@ public class ManagementService {
 		logger.debug("removeDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
+		final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
+
 		try {
-			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

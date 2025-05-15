@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
@@ -21,6 +20,14 @@ import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.DeviceNameNormalizer;
 import eu.arrowhead.common.service.validation.name.DeviceNameValidator;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
 import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
@@ -46,6 +53,7 @@ import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
@@ -76,10 +84,34 @@ public class ManagementValidation {
 	private DeviceNameValidator deviceNameValidator;
 
 	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
+
+	@Autowired
+	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private ServiceInstanceIdentifierValidator serviceInstanceIdentifierValidator;
+
+	@Autowired
+	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
+
+	@Autowired
 	private DeviceNameNormalizer deviceNameNormalizer; // for checking duplications
 
 	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer; // for checking duplications
+
+	@Autowired
+	private SystemNameNormalizer systemNameNormalizer; // for checking duplications
+
+	@Autowired
 	private VersionNormalizer versionNormalizer; // for checking duplications
+
+	@Autowired
+	private ServiceInstanceIdentifierNormalizer serviceInstanceIdentifierNormalizer; // for checking duplications
+
+	@Autowired
+	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer; // for checking duplications
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -89,10 +121,368 @@ public class ManagementValidation {
 	//=================================================================================================
 	// methods
 
+	// DEVICE VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedDeviceRequestDTO> validateAndNormalizeCreateDevices(final DeviceListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateDevices started");
+
+		validateCreateDevices(dto, origin);
+
+		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
+
+		try {
+			normalized.forEach(n -> {
+				deviceNameValidator.validateDeviceName(n.name());
+				n.addresses().forEach(address -> addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedDeviceRequestDTO> validateAndNormalizeUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateDevices started");
+
+		validateUpdateDevices(dto, origin);
+
+		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
+
+		try {
+			normalized.forEach(n -> {
+				deviceNameValidator.validateDeviceName(n.name());
+				n.addresses().forEach(address -> addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(address.type()), address.address()));
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public DeviceQueryRequestDTO validateAndNormalizeQueryDevices(final DeviceQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryDevices started");
+
+		validateQueryDevices(dto, origin);
+
+		final DeviceQueryRequestDTO normalized = dto == null
+				? new DeviceQueryRequestDTO(null, null, null, null, null)
+				: normalizer.normalizeDeviceQueryRequestDTO(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.deviceNames())) {
+				normalized.deviceNames().forEach(n -> deviceNameValidator.validateDeviceName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
+				normalized.addresses().forEach(a -> {
+					final AddressDTO aDto = new AddressDTO(normalized.addressType(), a);
+					addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(aDto.type()), aDto.address());
+				});
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveDevices(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeRemoveDevices started");
+
+		validateRemoveDevices(names, origin);
+		final List<String> normalized = normalizer.normalizeDeviceNames(names);
+
+		try {
+			normalized.forEach(n -> deviceNameValidator.validateDeviceName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("validateQueryServiceDefinitions started");
+
+		if (dto != null) {
+			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateServiceDefinitions started");
+
+		validateCreateServiceDefinitions(dto, origin);
+
+		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
+
+		try {
+			normalized.forEach(n -> serviceDefNameValidator.validateServiceDefinitionName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveServiceDefinitions(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeRemoveServiceDefinitions started");
+
+		validateRemoveServiceDefinitions(names, origin);
+		final List<String> normalized = normalizer.normalizeRemoveServiceDefinitions(names);
+		try {
+			normalized.forEach(n -> serviceDefNameValidator.validateServiceDefinitionName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	// SYSTEM VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedSystemRequestDTO> validateAndNormalizeCreateSystems(final SystemListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateSystems started");
+
+		validateCreateSystems(dto, origin);
+
+		final List<NormalizedSystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(dto);
+
+		try {
+			normalized.forEach(n -> {
+				systemNameValidator.validateSystemName(n.name());
+				versionValidator.validateNormalizedVersion(n.version());
+				n.addresses().forEach(a -> addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(a.type()), a.address()));
+				if (!Utilities.isEmpty(n.deviceName())) {
+					deviceNameValidator.validateDeviceName(n.deviceName());
+				}
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedSystemRequestDTO> validateAndNormalizeUpdateSystems(final SystemListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateSystems started");
+
+		return validateAndNormalizeCreateSystems(dto, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public SystemQueryRequestDTO validateAndNormalizeQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQuerySystems started");
+
+		validateQuerySystems(dto, origin);
+		final SystemQueryRequestDTO normalized = normalizer.normalizeSystemQueryRequestDTO(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.systemNames())) {
+				normalized.systemNames().forEach(n -> systemNameValidator.validateSystemName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
+				normalized.addresses().forEach(na -> {
+					final AddressDTO aDto = new AddressDTO(normalized.addressType(), na);
+					addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(aDto.type()), aDto.address());
+				});
+			}
+
+			if (!Utilities.isEmpty(normalized.versions())) {
+				normalized.versions().forEach(nv -> versionValidator.validateNormalizedVersion(nv));
+			}
+
+			if (!Utilities.isEmpty(normalized.deviceNames())) {
+				normalized.deviceNames().forEach(n -> deviceNameValidator.validateDeviceName(n));
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveSystems(final List<String> originalNames, final String origin) {
+		logger.debug("validateAndNormalizeRemoveSystems started");
+
+		validateRemoveSystems(originalNames, origin);
+		final List<String> normalized = normalizer.normalizeRemoveSystemNames(originalNames);
+
+		try {
+			normalized.forEach(n -> systemNameValidator.validateSystemName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceRequestDTO> validateAndNormalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateServiceInstances started");
+
+		validateCreateServiceInstances(dto, origin);
+		final List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
+
+		try {
+			normalized.forEach(n -> {
+				systemNameValidator.validateSystemName(n.systemName());
+				serviceDefNameValidator.validateServiceDefinitionName(n.serviceDefinitionName());
+				versionValidator.validateNormalizedVersion(n.version());
+				interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceUpdateRequestDTO> validateAndNormalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateServiceInstances started");
+
+		validateUpdateServiceInstances(dto, origin);
+		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
+
+		try {
+			normalized.forEach(n -> {
+				serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(n.instanceId());
+				interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveServiceInstances(final List<String> instanceIds, final String origin) {
+		logger.debug("validateAndNormalizeRevokeServiceInstances started");
+
+		validateRemoveServiceInstances(instanceIds, origin);
+		final List<String> normalized = normalizer.normalizeRemoveServiceInstances(instanceIds);
+
+		try {
+			normalized.forEach(i -> serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(i));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceQueryRequestDTO validateAndNormalizeQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryServiceInstances");
+
+		validateQueryServiceInstances(dto, origin);
+		final ServiceInstanceQueryRequestDTO normalized = normalizer.normalizeQueryServiceInstances(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.instanceIds())) {
+				normalized.instanceIds().forEach(i -> serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(i));
+			}
+
+			if (!Utilities.isEmpty(normalized.providerNames())) {
+				normalized.providerNames().forEach(n -> systemNameValidator.validateSystemName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.serviceDefinitionNames())) {
+				normalized.serviceDefinitionNames().forEach(n -> serviceDefNameNormalizer.normalize(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.versions())) {
+				normalized.versions().forEach(v -> versionValidator.validateNormalizedVersion(v));
+			}
+
+			if (!Utilities.isEmpty(normalized.interfaceTemplateNames())) {
+				normalized.interfaceTemplateNames().forEach(i -> interfaceTemplateNameValidator.validateInterfaceTemplateName(i));
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	// INTERFACE VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateListRequestDTO validateAndNormalizeCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateInterfaceTemplates started");
+
+		validateCreateInterfaceTemplates(dto, origin);
+		final ServiceInterfaceTemplateListRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto);
+
+		try {
+			interfaceValidator.validateNormalizedInterfaceTemplates(normalized.interfaceTemplates());
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInterfaceTemplateQueryRequestDTO validateAndNormalizeQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryInterfaceTemplates started");
+
+		validateQueryInterfaceTemplates(dto, origin);
+		final ServiceInterfaceTemplateQueryRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.templateNames())) {
+				normalized.templateNames().forEach(i -> interfaceTemplateNameValidator.validateInterfaceTemplateName(i));
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
+		logger.debug("validateAndNormalizeRemoveInterfaceTemplates started");
+
+		validateRemoveInterfaceTemplates(originalNames, origin);
+		final List<String> normalized = normalizer.normalizeRemoveInterfaceTemplates(originalNames);
+
+		try {
+			normalized.forEach(i -> interfaceTemplateNameValidator.validateInterfaceTemplateName(i));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//=================================================================================================
+	// assistant methods
+
 	// DEVICE VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateDevices(final DeviceListRequestDTO dto, final String origin) {
+	private void validateCreateDevices(final DeviceListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateDevice started");
 
 		if (dto == null) {
@@ -113,10 +503,6 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Device name is empty", origin);
 			}
 
-			if (device.name().length() > Constants.DEVICE_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Device name is too long", origin);
-			}
-
 			final String normalized = deviceNameNormalizer.normalize(device.name());
 			if (names.contains(normalized)) {
 				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
@@ -132,10 +518,6 @@ public class ManagementValidation {
 				if (Utilities.isEmpty(address)) {
 					throw new InvalidParameterException("Address is missing", origin);
 				}
-
-				if (address.trim().length() > Constants.ADDRESS_MAX_LENGTH) {
-					throw new InvalidParameterException("Address is too long", origin);
-				}
 			}
 
 			if (!Utilities.isEmpty(device.metadata())) {
@@ -145,14 +527,14 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
+	private void validateUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
 		logger.debug("validateUpdateDevice started");
 
 		validateCreateDevices(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateQueryDevices(final DeviceQueryRequestDTO dto, final String origin) {
+	private void validateQueryDevices(final DeviceQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryDevices started");
 
 		if (dto != null) {
@@ -177,7 +559,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveDevices(final List<String> names, final String origin) {
+	private void validateRemoveDevices(final List<String> names, final String origin) {
 		logger.debug("validateRemoveDevices started");
 
 		if (Utilities.isEmpty(names)) {
@@ -189,76 +571,10 @@ public class ManagementValidation {
 		}
 	}
 
-	// DEVICE VALIDATION AND NORMALIZATION
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedDeviceRequestDTO> validateAndNormalizeCreateDevices(final DeviceListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeCreateDevices started");
-
-		validateCreateDevices(dto, origin);
-
-		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> validateNormalizedDeviceName(n.name(), origin));
-		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedDeviceRequestDTO> validateAndNormalizeUpdateDevices(final DeviceListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeUpdateDevices started");
-
-		validateUpdateDevices(dto, origin);
-
-		final List<NormalizedDeviceRequestDTO> normalized = normalizer.normalizeDeviceRequestDTOList(dto.devices());
-		normalized.forEach(n -> validateNormalizedDeviceName(n.name(), origin));
-		normalized.forEach(n -> n.addresses().forEach(address -> validateNormalizedAddress(address, origin)));
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public DeviceQueryRequestDTO validateAndNormalizeQueryDevices(final DeviceQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeQueryDevices started");
-
-		validateQueryDevices(dto, origin);
-
-		final DeviceQueryRequestDTO normalized = dto == null ? new DeviceQueryRequestDTO(null, null, null, null, null)
-				: normalizer.normalizeDeviceQueryRequestDTO(dto);
-
-		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
-			normalized.addresses().forEach(a -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), a), origin));
-		}
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRemoveDevices(final List<String> names, final String origin) {
-		logger.debug("validateAndNormalizeRemoveDevices started");
-
-		try {
-			validateRemoveDevices(names, origin);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-
-		return normalizer.normalizeDeviceNames(names);
-	}
-
 	// SERVICE DEFINITION VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
-		logger.debug("validateQueryServiceDefinitions started");
-
-		if (dto != null) {
-			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
+	private void validateCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateServiceDefinition started");
 
 		if (dto == null) {
@@ -276,7 +592,8 @@ public class ManagementValidation {
 		final List<String> names = new ArrayList<>(dto.serviceDefinitionNames().size());
 
 		for (final String name : dto.serviceDefinitionNames()) {
-			if (names.contains(nameNormalizer.normalize(name))) {
+			final String normalized = serviceDefNameNormalizer.normalize(name);
+			if (names.contains(normalized)) {
 				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
 			}
 
@@ -284,13 +601,12 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 
-			names.add(nameNormalizer.normalize(name));
+			names.add(normalized);
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveServiceDefinitions(final List<String> names, final String origin) {
+	private void validateRemoveServiceDefinitions(final List<String> names, final String origin) {
 		logger.debug("validateRemoveServiceDefinitions started");
 
 		if (Utilities.isEmpty(names)) {
@@ -302,36 +618,10 @@ public class ManagementValidation {
 		}
 	}
 
-	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeCreateServiceDefinitions started");
-
-		validateCreateServiceDefinitions(dto, origin);
-
-		final List<String> normalized = normalizer.normalizeCreateServiceDefinitions(dto);
-		normalized.forEach(n -> validateNormalizedName(n, origin));
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRemoveServiceDefinitions(final List<String> names, final String origin) {
-		logger.debug("validateAndNormalizeRemoveServiceDefinitions started");
-
-		try {
-			validateRemoveServiceDefinitions(names, origin);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-
-		return normalizer.normalizeRemoveServiceDefinitions(names);
-	}
-
 	// SYSTEM VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateSystems(final SystemListRequestDTO dto, final String origin) {
+	private void validateCreateSystems(final SystemListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateSystems started");
 
 		if (dto == null) {
@@ -353,24 +643,17 @@ public class ManagementValidation {
 				throw new InvalidParameterException("System name is empty", origin);
 			}
 
-			if (names.contains(nameNormalizer.normalize(system.name()))) {
+			final String normalized = systemNameNormalizer.normalize(system.name());
+			if (names.contains(normalized)) {
 				throw new InvalidParameterException("Duplicated system name: " + system.name(), origin);
 			}
 
-			if (system.name().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("System name is too long: " + system.name(), origin);
-			}
-
-			names.add(nameNormalizer.normalize(system.name()));
+			names.add(normalized);
 
 			if (!Utilities.isEmpty(system.addresses())) {
 				for (final String address : system.addresses()) {
 					if (Utilities.isEmpty(address)) {
 						throw new InvalidParameterException("Address value is missing", origin);
-					}
-
-					if (address.trim().length() > Constants.ADDRESS_MAX_LENGTH) {
-						throw new InvalidParameterException("Address is too long", origin);
 					}
 				}
 			}
@@ -386,14 +669,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateSystems(final SystemListRequestDTO dto, final String origin) {
-		logger.debug("validateUpdateSystems started");
-
-		validateCreateSystems(dto, origin);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
+	private void validateQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQuerySystems started");
 
 		if (dto != null) {
@@ -426,7 +702,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveSystems(final List<String> originalNames, final String origin) {
+	private void validateRemoveSystems(final List<String> originalNames, final String origin) {
 		logger.debug("validateRemoveSystems started");
 
 		if (Utilities.isEmpty(originalNames)) {
@@ -438,62 +714,10 @@ public class ManagementValidation {
 		}
 	}
 
-	// SYSTEM VALIDATION AND NORMALIZATION
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedSystemRequestDTO> validateAndNormalizeCreateSystems(final SystemListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeCreateSystems started");
-
-		validateCreateSystems(dto, origin);
-
-		final List<NormalizedSystemRequestDTO> normalized = normalizer.normalizeSystemRequestDTOs(dto);
-
-		normalized.forEach(n -> validateNormalizedName(n.name(), origin));
-		normalized.forEach(n -> validateNormalizedVersion(n.version(), origin));
-		normalized.forEach(n -> n.addresses().forEach(a -> validateNormalizedAddress(a, origin)));
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedSystemRequestDTO> validateAndNormalizeUpdateSystems(final SystemListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeUpdateSystems started");
-
-		return validateAndNormalizeCreateSystems(dto, origin);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public SystemQueryRequestDTO validateAndNormalizeQuerySystems(final SystemQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeQuerySystems started");
-
-		validateQuerySystems(dto, origin);
-
-		final SystemQueryRequestDTO normalized = normalizer.normalizeSystemQueryRequestDTO(dto);
-
-		if (!Utilities.isEmpty(normalized.addressType()) && !Utilities.isEmpty(normalized.addresses())) {
-			normalized.addresses().forEach(na -> validateNormalizedAddress(new AddressDTO(normalized.addressType(), na), origin));
-		}
-
-		if (!Utilities.isEmpty(normalized.versions())) {
-			normalized.versions().forEach(nv -> validateNormalizedVersion(nv, origin));
-		}
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRemoveSystems(final List<String> originalNames, final String origin) {
-		logger.debug("validateAndNormalizeRemoveSystems started");
-
-		validateRemoveSystems(originalNames, origin);
-
-		return normalizer.normalizeRemoveSystemNames(originalNames);
-	}
-
 	// SERVICE INSTANCE VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
+	private void validateCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateServiceInstances started");
 
 		if (dto == null) {
@@ -512,24 +736,17 @@ public class ManagementValidation {
 				throw new InvalidParameterException("System name is empty", origin);
 			}
 
-			if (instance.systemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("System name is too long: " + instance.systemName(), origin);
-			}
-
 			// service definition name
 			if (Utilities.isEmpty(instance.serviceDefinitionName())) {
 				throw new InvalidParameterException("Service definition name is empty", origin);
 			}
 
-			if (instance.serviceDefinitionName().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Service definition name is too long: " + instance.serviceDefinitionName(), origin);
-			}
-
 			// version -> can be empty (default will be set at normalization)
 
 			// check for duplication
-			final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(nameNormalizer.normalize(instance.systemName()),
-					nameNormalizer.normalize(instance.serviceDefinitionName()),
+			final String instanceId = ServiceInstanceIdUtils.calculateInstanceId(
+					systemNameNormalizer.normalize(instance.systemName()),
+					serviceDefNameNormalizer.normalize(instance.serviceDefinitionName()),
 					versionNormalizer.normalize(instance.version()));
 			if (instanceIds.contains(instanceId)) {
 				throw new InvalidParameterException("Duplicated instance: " + instanceId, origin);
@@ -583,7 +800,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
+	private void validateUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
 		logger.debug("ServiceInstanceUpdateListRequestDTO started");
 
 		if (dto == null) {
@@ -601,11 +818,12 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Instance id is empty");
 			}
 
-			if (instanceIds.contains(nameNormalizer.normalize(instance.instanceId()))) {
+			final String normalized = serviceInstanceIdentifierNormalizer.normalize(instance.instanceId());
+			if (instanceIds.contains(normalized)) {
 				throw new InvalidParameterException("Duplicated instance id: " + instance.instanceId());
 			}
 
-			instanceIds.add(nameNormalizer.normalize(instance.instanceId()));
+			instanceIds.add(normalized);
 
 			// expires at
 			if (!Utilities.isEmpty(instance.expiresAt())) {
@@ -654,7 +872,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveServiceInstances(final List<String> instanceIds, final String origin) {
+	private void validateRemoveServiceInstances(final List<String> instanceIds, final String origin) {
 		logger.debug("validateRemoveServiceInstances started");
 
 		if (Utilities.isEmpty(instanceIds)) {
@@ -663,12 +881,12 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
+	private void validateQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryServiceInstances started");
 
 		if (dto != null) {
 			// pagination
-			pageValidator.validatePageParameter(dto.pagination(), Device.SORTABLE_FIELDS_BY, origin);
+			pageValidator.validatePageParameter(dto.pagination(), ServiceInstance.SORTABLE_FIELDS_BY, origin);
 
 			// check if instanceIds, providerNames and serviceDefinitionNames are all empty
 			if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
@@ -746,61 +964,10 @@ public class ManagementValidation {
 		}
 	}
 
-	// SERVICE INSTANCE VALIDATION AND NORMALIZATION
-
-	//-------------------------------------------------------------------------------------------------
-	public List<ServiceInstanceRequestDTO> validateAndNormalizeCreateServiceInstances(final ServiceInstanceCreateListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeCreateServiceInstances started");
-
-		validateCreateServiceInstances(dto, origin);
-
-		final List<ServiceInstanceRequestDTO> normalized = normalizer.normalizeCreateServiceInstances(dto);
-
-		normalized.forEach(n -> {
-			nameValidator.validateName(n.systemName());
-			nameValidator.validateName(n.serviceDefinitionName());
-			versionValidator.validateNormalizedVersion(n.version());
-			interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
-		});
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<ServiceInstanceUpdateRequestDTO> validateAndNormalizeUpdateServiceInstances(final ServiceInstanceUpdateListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeUpdateServiceInstances started");
-
-		validateUpdateServiceInstances(dto, origin);
-
-		final List<ServiceInstanceUpdateRequestDTO> normalized = normalizer.normalizeUpdateServiceInstances(dto);
-
-		normalized.forEach(n -> interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces()));
-
-		return normalized;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRemoveServiceInstances(final List<String> instanceIds, final String origin) {
-		logger.debug("validateAndNormalizeRevokeServiceInstances started");
-
-		validateRemoveServiceInstances(instanceIds, origin);
-
-		return normalizer.normalizeRemoveServiceInstances(instanceIds);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceQueryRequestDTO validateAndNormalizeQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeQueryServiceInstances");
-
-		validateQueryServiceInstances(dto, origin);
-
-		return normalizer.normalizeQueryServiceInstances(dto);
-	}
-
 	// INTERFACE VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
+	private void validateCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
 		logger.debug("validateCreateInterfaceTemplates started");
 
 		if (dto == null) {
@@ -821,10 +988,11 @@ public class ManagementValidation {
 				throw new InvalidParameterException("Interface template name is empty", origin);
 			}
 
-			if (templateNames.contains(templateDTO.name().trim().toLowerCase())) {
+			final String normalized = interfaceTemplateNameNormalizer.normalize(templateDTO.name());
+			if (templateNames.contains(normalized)) {
 				throw new InvalidParameterException("Duplicate interface template name: " + templateDTO.name(), origin);
 			}
-			templateNames.add(templateDTO.name().trim().toLowerCase());
+			templateNames.add(normalized);
 
 			if (Utilities.isEmpty(templateDTO.protocol())) {
 				throw new InvalidParameterException("Interface template protocol is empty", origin);
@@ -842,7 +1010,8 @@ public class ManagementValidation {
 					}
 
 					if (propertyDTO.name().contains(MetadataValidation.METADATA_COMPOSITE_KEY_DELIMITER)) {
-						throw new InvalidParameterException("Invalid interface template property name: " + propertyDTO.name() + ", it should not contain " + MetadataValidation.METADATA_COMPOSITE_KEY_DELIMITER + " character", origin);
+						throw new InvalidParameterException("Invalid interface template property name: " + propertyDTO.name() + ", it should not contain "
+								+ MetadataValidation.METADATA_COMPOSITE_KEY_DELIMITER + " character", origin);
 					}
 
 					if (propertyNames.contains(propertyDTO.name().trim())) {
@@ -865,7 +1034,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
+	private void validateQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryInterfaceTemplates started");
 
 		if (dto != null) {
@@ -882,7 +1051,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
+	private void validateRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
 		logger.debug("validateRemoveInterfaceTemplate started");
 
 		if (Utilities.isEmpty(originalNames)) {
@@ -891,83 +1060,6 @@ public class ManagementValidation {
 
 		if (Utilities.containsNullOrEmpty(originalNames)) {
 			throw new InvalidParameterException("Interface templpate name list contains null or empty element", origin);
-		}
-	}
-
-	// INTERFACE VALIDATION AND NORMALIZATION
-
-	//-------------------------------------------------------------------------------------------------
-	public ServiceInterfaceTemplateListRequestDTO validateAndNormalizeCreateInterfaceTemplates(final ServiceInterfaceTemplateListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeCreateInterfaceTemplates started");
-
-		validateCreateInterfaceTemplates(dto, origin);
-		final ServiceInterfaceTemplateListRequestDTO normalized = normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto);
-
-		try {
-			interfaceValidator.validateNormalizedInterfaceTemplates(normalized.interfaceTemplates());
-
-			return normalized;
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public ServiceInterfaceTemplateQueryRequestDTO validateAndNormalizeQueryInterfaceTemplates(final ServiceInterfaceTemplateQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeQueryInterfaceTemplates started");
-
-		validateQueryInterfaceTemplates(dto, origin);
-
-		return normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRemoveInterfaceTemplates(final List<String> originalNames, final String origin) {
-		logger.debug("validateAndNormalizeRemoveInterfaceTemplates started");
-
-		validateRemoveInterfaceTemplates(originalNames, origin);
-
-		return normalizer.normalizeRemoveInterfaceTemplates(originalNames);
-	}
-
-	//=================================================================================================
-	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateNormalizedDeviceName(final String name, final String origin) {
-		logger.debug("validateNormalizedDeviceName started");
-
-		try {
-			deviceNameValidator.validateDeviceName(name);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateNormalizedVersion(final String version, final String origin) {
-		logger.debug("validateNormalizedVersion started");
-
-		try {
-			versionValidator.validateNormalizedVersion(version);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateNormalizedAddress(final AddressDTO dto, final String origin) {
-		logger.debug("validateNormalizedAddress started");
-		Assert.isTrue(Utilities.isEnumValue(dto.type(), AddressType.class), "address type is invalid");
-
-		if (dto.address().trim().length() > Constants.ADDRESS_MAX_LENGTH) {
-			throw new InvalidParameterException("Address is too long", origin);
-		}
-
-		try {
-			addressTypeValidator.validateNormalizedAddress(AddressType.valueOf(dto.type()), dto.address());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 	}
 }

@@ -14,11 +14,20 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.DeviceNameNormalizer;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
@@ -27,11 +36,6 @@ import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
-import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
-import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
-import eu.arrowhead.dto.ServiceInstanceRequestDTO;
-import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
-import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 
 @Service
 public class ManagementNormalization {
@@ -53,6 +57,18 @@ public class ManagementNormalization {
 	@Autowired
 	private DeviceNameNormalizer deviceNameNormalizer;
 
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+	@Autowired
+	private SystemNameNormalizer systemNameNormalizer;
+
+	@Autowired
+	private ServiceInstanceIdentifierNormalizer serviceInstanceIdentifierNormalizer;
+
+	@Autowired
+	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -69,15 +85,17 @@ public class ManagementNormalization {
 		final List<NormalizedSystemRequestDTO> normalized = new ArrayList<>(dtoList.systems().size());
 		for (final SystemRequestDTO system : dtoList.systems()) {
 			normalized.add(new NormalizedSystemRequestDTO(
-					nameNormalizer.normalize(system.name()),
+					systemNameNormalizer.normalize(system.name()),
 					system.metadata(),
 					versionNormalizer.normalize(system.version()),
-					Utilities.isEmpty(system.addresses()) ? new ArrayList<>()
-							: system.addresses().stream()
+					Utilities.isEmpty(system.addresses())
+							? new ArrayList<>()
+							: system.addresses()
+									.stream()
 									.map(a -> addressNormalizer.normalize(a))
 									.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
 									.collect(Collectors.toList()),
-					Utilities.isEmpty(system.deviceName()) ? null : nameNormalizer.normalize(system.deviceName())));
+					Utilities.isEmpty(system.deviceName()) ? null : deviceNameNormalizer.normalize(system.deviceName())));
 		}
 
 		return normalized;
@@ -93,19 +111,22 @@ public class ManagementNormalization {
 
 		return new SystemQueryRequestDTO(
 				dto.pagination(), // no need to normalize, because it will happen in the getPageRequest method
-				Utilities.isEmpty(dto.systemNames()) ? null
-						: dto.systemNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addresses()) ? null
-						: dto.addresses().stream().map(n -> n.trim()).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addressType()) ? null
-						: dto.addressType().trim(),
+				Utilities.isEmpty(dto.systemNames())
+						? null
+						: dto.systemNames().stream().map(n -> systemNameNormalizer.normalize(n)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.addresses())
+						? null
+						: dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.addressType())
+						? null
+						: dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList(),
-				Utilities.isEmpty(dto.versions()) ? null
-						: dto.versions().stream()
-								.map(v -> versionNormalizer.normalize(v))
-								.collect(Collectors.toList()),
-				Utilities.isEmpty(dto.deviceNames()) ? null
-						: dto.deviceNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()));
+				Utilities.isEmpty(dto.versions())
+						? null
+						: dto.versions().stream().map(v -> versionNormalizer.normalize(v)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.deviceNames())
+						? null
+						: dto.deviceNames().stream().map(n -> deviceNameNormalizer.normalize(n)).collect(Collectors.toList()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -113,9 +134,10 @@ public class ManagementNormalization {
 		logger.debug("normalizeRemoveSystemNames started");
 		Assert.notNull(originalNames, "name list is null");
 
-		return originalNames.stream()
+		return originalNames
+				.stream()
 				.filter(n -> !Utilities.isEmpty(n))
-				.map(n -> nameNormalizer.normalize(n))
+				.map(n -> systemNameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -132,8 +154,10 @@ public class ManagementNormalization {
 			normalized.add(new NormalizedDeviceRequestDTO(
 					deviceNameNormalizer.normalize(device.name()),
 					device.metadata(),
-					Utilities.isEmpty(device.addresses()) ? new ArrayList<>()
-							: device.addresses().stream()
+					Utilities.isEmpty(device.addresses())
+							? new ArrayList<>()
+							: device.addresses()
+									.stream()
 									.map(a -> addressNormalizer.normalize(a))
 									.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
 									.collect(Collectors.toList())));
@@ -149,7 +173,7 @@ public class ManagementNormalization {
 
 		return new DeviceQueryRequestDTO(
 				dto.pagination(),
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> nameNormalizer.normalize(n)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> deviceNameNormalizer.normalize(n)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
 				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
 				dto.metadataRequirementList());
@@ -160,9 +184,10 @@ public class ManagementNormalization {
 		logger.debug("normalizeDeviceNames started");
 		Assert.notNull(originalNames, "name list is null");
 
-		return originalNames.stream()
+		return originalNames
+				.stream()
 				.filter(n -> !Utilities.isEmpty(n))
-				.map(n -> nameNormalizer.normalize(n))
+				.map(n -> deviceNameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -176,7 +201,7 @@ public class ManagementNormalization {
 
 		return dto.serviceDefinitionNames()
 				.stream()
-				.map(n -> nameNormalizer.normalize(n))
+				.map(n -> serviceDefNameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -187,7 +212,7 @@ public class ManagementNormalization {
 
 		return names
 				.stream()
-				.map(n -> nameNormalizer.normalize(n))
+				.map(n -> serviceDefNameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -199,7 +224,10 @@ public class ManagementNormalization {
 		Assert.notNull(dto, "ServiceInstanceCreateListRequestDTO is null");
 		Assert.notNull(dto.instances(), "instance list is null");
 
-		return dto.instances().stream().map(i -> normalizeServiceInstanceRequestDTO(i)).collect(Collectors.toList());
+		return dto.instances()
+				.stream()
+				.map(i -> normalizeServiceInstanceRequestDTO(i))
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -208,7 +236,10 @@ public class ManagementNormalization {
 		Assert.notNull(dto, "ServiceInstanceUpdateListRequestDTO is null");
 		Assert.notNull(dto.instances(), "instance list is null");
 
-		return dto.instances().stream().map(i -> normalizeServiceInstanceUpdateRequestDTO(i)).collect(Collectors.toList());
+		return dto.instances()
+				.stream()
+				.map(i -> normalizeServiceInstanceUpdateRequestDTO(i))
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -216,7 +247,10 @@ public class ManagementNormalization {
 		logger.debug("normalizeRemoveServiceInstances started");
 		Assert.notNull(instanceIds, "instanceId list is null");
 
-		return instanceIds.stream().map(i -> nameNormalizer.normalize(i)).collect(Collectors.toList());
+		return instanceIds
+				.stream()
+				.map(i -> serviceInstanceIdentifierNormalizer.normalize(i))
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -226,14 +260,14 @@ public class ManagementNormalization {
 
 		return new ServiceInstanceQueryRequestDTO(
 				dto.pagination(),
-				Utilities.isEmpty(dto.instanceIds()) ? new ArrayList<>() : dto.instanceIds().stream().map(id -> normalizeServiceInstanceId(id)).toList(),
-				Utilities.isEmpty(dto.providerNames()) ? new ArrayList<>() : dto.providerNames().stream().map(n -> normalizeSystemName(n)).toList(),
-				Utilities.isEmpty(dto.serviceDefinitionNames()) ? new ArrayList<>() : dto.serviceDefinitionNames().stream().map(sd -> nameNormalizer.normalize(sd)).toList(),
+				Utilities.isEmpty(dto.instanceIds()) ? new ArrayList<>() : dto.instanceIds().stream().map(id -> serviceInstanceIdentifierNormalizer.normalize(id)).toList(),
+				Utilities.isEmpty(dto.providerNames()) ? new ArrayList<>() : dto.providerNames().stream().map(n -> systemNameNormalizer.normalize(n)).toList(),
+				Utilities.isEmpty(dto.serviceDefinitionNames()) ? new ArrayList<>() : dto.serviceDefinitionNames().stream().map(sd -> serviceDefNameNormalizer.normalize(sd)).toList(),
 				Utilities.isEmpty(dto.versions()) ? new ArrayList<>() : dto.versions().stream().map(v -> versionNormalizer.normalize(v)).toList(),
 				Utilities.isEmpty(dto.alivesAt()) ? "" : dto.alivesAt().trim(),
 				Utilities.isEmpty(dto.metadataRequirementsList()) ? new ArrayList<>() : dto.metadataRequirementsList(),
-				Utilities.isEmpty(dto.addressTypes()) ?  new ArrayList<>() : dto.addressTypes().stream().map(at -> at.trim().toUpperCase()).toList(),
-				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> nameNormalizer.normalize(i)).toList(),
+				Utilities.isEmpty(dto.addressTypes()) ? new ArrayList<>() : dto.addressTypes().stream().map(at -> at.trim().toUpperCase()).toList(),
+				Utilities.isEmpty(dto.interfaceTemplateNames()) ? new ArrayList<>() : dto.interfaceTemplateNames().stream().map(i -> interfaceTemplateNameNormalizer.normalize(i)).toList(),
 				Utilities.isEmpty(dto.interfacePropertyRequirementsList()) ? new ArrayList<>() : dto.interfacePropertyRequirementsList(),
 				Utilities.isEmpty(dto.policies()) ? new ArrayList<>() : dto.policies().stream().map(p -> p.trim().toUpperCase()).toList());
 	}
@@ -247,7 +281,8 @@ public class ManagementNormalization {
 		Assert.notNull(dto.interfaceTemplates(), "interface template list is null");
 
 		return new ServiceInterfaceTemplateListRequestDTO(
-				dto.interfaceTemplates().stream()
+				dto.interfaceTemplates()
+						.stream()
 						.map(t -> interfaceNormalizer.normalizeTemplateDTO(t))
 						.toList());
 	}
@@ -262,7 +297,7 @@ public class ManagementNormalization {
 
 		return new ServiceInterfaceTemplateQueryRequestDTO(
 				dto.pagination(), // no need to normalize, because it will happen in the getPageRequest method
-				Utilities.isEmpty(dto.templateNames()) ? new ArrayList<>() : dto.templateNames().stream().map(n -> nameNormalizer.normalize(n)).toList(),
+				Utilities.isEmpty(dto.templateNames()) ? new ArrayList<>() : dto.templateNames().stream().map(n -> interfaceTemplateNameNormalizer.normalize(n)).toList(),
 				Utilities.isEmpty(dto.protocols()) ? new ArrayList<>() : dto.protocols().stream().map(p -> p.trim().toLowerCase()).toList());
 	}
 
@@ -273,7 +308,7 @@ public class ManagementNormalization {
 
 		return names
 				.stream()
-				.map(n -> nameNormalizer.normalize(n))
+				.map(n -> interfaceTemplateNameNormalizer.normalize(n))
 				.collect(Collectors.toList());
 	}
 
@@ -286,10 +321,10 @@ public class ManagementNormalization {
 
 		return new ServiceInstanceRequestDTO(
 				// system name
-				nameNormalizer.normalize(dto.systemName()),
+				systemNameNormalizer.normalize(dto.systemName()),
 
 				// service definition name
-				nameNormalizer.normalize(dto.serviceDefinitionName()),
+				serviceDefNameNormalizer.normalize(dto.serviceDefinitionName()),
 
 				// version
 				versionNormalizer.normalize(dto.version()),
@@ -313,7 +348,7 @@ public class ManagementNormalization {
 
 		return new ServiceInstanceUpdateRequestDTO(
 				// instance id
-				nameNormalizer.normalize(dto.instanceId()),
+				serviceInstanceIdentifierNormalizer.normalize(dto.instanceId()),
 
 				// expires at
 				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
@@ -326,21 +361,5 @@ public class ManagementNormalization {
 						.stream()
 						.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
 						.toList());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private String normalizeSystemName(final String systemName) {
-		logger.debug("normalizeSystemName started");
-		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
-
-		return nameNormalizer.normalize(systemName);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private String normalizeServiceInstanceId(final String instanceId) {
-		logger.debug("normalizeServiceInstanceId started");
-		Assert.isTrue(!Utilities.isEmpty(instanceId), "Service instance id is empty");
-
-		return nameNormalizer.normalize(instanceId);
 	}
 }

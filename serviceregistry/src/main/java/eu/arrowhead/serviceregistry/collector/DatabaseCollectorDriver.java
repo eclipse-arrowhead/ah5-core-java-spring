@@ -156,7 +156,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		serviceDefNameValidator.validateServiceDefinitionName(nServiceDefinitionName);
 
 		final String nInterfaceTemplateName = interfaceTemplateNameNormalizer.normalize(interfaceTemplateName);
-		interfaceTemplateNameValidator.validateIntefaceTemplateName(nInterfaceTemplateName);
+		interfaceTemplateNameValidator.validateInterfaceTemplateName(nInterfaceTemplateName);
 
 		final PageRequest pagination = PageRequest.of(0, 1, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
 

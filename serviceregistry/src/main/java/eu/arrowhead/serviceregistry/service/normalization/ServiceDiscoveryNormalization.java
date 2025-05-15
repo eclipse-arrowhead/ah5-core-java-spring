@@ -58,7 +58,8 @@ public class ServiceDiscoveryNormalization {
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
 				dto.metadata(),
-				Utilities.isEmpty(dto.interfaces()) ? new ArrayList<>()
+				Utilities.isEmpty(dto.interfaces())
+						? new ArrayList<>()
 						: dto.interfaces()
 								.stream()
 								.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
