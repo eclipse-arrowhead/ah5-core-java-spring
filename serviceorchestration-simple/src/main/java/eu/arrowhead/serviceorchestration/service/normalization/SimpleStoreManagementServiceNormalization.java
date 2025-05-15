@@ -59,8 +59,8 @@ public class SimpleStoreManagementServiceNormalization {
 						: dto.consumerNames().stream().map(c -> nameNormalizer.normalize(c)).collect(Collectors.toList()),
 				
 				//TODO: replace with the new implementation
-				Utilities.isEmpty(dto.serviceDefinitionNames()) ? null 
-						: dto.serviceDefinitionNames().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
+				Utilities.isEmpty(dto.serviceDefinitions()) ? null 
+						: dto.serviceDefinitions().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
 				
 				//TODO: replace with the new implementation
 				Utilities.isEmpty(dto.serviceInstanceIds()) ? null 

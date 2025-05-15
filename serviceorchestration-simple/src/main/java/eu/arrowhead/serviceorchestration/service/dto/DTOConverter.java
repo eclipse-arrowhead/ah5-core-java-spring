@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -26,14 +27,21 @@ public class DTOConverter {
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityListToResponseListDTO(final List<OrchestrationStore> entities) {
 		logger.debug("convertOrchestrationStoreListToResponseListDTO started...");
-		
-		if (entities == null) {
-			return null;
-		}
+		Assert.notNull(entities, "entities is null");
 		
 		return new OrchestrationSimpleStoreListResponseDTO(
 				entities.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()), 
 				entities.size());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityPageToResponseListTO(final Page<OrchestrationStore> results) {
+		logger.debug("convertStoreEntityPageToResponesListTO started...");
+		Assert.notNull(results, "results is null");
+		
+		return new OrchestrationSimpleStoreListResponseDTO(
+				results.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()), 
+				results.getTotalElements());
 	}
 	
 	//=================================================================================================

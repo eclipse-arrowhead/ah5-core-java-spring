@@ -64,7 +64,7 @@ public class SimpleStoreManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody OrchestrationSimpleStoreListResponseDTO query(@RequestBody(required=false) final OrchestrationSimpleStoreQueryRequestDTO dto) {
+	public @ResponseBody OrchestrationSimpleStoreListResponseDTO query(@RequestBody final OrchestrationSimpleStoreQueryRequestDTO dto) {
 		logger.debug("query started...");
 
 		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;

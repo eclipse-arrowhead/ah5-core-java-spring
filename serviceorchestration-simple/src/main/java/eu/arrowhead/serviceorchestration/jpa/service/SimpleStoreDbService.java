@@ -58,7 +58,7 @@ public class SimpleStoreDbService {
 			final PageRequest pagination,
 			final List<UUID> ids,
 			final List<String> consumerNames,
-			final List<String> serviceDefinitionNames,
+			final List<String> serviceDefinitions,
 			final List<String> serviceInstanceIds,
 			final Integer minPriority,
 			final Integer maxPriority,
@@ -67,57 +67,80 @@ public class SimpleStoreDbService {
 		logger.debug("getPage started...");
 		Assert.notNull(pagination, "page is null");
 		
-		// withot filters
-		if (ids == null 
-			&& consumerNames == null 
-			&& serviceDefinitionNames == null 
-			&& serviceInstanceIds == null 
-			&& minPriority == null
-			&& maxPriority == null
-			&& createdBy == null) {
-			
+		// without filters
+		if (Utilities.allEmpty(ids, consumerNames, serviceDefinitions, serviceInstanceIds)
+				&& Utilities.isEmpty(createdBy)
+				&& minPriority == null 
+				&& maxPriority == null) {
 			return storeRepo.findAll(pagination);
 		}
 		
-		// with filters
+		try {
 		
-		//TODO: create BASE_FILTER
-		//lock?
-		List<OrchestrationStore> matchings = ids == null ? storeRepo.findAll() : storeRepo.findAllById(ids);
-		for (OrchestrationStore match : matchings) {
-			
-			if (consumerNames != null && !consumerNames.contains(match.getConsumer())) {
-				matchings.remove(match);
-				continue;
+			// with filters
+			BaseFilter baseFilter = BaseFilter.NONE;
+			List<OrchestrationStore> toFilter = new ArrayList<>();
+			if (!Utilities.isEmpty(ids)) {
+				baseFilter = BaseFilter.ID;
+				toFilter = storeRepo.findAllById(ids);
+			} else if (!Utilities.isEmpty(consumerNames)) {
+				baseFilter = BaseFilter.CONSUMER;
+				toFilter = storeRepo.findAllByConsumerIn(consumerNames);
+			} else if (!Utilities.isEmpty(serviceDefinitions)) {
+				baseFilter = BaseFilter.DEFINITION;
+				toFilter = storeRepo.findAllByServiceDefinitionIn(serviceDefinitions);
+			} else if (!Utilities.isEmpty(serviceInstanceIds)) {
+				baseFilter = BaseFilter.INSTANCE;
+				toFilter = storeRepo.findAllByServiceInstanceIdIn(serviceInstanceIds);
+			} else if (!Utilities.isEmpty(createdBy)) {
+				baseFilter = BaseFilter.CREATOR;
+				toFilter = storeRepo.findAllByCreatedBy(createdBy);
+			} else {
+				toFilter = storeRepo.findAll();
+			}
+			final List<UUID> matchingIds = new ArrayList<UUID>();
+			for (final OrchestrationStore entity : toFilter) {
+				
+				// match against id not needed, because if it was not empty, it was the baseFilter
+				
+				// match against consumer
+				if (baseFilter != BaseFilter.CONSUMER && consumerNames != null && !consumerNames.contains(entity.getConsumer())) {
+					continue;
+				}
+				
+				// match against service definition
+				if (baseFilter != BaseFilter.DEFINITION && serviceDefinitions != null && !serviceDefinitions.contains(entity.getServiceDefinition())) {
+					continue;
+				}
+				
+				// match against service instance id
+				if (baseFilter != BaseFilter.INSTANCE && serviceInstanceIds != null && !serviceInstanceIds.contains(entity.getServiceInstanceId())) {
+					continue;
+				}
+				
+				// match against created by
+				if (baseFilter != BaseFilter.CREATOR && createdBy != null && !createdBy.equals(entity.getCreatedBy())) {
+					continue;
+				}
+				
+				// match against minimum priority
+				if (minPriority != null && entity.getPriority() < minPriority) {
+					continue;
+				}
+				
+				// match against maximum priority
+				if (maxPriority != null && entity.getPriority() > maxPriority) {
+					continue;
+				}
+				matchingIds.add(entity.getId());
 			}
 			
-			if (serviceDefinitionNames != null && !serviceDefinitionNames.contains(match.getServiceDefinition())) {
-				matchings.remove(match);
-				continue;
-			}
-			
-			if (serviceInstanceIds != null && !serviceInstanceIds.contains(match.getServiceInstanceId())) {
-				matchings.remove(match);
-				continue;
-			}
-			
-			if (createdBy != null && !createdBy.equals(match.getCreatedBy())) {
-				matchings.remove(match);
-			}
-			
-			if (minPriority != null && match.getPriority() < minPriority) {
-				matchings.remove(match);
-				continue;
-			}
-			
-			if (maxPriority != null && match.getPriority() > maxPriority) {
-				matchings.remove(match);
-				continue;
-			}
+			return storeRepo.findAllByIdIn(matchingIds, pagination);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
-		
-		//TODO
-		return null;
 	}
 	
 	//=================================================================================================
@@ -138,5 +161,12 @@ public class SimpleStoreDbService {
 						+ candidate.getServiceInstanceId() + ", priority: " + candidate.getPriority());
 			}
 		}
+	}
+	
+	//=================================================================================================
+	// nested classes
+	
+	private enum BaseFilter {
+		NONE, ID, CONSUMER, DEFINITION, INSTANCE, CREATOR;
 	}
 }

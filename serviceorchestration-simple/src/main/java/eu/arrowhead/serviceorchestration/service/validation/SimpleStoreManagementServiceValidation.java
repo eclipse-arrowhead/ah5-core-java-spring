@@ -3,7 +3,6 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,13 +71,21 @@ public class SimpleStoreManagementServiceValidation {
 		
 		validateQuery(dto, origin);
 		
-		final OrchestrationSimpleStoreQueryRequestDTO normalized = dto == null ? new OrchestrationSimpleStoreQueryRequestDTO(null, null, null, null, null, null, null, null) 
-				: normalizer.normalizeQuery(dto);
+		final OrchestrationSimpleStoreQueryRequestDTO normalized = normalizer.normalizeQuery(dto);
 		try {
 			//TODO: replace these with the new implementation
-			normalized.consumerNames().forEach(c -> { if (c != null) {nameValidator.validateName(c);}});
-			normalized.serviceDefinitionNames().forEach(s -> { if (s != null) nameValidator.validateName(s);});
-			normalized.serviceInstanceIds().forEach(s -> { if (s != null) nameValidator.validateServiceInstanceId(s);});
+			if (normalized.consumerNames() != null) {
+				normalized.consumerNames().forEach(c -> nameValidator.validateName(c));
+			}
+			
+			if (normalized.serviceDefinitions() != null) {
+				normalized.serviceDefinitions().forEach(s -> nameValidator.validateName(s));
+			}
+			
+			if (normalized.serviceInstanceIds() != null) {
+				normalized.serviceInstanceIds().forEach(s -> nameValidator.validateServiceInstanceId(s));
+			}
+			
 			if (normalized.createdBy() != null) {
 				nameValidator.validateName(normalized.createdBy());
 			}
@@ -147,38 +154,48 @@ public class SimpleStoreManagementServiceValidation {
 	
 	//-------------------------------------------------------------------------------------------------
 	private void validateQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
-		if (dto != null) {
+		Assert.notNull(dto, "dto is null");
 			
+		if (dto.pagination() == null) {
+			throw new InvalidParameterException("Page is null!", origin);
+		} 
+		else {
 			pageValidator.validatePageParameter(dto.pagination(), OrchestrationStore.SORTABLE_FIELDS_BY, origin);
-			
-			if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNullOrEmpty(dto.ids())) {
-				throw new InvalidParameterException("id list contains null or empty element!", origin);
-			}
-			
-			if (!Utilities.isEmpty(dto.consumerNames()) && Utilities.containsNullOrEmpty(dto.ids())) {
-				throw new InvalidParameterException("consumer name list contains null or empty element!", origin);
-			}
-			
-			if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
-				throw new InvalidParameterException("service definition name list contains null or empty element!", origin);
-			}
-			
-			if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
-				throw new InvalidParameterException("service instance id list contains null or empty element!", origin);
-			}
-			
-			if (dto.minPriority() < 0) {
-				throw new InvalidParameterException("invalid minimum priority: should be a non-negative integer", origin);
-			}
-			
-			if (dto.maxPriority() < 0) {
-				throw new InvalidParameterException("invalid maximum priority: should be a non-negative integer", origin);
-			}
 		}
-		
-		//TODO: dto mégsem lehet null,
-		// id, consumer, servicedef, serviceinstance, createdby közül valamelyik ki legyen töltve
-		throw new NotImplementedException();
+			
+		if (Utilities.allEmpty(dto.ids(), dto.consumerNames(), dto.serviceDefinitions(),
+				dto.serviceInstanceIds()) && Utilities.isEmpty(dto.createdBy())) {
+			throw new InvalidParameterException("At least one of the following fields must be specified: "
+					+ "ids, consumerNames, serviceDefinitions, serviceInstanceIds, createdBy.");
+		}
+			
+		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNullOrEmpty(dto.ids())) {
+			throw new InvalidParameterException("Id list contains null or empty element!", origin);
+		}
+			
+		if (!Utilities.isEmpty(dto.consumerNames()) && Utilities.containsNullOrEmpty(dto.ids())) {
+			throw new InvalidParameterException("Consumer name list contains null or empty element!", origin);
+		}
+			
+		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element!", origin);
+		}
+			
+		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
+			throw new InvalidParameterException("Service instance id list contains null or empty element!", origin);
+		}
+			
+		if (dto.minPriority() != null && dto.minPriority() < 0) {
+			throw new InvalidParameterException("Invalid minimum priority: should be a non-negative integer.", origin);
+		}
+			
+		if (dto.maxPriority() != null && dto.maxPriority() < 0) {
+			throw new InvalidParameterException("Invalid maximum priority: should be a non-negative integer.", origin);
+		}
+			
+		if (dto.maxPriority() != null && dto.minPriority() != null && dto.minPriority() > dto.maxPriority()) {
+			throw new InvalidParameterException("Minimum priority should not be greater than maxim priority!");
+		}
 	}
 	
 }

@@ -3,6 +3,8 @@ package eu.arrowhead.serviceorchestration.jpa.repository;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
@@ -14,5 +16,20 @@ public interface OrchestrationStoreRepository extends RefreshableRepository<Orch
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationStore> findAllByConsumerAndServiceInstanceIdAndPriority(
 			final String consumer, final String serviceInstanceId, final int priority);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByConsumerIn(final List<String> consumerNames);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByServiceDefinitionIn(final List<String> serviceDefinitionNames);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByServiceInstanceIdIn(final List<String> serviceInstanceIds);
+
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByCreatedBy(final String createdBy);
+
+	//-------------------------------------------------------------------------------------------------
+	public Page<OrchestrationStore> findAllByIdIn(final List<UUID> matchingIds, final PageRequest pagination);
 	
 }
