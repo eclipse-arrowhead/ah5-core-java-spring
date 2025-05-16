@@ -29,31 +29,31 @@ import eu.arrowhead.serviceorchestration.service.validation.SimpleStoreManagemen
 
 @Service
 public class SimpleStoreManagementService {
-	
+
 	//=================================================================================================
 	// members
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	@Autowired
 	private SimpleStoreManagementServiceValidation validator;
-	
+
 	@Autowired
 	private SimpleStoreDbService dbService;
-	
+
 	@Autowired
 	private PageService pageService;
-	
+
 	@Autowired
 	private DTOConverter dtoConverter;
 
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO createSimpleStoreEntries(final OrchestrationSimpleStoreListRequestDTO dto, final String requesterName, final String origin) {
 		logger.info("createSimpleStoreEntries started...");
-		
+
 		final List<OrchestrationSimpleStoreRequestDTO> normalized = validator.validateAndNormalizeCreateBulk(dto, origin);
 		try {
 			final List<OrchestrationStore> created = dbService.createBulk(normalized
@@ -74,13 +74,13 @@ public class SimpleStoreManagementService {
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO querySimpleStoreEntries(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		logger.info("querySimpleStoreEntries started...");
-		
+
 		final OrchestrationSimpleStoreQueryRequestDTO normalized = validator.validateAndNormalizeQuery(dto, origin);
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, OrchestrationStore.SORTABLE_FIELDS_BY, OrchestrationStore.DEFAULT_SORT_FIELD, origin);
-		
+
 		try {
 			final Page<OrchestrationStore> results = dbService.getPage(
-					pageRequest, 
+					pageRequest,
 					normalized.ids(),
 					normalized.consumerNames(),
 					normalized.serviceDefinitions(),
@@ -88,9 +88,9 @@ public class SimpleStoreManagementService {
 					normalized.minPriority(),
 					normalized.maxPriority(),
 					normalized.createdBy());
-			
+
 			return dtoConverter.convertStoreEntityPageToResponseListTO(results);
-			
+
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -99,14 +99,27 @@ public class SimpleStoreManagementService {
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO modifyPriorities(final PriorityRequestDTO dto, final String requesterName, final String origin) {
 		logger.info("modifyPriorities started...");
-		
+
 		validator.validatePriorityMap(dto, origin);
 		try {
 			final List<OrchestrationStore> modified = dbService.setPriorities(dto, requesterName);
 			return dtoConverter.convertStoreEntityListToResponseListDTO(modified);
-			
+
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void removeSimpleStoreEntries(final List<UUID> uuids, final String origin) {
+		logger.info("removeSimpleStoreEntries started...");
+
+		validator.validateUUIDList(uuids, origin);
+
+		try {
+			dbService.deleteBulk(uuids);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

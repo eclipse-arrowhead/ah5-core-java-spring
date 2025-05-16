@@ -1,14 +1,19 @@
 package eu.arrowhead.serviceorchestration.api.http;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,18 +40,18 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping(SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class SimpleStoreManagementAPI {
-	
+
 	//=================================================================================================
 	// members
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	@Autowired
 	private SimpleStoreManagementService mgmtService;
-	
+
 	@Autowired
 	private SystemNamePreprocessor preprocessor;
-	
+
 	//=================================================================================================
 	// methods
 
@@ -71,9 +76,6 @@ public class SimpleStoreManagementAPI {
 		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
 		return mgmtService.querySimpleStoreEntries(dto, origin);
 	}
-	
-	
-	// create
 
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the simple store records that were actually created.")
@@ -98,10 +100,29 @@ public class SimpleStoreManagementAPI {
 		final String requesterName = preprocessor.process(httpServletRequest, origin);
 		return mgmtService.createSimpleStoreEntries(dto, requesterName, origin);
 	}
-	
-	// remove
-	
-	// modify-priorities
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Deletes the simple store records by UUID.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@DeleteMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH)
+	public void remove(final @RequestParam List<UUID> uuids) {
+		logger.debug("remove started...");
+
+		final String origin = HttpMethod.DELETE.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH;
+		mgmtService.removeSimpleStoreEntries(uuids, origin);
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the simple store records that were actually updated.")
 	@ApiResponses(value = {
@@ -124,6 +145,4 @@ public class SimpleStoreManagementAPI {
 		final String requesterName = preprocessor.process(httpServletRequest, origin);
 		return mgmtService.modifyPriorities(dto, requesterName, origin);
 	}
-	
-	
 }

@@ -23,6 +23,7 @@ public final class SimpleServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
 	public static final String HTTP_API_OP_MODIFY_PRIORITIES_PATH = "/modify-priorities";
+	public static final String HTTP_API_OP_REMOVE_PATH = "/remove";
 	
 
 	//=================================================================================================
