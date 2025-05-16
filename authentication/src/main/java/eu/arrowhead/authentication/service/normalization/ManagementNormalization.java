@@ -20,7 +20,7 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO
 import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
@@ -38,7 +38,7 @@ public class ManagementNormalization {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	@Autowired
 	private PageService pageService;
@@ -62,7 +62,7 @@ public class ManagementNormalization {
 
 		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(dto.identities().size());
 		for (final IdentityMgmtRequestDTO identity : dto.identities()) {
-			final String normalizedSystem = nameNormalizer.normalize(identity.systemName());
+			final String normalizedSystem = systemNameNormalizer.normalize(identity.systemName());
 			final Map<String, String> normalizedCredentials = method.normalizer().normalizeCredentials(identity.credentials());
 			final boolean normalizedSysop = identity.sysop() == null ? false : identity.sysop().booleanValue();
 

@@ -42,7 +42,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return AuthenticationConstants.SYSTEM_NAME;
+		return Constants.SYS_NAME_AUTHENTICATION;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -110,6 +110,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 						Constants.ENABLE_MANAGEMENT_FILTER,
 						Constants.MANAGEMENT_POLICY,
 						Constants.MAX_PAGE_SIZE,
+						Constants.NORMALIZATION_MODE,
 						AuthenticationConstants.IDENTITY_TOKEN_DURATION,
 						AuthenticationConstants.CLEANER_JOB_INTERVAL),
 				AuthenticationDefaults.class);

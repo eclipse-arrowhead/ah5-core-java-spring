@@ -26,8 +26,8 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
@@ -44,13 +44,13 @@ public class ManagementValidation {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
 	private PageValidator pageValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -60,66 +60,6 @@ public class ManagementValidation {
 
 	//=================================================================================================
 	// methods
-
-	//-------------------------------------------------------------------------------------------------
-	// VALIDATION
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateRequester(final String requester, final String origin) {
-		logger.debug("validateRequester started...");
-
-		if (Utilities.isEmpty(requester)) {
-			throw new InvalidParameterException("Requester name is missing or empty", origin);
-		}
-
-		if (requester.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Requester name is too long: " + requester, origin);
-		}
-
-		try {
-			nameValidator.validateName(requester);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
-		logger.debug("validateCreateIdentityList started...");
-
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-
-		if (Utilities.isEmpty(dto.authenticationMethod())) {
-			throw new InvalidParameterException("Authentication method is missing", origin);
-		}
-
-		final String authMethodName = dto.authenticationMethod().trim().toUpperCase();
-
-		if (!Utilities.isEnumValue(authMethodName, AuthenticationMethod.class)) {
-			throw new InvalidParameterException("Authentication method is invalid: " + authMethodName, origin);
-		}
-
-		final AuthenticationMethod methodType = AuthenticationMethod.valueOf(authMethodName);
-		final IAuthenticationMethod method = methods.method(methodType);
-		if (method == null) {
-			throw new InvalidParameterException("Authentication method is unsupported: " + authMethodName, origin);
-		}
-
-		final List<IdentityMgmtRequestDTO> list = dto.identities();
-		if (Utilities.isEmpty(list)) {
-			throw new InvalidParameterException("Identity list is missing or empty", origin);
-		}
-
-		if (Utilities.containsNull(list)) {
-			throw new InvalidParameterException("Identity list contains null element", origin);
-		}
-
-		for (final IdentityMgmtRequestDTO identity : list) {
-			validateIdentity(method, identity, origin);
-		}
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
@@ -246,8 +186,15 @@ public class ManagementValidation {
 		logger.debug("validateAndNormalizeRequester started...");
 
 		validateRequester(requester, origin);
+		final String normalized = systemNameNormalizer.normalize(requester);
 
-		return nameNormalizer.normalize(requester);
+		try {
+			systemNameValidator.validateSystemName(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -259,8 +206,16 @@ public class ManagementValidation {
 		try {
 			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeCreateIdentityList(dto);
 			checkNameDuplications(result.identities().stream().map(ni -> ni.systemName()).toList(), origin);
+			
+			final IAuthenticationMethod method = result.authenticationMethod();
+			result.identities().forEach(i -> {
+				systemNameValidator.validateSystemName(i.systemName());
+				method.validator().validateCredentials(i.credentials());
+			});
 
 			return result;
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -332,38 +287,63 @@ public class ManagementValidation {
 
 	//=================================================================================================
 	// assistant methods
+	
+	//-------------------------------------------------------------------------------------------------
+	// VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateRequester(final String requester, final String origin) {
+		logger.debug("validateRequester started...");
+
+		if (Utilities.isEmpty(requester)) {
+			throw new InvalidParameterException("Requester name is missing or empty", origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private void validateCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
+		logger.debug("validateCreateIdentityList started...");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.authenticationMethod())) {
+			throw new InvalidParameterException("Authentication method is missing", origin);
+		}
+
+		final String authMethodName = dto.authenticationMethod().trim().toUpperCase();
+
+		if (!Utilities.isEnumValue(authMethodName, AuthenticationMethod.class)) {
+			throw new InvalidParameterException("Authentication method is invalid: " + authMethodName, origin);
+		}
+
+		final AuthenticationMethod methodType = AuthenticationMethod.valueOf(authMethodName);
+		final IAuthenticationMethod method = methods.method(methodType);
+		if (method == null) {
+			throw new InvalidParameterException("Authentication method is unsupported: " + authMethodName, origin);
+		}
+
+		final List<IdentityMgmtRequestDTO> list = dto.identities();
+		if (Utilities.isEmpty(list)) {
+			throw new InvalidParameterException("Identity list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNull(list)) {
+			throw new InvalidParameterException("Identity list contains null element", origin);
+		}
+
+		for (final IdentityMgmtRequestDTO identity : list) {
+			validateIdentity(method, identity, origin);
+		}
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void validateIdentity(final IAuthenticationMethod method, final IdentityMgmtRequestDTO identity, final String origin) {
 		logger.debug("validateIdentity started...");
 
-		validateIdentityWithoutCredentials(identity, origin);
-
-		try {
-			method.validator().validateCredentials(identity.credentials());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateIdentityWithoutCredentials(final IdentityMgmtRequestDTO identity, final String origin) {
-		logger.debug("validateIdentityWithoutCredentials started...");
-
 		if (Utilities.isEmpty(identity.systemName())) {
 			throw new InvalidParameterException("System name is missing or empty", origin);
-		}
-
-		if (identity.systemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("System name is too long: " + identity.systemName(), origin);
-		}
-
-		try {
-			nameValidator.validateName(identity.systemName());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 	}
 

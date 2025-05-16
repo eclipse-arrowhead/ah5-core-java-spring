@@ -134,7 +134,7 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 			final PasswordAuthentication relatedEntity = findEntityInList(entities, identityData.system());
 			if (relatedEntity == null) {
 				// should not happen
-				throw new InternalServerError("Credentials for system " + identityData.system().getName() + " not found.");
+				throw new InternalServerError("Credentials for system " + identityData.system().getName() + " not found");
 			}
 
 			final String encodedPassword = encoder.encode(identityData.credentials().get(PasswordAuthenticationMethod.KEY_PASSWORD));

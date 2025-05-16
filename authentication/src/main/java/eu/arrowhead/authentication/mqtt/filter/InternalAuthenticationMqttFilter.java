@@ -77,7 +77,7 @@ public class InternalAuthenticationMqttFilter implements ArrowheadMqttFilter {
 	//-------------------------------------------------------------------------------------------------
 	private boolean needTokenCheck(final String currentOperation) {
 		for (final String operation : tokenlessOperations) {
-			if (operation.equalsIgnoreCase(currentOperation)) {
+			if (operation.equals(currentOperation)) {
 				return false;
 			}
 		}

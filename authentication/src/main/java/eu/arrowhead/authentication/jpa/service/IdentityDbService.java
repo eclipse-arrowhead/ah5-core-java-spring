@@ -157,7 +157,7 @@ public class IdentityDbService {
 				// check if extras list size is correct
 				if (extras.size() != identityList.size()) {
 					// something is not right => roll back everything
-					logger.error("Extra list's size is incorrect.");
+					logger.error("Extra list's size is incorrect");
 					dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 					throw new InternalServerError("Database operation error");
 				}
@@ -206,7 +206,7 @@ public class IdentityDbService {
 				// check if extras list size is correct
 				if (extras.size() != identityList.size()) {
 					// something is not right => roll back everything
-					logger.error("Extra list's size is incorrect.");
+					logger.error("Extra list's size is incorrect");
 					authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
 					throw new InternalServerError("Database operation error");
 				}
