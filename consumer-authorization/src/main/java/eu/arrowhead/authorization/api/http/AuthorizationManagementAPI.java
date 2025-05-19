@@ -21,6 +21,8 @@ import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.authorization.service.AuthorizationManagementService;
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyListResponseDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtGrantListRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
@@ -154,7 +156,7 @@ public class AuthorizationManagementAPI {
 	@Operation(summary = "Returns the generated authorization tokens and their paramters.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ServiceInstanceListResponseDTO.class)) }),
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationTokenMgmtListResponseDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
@@ -180,8 +182,26 @@ public class AuthorizationManagementAPI {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public void addEncryptionKeys() {
-		// TODO
+	@Operation(summary = "Returns the created encryption key entries.")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationMgmtEncryptionKeyListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@ResponseStatus(HttpStatus.CREATED)
+	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody AuthorizationMgmtEncryptionKeyListResponseDTO addEncryptionKeys(@RequestBody final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto) {
+		logger.debug("addEncryptionKeys started");
+		
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+		return mgmtService.addEncryptionKeysOperation(dto, origin);
 	}
 	
 	//-------------------------------------------------------------------------------------------------

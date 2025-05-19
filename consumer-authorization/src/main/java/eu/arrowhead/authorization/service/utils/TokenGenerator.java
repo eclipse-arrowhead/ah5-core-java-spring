@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
-import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
+import eu.arrowhead.authorization.service.dto.SelfContainedTokenPayload;
 import eu.arrowhead.common.Utilities;
 
 @Service

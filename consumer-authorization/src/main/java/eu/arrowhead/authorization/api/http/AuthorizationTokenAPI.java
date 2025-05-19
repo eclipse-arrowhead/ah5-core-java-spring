@@ -1,9 +1,9 @@
 package eu.arrowhead.authorization.api.http;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -77,7 +77,7 @@ public class AuthorizationTokenAPI {
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		final Pair<AuthorizationTokenGenerationResponseDTO, Boolean> result = authTokenService.generate(requesterSystem, dto, origin);
-		return new ResponseEntity<AuthorizationTokenGenerationResponseDTO>(result.getLeft(), result.getRight() ? HttpStatus.CREATED : HttpStatus.OK);
+		return new ResponseEntity<AuthorizationTokenGenerationResponseDTO>(result.getFirst(), result.getSecond() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ public class AuthorizationTokenAPI {
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		final Pair<String, Boolean> result = authTokenService.registerEncryptionKey(requesterSystem, dto, origin);
-		return new ResponseEntity<String>(result.getLeft(), result.getRight() ? HttpStatus.CREATED : HttpStatus.OK);
+		return new ResponseEntity<String>(result.getFirst(), result.getSecond() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
 	//-------------------------------------------------------------------------------------------------

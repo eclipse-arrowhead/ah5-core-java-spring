@@ -1,4 +1,4 @@
-package eu.arrowhead.authorization.service.model;
+package eu.arrowhead.authorization.service.dto;
 
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 

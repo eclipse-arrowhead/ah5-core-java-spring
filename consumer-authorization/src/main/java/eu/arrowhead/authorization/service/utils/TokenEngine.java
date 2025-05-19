@@ -5,11 +5,11 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -22,7 +22,7 @@ import eu.arrowhead.authorization.jpa.service.SelfContainedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TimeLimitedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TokenHeaderDbService;
 import eu.arrowhead.authorization.jpa.service.UsageLimitedTokenDbService;
-import eu.arrowhead.authorization.service.model.SelfContainedTokenPayload;
+import eu.arrowhead.authorization.service.dto.SelfContainedTokenPayload;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
@@ -112,11 +112,11 @@ public class TokenEngine {
 						providerSystem,
 						serviceDefinition,
 						operation,
-						Utilities.convertZonedDateTimeToUTCString(usageLimitTokenResult.getLeft().getHeader().getCreatedAt()),
-						usageLimitTokenResult.getLeft().getUsageLimit(),
-						usageLimitTokenResult.getLeft().getUsageLeft(),
+						Utilities.convertZonedDateTimeToUTCString(usageLimitTokenResult.getFirst().getHeader().getCreatedAt()),
+						usageLimitTokenResult.getFirst().getUsageLimit(),
+						usageLimitTokenResult.getFirst().getUsageLeft(),
 						null),
-						usageLimitTokenResult.getRight());
+						usageLimitTokenResult.getSecond());
 			}
 
 			// SIMPLE TIME LIMITED TOKEN
@@ -144,11 +144,11 @@ public class TokenEngine {
 						providerSystem,
 						serviceDefinition,
 						operation,
-						Utilities.convertZonedDateTimeToUTCString(timeLimitTokenResult.getLeft().getHeader().getCreatedAt()),
+						Utilities.convertZonedDateTimeToUTCString(timeLimitTokenResult.getFirst().getHeader().getCreatedAt()),
 						null,
 						null,
-						Utilities.convertZonedDateTimeToUTCString(timeLimitTokenResult.getLeft().getExpiresAt())),
-						timeLimitTokenResult.getRight());
+						Utilities.convertZonedDateTimeToUTCString(timeLimitTokenResult.getFirst().getExpiresAt())),
+						timeLimitTokenResult.getSecond());
 			}
 
 			// SELF CONTAINED TOKENS
@@ -186,8 +186,8 @@ public class TokenEngine {
 			encryptedToSaveAES = secretCryptographer.encryptAESCBCPKCS5P(token, sysInfo.getSecretCryptographerKey());
 			final Pair<SelfContainedToken, Boolean> selfContainedTokenResult = selfContainedTokenDbService.save(
 					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
-					encryptedToSaveAES.getLeft(),
-					encryptedToSaveAES.getRight(),
+					encryptedToSaveAES.getFirst(),
+					encryptedToSaveAES.getSecond(),
 					requesterSystem,
 					cloud,
 					consumerSystem,
@@ -205,11 +205,11 @@ public class TokenEngine {
 					providerSystem,
 					serviceDefinition,
 					operation,
-					Utilities.convertZonedDateTimeToUTCString(selfContainedTokenResult.getLeft().getHeader().getCreatedAt()),
+					Utilities.convertZonedDateTimeToUTCString(selfContainedTokenResult.getFirst().getHeader().getCreatedAt()),
 					null,
 					null,
-					Utilities.convertZonedDateTimeToUTCString(selfContainedTokenResult.getLeft().getExpiresAt())),
-					selfContainedTokenResult.getRight());
+					Utilities.convertZonedDateTimeToUTCString(selfContainedTokenResult.getFirst().getExpiresAt())),
+					selfContainedTokenResult.getSecond());
 
 		} catch (final InternalServerError | InvalidParameterException ex) {
 			throw ex;

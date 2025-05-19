@@ -1,11 +1,15 @@
 package eu.arrowhead.authorization.jpa.service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -14,6 +18,7 @@ import eu.arrowhead.authorization.jpa.entity.CryptographerAuxiliary;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.authorization.jpa.repository.CryptographerAuxiliaryRepository;
 import eu.arrowhead.authorization.jpa.repository.EncryptionKeyRepository;
+import eu.arrowhead.authorization.service.model.EncryptionKeyModel;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -37,6 +42,7 @@ public class EncryptionKeyDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<EncryptionKey> get(final String systemName) {
+		logger.debug("get started...");
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
 
 		try {
@@ -51,15 +57,17 @@ public class EncryptionKeyDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Pair<EncryptionKey, Boolean> save(final String systemName, final String key, final String algorithm, final String internalAuxiliary, final String externalAuxiliary) {
-		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
-		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
-		Assert.isTrue(!Utilities.isEmpty(algorithm), "algorithm is empty");
-		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
+	public Pair<EncryptionKey, Boolean> save(final EncryptionKeyModel candidate) {
+		logger.debug("save started...");
+		Assert.notNull(candidate, "EncryptionKeyModel candidate is null");
+		Assert.isTrue(!Utilities.isEmpty(candidate.getSystemName()), "EncryptionKeyModel.systemName is empty");
+		Assert.isTrue(!Utilities.isEmpty(candidate.getKeyEncryptedValue()), "EncryptionKeyModel.keyEncriptedValue is empty");
+		Assert.isTrue(!Utilities.isEmpty(candidate.getAlgorithm()), "EncryptionKeyModel.algorithm is empty");
+		Assert.isTrue(!Utilities.isEmpty(candidate.getInternalAuxiliary()), "EncryptionKeyModel.internalAuxiliary is empty");
 
 		try {
 			boolean override = false;
-			final Optional<EncryptionKey> optional = keyRepo.findBySystemName(systemName);
+			final Optional<EncryptionKey> optional = keyRepo.findBySystemName(candidate.getSystemName());
 			if (optional.isPresent()) {
 				keyRepo.delete(optional.get());
 				auxiliaryRepo.delete(optional.get().getInternalAuxiliary());
@@ -69,9 +77,9 @@ public class EncryptionKeyDbService {
 				override = true;
 			}			
 			
-			final CryptographerAuxiliary internalAuxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
-			final CryptographerAuxiliary externalAuxiliaryRecord = Utilities.isEmpty(externalAuxiliary) ? null : auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(externalAuxiliary));
-			final EncryptionKey toSave = new EncryptionKey(systemName, key, algorithm, internalAuxiliaryRecord, externalAuxiliaryRecord);			
+			final CryptographerAuxiliary internalAuxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(candidate.getInternalAuxiliary()));
+			final CryptographerAuxiliary externalAuxiliaryRecord = !candidate.hasExternalAuxiliary() ? null : auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(candidate.getExternalAuxiliary()));
+			final EncryptionKey toSave = new EncryptionKey(candidate.getSystemName(), candidate.getKeyEncryptedValue(), candidate.getAlgorithm(), internalAuxiliaryRecord, externalAuxiliaryRecord);			
 
 			return Pair.of(keyRepo.saveAndFlush(toSave), !override);
 
@@ -81,10 +89,59 @@ public class EncryptionKeyDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
-
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public List<EncryptionKey> save(final List<EncryptionKeyModel> candidates) {
+		logger.debug("save started...");
+		Assert.notNull(candidates, "EncryptionKeyModel candidate list is null.");
+		
+		final Set<String> sysNames = new HashSet<>();
+		final List<EncryptionKey> keysToDelete = new ArrayList<>();
+		final List<CryptographerAuxiliary> auxiliariesToDelete = new ArrayList<>();
+		final List<EncryptionKey> keysToSave = new ArrayList<>();
+		final List<CryptographerAuxiliary> auxiliariesToSave = new ArrayList<>();
+		
+		for (final EncryptionKeyModel candidate : candidates) {
+			Assert.notNull(candidate, "EncryptionKeyModel candidate is null");
+			Assert.isTrue(!Utilities.isEmpty(candidate.getSystemName()), "EncryptionKeyModel.systemName is empty");
+			Assert.isTrue(!Utilities.isEmpty(candidate.getKeyEncryptedValue()), "EncryptionKeyModel.keyEncriptedValue is empty");
+			Assert.isTrue(!Utilities.isEmpty(candidate.getAlgorithm()), "EncryptionKeyModel.algorithm is empty");
+			Assert.isTrue(!Utilities.isEmpty(candidate.getInternalAuxiliary()), "EncryptionKeyModel.internalAuxiliary is empty");
+			
+			Assert.isTrue(!sysNames.contains(candidate.getSystemName()), "Duplicate EncryptionKeyModel for system: " + candidate.getSystemName());
+			sysNames.add(candidate.getSystemName());
+			
+			final Optional<EncryptionKey> keyOpt = keyRepo.findBySystemName(candidate.getSystemName());
+			if (keyOpt.isPresent()) {
+				keysToDelete.add(keyOpt.get());
+				auxiliariesToDelete.add(keyOpt.get().getInternalAuxiliary());
+				if (keyOpt.get().getExternalAuxiliary() != null) {
+					auxiliariesToDelete.add(keyOpt.get().getExternalAuxiliary());
+				}
+			}
+			
+			final EncryptionKey toSave = new EncryptionKey(candidate.getSystemName(), candidate.getKeyEncryptedValue(), candidate.getAlgorithm(),
+					new CryptographerAuxiliary(candidate.getInternalAuxiliary()), !candidate.hasExternalAuxiliary() ? null : new CryptographerAuxiliary(candidate.getExternalAuxiliary()));
+			
+			keysToSave.add(toSave);
+			auxiliariesToSave.add(toSave.getInternalAuxiliary());
+			if (candidate.hasExternalAuxiliary()) {
+				auxiliariesToSave.add(toSave.getExternalAuxiliary());
+			}
+		}
+		
+		auxiliaryRepo.saveAll(auxiliariesToSave);
+		final List<EncryptionKey> results = keyRepo.saveAll(keysToSave);
+		auxiliaryRepo.flush();
+		keyRepo.flush();
+		return results;
+	}
+ 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public boolean delete(final String systemName) {
+		logger.debug("delete started...");
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
 
 		try {

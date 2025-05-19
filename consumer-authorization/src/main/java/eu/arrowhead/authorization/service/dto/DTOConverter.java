@@ -17,8 +17,11 @@ import eu.arrowhead.authorization.jpa.entity.AuthMgmtPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
+import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyListResponseDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
@@ -159,6 +162,22 @@ public class DTOConverter {
 				.toList();
 
 		return new AuthorizationVerifyListResponseDTO(convertedList, result.size());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyListResponseDTO convertEncryptionKeyListToResponse(final List<EncryptionKey> keys, final long size) {
+		logger.debug("convertEncryptionKeyListToResponse started...");
+		Assert.notNull(keys, "EncryptionKey list is null");
+		
+		return new AuthorizationMgmtEncryptionKeyListResponseDTO(keys.stream().map((item) -> convertEncryptionKeyToResponse(item)).toList(), size);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyResponseDTO convertEncryptionKeyToResponse(final EncryptionKey key) {
+		logger.debug("convertEncryptionKeyToResponse started...");
+		Assert.notNull(key, "EncryptionKey is null");
+		
+		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getKeyValue(), key.getAlgorithm(), key.getExternalAuxiliary().getAuxiliary(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
 	}
 
 	//=================================================================================================

@@ -5,16 +5,17 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
+import eu.arrowhead.authorization.service.model.EncryptionKeyModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationTokenValidation;
@@ -47,7 +48,7 @@ public class AuthorizationTokenService {
 
 	@Autowired
 	private AuthorizationPolicyEngine policyEngine;
-	
+
 	@Autowired
 	private TokenEngine tokenEngine;
 
@@ -59,7 +60,7 @@ public class AuthorizationTokenService {
 
 	@Autowired
 	private AuthorizationTokenValidation validator;
-	
+
 	@Resource(name = Constants.ARROWHEAD_CONTEXT)
 	private Map<String, Object> arrowheadContext;
 
@@ -93,7 +94,7 @@ public class AuthorizationTokenService {
 		// Generate token
 		final Pair<AuthorizationTokenResponseDTO, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, serviceInstanceIdParts.systemName(), serviceInstanceIdParts.serviceDefinition(),
 				Utilities.isEmpty(normalizedDTO.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.serviceOperation(), origin);
-		String tokenString = tokenResult.getLeft().token();
+		String tokenString = tokenResult.getFirst().token();
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
@@ -102,13 +103,13 @@ public class AuthorizationTokenService {
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());					
+					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
 
 					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
 						tokenString = secretCryptographer.encryptHMACSHA256(tokenString, plainEncriptionKey);
 
 					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
-						tokenString = secretCryptographer.encryptAESCBCPKCS5P(tokenString, plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getLeft();
+						tokenString = secretCryptographer.encryptAESCBCPKCS5P(tokenString, plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst();
 
 					} else {
 						throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -122,7 +123,7 @@ public class AuthorizationTokenService {
 			}
 		}
 
-		return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), tokenString, tokenResult.getLeft().usageLimit(), tokenResult.getLeft().expiresAt()), tokenResult.getRight());
+		return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), tokenString, tokenResult.getFirst().usageLimit(), tokenResult.getFirst().expiresAt()), tokenResult.getSecond());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -169,8 +170,8 @@ public class AuthorizationTokenService {
 			throw new InternalServerError("Secret encryption failed!", origin);
 		}
 
-		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(normalizedRequester, encryptedToSave.getLeft(), normalizedDTO.algorithm(), encryptedToSave.getRight(), externalAuxiliary);
-		return Pair.of(externalAuxiliary, result.getRight());
+		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(new EncryptionKeyModel(normalizedRequester, normalizedDTO.key(), encryptedToSave.getFirst(), normalizedDTO.algorithm(), encryptedToSave.getFirst(), externalAuxiliary));
+		return Pair.of(externalAuxiliary, result.getSecond());
 	}
 
 	//-------------------------------------------------------------------------------------------------

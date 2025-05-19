@@ -26,6 +26,7 @@ import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
+import eu.arrowhead.authorization.service.model.EncryptionKeyModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationManagementValidation;
@@ -34,6 +35,9 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyListResponseDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtGrantListRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
@@ -191,7 +195,7 @@ public class AuthorizationManagementService {
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : authorizedRequests) {
 			tokenResults.add(
 					tokenEngine.produce(requester, request.consumer(), request.consumerCloud(), ServiceInterfacePolicy.valueOf(request.tokenType()), request.provider(), request.serviceDefinition(),
-							Utilities.isEmpty(request.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.serviceOperation(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expireAt()), origin).getLeft());
+							Utilities.isEmpty(request.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.serviceOperation(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expireAt()), origin).getFirst());
 		}
 		
 		// Encrypt token if required
@@ -215,7 +219,7 @@ public class AuthorizationManagementService {
 							tokenString = secretCryptographer.encryptHMACSHA256(tokenString, plainEncriptionKey);
 							
 						} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
-							tokenString = secretCryptographer.encryptAESCBCPKCS5P(tokenString, plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getLeft();
+							tokenString = secretCryptographer.encryptAESCBCPKCS5P(tokenString, plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst();
 							
 						} else {
 							throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -234,5 +238,54 @@ public class AuthorizationManagementService {
 		}
 
 		return new AuthorizationTokenMgmtListResponseDTO(finalResults, finalResults.size());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void queryTokensOperation() {
+		// TODO
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyListResponseDTO addEncryptionKeysOperation(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
+		logger.debug("addEncryptionKeysOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalizedDTO = dto; // TODO
+		
+		final List<EncryptionKeyModel> models = new ArrayList<EncryptionKeyModel>(normalizedDTO.list().size());
+		
+		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO item : normalizedDTO.list()) {
+			
+			String externalKeyAuxiliary = null;
+			if (item.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+				externalKeyAuxiliary = secretCryptographer.generateInitializationVectorBase64();
+			}
+			
+			// Encrypt the key for saving into the DB
+			Pair<String, String> encryptedKeyToSave = null;
+			try {
+				encryptedKeyToSave = secretCryptographer.encryptAESCBCPKCS5P(item.key(), sysInfo.getSecretCryptographerKey());
+			} catch (final Exception ex) {
+				logger.error(ex.getMessage());
+				logger.debug(ex);
+				throw new InternalServerError("Secret encryption failed!", origin);
+			}
+			
+			models.add(new EncryptionKeyModel(item.systemName(), item.key(), encryptedKeyToSave.getFirst(), item.algorithm(), encryptedKeyToSave.getSecond(), externalKeyAuxiliary));
+		}
+		
+		// Change the keyValue from encrypted to raw
+		final List<EncryptionKey> result = encryptionKeyDbService.save(models);
+		for (final EncryptionKey encryptionKey : result) {
+			final String rawKeyValue = models.stream().filter((item) -> item.getSystemName().equals(encryptionKey.getSystemName())).findFirst().get().getKeyValue();
+			encryptionKey.setKeyValue(rawKeyValue);
+		}
+		
+		return dtoConverter.convertEncryptionKeyListToResponse(result, result.size());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void removeEncriptionKeysOperation() {
+		// TODO
 	}
 }
