@@ -10,10 +10,15 @@ import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
+import eu.arrowhead.dto.DTODefaults;
 
 @Service
-public class AuthorizationTokenNormalization {
+public class AuthorizationTokenNormalizer {
 
 	//=================================================================================================
 	// members
@@ -61,5 +66,37 @@ public class AuthorizationTokenNormalization {
 		return new AuthorizationEncryptionKeyRegistrationRequestDTO(
 				dto.key(),
 				dto.algorithm().trim());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenGenerationMgmtListRequestDTO normalizeAuthorizationTokenGenerationMgmtListRequestDTO(final AuthorizationTokenGenerationMgmtListRequestDTO dto) {
+		logger.debug("normalizeAuthorizationTokenGenerationMgmtListRequestDTO started...");
+		Assert.notNull(dto, "AuthorizationTokenGenerationMgmtListRequestDTO is null.");
+		Assert.notNull(dto.list(), "AuthorizationTokenGenerationMgmtListRequestDTO.list is null.");
+
+		return new AuthorizationTokenGenerationMgmtListRequestDTO(
+				dto.list().stream()
+						.map((item) -> new AuthorizationTokenGenerationMgmtRequestDTO(
+								item.tokenType().trim().toUpperCase(),
+								Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : nameNormalizer.normalize(item.consumerCloud()),
+								nameNormalizer.normalize(item.consumer()),
+								nameNormalizer.normalize(item.provider()),
+								nameNormalizer.normalize(item.serviceDefinition()),
+								Utilities.isEmpty(item.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(item.serviceOperation()),
+								Utilities.isEmpty(item.expireAt()) ? null : item.expireAt().trim(),
+								item.usageLimit()))
+						.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalizeAuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto) {
+		logger.debug("normalizeAuthorizationMgmtEncryptionKeyRegistrationListRequestDTO started...");
+		Assert.notNull(dto, "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO is null.");
+		Assert.notNull(dto.list(), "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO.list is null.");
+
+		return new AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(
+				dto.list().stream()
+						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(nameNormalizer.normalize(item.systemName()), item.key(), item.algorithm().trim().toUpperCase()))
+						.toList());
 	}
 }

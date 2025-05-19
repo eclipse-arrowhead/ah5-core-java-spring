@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.authorization.service.normalization.AuthorizationTokenNormalization;
+import eu.arrowhead.authorization.AuthorizationConstants;
+import eu.arrowhead.authorization.service.normalization.AuthorizationTokenNormalizer;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
@@ -27,9 +28,7 @@ public class AuthorizationTokenValidation {
 	private NameValidator nameValidator;
 	
 	@Autowired
-	private AuthorizationTokenNormalization normalizer;
-	
-	private static final String TOKEN_TYPE_SUFFIX = "TOKEN_AUTH";
+	private AuthorizationTokenNormalizer normalizer;
 	
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
@@ -137,7 +136,7 @@ public class AuthorizationTokenValidation {
 		
 		try {
 			if (!Utilities.isEnumValue(normalized.tokenType(), ServiceInterfacePolicy.class)
-					|| !normalized.tokenType().endsWith(TOKEN_TYPE_SUFFIX)) {
+					|| !normalized.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
 				throw new InvalidParameterException("Token type is invalid", origin);
 			}
 			

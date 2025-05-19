@@ -44,6 +44,7 @@ import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenQueryRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
@@ -175,7 +176,7 @@ public class AuthorizationManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requester, origin);
-		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = dto; // TODO
+		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateTokenRequets(dto, origin);
 		List<AuthorizationTokenGenerationMgmtRequestDTO> authorizedRequests = normalizedDTO.list();
 
 		if (!sysInfo.hasSystemUnboundedTokenGenerationRight(normalizedRequester)) {
@@ -244,8 +245,13 @@ public class AuthorizationManagementService {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public void queryTokensOperation() {
+	public AuthorizationTokenMgmtListResponseDTO queryTokensOperation(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
+		logger.debug("queryTokensOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
 		// TODO
+		
+		return null;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -261,7 +267,7 @@ public class AuthorizationManagementService {
 		logger.debug("addEncryptionKeysOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalizedDTO = dto; // TODO
+		final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalizedDTO = validator.validateAndNormalizeAddEncryptionKeysRequest(dto, origin);
 		
 		final List<EncryptionKeyModel> models = new ArrayList<EncryptionKeyModel>(normalizedDTO.list().size());
 		
@@ -306,7 +312,7 @@ public class AuthorizationManagementService {
 		logger.debug("removeEncriptionKeysOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		final List<String> normalized = systemNames; // TODO
+		final List<String> normalized = systemNames.stream().map((name) -> validator.validateAndNormalizeSystemName(name, origin)).toList();
 		
 		try {
 			encryptionKeyDbService.delete(normalized);

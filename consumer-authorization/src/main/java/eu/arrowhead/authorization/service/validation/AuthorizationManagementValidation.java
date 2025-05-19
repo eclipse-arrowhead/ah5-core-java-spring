@@ -1,7 +1,10 @@
 package eu.arrowhead.authorization.service.validation;
 
+import java.time.format.DateTimeParseException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.jpa.entity.AuthMgmtPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
@@ -16,6 +20,8 @@ import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyRequestNormalizer;
+import eu.arrowhead.authorization.service.normalization.AuthorizationTokenNormalizer;
+import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
@@ -25,15 +31,20 @@ import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierValidator;
 import eu.arrowhead.common.service.validation.name.NameNormalizer;
 import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtGrantListRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtGrantRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
 import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
 import eu.arrowhead.dto.DTODefaults;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 @Service
 public class AuthorizationManagementValidation {
@@ -58,6 +69,9 @@ public class AuthorizationManagementValidation {
 
 	@Autowired
 	private AuthorizationPolicyRequestNormalizer policyRequestNormalizer;
+
+	@Autowired
+	private AuthorizationTokenNormalizer tokenNormalizer;
 
 	@Autowired
 	private PageValidator pageValidator;
@@ -199,6 +213,61 @@ public class AuthorizationManagementValidation {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validateGenerateTokenRequets(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
+		logger.debug("validateGenerateTokenRequets started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null || Utilities.isEmpty(dto.list())) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.containsNull(dto.list())) {
+			throw new InvalidParameterException("Request payload list contains null element", origin);
+		}
+
+		for (final AuthorizationTokenGenerationMgmtRequestDTO request : dto.list()) {
+			if (Utilities.isEmpty(request.tokenType())) {
+				throw new InvalidParameterException("Token type is missing", origin);
+			}
+			if (Utilities.isEmpty(request.consumer())) {
+				throw new InvalidParameterException("Consumer system name is missing", origin);
+			}
+			if (Utilities.isEmpty(request.provider())) {
+				throw new InvalidParameterException("Provider system name is missing", origin);
+			}
+			if (Utilities.isEmpty(request.serviceDefinition())) {
+				throw new InvalidParameterException("Service definition is missing", origin);
+			}
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void validateAddEncryptionKeysRequest(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
+		logger.debug("validateAddEncryptionKeysRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		if (dto == null || Utilities.isEmpty(dto.list())) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+		
+		if (Utilities.containsNull(dto.list())) {
+			throw new InvalidParameterException("Request payload list contains null element", origin);
+		}
+		
+		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO request : dto.list()) {
+			if (Utilities.isEmpty(request.systemName())) {
+				throw new InvalidParameterException("System name is missing", origin);
+			}
+			if (Utilities.isEmpty(request.algorithm())) {
+				throw new InvalidParameterException("Algorithm is missing.", origin);
+			}			
+			if (Utilities.isEmpty(request.key())) {
+				throw new InvalidParameterException("Key is missing.", origin);
+			}
+		}
+	}
+
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -253,6 +322,80 @@ public class AuthorizationManagementValidation {
 		return normalizeVerifyListRequest(dto);
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenGenerationMgmtListRequestDTO validateAndNormalizeGenerateTokenRequets(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeGenerateTokenRequets started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateGenerateTokenRequets(dto, origin);
+
+		final AuthorizationTokenGenerationMgmtListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationTokenGenerationMgmtListRequestDTO(dto);
+
+		for (final AuthorizationTokenGenerationMgmtRequestDTO request : normalized.list()) {
+			if (!Utilities.isEnumValue(request.tokenType(), ServiceInterfacePolicy.class)
+					|| !request.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
+				throw new InvalidParameterException("Invalid token type: " + request.tokenType(), origin);
+			}
+
+			try {
+				nameValidator.validateName(request.consumerCloud());
+				nameValidator.validateName(request.consumer());
+				nameValidator.validateName(request.provider());
+				nameValidator.validateName(request.serviceDefinition());
+
+				if (!request.serviceOperation().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
+					nameValidator.validateName(request.serviceOperation());
+				}
+
+			} catch (final InvalidParameterException ex) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
+
+			if (!Utilities.isEmpty(request.expireAt())) {
+				try {
+					Utilities.parseUTCStringToZonedDateTime(request.expireAt());
+				} catch (final DateTimeParseException ex) {
+					throw new InvalidParameterException("Invalid expires at: " + request.expireAt(), origin);
+				}
+			}
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO validateAndNormalizeAddEncryptionKeysRequest(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeAddEncryptionKeysRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		validateAddEncryptionKeysRequest(dto, origin);
+		
+		final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(dto);
+		
+		final Set<String> sysNames = new HashSet<>(normalized.list().size());
+		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO request : normalized.list()) {
+			try {
+				nameValidator.validateName(request.systemName());
+			} catch (final InvalidParameterException ex) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}			
+			if (sysNames.contains(request.systemName())) {
+				throw new InvalidParameterException("Duplicate system name: " + request.systemName(), origin);
+			}
+			sysNames.add(request.systemName());
+			
+			if (!(request.algorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM) || request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM))) {
+				throw new InvalidParameterException("Unsupported algorithm", origin);
+			}
+			if (request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)
+					&& request.key().getBytes().length != SecretCryptographer.AES_KEY_SIZE) {
+				throw new InvalidParameterException("Key size is not " + SecretCryptographer.AES_KEY_SIZE + " byte long for system: " + request.systemName());
+			}
+		}
+		
+		return normalized;
+	}
+	
 	//=================================================================================================
 	// assistant methods
 
