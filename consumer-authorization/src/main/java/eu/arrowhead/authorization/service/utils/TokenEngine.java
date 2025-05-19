@@ -2,6 +2,7 @@ package eu.arrowhead.authorization.service.utils;
 
 import java.security.PrivateKey;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -10,6 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -29,6 +32,7 @@ import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
@@ -106,6 +110,7 @@ public class TokenEngine {
 						usageLimit == null ? sysInfo.getSimpleTokenUsageLimit() : usageLimit);
 				return Pair.of(new AuthorizationTokenResponseDTO(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
+						null,
 						token,
 						requesterSystem,
 						cloud,
@@ -138,6 +143,7 @@ public class TokenEngine {
 						expiresAt);
 				return Pair.of(new AuthorizationTokenResponseDTO(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
+						null,
 						token,
 						requesterSystem,
 						cloud,
@@ -199,6 +205,7 @@ public class TokenEngine {
 					expiresAt);
 			return Pair.of(new AuthorizationTokenResponseDTO(
 					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
+					tokenType.name(),
 					token,
 					requesterSystem,
 					cloud,
@@ -294,6 +301,80 @@ public class TokenEngine {
 
 			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenList(tokensAsSaved);
 			tokenHeaderDbService.deleteById(tokenHeaders.stream().map((header) -> header.getId()).toList()); // Delete on cascade removes also the belonged time or usage limited token details 
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenMgmtListResponseDTO query(final Pageable pagination, final String requester, final AuthorizationTokenType tokenType, final String consumerCloud, final String consumer, final String provider,
+			final String serviceDefinition, final String origin) {
+		logger.debug("query started...");
+
+		try {
+			final List<AuthorizationTokenResponseDTO> results = new ArrayList<>();
+			final Page<TokenHeader> tokenHeaderPage = tokenHeaderDbService.query(pagination, requester, tokenType, consumerCloud, consumer, provider, serviceDefinition);
+			for (final TokenHeader tokenHeader : tokenHeaderPage) {
+				// USAGE LIMITED TOKEN
+				if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {
+					final Optional<UsageLimitedToken> detailsOpt = usageLimitedTokenDbService.getByHeader(tokenHeader);
+					results.add(new AuthorizationTokenResponseDTO(
+							tokenType,
+							null,
+							tokenHeader.getToken(),
+							tokenHeader.getRequester(),
+							tokenHeader.getConsumerCloud(),
+							tokenHeader.getConsumer(),
+							tokenHeader.getProvider(),
+							tokenHeader.getServiceDefinition(),
+							tokenHeader.getServiceOperation(),
+							Utilities.convertZonedDateTimeToUTCString(tokenHeader.getCreatedAt()),
+							detailsOpt.isEmpty() ? null : detailsOpt.get().getUsageLimit(),
+							detailsOpt.isEmpty() ? null : detailsOpt.get().getUsageLeft(),
+							null));
+				}
+
+				// TIME LIMITED TOKEN
+				if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
+					final Optional<TimeLimitedToken> detailsOpt = timeLimitedTokenDbService.getByHeader(tokenHeader);
+					results.add(new AuthorizationTokenResponseDTO(
+							tokenType,
+							null,
+							tokenHeader.getToken(),
+							tokenHeader.getRequester(),
+							tokenHeader.getConsumerCloud(),
+							tokenHeader.getConsumer(),
+							tokenHeader.getProvider(),
+							tokenHeader.getServiceDefinition(),
+							tokenHeader.getServiceOperation(),
+							Utilities.convertZonedDateTimeToUTCString(tokenHeader.getCreatedAt()),
+							null,
+							null,
+							detailsOpt.isEmpty() ? null : Utilities.convertZonedDateTimeToUTCString(detailsOpt.get().getExpiresAt())));
+				}
+				
+				// SELF CONTAINED TOKEN
+				if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
+					final Optional<SelfContainedToken> detailsOpt = selfContainedTokenDbService.getByHeader(tokenHeader);
+					results.add(new AuthorizationTokenResponseDTO(
+							tokenType,
+							detailsOpt.isEmpty() ? null : detailsOpt.get().getType(),
+							tokenHeader.getToken(),
+							tokenHeader.getRequester(),
+							tokenHeader.getConsumerCloud(),
+							tokenHeader.getConsumer(),
+							tokenHeader.getProvider(),
+							tokenHeader.getServiceDefinition(),
+							tokenHeader.getServiceOperation(),
+							Utilities.convertZonedDateTimeToUTCString(tokenHeader.getCreatedAt()),
+							null,
+							null,
+							detailsOpt.isEmpty() ? null : Utilities.convertZonedDateTimeToUTCString(detailsOpt.get().getExpiresAt())));
+				}
+			}
+
+			return new AuthorizationTokenMgmtListResponseDTO(results, tokenHeaderPage.getTotalElements());
 
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

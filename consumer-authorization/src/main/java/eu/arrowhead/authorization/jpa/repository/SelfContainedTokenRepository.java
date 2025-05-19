@@ -14,5 +14,6 @@ public interface SelfContainedTokenRepository extends RefreshableRepository<Self
 	//=================================================================================================
 	// methods
 	
+	//-------------------------------------------------------------------------------------------------
 	public Optional<SelfContainedToken> findByHeader(final TokenHeader header);
 }

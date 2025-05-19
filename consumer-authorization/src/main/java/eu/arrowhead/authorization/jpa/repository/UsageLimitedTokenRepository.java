@@ -14,5 +14,6 @@ public interface UsageLimitedTokenRepository extends RefreshableRepository<Usage
 	//=================================================================================================
 	// methods
 	
+	//-------------------------------------------------------------------------------------------------
 	public Optional<UsageLimitedToken> findByHeader(final TokenHeader header);
 }

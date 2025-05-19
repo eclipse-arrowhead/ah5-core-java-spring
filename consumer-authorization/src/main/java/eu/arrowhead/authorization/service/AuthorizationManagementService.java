@@ -20,6 +20,7 @@ import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
+import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.jpa.service.AuthorizationPolicyDbService;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
@@ -226,8 +227,8 @@ public class AuthorizationManagementService {
 							throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
 						}					
 						
-						finalResults.add(new AuthorizationTokenResponseDTO(tokenResult.tokenType(), tokenString, tokenResult.requester(), tokenResult.consumerCloud(), tokenResult.consumer(), tokenResult.provider(),
-								tokenResult.serviceDefinition(), tokenResult.serviceOperation(), tokenResult.createdAt(), tokenResult.usageLimit(), tokenResult.usageLeft(), tokenResult.expiresAt()));
+						finalResults.add(new AuthorizationTokenResponseDTO(tokenResult.tokenType(), null, tokenString, tokenResult.requester(), tokenResult.consumerCloud(), tokenResult.consumer(), tokenResult.provider(),
+								tokenResult.serviceDefinition(), tokenResult.serviceOperation(), tokenResult.createdAt(), tokenResult.usageLimit(), tokenResult.usageLeft(), tokenResult.expiresAt())); // TODO token variant
 						
 					} catch (final InternalServerError ex) {
 						throw new InternalServerError(ex.getMessage(), origin);
@@ -249,9 +250,16 @@ public class AuthorizationManagementService {
 		logger.debug("queryTokensOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		
-		// TODO
+		final AuthorizationTokenQueryRequestDTO normalized = dto; // TODO 
 		
-		return null;
+		final PageRequest pageRequest = pageService.getPageRequest(
+				normalized.pagination(),
+				Direction.ASC,
+				TokenHeader.SORTABLE_FIELDS_BY,
+				TokenHeader.DEFAULT_SORT_FIELD,
+				origin);
+		
+		return tokenEngine.query(pageRequest, normalized.requester(), AuthorizationTokenType.valueOf(normalized.tokenType()), normalized.consumerCloud(), normalized.consumer(), normalized.provider(), normalized.serviceDefinition(), origin);
 	}
 	
 	//-------------------------------------------------------------------------------------------------

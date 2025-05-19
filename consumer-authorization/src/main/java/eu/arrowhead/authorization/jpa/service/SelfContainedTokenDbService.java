@@ -91,4 +91,12 @@ public class SelfContainedTokenDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<SelfContainedToken> getByHeader(final TokenHeader header) {
+		logger.debug("getByHeader started...");
+		Assert.notNull(header, "header is null");
+
+		return tokenRepo.findByHeader(header);
+	}
 }

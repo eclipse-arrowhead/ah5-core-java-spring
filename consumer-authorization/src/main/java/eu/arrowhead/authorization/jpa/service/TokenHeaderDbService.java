@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -15,6 +17,7 @@ import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 @Service
 public class TokenHeaderDbService {
@@ -76,5 +79,29 @@ public class TokenHeaderDbService {
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Page<TokenHeader> query(final Pageable pagination, final String requester, final AuthorizationTokenType tokenType, final String consumerCloud, final String consumer, final String provider, final String serviceDefinition) {
+		logger.debug("query started");
+		Assert.notNull(pagination, "pagination is null");
+		
+		try {
+			// TODO
+			return null;
+			
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//=================================================================================================
+	// nested structures
+
+	//-------------------------------------------------------------------------------------------------
+	private enum BaseFilter {
+		NONE, REQUESTER, TOKEN_TYPE, CLOUD, CONSUMER, PROVIDER, SERVICE
 	}
 }
