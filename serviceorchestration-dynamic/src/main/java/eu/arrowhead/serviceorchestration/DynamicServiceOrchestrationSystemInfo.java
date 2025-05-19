@@ -49,7 +49,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return DynamicServiceOrchestrationConstants.SYSTEM_NAME;
+		return Constants.SYS_NAME_DYNAMIC_SERVICE_ORCHESTRATION;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -58,7 +58,8 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		if (systemModel == null) {
 			SystemModel.Builder builder = new SystemModel.Builder()
 					.address(getAddress())
-					.version(Constants.AH_FRAMEWORK_VERSION);
+					.version(Constants.AH_FRAMEWORK_VERSION)
+					.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY);
 
 			if (AuthenticationPolicy.CERTIFICATE == this.getAuthenticationPolicy()) {
 				builder = builder.metadata(Constants.METADATA_KEY_X509_PUBLIC_KEY, getPublicKey());
@@ -170,6 +171,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 						Constants.ALLOW_SELF_ADDRESSING,
 						Constants.ALLOW_NON_ROUTABLE_ADDRESSING,
 						Constants.MAX_PAGE_SIZE,
+						Constants.NORMALIZATION_MODE,
 						Constants.SERVICE_ADDRESS_ALIAS,
 						DynamicServiceOrchestrationConstants.ENABLE_AUTHORIZATION,
 						DynamicServiceOrchestrationConstants.ENABLE_INTERCLOUD,

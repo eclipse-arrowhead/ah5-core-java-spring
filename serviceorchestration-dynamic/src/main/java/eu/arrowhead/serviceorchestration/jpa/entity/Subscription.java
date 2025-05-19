@@ -59,8 +59,15 @@ public class Subscription {
 
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:ParameterNumberCheck")
-	public Subscription(final UUID id, final String ownerSystem, final String targetSystem, final String serviceDefinition,
-			final ZonedDateTime expiresAt, final String notifyProtocol, final String notifyProperties, final String orchestrationRequest) {
+	public Subscription(
+			final UUID id,
+			final String ownerSystem,
+			final String targetSystem,
+			final String serviceDefinition,
+			final ZonedDateTime expiresAt,
+			final String notifyProtocol,
+			final String notifyProperties,
+			final String orchestrationRequest) {
 		this.id = id;
 		this.ownerSystem = ownerSystem;
 		this.targetSystem = targetSystem;
@@ -80,8 +87,8 @@ public class Subscription {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "System [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt + ", notifyProtocol = " + notifyProtocol
-				+ ", notifyProperties = " + notifyProperties + ", orchestrationRequest = " + orchestrationRequest + ", createdAt = " + createdAt + "]";
+		return "System [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt
+				+ ", notifyProtocol = " + notifyProtocol + ", notifyProperties = " + notifyProperties + ", orchestrationRequest = " + orchestrationRequest + ", createdAt = " + createdAt + "]";
 	}
 
 	//=================================================================================================
@@ -176,5 +183,4 @@ public class Subscription {
 	public void setCreatedAt(final ZonedDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
-
 }

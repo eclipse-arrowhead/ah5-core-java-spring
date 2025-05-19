@@ -64,7 +64,8 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_GET_CONFIG:
-			final List<String> getConfigDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() { });
+			final List<String> getConfigDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+			});
 			responsePayload = getConfig(getConfigDTO);
 			break;
 
@@ -81,12 +82,14 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private LogEntryListResponseDTO getLog(final LogRequestDTO dto) {
 		logger.debug("GeneralManagementMqttHandler.getLog started");
+		
 		return logService.getLogEntries(dto, baseTopic() + Constants.SERVICE_OP_GET_LOG);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private KeyValuesDTO getConfig(final List<String> dto) {
 		logger.debug("GeneralManagementMqttHandler.getConfig started");
+		
 		return configService.getConfig(dto, baseTopic() + Constants.SERVICE_OP_GET_CONFIG);
 	}
 }

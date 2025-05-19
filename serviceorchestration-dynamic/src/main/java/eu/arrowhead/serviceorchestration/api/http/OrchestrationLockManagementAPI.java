@@ -67,7 +67,9 @@ public class OrchestrationLockManagementAPI {
 	public @ResponseBody OrchestrationLockListResponseDTO create(@RequestBody final OrchestrationLockListRequestDTO dto) {
 		logger.debug("created started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH
+				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
+
 		return lockMgmtService.create(dto, origin);
 	}
 
@@ -89,7 +91,9 @@ public class OrchestrationLockManagementAPI {
 	public @ResponseBody OrchestrationLockListResponseDTO query(@RequestBody(required = false) final OrchestrationLockQueryRequestDTO dto) {
 		logger.debug("query started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_LOCK_MANAGEMENT_PATH
+				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+
 		return lockMgmtService.query(dto, origin);
 	}
 

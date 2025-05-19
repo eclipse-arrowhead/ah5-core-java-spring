@@ -21,7 +21,6 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
@@ -44,10 +43,10 @@ public class ManagementValidation {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private SystemNameValidator systemNameValidator;
+	private PageValidator pageValidator;
 
 	@Autowired
-	private PageValidator pageValidator;
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
 	private SystemNameNormalizer systemNameNormalizer;
@@ -60,123 +59,6 @@ public class ManagementValidation {
 
 	//=================================================================================================
 	// methods
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
-		logger.debug("validateUpdateIdentityListPhase1 started...");
-
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-
-		final List<IdentityMgmtRequestDTO> list = dto.identities();
-		if (Utilities.isEmpty(list)) {
-			throw new InvalidParameterException("Identity list is missing or empty", origin);
-		}
-
-		if (Utilities.containsNull(list)) {
-			throw new InvalidParameterException("Identity list contains null element", origin);
-		}
-
-		for (final IdentityMgmtRequestDTO identity : list) {
-			validateIdentityWithoutCredentials(identity, origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateIdentityListPhase2(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities, final String origin) {
-		logger.debug("validateUpdateIdentityListPhase2 started...");
-		Assert.notNull(authenticationMethod, "Authentication method is null");
-		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
-
-		for (final NormalizedIdentityMgmtRequestDTO identity : identities) {
-			try {
-				authenticationMethod.validator().validateCredentials(identity.credentials());
-			} catch (final InvalidParameterException ex) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			} catch (final InternalServerError ex) {
-				throw new InternalServerError(ex.getMessage(), origin);
-			}
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateIdentityNames(final List<String> originalNames, final String origin) {
-		logger.debug("validateIdentityNames started");
-
-		if (Utilities.isEmpty(originalNames)) {
-			throw new InvalidParameterException("Identifiable system name list is missing or empty", origin);
-		}
-
-		if (Utilities.containsNullOrEmpty(originalNames)) {
-			throw new InvalidParameterException("Identifiable system name list contains null or empty element", origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
-		logger.debug("validateIdentityQueryRequest started");
-
-		if (dto != null) {
-			// pagination
-			pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
-
-			ZonedDateTime from = null;
-			if (!Utilities.isEmpty(dto.creationFrom())) {
-				try {
-					from = Utilities.parseUTCStringToZonedDateTime(dto.creationFrom());
-				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Minimum creation time has an invalid time format", origin);
-				}
-			}
-
-			ZonedDateTime to = null;
-			if (!Utilities.isEmpty(dto.creationTo())) {
-				try {
-					to = Utilities.parseUTCStringToZonedDateTime(dto.creationTo());
-				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Maximum creation time has an invalid time format", origin);
-				}
-			}
-
-			if (from != null && to != null && to.isBefore(from)) {
-				throw new InvalidParameterException("Empty creation time interval", origin);
-			}
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
-		logger.debug("validateSessionQueryRequest started");
-
-		if (dto != null) {
-			// pagination
-			pageValidator.validatePageParameter(dto.pagination(), ActiveSession.ACCEPTABLE_SORT_FIELDS, origin);
-
-			ZonedDateTime from = null;
-			if (!Utilities.isEmpty(dto.loginFrom())) {
-				try {
-					from = Utilities.parseUTCStringToZonedDateTime(dto.loginFrom());
-				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Minimum login time has an invalid time format", origin);
-				}
-			}
-
-			ZonedDateTime to = null;
-			if (!Utilities.isEmpty(dto.loginTo())) {
-				try {
-					to = Utilities.parseUTCStringToZonedDateTime(dto.loginTo());
-				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Maximum login time has an invalid time format", origin);
-				}
-			}
-
-			if (from != null && to != null && to.isBefore(from)) {
-				throw new InvalidParameterException("Empty login time interval", origin);
-			}
-		}
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	// VALIDATION AND NORMALIZATION
@@ -206,7 +88,7 @@ public class ManagementValidation {
 		try {
 			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeCreateIdentityList(dto);
 			checkNameDuplications(result.identities().stream().map(ni -> ni.systemName()).toList(), origin);
-			
+
 			final IAuthenticationMethod method = result.authenticationMethod();
 			result.identities().forEach(i -> {
 				systemNameValidator.validateSystemName(i.systemName());
@@ -230,6 +112,12 @@ public class ManagementValidation {
 		final List<NormalizedIdentityMgmtRequestDTO> result = normalizer.normalizeUpdateIdentityListWithoutCredentials(dto);
 		checkNameDuplications(result.stream().map(ni -> ni.systemName()).toList(), origin);
 
+		try {
+			result.forEach(i -> systemNameValidator.validateSystemName(i.systemName()));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
 		return result;
 	}
 
@@ -240,10 +128,13 @@ public class ManagementValidation {
 			final String origin) {
 		logger.debug("validateAndNormalizeUpdateIdentityListPhase2 started...");
 
-		validateUpdateIdentityListPhase2(authenticationMethod, identities, origin);
-
 		try {
-			return normalizer.normalizeCredentials(authenticationMethod, identities);
+			final List<NormalizedIdentityMgmtRequestDTO> normalized = normalizer.normalizeCredentials(authenticationMethod, identities);
+			validateUpdateIdentityListPhase2(authenticationMethod, normalized);
+
+			return normalized;
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -255,7 +146,15 @@ public class ManagementValidation {
 
 		validateIdentityNames(names, origin);
 
-		return normalizer.normalizeIdentifiableSystemNames(names);
+		final List<String> normalized = normalizer.normalizeIdentifiableSystemNames(names);
+
+		try {
+			normalized.forEach(n -> systemNameValidator.validateSystemName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), ex);
+		}
+
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -263,8 +162,17 @@ public class ManagementValidation {
 		logger.debug("validateAndNormalizeIdentityQueryRequest started...");
 
 		validateIdentityQueryRequest(dto, origin);
+		final NormalizedIdentityQueryRequestDTO normalized = normalizer.normalizeIdentityQueryRequest(dto);
 
-		return normalizer.normalizeIdentityQueryRequest(dto);
+		try {
+			if (!Utilities.isEmpty(normalized.createdBy())) {
+				systemNameValidator.validateSystemName(normalized.createdBy());
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -272,8 +180,15 @@ public class ManagementValidation {
 		logger.debug("validateAndNormalizeCloseSessions started...");
 
 		validateIdentityNames(names, origin);
+		final List<String> normalized = normalizer.normalizeIdentifiableSystemNames(names);
 
-		return normalizer.normalizeIdentifiableSystemNames(names);
+		try {
+			normalized.forEach(n -> systemNameValidator.validateSystemName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -287,7 +202,7 @@ public class ManagementValidation {
 
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	// VALIDATION
 
@@ -299,7 +214,7 @@ public class ManagementValidation {
 			throw new InvalidParameterException("Requester name is missing or empty", origin);
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private void validateCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
 		logger.debug("validateCreateIdentityList started...");
@@ -334,12 +249,34 @@ public class ManagementValidation {
 		}
 
 		for (final IdentityMgmtRequestDTO identity : list) {
-			validateIdentity(method, identity, origin);
+			validateIdentity(identity, origin);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void validateIdentity(final IAuthenticationMethod method, final IdentityMgmtRequestDTO identity, final String origin) {
+	private void validateUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
+		logger.debug("validateUpdateIdentityListPhase1 started...");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		final List<IdentityMgmtRequestDTO> list = dto.identities();
+		if (Utilities.isEmpty(list)) {
+			throw new InvalidParameterException("Identity list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNull(list)) {
+			throw new InvalidParameterException("Identity list contains null element", origin);
+		}
+
+		for (final IdentityMgmtRequestDTO identity : list) {
+			validateIdentity(identity, origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateIdentity(final IdentityMgmtRequestDTO identity, final String origin) {
 		logger.debug("validateIdentity started...");
 
 		if (Utilities.isEmpty(identity.systemName())) {
@@ -358,6 +295,95 @@ public class ManagementValidation {
 			}
 
 			uniqueNames.add(name);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateUpdateIdentityListPhase2(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities) {
+		logger.debug("validateUpdateIdentityListPhase2 started...");
+		Assert.notNull(authenticationMethod, "Authentication method is null");
+		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
+
+		for (final NormalizedIdentityMgmtRequestDTO identity : identities) {
+			authenticationMethod.validator().validateCredentials(identity.credentials());
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateIdentityNames(final List<String> originalNames, final String origin) {
+		logger.debug("validateIdentityNames started");
+
+		if (Utilities.isEmpty(originalNames)) {
+			throw new InvalidParameterException("Identifiable system name list is missing or empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(originalNames)) {
+			throw new InvalidParameterException("Identifiable system name list contains null or empty element", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
+		logger.debug("validateIdentityQueryRequest started");
+
+		if (dto != null) {
+			// pagination
+			pageValidator.validatePageParameter(dto.pagination(), System.SORTABLE_FIELDS_BY, origin);
+
+			ZonedDateTime from = null;
+			if (!Utilities.isEmpty(dto.creationFrom())) {
+				try {
+					from = Utilities.parseUTCStringToZonedDateTime(dto.creationFrom());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Minimum creation time has an invalid time format", origin);
+				}
+			}
+
+			ZonedDateTime to = null;
+			if (!Utilities.isEmpty(dto.creationTo())) {
+				try {
+					to = Utilities.parseUTCStringToZonedDateTime(dto.creationTo());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Maximum creation time has an invalid time format", origin);
+				}
+			}
+
+			if (from != null && to != null && to.isBefore(from)) {
+				throw new InvalidParameterException("Empty creation time interval", origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
+		logger.debug("validateSessionQueryRequest started");
+
+		if (dto != null) {
+			// pagination
+			pageValidator.validatePageParameter(dto.pagination(), ActiveSession.ACCEPTABLE_SORT_FIELDS, origin);
+
+			ZonedDateTime from = null;
+			if (!Utilities.isEmpty(dto.loginFrom())) {
+				try {
+					from = Utilities.parseUTCStringToZonedDateTime(dto.loginFrom());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Minimum login time has an invalid time format", origin);
+				}
+			}
+
+			ZonedDateTime to = null;
+			if (!Utilities.isEmpty(dto.loginTo())) {
+				try {
+					to = Utilities.parseUTCStringToZonedDateTime(dto.loginTo());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Maximum login time has an invalid time format", origin);
+				}
+			}
+
+			if (from != null && to != null && to.isBefore(from)) {
+				throw new InvalidParameterException("Empty login time interval", origin);
+			}
 		}
 	}
 }

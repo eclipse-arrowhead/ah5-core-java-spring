@@ -11,14 +11,14 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
 import eu.arrowhead.dto.OrchestrationLockListRequestDTO;
 import eu.arrowhead.dto.OrchestrationLockQueryRequestDTO;
-import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationLockManagementNormalization;
 
 @Service
@@ -31,7 +31,10 @@ public class OrchestrationLockManagementValidation {
 	private OrchestrationLockManagementNormalization normalization;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
+	
+	@Autowired
+	private ServiceInstanceIdentifierValidator serviceInstanceIdValidator;
 
 	@Autowired
 	private PageValidator pageValidator;
@@ -41,97 +44,7 @@ public class OrchestrationLockManagementValidation {
 	//=================================================================================================
 	// methods
 
-	// VALIDATION
-
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateService(final OrchestrationLockListRequestDTO dto, final String origin) {
-		logger.debug("validateCreateService started...");
-
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is null", origin);
-		}
-
-		if (Utilities.containsNull(dto.locks())) {
-			throw new InvalidParameterException("Request payload contains null element", origin);
-		}
-
-		final ZonedDateTime now = Utilities.utcNow();
-		dto.locks().forEach(lock -> {
-			if (Utilities.isEmpty(lock.serviceInstanceId())) {
-				throw new InvalidParameterException("Service instance id is missing", origin);
-			}
-
-			if (lock.serviceInstanceId().length() > Constants.SERVICE_INSTANCE_ID_MAX_LENGTH) {
-				throw new InvalidParameterException("Service instance id is too long", origin);
-			}
-
-			if (Utilities.isEmpty(lock.owner())) {
-				throw new InvalidParameterException("Owner is missing", origin);
-			}
-
-			if (lock.owner().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Owner name is too long", origin);
-			}
-
-			if (!Utilities.isEmpty(lock.expiresAt())) {
-				try {
-					final ZonedDateTime expiresAt = Utilities.parseUTCStringToZonedDateTime(lock.expiresAt().trim());
-					if (expiresAt.isBefore(now)) {
-						throw new InvalidParameterException("Expires at is in the past: " + lock.expiresAt(), origin);
-					}
-				} catch (final DateTimeParseException ex) {
-					throw new InvalidParameterException("Invalid expires at format: " + lock.expiresAt(), origin);
-				}
-			} else {
-				throw new InvalidParameterException("Expiration time is missing", origin);
-			}
-		});
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
-		logger.debug("validateQueryService started...");
-
-		if (dto == null) {
-			return;
-		}
-
-		pageValidator.validatePageParameter(dto.pagination(), OrchestrationJob.SORTABLE_FIELDS_BY, origin);
-
-		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNull(dto.ids())) {
-			throw new InvalidParameterException("ID list contains empty element.", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.orchestrationJobIds()) && Utilities.containsNullOrEmpty(dto.orchestrationJobIds())) {
-			throw new InvalidParameterException("Orchestration job id list contains empty element.", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceInstanceIds())) {
-			throw new InvalidParameterException("Service instance id list contains empty element.", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.owners()) && Utilities.containsNullOrEmpty(dto.owners())) {
-			throw new InvalidParameterException("Owner list contains empty element.", origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateRemoveService(final List<String> serviceInstanceIds, final String owner, final String origin) {
-		logger.debug("validateRemoveService started...");
-
-		if (Utilities.isEmpty(serviceInstanceIds)) {
-			throw new InvalidParameterException("Service instance id list empty.", origin);
-		}
-
-		if (Utilities.containsNullOrEmpty(serviceInstanceIds)) {
-			throw new InvalidParameterException("Service instance id list contains empty element.", origin);
-		}
-
-		if (Utilities.isEmpty(owner)) {
-			throw new InvalidParameterException("Owner is missing.", origin);
-		}
-	}
-
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -139,14 +52,13 @@ public class OrchestrationLockManagementValidation {
 		logger.debug("validateAndNormalizeCreateService started...");
 
 		validateCreateService(dto, origin);
-
 		final OrchestrationLockListRequestDTO normalized = normalization.normalizeOrchestrationLockListRequestDTO(dto);
 
 		try {
 			normalized.locks().forEach(lock -> {
-				nameValidator.validateName(lock.owner());
+				serviceInstanceIdValidator.validateServiceInstanceIdentifier(lock.serviceInstanceId());
+				systemNameValidator.validateSystemName(lock.owner());
 			});
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -159,7 +71,6 @@ public class OrchestrationLockManagementValidation {
 		logger.debug("validateAndNormalizeQueryService started...");
 
 		validateQueryService(dto, origin);
-
 		final OrchestrationLockQueryRequestDTO normalized = normalization.normalizeOrchestrationLockQueryRequestDTO(dto);
 
 		try {
@@ -169,13 +80,14 @@ public class OrchestrationLockManagementValidation {
 						throw new InvalidParameterException("Invalid orchestration job id: " + jobId);
 					}
 				});
-
+			}
+			
+			if (!Utilities.isEmpty(normalized.serviceInstanceIds())) {
+				normalized.serviceInstanceIds().forEach(id -> serviceInstanceIdValidator.validateServiceInstanceIdentifier(id));
 			}
 
 			if (!Utilities.isEmpty(normalized.owners())) {
-				normalized.owners().forEach(owner -> {
-					nameValidator.validateName(owner);
-				});
+				normalized.owners().forEach(owner -> systemNameValidator.validateSystemName(owner));
 			}
 
 			if (!Utilities.isEmpty(normalized.expiresBefore())) {
@@ -193,7 +105,6 @@ public class OrchestrationLockManagementValidation {
 					throw new InvalidParameterException("Invalid expires after: " + normalized.expiresAfter());
 				}
 			}
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
@@ -206,6 +117,101 @@ public class OrchestrationLockManagementValidation {
 		logger.debug("validateAndNormalizeRemoveService started...");
 
 		validateRemoveService(serviceInstanceIds, owner, origin);
-		return Pair.of(normalization.normalizeSystemName(owner), normalization.normalizeServiceInstanceIds(serviceInstanceIds));
+		final Pair<String, List<String>> normalized = Pair.of(normalization.normalizeSystemName(owner), normalization.normalizeServiceInstanceIds(serviceInstanceIds));
+		
+		try {
+			systemNameValidator.validateSystemName(normalized.getLeft());
+			normalized.getRight().forEach(id -> serviceInstanceIdValidator.validateServiceInstanceIdentifier(id));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+		
+		return normalized;
+	}
+	
+	//=================================================================================================
+	// assistant methods
+	
+	// VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateCreateService(final OrchestrationLockListRequestDTO dto, final String origin) {
+		logger.debug("validateCreateService started...");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is null", origin);
+		}
+
+		if (Utilities.containsNull(dto.locks())) {
+			throw new InvalidParameterException("Request payload contains null element", origin);
+		}
+
+		final ZonedDateTime now = Utilities.utcNow();
+		dto.locks().forEach(lock -> {
+			if (Utilities.isEmpty(lock.serviceInstanceId())) {
+				throw new InvalidParameterException("Service instance id is missing", origin);
+			}
+
+			if (Utilities.isEmpty(lock.owner())) {
+				throw new InvalidParameterException("Owner is missing", origin);
+			}
+
+			if (!Utilities.isEmpty(lock.expiresAt())) {
+				try {
+					final ZonedDateTime expiresAt = Utilities.parseUTCStringToZonedDateTime(lock.expiresAt().trim());
+					if (expiresAt.isBefore(now)) {
+						throw new InvalidParameterException("Expires at is in the past: " + lock.expiresAt(), origin);
+					}
+				} catch (final DateTimeParseException ex) {
+					throw new InvalidParameterException("Invalid expires at format: " + lock.expiresAt(), origin);
+				}
+			} else {
+				throw new InvalidParameterException("Expiration time is missing", origin);
+			}
+		});
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private void validateQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryService started...");
+
+		if (dto == null) {
+			return;
+		}
+
+		pageValidator.validatePageParameter(dto.pagination(), OrchestrationLock.SORTABLE_FIELDS_BY, origin);
+
+		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNull(dto.ids())) {
+			throw new InvalidParameterException("ID list contains empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.orchestrationJobIds()) && Utilities.containsNullOrEmpty(dto.orchestrationJobIds())) {
+			throw new InvalidParameterException("Orchestration job id list contains empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceInstanceIds())) {
+			throw new InvalidParameterException("Service instance id list contains empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.owners()) && Utilities.containsNullOrEmpty(dto.owners())) {
+			throw new InvalidParameterException("Owner list contains empty element", origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private void validateRemoveService(final List<String> serviceInstanceIds, final String owner, final String origin) {
+		logger.debug("validateRemoveService started...");
+
+		if (Utilities.isEmpty(serviceInstanceIds)) {
+			throw new InvalidParameterException("Service instance id list empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(serviceInstanceIds)) {
+			throw new InvalidParameterException("Service instance id list contains empty element", origin);
+		}
+
+		if (Utilities.isEmpty(owner)) {
+			throw new InvalidParameterException("Owner is missing", origin);
+		}
 	}
 }

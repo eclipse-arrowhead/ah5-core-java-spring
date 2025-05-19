@@ -23,7 +23,7 @@ public interface SystemRepository extends RefreshableRepository<System, Long> {
 	public List<System> findAllByNameIn(final List<String> names);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<System> findAllByNameContains(final String namePart);
+	public List<System> findAllByNameContainsIgnoreCase(final String namePart);
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<System> findAllByIdIn(final Pageable pageable, final List<Long> ids);

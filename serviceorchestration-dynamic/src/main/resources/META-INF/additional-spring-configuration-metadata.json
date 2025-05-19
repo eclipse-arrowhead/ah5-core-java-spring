@@ -98,5 +98,15 @@
     "name": "push.orchestration.max.thread",
     "type": "java.lang.Integer",
     "description": "A description for 'push.orchestration.max.thread'"
+  },
+  {
+    "name": "normalization.mode",
+    "type": "eu.arrowhead.common.service.normalization.NormalizationMode",
+    "description": "A description for 'normalization.mode'"
+  },
+  {
+    "name": "disable.hostname.verifier",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'disable.hostname.verifier'"
   }
 ]}

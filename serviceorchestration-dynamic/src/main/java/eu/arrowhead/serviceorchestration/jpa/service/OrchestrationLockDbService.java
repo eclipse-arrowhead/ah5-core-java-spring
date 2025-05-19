@@ -41,12 +41,11 @@ public class OrchestrationLockDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationLock> create(final List<OrchestrationLock> candidates) {
 		logger.debug("create started...");
-		Assert.isTrue(!Utilities.isEmpty(candidates), "Orchestration lock is empty");
+		Assert.isTrue(!Utilities.isEmpty(candidates), "Orchestration lock list is empty");
 		Assert.isTrue(!Utilities.containsNull(candidates), "Orchestration lock list contains null element");
 
 		try {
 			return lockRepo.saveAllAndFlush(candidates);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -58,10 +57,10 @@ public class OrchestrationLockDbService {
 	public List<OrchestrationLock> getByServiceInstanceId(final List<String> ids) {
 		logger.debug("getByServiceInstanceId started...");
 		Assert.isTrue(!Utilities.isEmpty(ids), "Service instance id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "Service instance id list contains null element");
 
 		try {
 			return lockRepo.findAllByServiceInstanceIdIn(ids);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -75,7 +74,6 @@ public class OrchestrationLockDbService {
 
 		try {
 			return lockRepo.findAll();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -90,8 +88,8 @@ public class OrchestrationLockDbService {
 
 		try {
 			final BaseFilter baseFilter = filter.getBaseFilter();
-
 			List<OrchestrationLock> toFilter;
+			
 			if (baseFilter == BaseFilter.ID) {
 				toFilter = lockRepo.findAllById(filter.getIds());
 			} else if (baseFilter == BaseFilter.JOB) {
@@ -113,7 +111,9 @@ public class OrchestrationLockDbService {
 					matching = false;
 
 					// Match against to orchestration job id
-				} else if (baseFilter != BaseFilter.JOB && !Utilities.isEmpty(filter.getOrchestrationJobIds()) && !Utilities.isEmpty(lock.getOrchestrationJobId())
+				} else if (baseFilter != BaseFilter.JOB
+						&& !Utilities.isEmpty(filter.getOrchestrationJobIds())
+						&& !Utilities.isEmpty(lock.getOrchestrationJobId())
 						&& !filter.getOrchestrationJobIds().contains(lock.getOrchestrationJobId())) {
 					matching = false;
 
@@ -139,7 +139,6 @@ public class OrchestrationLockDbService {
 			}
 
 			return lockRepo.findAllByIdIn(matchingIds, pagination);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -149,7 +148,11 @@ public class OrchestrationLockDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Optional<OrchestrationLock> changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(final String orchestrationJobId, final String serviceInstanceId, final ZonedDateTime time, final boolean isTemporary) {
+	public Optional<OrchestrationLock> changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(
+			final String orchestrationJobId,
+			final String serviceInstanceId,
+			final ZonedDateTime time,
+			final boolean isTemporary) {
 		logger.debug("changeExpiresAtByOrchestrationJobIdAndServiceInstanceId started...");
 		Assert.isTrue(!Utilities.isEmpty(orchestrationJobId), "Orchestration job id is empty");
 		Assert.isTrue(!Utilities.isEmpty(serviceInstanceId), "Service instance id is empty");
@@ -163,7 +166,6 @@ public class OrchestrationLockDbService {
 			}
 
 			return optional;
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -175,12 +177,11 @@ public class OrchestrationLockDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteInBatch(final Collection<Long> ids) {
 		logger.debug("deleteInBatch started...");
-		Assert.isTrue(!Utilities.isEmpty(ids), "Orchestration lock is list is empty");
+		Assert.isTrue(!Utilities.isEmpty(ids), "Id list is empty");
 
 		try {
 			lockRepo.deleteAllByIdInBatch(ids);
 			lockRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -197,8 +198,8 @@ public class OrchestrationLockDbService {
 			final List<OrchestrationLock> toDelete = lockRepo.findAllByExpiresAtBefore(time);
 			if (!Utilities.isEmpty(toDelete)) {
 				lockRepo.deleteAllInBatch(toDelete);
+				lockRepo.flush();
 			}
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

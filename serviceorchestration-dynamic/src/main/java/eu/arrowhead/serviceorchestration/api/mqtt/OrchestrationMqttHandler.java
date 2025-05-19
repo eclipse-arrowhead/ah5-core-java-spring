@@ -59,7 +59,7 @@ public class OrchestrationMqttHandler extends MqttTopicHandler {
 
 		case Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE:
 			final OrchestrationSubscriptionRequestDTO subscribeReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionRequestDTO.class);
-			final String triggerStr = request.getParams().getOrDefault("trigger", Boolean.FALSE.toString());
+			final String triggerStr = request.getParams().getOrDefault(DynamicServiceOrchestrationConstants.PARAM_NAME_TRIGGER, Boolean.FALSE.toString());
 			final Pair<Boolean, String> subscribeResult = pushSubscribe(request.getRequester(), subscribeReqDTO, Boolean.valueOf(triggerStr));
 			responseStatus = subscribeResult.getLeft() ? MqttStatus.CREATED : MqttStatus.OK;
 			responsePayload = subscribeResult.getRight();
@@ -84,18 +84,21 @@ public class OrchestrationMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationResponseDTO pull(final String requesterSystem, final OrchestrationRequestDTO dto) {
 		logger.debug("OrchestrationMqttHandler.pull started");
+		
 		return orchService.pull(requesterSystem, dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_PULL);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final boolean trigger) {
 		logger.debug("OrchestrationMqttHandler.pushSubscribe started");
+		
 		return orchService.pushSubscribe(requesterSystem, dto, trigger, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private boolean pushUnsubscribe(final String requesterSystem, final String id) {
 		logger.debug("OrchestrationMqttHandler.pushUnsubscribe started");
+		
 		return orchService.pushUnsubscribe(requesterSystem, id, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE);
 	}
 }

@@ -72,8 +72,8 @@ public class OrchestrationAPI {
 		logger.debug("pull started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH;
-
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
+
 		return orchService.pull(requesterSystem, dto, origin);
 	}
 
@@ -97,13 +97,13 @@ public class OrchestrationAPI {
 	public ResponseEntity<String> pushSubscribe(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final OrchestrationSubscriptionRequestDTO dto,
-			@Parameter(name = "trigger", description = "Set to true in order to initiate a push orchestration after the successful subscription.") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
+			@Parameter(name = DynamicServiceOrchestrationConstants.PARAM_NAME_TRIGGER, description = "Set to true in order to initiate a push orchestration after the successful subscription.") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
 		logger.debug("pushSubscribe started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
-
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, trigger, origin);
+
 		return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
@@ -127,9 +127,9 @@ public class OrchestrationAPI {
 
 		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH
 				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH.replace(DynamicServiceOrchestrationConstants.HTTP_PATH_PARAM_ID, id);
-
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		final boolean result = orchService.pushUnsubscribe(requesterSystem, id, origin);
+
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }
