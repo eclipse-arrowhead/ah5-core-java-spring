@@ -96,46 +96,53 @@ public class EncryptionKeyDbService {
 		logger.debug("save started...");
 		Assert.notNull(candidates, "EncryptionKeyModel candidate list is null.");
 		
-		final Set<String> sysNames = new HashSet<>();
-		final List<EncryptionKey> keysToDelete = new ArrayList<>();
-		final List<CryptographerAuxiliary> auxiliariesToDelete = new ArrayList<>();
-		final List<EncryptionKey> keysToSave = new ArrayList<>();
-		final List<CryptographerAuxiliary> auxiliariesToSave = new ArrayList<>();
-		
-		for (final EncryptionKeyModel candidate : candidates) {
-			Assert.notNull(candidate, "EncryptionKeyModel candidate is null");
-			Assert.isTrue(!Utilities.isEmpty(candidate.getSystemName()), "EncryptionKeyModel.systemName is empty");
-			Assert.isTrue(!Utilities.isEmpty(candidate.getKeyEncryptedValue()), "EncryptionKeyModel.keyEncriptedValue is empty");
-			Assert.isTrue(!Utilities.isEmpty(candidate.getAlgorithm()), "EncryptionKeyModel.algorithm is empty");
-			Assert.isTrue(!Utilities.isEmpty(candidate.getInternalAuxiliary()), "EncryptionKeyModel.internalAuxiliary is empty");
+		try {
+			final Set<String> sysNames = new HashSet<>();
+			final List<EncryptionKey> keysToDelete = new ArrayList<>();
+			final List<CryptographerAuxiliary> auxiliariesToDelete = new ArrayList<>();
+			final List<EncryptionKey> keysToSave = new ArrayList<>();
+			final List<CryptographerAuxiliary> auxiliariesToSave = new ArrayList<>();
 			
-			Assert.isTrue(!sysNames.contains(candidate.getSystemName()), "Duplicate EncryptionKeyModel for system: " + candidate.getSystemName());
-			sysNames.add(candidate.getSystemName());
-			
-			final Optional<EncryptionKey> keyOpt = keyRepo.findBySystemName(candidate.getSystemName());
-			if (keyOpt.isPresent()) {
-				keysToDelete.add(keyOpt.get());
-				auxiliariesToDelete.add(keyOpt.get().getInternalAuxiliary());
-				if (keyOpt.get().getExternalAuxiliary() != null) {
-					auxiliariesToDelete.add(keyOpt.get().getExternalAuxiliary());
+			for (final EncryptionKeyModel candidate : candidates) {
+				Assert.notNull(candidate, "EncryptionKeyModel candidate is null");
+				Assert.isTrue(!Utilities.isEmpty(candidate.getSystemName()), "EncryptionKeyModel.systemName is empty");
+				Assert.isTrue(!Utilities.isEmpty(candidate.getKeyEncryptedValue()), "EncryptionKeyModel.keyEncriptedValue is empty");
+				Assert.isTrue(!Utilities.isEmpty(candidate.getAlgorithm()), "EncryptionKeyModel.algorithm is empty");
+				Assert.isTrue(!Utilities.isEmpty(candidate.getInternalAuxiliary()), "EncryptionKeyModel.internalAuxiliary is empty");
+				
+				Assert.isTrue(!sysNames.contains(candidate.getSystemName()), "Duplicate EncryptionKeyModel for system: " + candidate.getSystemName());
+				sysNames.add(candidate.getSystemName());
+				
+				final Optional<EncryptionKey> keyOpt = keyRepo.findBySystemName(candidate.getSystemName());
+				if (keyOpt.isPresent()) {
+					keysToDelete.add(keyOpt.get());
+					auxiliariesToDelete.add(keyOpt.get().getInternalAuxiliary());
+					if (keyOpt.get().getExternalAuxiliary() != null) {
+						auxiliariesToDelete.add(keyOpt.get().getExternalAuxiliary());
+					}
+				}
+				
+				final EncryptionKey toSave = new EncryptionKey(candidate.getSystemName(), candidate.getKeyEncryptedValue(), candidate.getAlgorithm(),
+						new CryptographerAuxiliary(candidate.getInternalAuxiliary()), !candidate.hasExternalAuxiliary() ? null : new CryptographerAuxiliary(candidate.getExternalAuxiliary()));
+				
+				keysToSave.add(toSave);
+				auxiliariesToSave.add(toSave.getInternalAuxiliary());
+				if (candidate.hasExternalAuxiliary()) {
+					auxiliariesToSave.add(toSave.getExternalAuxiliary());
 				}
 			}
 			
-			final EncryptionKey toSave = new EncryptionKey(candidate.getSystemName(), candidate.getKeyEncryptedValue(), candidate.getAlgorithm(),
-					new CryptographerAuxiliary(candidate.getInternalAuxiliary()), !candidate.hasExternalAuxiliary() ? null : new CryptographerAuxiliary(candidate.getExternalAuxiliary()));
+			auxiliaryRepo.saveAll(auxiliariesToSave);
+			final List<EncryptionKey> results = keyRepo.saveAll(keysToSave);
+			auxiliaryRepo.flush();
+			keyRepo.flush();
+			return results;
 			
-			keysToSave.add(toSave);
-			auxiliariesToSave.add(toSave.getInternalAuxiliary());
-			if (candidate.hasExternalAuxiliary()) {
-				auxiliariesToSave.add(toSave.getExternalAuxiliary());
-			}
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
-		
-		auxiliaryRepo.saveAll(auxiliariesToSave);
-		final List<EncryptionKey> results = keyRepo.saveAll(keysToSave);
-		auxiliaryRepo.flush();
-		keyRepo.flush();
-		return results;
 	}
  
 	//-------------------------------------------------------------------------------------------------
@@ -149,10 +156,55 @@ public class EncryptionKeyDbService {
 			if (optional.isEmpty()) {
 				return false;
 			}
-
-			keyRepo.deleteById(optional.get().getId());
+			
+			final EncryptionKey entry = optional.get();
+			
+			auxiliaryRepo.deleteById(entry.getInternalAuxiliary().getId());
+			if (entry.getExternalAuxiliary() != null) {
+				auxiliaryRepo.deleteById(entry.getExternalAuxiliary().getId());
+			}
+			keyRepo.deleteById(entry.getId());
+			
+			auxiliaryRepo.flush();
+			keyRepo.flush();
 			return true;
 
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void delete(final List<String> systemNames) {
+		logger.debug("delete started...");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(systemNames), "systemName list contains null or empty element");
+		
+		try {
+			final List<CryptographerAuxiliary> auxiliariesToDelete = new ArrayList<>();
+			final List<EncryptionKey> keysToDelete = new ArrayList<>(systemNames.size());
+			
+			for (final String name : systemNames) {
+				final Optional<EncryptionKey> optional = keyRepo.findBySystemName(name);
+				if (optional.isEmpty()) {
+					continue;
+				}
+				
+				final EncryptionKey entry = optional.get();
+				auxiliariesToDelete.add(entry.getInternalAuxiliary());
+				if (entry.getExternalAuxiliary() != null) {
+					auxiliariesToDelete.add(entry.getExternalAuxiliary());
+				}
+				keysToDelete.add(entry);
+			}
+			
+			auxiliaryRepo.deleteAllInBatch(auxiliariesToDelete);
+			keyRepo.deleteAllInBatch(keysToDelete);
+			auxiliaryRepo.flush();
+			keyRepo.flush();
+			
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

@@ -228,6 +228,9 @@ public class AuthorizationManagementService {
 						finalResults.add(new AuthorizationTokenResponseDTO(tokenResult.tokenType(), tokenString, tokenResult.requester(), tokenResult.consumerCloud(), tokenResult.consumer(), tokenResult.provider(),
 								tokenResult.serviceDefinition(), tokenResult.serviceOperation(), tokenResult.createdAt(), tokenResult.usageLimit(), tokenResult.usageLeft(), tokenResult.expiresAt()));
 						
+					} catch (final InternalServerError ex) {
+						throw new InternalServerError(ex.getMessage(), origin);
+						
 					} catch (final Exception ex) {
 						logger.error(ex.getMessage());
 						logger.debug(ex);
@@ -243,6 +246,14 @@ public class AuthorizationManagementService {
 	//-------------------------------------------------------------------------------------------------
 	public void queryTokensOperation() {
 		// TODO
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public void revokeTokensOperation(final List<String> tokens, final String origin) {
+		logger.debug("revokeTokensOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		tokenEngine.revoke(tokens, origin);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -274,18 +285,34 @@ public class AuthorizationManagementService {
 			models.add(new EncryptionKeyModel(item.systemName(), item.key(), encryptedKeyToSave.getFirst(), item.algorithm(), encryptedKeyToSave.getSecond(), externalKeyAuxiliary));
 		}
 		
-		// Change the keyValue from encrypted to raw
-		final List<EncryptionKey> result = encryptionKeyDbService.save(models);
-		for (final EncryptionKey encryptionKey : result) {
-			final String rawKeyValue = models.stream().filter((item) -> item.getSystemName().equals(encryptionKey.getSystemName())).findFirst().get().getKeyValue();
-			encryptionKey.setKeyValue(rawKeyValue);
+		try {
+			final List<EncryptionKey> result = encryptionKeyDbService.save(models);
+			
+			// Change the keyValue from encrypted to raw
+			for (final EncryptionKey encryptionKey : result) {
+				final String rawKeyValue = models.stream().filter((item) -> item.getSystemName().equals(encryptionKey.getSystemName())).findFirst().get().getKeyValue();
+				encryptionKey.setKeyValue(rawKeyValue);
+			}
+			
+			return dtoConverter.convertEncryptionKeyListToResponse(result, result.size());
+			
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
-		
-		return dtoConverter.convertEncryptionKeyListToResponse(result, result.size());
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public void removeEncriptionKeysOperation() {
-		// TODO
+	public void removeEncryptionKeysOperation(final List<String> systemNames, final String origin) {
+		logger.debug("removeEncriptionKeysOperation started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		final List<String> normalized = systemNames; // TODO
+		
+		try {
+			encryptionKeyDbService.delete(normalized);
+			
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 }

@@ -2,6 +2,7 @@ package eu.arrowhead.authorization.service.utils;
 
 import java.security.PrivateKey;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -211,8 +212,11 @@ public class TokenEngine {
 					Utilities.convertZonedDateTimeToUTCString(selfContainedTokenResult.getFirst().getExpiresAt())),
 					selfContainedTokenResult.getSecond());
 
-		} catch (final InternalServerError | InvalidParameterException ex) {
+		} catch (final InvalidParameterException ex) {
 			throw ex;
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -235,34 +239,64 @@ public class TokenEngine {
 			throw new InternalServerError("Token verification failed.", origin);
 		}
 
-		final Optional<TokenHeader> optional = tokenHeaderDbService.find(requesterSystem, tokenAsSaved);
-		if (optional.isEmpty()) {
-			return new AuthorizationTokenVerifyResponseDTO(false, null, null, null, null);
-		}
-		final TokenHeader tokenHeader = optional.get();
-
-		if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
-			// Cannot happen, but who knows...
-			throw new InvalidParameterException("Self contained tokens can't be verified this way.", origin);
-		}
-
-		// USAGE LIMITED TOKEN
-		if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {
-			final UsageLimitedToken usageLimitedToken = usageLimitedTokenDbService.getByHeader(tokenHeader).get();
-			final boolean verified = usageLimitedToken.getUsageLeft() > 0;
-			if (verified) {
-				usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
+		try {
+			final Optional<TokenHeader> optional = tokenHeaderDbService.find(requesterSystem, tokenAsSaved);
+			if (optional.isEmpty()) {
+				return new AuthorizationTokenVerifyResponseDTO(false, null, null, null, null);
 			}
-			return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
+			final TokenHeader tokenHeader = optional.get();
+
+			if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
+				// Cannot happen, but who knows...
+				throw new InvalidParameterException("Self contained tokens can't be verified this way.", origin);
+			}
+
+			// USAGE LIMITED TOKEN
+			if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {
+				final UsageLimitedToken usageLimitedToken = usageLimitedTokenDbService.getByHeader(tokenHeader).get();
+				final boolean verified = usageLimitedToken.getUsageLeft() > 0;
+				if (verified) {
+					usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
+				}
+				return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
+			}
+
+			// TIME LIMITED TOKEN
+			if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
+				final TimeLimitedToken timeLimitedToken = timeLimitedTokenDbService.getByHeader(tokenHeader).get();
+				final boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
+				return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
+			}
+
+			throw new InternalServerError("Unhandled token type: " + tokenHeader.getTokenType());
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
 		}
 
-		// TIME LIMITED TOKEN
-		if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
-			final TimeLimitedToken timeLimitedToken = timeLimitedTokenDbService.getByHeader(tokenHeader).get();
-			final boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
-			return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
-		}
+	}
 
-		throw new InternalServerError("Unhandled token type: " + tokenHeader.getTokenType(), origin);
+	//-------------------------------------------------------------------------------------------------
+	public void revoke(final List<String> tokens, final String origin) {
+		logger.debug("revoke started...");
+
+		try {
+			// Only the not self contained token can be revoked and those are encrypted with HMAC (to not to have auxiliary, otherwise we could not find it)
+			final List<String> tokensAsSaved = tokens.stream().map((token) -> {
+				try {
+					return secretCryptographer.encryptHMACSHA256(token, sysInfo.getSecretCryptographerKey());
+				} catch (final Exception ex) {
+					logger.error(ex.getMessage());
+					logger.debug(ex);
+					throw new InternalServerError("Token verification failed.");
+				}
+			}).toList();
+
+			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenList(tokensAsSaved);
+			tokenHeaderDbService.deleteById(tokenHeaders.stream().map((header) -> header.getId()).toList()); // Delete on cascade removes also the belonged time or usage limited token details 
+
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 }

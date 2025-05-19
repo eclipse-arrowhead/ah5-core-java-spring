@@ -1,16 +1,20 @@
 package eu.arrowhead.authorization.jpa.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InternalServerError;
 
 @Service
 public class TokenHeaderDbService {
@@ -32,6 +36,45 @@ public class TokenHeaderDbService {
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
 		
-		return headerRepo.findByProviderAndToken(provider, token);
+		try {
+			return headerRepo.findByProviderAndToken(provider, token);
+			
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<TokenHeader> findByTokenList(final List<String> tokens) {
+		logger.debug("findByTokenList started");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(tokens), "token list contains null or empty element");
+		
+		try {
+			return headerRepo.findAllByTokenIn(tokens);
+			
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Transactional(rollbackFor = ArrowheadException.class)
+	public void deleteById(final List<Long> ids) {
+		logger.debug("deleteById started");
+		Assert.isTrue(!Utilities.containsNull(ids), "ID list contains null element");
+		
+		try {
+			headerRepo.deleteAllByIdInBatch(ids);
+			headerRepo.flush();
+			
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
 	}
 }

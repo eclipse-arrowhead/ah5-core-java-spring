@@ -1,5 +1,6 @@
 package eu.arrowhead.authorization.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -12,6 +13,9 @@ public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader
 	
 	//=================================================================================================
 	// methods
+	
+	//-------------------------------------------------------------------------------------------------
+	public List<TokenHeader> findAllByTokenIn(final List<String> tokens);
 	
 	//-------------------------------------------------------------------------------------------------
 	public Optional<TokenHeader> findByProviderAndToken(final String provider, final String token);
