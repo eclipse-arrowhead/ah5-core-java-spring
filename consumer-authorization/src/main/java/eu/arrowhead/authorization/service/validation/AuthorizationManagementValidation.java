@@ -15,6 +15,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.jpa.entity.AuthMgmtPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
+import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
@@ -39,11 +40,13 @@ import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
 import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenQueryRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
 import eu.arrowhead.dto.DTODefaults;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
+import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 @Service
@@ -243,6 +246,18 @@ public class AuthorizationManagementValidation {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
+	public void validateQueryTokensRequest(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryTokensRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+		
+		pageValidator.validatePageParameter(dto.pagination(), TokenHeader.SORTABLE_FIELDS_BY, origin);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
 	public void validateAddEncryptionKeysRequest(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
 		logger.debug("validateAddEncryptionKeysRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
@@ -267,7 +282,7 @@ public class AuthorizationManagementValidation {
 			}
 		}
 	}
-
+	
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -360,6 +375,43 @@ public class AuthorizationManagementValidation {
 			}
 		}
 
+		return normalized;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenQueryRequestDTO validateAndNormalizedQueryTokensRequest(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizedQueryTokensRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		
+		validateQueryTokensRequest(dto, origin);
+		final AuthorizationTokenQueryRequestDTO normalized = tokenNormalizer.normalizeAuthorizationTokenQueryRequestDTO(dto);
+		
+		try {
+			if (!Utilities.isEmpty(normalized.requester())) {
+				nameValidator.validateName(normalized.requester());
+			}
+			if (!Utilities.isEmpty(normalized.consumerCloud())) {
+				nameValidator.validateName(normalized.consumerCloud());
+			}
+			if (!Utilities.isEmpty(normalized.consumer())) {
+				nameValidator.validateName(normalized.consumer());
+			}
+			if (!Utilities.isEmpty(normalized.provider())) {
+				nameValidator.validateName(normalized.provider());
+			}
+			if (!Utilities.isEmpty(normalized.serviceDefinition())) {
+				nameValidator.validateName(normalized.serviceDefinition());
+			}
+			
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.tokenType())
+				&& !Utilities.isEnumValue(dto.tokenType(), AuthorizationTokenType.class)) {
+			throw new InvalidParameterException("Invalid token type: " + dto.tokenType(), origin);
+		}
+		
 		return normalized;
 	}
 

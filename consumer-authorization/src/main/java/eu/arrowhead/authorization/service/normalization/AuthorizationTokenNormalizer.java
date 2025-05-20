@@ -15,6 +15,7 @@ import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenQueryRequestDTO;
 import eu.arrowhead.dto.DTODefaults;
 
 @Service
@@ -86,6 +87,21 @@ public class AuthorizationTokenNormalizer {
 								Utilities.isEmpty(item.expireAt()) ? null : item.expireAt().trim(),
 								item.usageLimit()))
 						.toList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenQueryRequestDTO normalizeAuthorizationTokenQueryRequestDTO(final AuthorizationTokenQueryRequestDTO dto) {
+		logger.debug("normalizeAuthorizationTokenQueryRequestDTO started...");
+		Assert.notNull(dto, "AuthorizationTokenQueryRequestDTO is null.");
+
+		return new AuthorizationTokenQueryRequestDTO(
+				dto.pagination(),
+				Utilities.isEmpty(dto.requester()) ? null : nameNormalizer.normalize(dto.requester()),
+				Utilities.isEmpty(dto.tokenType()) ? null : dto.tokenType().trim().toUpperCase(),
+				Utilities.isEmpty(dto.consumerCloud()) ? null : nameNormalizer.normalize(dto.consumerCloud()),
+				Utilities.isEmpty(dto.consumer()) ? null : nameNormalizer.normalize(dto.consumer()),
+				Utilities.isEmpty(dto.provider()) ? null : nameNormalizer.normalize(dto.provider()),
+				Utilities.isEmpty(dto.serviceDefinition()) ? null : nameNormalizer.normalize(dto.serviceDefinition()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
