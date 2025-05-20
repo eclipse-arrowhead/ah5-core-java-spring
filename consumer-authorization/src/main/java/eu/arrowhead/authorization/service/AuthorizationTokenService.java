@@ -14,8 +14,10 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
+import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.model.EncryptionKeyModel;
+import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationTokenValidation;
@@ -30,7 +32,6 @@ import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
-import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
@@ -60,6 +61,9 @@ public class AuthorizationTokenService {
 
 	@Autowired
 	private AuthorizationTokenValidation validator;
+	
+	@Autowired
+	private DTOConverter dtoConverter;
 
 	@Resource(name = Constants.ARROWHEAD_CONTEXT)
 	private Map<String, Object> arrowheadContext;
@@ -92,9 +96,8 @@ public class AuthorizationTokenService {
 		}
 
 		// Generate token
-		final Pair<AuthorizationTokenResponseDTO, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, serviceInstanceIdParts.systemName(), serviceInstanceIdParts.serviceDefinition(),
+		final Pair<TokenModel, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, serviceInstanceIdParts.systemName(), serviceInstanceIdParts.serviceDefinition(),
 				Utilities.isEmpty(normalizedDTO.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.serviceOperation(), origin);
-		String tokenString = tokenResult.getFirst().token();
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
@@ -106,10 +109,10 @@ public class AuthorizationTokenService {
 					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
 
 					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
-						tokenString = secretCryptographer.encryptHMACSHA256(tokenString, plainEncriptionKey);
+						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptHMACSHA256(tokenResult.getFirst().getRawToken(), plainEncriptionKey));
 
 					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
-						tokenString = secretCryptographer.encryptAESCBCPKCS5P(tokenString, plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst();
+						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P(tokenResult.getFirst().getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
 
 					} else {
 						throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -123,7 +126,7 @@ public class AuthorizationTokenService {
 			}
 		}
 
-		return Pair.of(new AuthorizationTokenGenerationResponseDTO(AuthorizationTokenType.fromServiceInterfacePolicy(tokenType), tokenString, tokenResult.getFirst().usageLimit(), tokenResult.getFirst().expiresAt()), tokenResult.getSecond());
+		return Pair.of(dtoConverter.convertTokenModelToResponse(tokenResult.getFirst()), tokenResult.getSecond());
 	}
 
 	//-------------------------------------------------------------------------------------------------

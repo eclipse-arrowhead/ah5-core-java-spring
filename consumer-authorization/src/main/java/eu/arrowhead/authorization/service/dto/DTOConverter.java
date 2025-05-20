@@ -18,6 +18,7 @@ import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
+import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyListResponseDTO;
@@ -25,6 +26,8 @@ import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
@@ -163,20 +166,54 @@ public class DTOConverter {
 
 		return new AuthorizationVerifyListResponseDTO(convertedList, result.size());
 	}
-	
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenGenerationResponseDTO convertTokenModelToResponse(final TokenModel token) {
+		logger.debug("convertTokenModelToResponse started...");
+		Assert.notNull(token, "TokenModel is null");
+
+		return new AuthorizationTokenGenerationResponseDTO(
+				token.getTokenType(),
+				token.isEncrypted() ? token.getEnrcyptedToken() : token.getRawToken(),
+				token.getUsageLimit(),
+				token.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(token.getExpiresAt()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenResponseDTO convertTokenModelToMgmtResponse(final TokenModel token) {
+		logger.debug("convertTokenModelToResponse started...");
+		Assert.notNull(token, "TokenModel is null");
+
+		return new AuthorizationTokenResponseDTO(
+				token.getTokenType(),
+				token.getVariant(),
+				token.isEncrypted() ? token.getEnrcyptedToken() : token.getRawToken(),
+				token.getTokenAsStored(),
+				token.getRequester(),
+				token.getConsumerCloud(),
+				token.getConsumer(),
+				token.getProvider(),
+				token.getServiceDefinition(),
+				token.getServiceOperation(),
+				Utilities.convertZonedDateTimeToUTCString(token.getCreatedAt()),
+				token.getUsageLimit(),
+				token.getUsageLeft(),
+				token.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(token.getExpiresAt()));
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationMgmtEncryptionKeyListResponseDTO convertEncryptionKeyListToResponse(final List<EncryptionKey> keys, final long size) {
 		logger.debug("convertEncryptionKeyListToResponse started...");
 		Assert.notNull(keys, "EncryptionKey list is null");
-		
+
 		return new AuthorizationMgmtEncryptionKeyListResponseDTO(keys.stream().map((item) -> convertEncryptionKeyToResponse(item)).toList(), size);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationMgmtEncryptionKeyResponseDTO convertEncryptionKeyToResponse(final EncryptionKey key) {
 		logger.debug("convertEncryptionKeyToResponse started...");
 		Assert.notNull(key, "EncryptionKey is null");
-		
+
 		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getKeyValue(), key.getAlgorithm(), key.getExternalAuxiliary().getAuxiliary(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
 	}
 

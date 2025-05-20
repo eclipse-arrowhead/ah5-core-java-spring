@@ -207,7 +207,7 @@ public class AuthorizationManagementAPI {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Deletes token entries if exists")
+	@Operation(summary = "Deletes token entries by tokenReference if exists")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
@@ -220,11 +220,11 @@ public class AuthorizationManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@DeleteMapping(path = AuthorizationConstants.HTTP_API_OP_TOKEN_REVOKE_PATH)
-	public void revokeTokens(@RequestParam final List<String> tokens) {
+	public void revokeTokens(@RequestParam final List<String> tokenReferences) {
 		logger.debug("revokeTokens started");
 		
 		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_TOKEN_REVOKE_PATH;
-		mgmtService.revokeTokensOperation(tokens, origin);
+		mgmtService.revokeTokensOperation(tokenReferences, origin);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
