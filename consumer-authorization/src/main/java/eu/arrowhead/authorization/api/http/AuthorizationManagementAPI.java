@@ -169,7 +169,7 @@ public class AuthorizationManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@ResponseStatus(HttpStatus.CREATED)
-	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_GENERATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody AuthorizationTokenMgmtListResponseDTO generateTokens(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final AuthorizationTokenGenerationMgmtListRequestDTO dto,
@@ -178,7 +178,7 @@ public class AuthorizationManagementAPI {
 			   example = "true") @RequestParam final boolean unbound) {
 		logger.debug("generateTokens started");
 		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
 		final String requester = sysNamePreprocessor.process(httpServletRequest, origin);
 		
 		return mgmtService.generateTokensOperation(requester, dto, unbound, origin);
@@ -198,11 +198,11 @@ public class AuthorizationManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_TOKEN_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody AuthorizationTokenMgmtListResponseDTO queryTokens(@RequestBody final AuthorizationTokenQueryRequestDTO dto) {
 		logger.debug("generateTokens started");
 		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_TOKEN_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_QUERY_PATH;
 		return mgmtService.queryTokensOperation(dto, origin);
 	}
 	
@@ -219,11 +219,11 @@ public class AuthorizationManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@DeleteMapping(path = AuthorizationConstants.HTTP_API_OP_TOKEN_REVOKE_PATH)
+	@DeleteMapping(path = AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_REVOKE_PATH)
 	public void revokeTokens(@RequestParam final List<String> tokenReferences) {
 		logger.debug("revokeTokens started");
 		
-		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_TOKEN_REVOKE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_REVOKE_PATH;
 		mgmtService.revokeTokensOperation(tokenReferences, origin);
 	}
 	
@@ -242,11 +242,11 @@ public class AuthorizationManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@ResponseStatus(HttpStatus.CREATED)
-	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody AuthorizationMgmtEncryptionKeyListResponseDTO addEncryptionKeys(@RequestBody final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto) {
 		logger.debug("addEncryptionKeys started");
 		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
 		return mgmtService.addEncryptionKeysOperation(dto, origin);
 	}
 	
@@ -263,11 +263,11 @@ public class AuthorizationManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@DeleteMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
+	@DeleteMapping(path = AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
 	public void removeEncryptionKeys(@RequestParam final List<String> systemNames) {
 		logger.debug("addEncryptionKeys started");
 		
-		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
 		mgmtService.removeEncryptionKeysOperation(systemNames, origin);
 	}
 }

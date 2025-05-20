@@ -28,6 +28,7 @@ import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
@@ -199,6 +200,18 @@ public class DTOConverter {
 				token.getUsageLimit(),
 				token.getUsageLeft(),
 				token.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(token.getExpiresAt()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenVerifyResponseDTO convertTokenVerificationResultToResponse(final Pair<Boolean, TokenModel> result) {
+		logger.debug("convertTokenVerificationResultToResponse started...");
+		Assert.notNull(result, "result is null");
+
+		if (result.getSecond() == null) {
+			return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), null, null, null, null);
+		}
+
+		return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), result.getSecond().getConsumerCloud(), result.getSecond().getConsumer(), result.getSecond().getServiceDefinition(), result.getSecond().getServiceOperation());
 	}
 
 	//-------------------------------------------------------------------------------------------------

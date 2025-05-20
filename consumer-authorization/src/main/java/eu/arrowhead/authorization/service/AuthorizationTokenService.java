@@ -61,7 +61,7 @@ public class AuthorizationTokenService {
 
 	@Autowired
 	private AuthorizationTokenValidation validator;
-	
+
 	@Autowired
 	private DTOConverter dtoConverter;
 
@@ -136,7 +136,8 @@ public class AuthorizationTokenService {
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final String normalizedToken = validator.validateAndNormalizeToken(token, origin);
 
-		return tokenEngine.verify(normalizedRequester, normalizedToken, origin);
+		final Pair<Boolean, TokenModel> result = tokenEngine.verify(normalizedRequester, normalizedToken, origin);
+		return dtoConverter.convertTokenVerificationResultToResponse(result);
 	}
 
 	//-------------------------------------------------------------------------------------------------

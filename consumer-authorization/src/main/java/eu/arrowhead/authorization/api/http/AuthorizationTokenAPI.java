@@ -94,11 +94,11 @@ public class AuthorizationTokenAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@GetMapping(path = AuthorizationConstants.HTTP_API_OP_VERIFY_TOKEN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(path = AuthorizationConstants.HTTP_API_OP_TOKEN_VERIFY_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody AuthorizationTokenVerifyResponseDTO verify(final HttpServletRequest httpServletRequest, @PathVariable(required = true) final String token) {
 		logger.debug("verify started...");
 
-		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_VERIFY_TOKEN_PATH.replace(AuthorizationConstants.HTTP_PATH_PARAM_TOKEN, token);
+		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_TOKEN_VERIFY_PATH.replace(AuthorizationConstants.HTTP_PATH_PARAM_TOKEN, token);
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		return authTokenService.verify(requesterSystem, token, origin);

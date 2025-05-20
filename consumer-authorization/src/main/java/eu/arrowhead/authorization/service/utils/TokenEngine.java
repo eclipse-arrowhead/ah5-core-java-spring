@@ -34,7 +34,6 @@ import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
@@ -191,13 +190,13 @@ public class TokenEngine {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenVerifyResponseDTO verify(final String requesterSystem, final String token, final String origin) {
+	public Pair<Boolean, TokenModel> verify(final String requesterSystem, final String rawToken, final String origin) {
 		logger.debug("verify started...");
 
 		String tokenAsSaved = null;
 		try {
 			// Only the not self contained token can be verified this way and those are encrypted with HMAC (to not to have auxiliary, otherwise we could not find it)
-			tokenAsSaved = secretCryptographer.encryptHMACSHA256(token, sysInfo.getSecretCryptographerKey());
+			tokenAsSaved = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -207,7 +206,7 @@ public class TokenEngine {
 		try {
 			final Optional<TokenHeader> optional = tokenHeaderDbService.find(requesterSystem, tokenAsSaved);
 			if (optional.isEmpty()) {
-				return new AuthorizationTokenVerifyResponseDTO(false, null, null, null, null);
+				return Pair.of(false, null);
 			}
 			final TokenHeader tokenHeader = optional.get();
 
@@ -223,14 +222,14 @@ public class TokenEngine {
 				if (verified) {
 					usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
 				}
-				return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
+				return Pair.of(verified, new TokenModel(tokenHeader));
 			}
 
 			// TIME LIMITED TOKEN
 			if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
 				final TimeLimitedToken timeLimitedToken = timeLimitedTokenDbService.getByHeader(tokenHeader).get();
 				final boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
-				return new AuthorizationTokenVerifyResponseDTO(verified, tokenHeader.getConsumerCloud(), tokenHeader.getConsumer(), tokenHeader.getServiceDefinition(), tokenHeader.getServiceOperation());
+				return Pair.of(verified, new TokenModel(tokenHeader));
 			}
 
 			throw new InternalServerError("Unhandled token type: " + tokenHeader.getTokenType());
@@ -244,8 +243,7 @@ public class TokenEngine {
 	//-------------------------------------------------------------------------------------------------
 	public void revoke(final List<String> tokensAsStored, final String origin) {
 		logger.debug("revoke started...");
-		// TODO ez így nem jó, HMAC miatt nem lehet visszafejteni a tokent a stored versiont peding nem szívesen adom aki. Vagy ki lehet adni?
-		
+
 		if (Utilities.isEmpty(tokensAsStored)) {
 			return;
 		}

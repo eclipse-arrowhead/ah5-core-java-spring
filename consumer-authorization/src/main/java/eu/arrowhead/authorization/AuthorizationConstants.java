@@ -20,6 +20,7 @@ public final class AuthorizationConstants {
 	public static final String HTTP_API_MANAGEMENT_PATH = HTTP_API_AUTHORIZATION_PATH + "/mgmt";
 	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
 	public static final String HTTP_API_AUTHORIZATION_TOKEN_PATH = HTTP_API_BASE_PATH + "/authorization-token";
+	public static final String HTTP_API_TOKEN_SUB_PATH = "/token";
 
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/consumer-authorization";
 	public static final String MQTT_API_AUTHORIZATION_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/authorization/";
@@ -33,14 +34,12 @@ public final class AuthorizationConstants {
 	public static final String HTTP_API_OP_GRANT_PATH = "/grant";
 	public static final String HTTP_API_OP_REVOKE_PATH = "/revoke";
 	public static final String HTTP_API_OP_SERVICE_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/" + HTTP_PARAM_INSTANCE_ID;
-	public static final String HTTP_API_OP_TOKEN_REVOKE_PATH = HTTP_API_OP_REVOKE_PATH + "/token";
 	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 	public static final String HTTP_API_OP_VERIFY_PATH = "/verify";
+	public static final String HTTP_API_OP_TOKEN_VERIFY_PATH = "/token" + HTTP_API_OP_VERIFY_PATH + "/" + HTTP_PATH_PARAM_TOKEN;
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
-	public static final String HTTP_API_OP_TOKEN_QUERY_PATH = HTTP_API_OP_QUERY_PATH + "/token";
 	public static final String HTTP_API_OP_CHECK_PATH = "/check";
 	public static final String HTTP_API_OP_GENERATE_PATH = "/generate";
-	public static final String HTTP_API_OP_VERIFY_TOKEN_PATH = HTTP_API_OP_VERIFY_PATH + "/" + HTTP_PATH_PARAM_TOKEN;
 	public static final String HTTP_API_OP_PUBLIC_KEY_PATH = "/public-key";
 	public static final String HTTP_API_OP_ENCRYPTION_KEY_PATH = "/encryption-key";
 
