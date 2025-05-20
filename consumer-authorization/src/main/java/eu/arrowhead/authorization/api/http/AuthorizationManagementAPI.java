@@ -28,12 +28,14 @@ import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationQueryRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenQueryRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -155,6 +157,36 @@ public class AuthorizationManagementAPI {
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the generated authorization tokens and their paramters.")
 	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationTokenMgmtListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@ResponseStatus(HttpStatus.CREATED)
+	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_GENERATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody AuthorizationTokenMgmtListResponseDTO generateTokens(
+			final HttpServletRequest httpServletRequest,
+			@RequestBody final AuthorizationTokenGenerationMgmtListRequestDTO dto,
+			@Parameter(name = "unbound",
+			   description = "Set true if you want to skip the authorization check. (It should be configured in the Application properties as well.)",
+			   example = "true") @RequestParam final boolean unbound) {
+		logger.debug("generateTokens started");
+		
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
+		final String requester = sysNamePreprocessor.process(httpServletRequest, origin);
+		
+		return mgmtService.generateTokensOperation(requester, dto, unbound, origin);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the matching token entries according to the given filters.")
+	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationTokenMgmtListResponseDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
@@ -166,19 +198,12 @@ public class AuthorizationManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_GENERATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody AuthorizationTokenMgmtListResponseDTO generateTokens(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationTokenGenerationMgmtListRequestDTO dto) {
+	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_TOKEN_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody AuthorizationTokenMgmtListResponseDTO queryTokens(@RequestBody final AuthorizationTokenQueryRequestDTO dto) {
 		logger.debug("generateTokens started");
 		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
-		final String requester = sysNamePreprocessor.process(httpServletRequest, origin);
-		
-		return mgmtService.generateTokensOperation(requester, dto, origin);
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	public void queryTokens() {
-		// TODO
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_OP_TOKEN_QUERY_PATH;
+		return mgmtService.queryTokensOperation(dto, origin);
 	}
 	
 	//-------------------------------------------------------------------------------------------------

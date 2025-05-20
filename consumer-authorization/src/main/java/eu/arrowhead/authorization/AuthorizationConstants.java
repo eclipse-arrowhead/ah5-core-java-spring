@@ -37,6 +37,7 @@ public final class AuthorizationConstants {
 	public static final String HTTP_API_OP_LOOKUP_PATH = "/lookup";
 	public static final String HTTP_API_OP_VERIFY_PATH = "/verify";
 	public static final String HTTP_API_OP_QUERY_PATH = "/query";
+	public static final String HTTP_API_OP_TOKEN_QUERY_PATH = HTTP_API_OP_QUERY_PATH + "/token";
 	public static final String HTTP_API_OP_CHECK_PATH = "/check";
 	public static final String HTTP_API_OP_GENERATE_PATH = "/generate";
 	public static final String HTTP_API_OP_VERIFY_TOKEN_PATH = HTTP_API_OP_VERIFY_PATH + "/" + HTTP_PATH_PARAM_TOKEN;

@@ -33,6 +33,7 @@ import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationManagementValidation;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
@@ -172,15 +173,23 @@ public class AuthorizationManagementService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenMgmtListResponseDTO generateTokensOperation(final String requester, final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
+	public AuthorizationTokenMgmtListResponseDTO generateTokensOperation(final String requester, final AuthorizationTokenGenerationMgmtListRequestDTO dto, final boolean unbounded, final String origin) {
 		logger.debug("generateTokensOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requester, origin);
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateTokenRequets(dto, origin);
 		List<AuthorizationTokenGenerationMgmtRequestDTO> authorizedRequests = normalizedDTO.list();
+		
+		boolean skipAuth = false;
+		if (unbounded) {
+			skipAuth = sysInfo.hasSystemUnboundedTokenGenerationRight(normalizedRequester);
+			if (!skipAuth) {
+				throw new ForbiddenException(normalizedRequester + " has no permission for unbounded token generation request", origin);
+			}
+		}
 
-		if (!sysInfo.hasSystemUnboundedTokenGenerationRight(normalizedRequester)) {
+		if (!skipAuth) {
 			// Check permission
 			authorizedRequests = normalizedDTO.list().stream()
 					.filter((request) -> policyEngine.isAccessGranted(
