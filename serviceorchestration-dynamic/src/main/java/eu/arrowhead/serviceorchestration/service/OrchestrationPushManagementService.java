@@ -95,12 +95,11 @@ public class OrchestrationPushManagementService {
 			synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
 				result = subscriptionDbService.create(subscriptions);
 			}
-			return dtoConverter.convertSubscriptionListToDTO(result, result.size());
 
+			return dtoConverter.convertSubscriptionListToDTO(result, result.size());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -113,11 +112,21 @@ public class OrchestrationPushManagementService {
 		try {
 			List<Subscription> subscriptions;
 			if (Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.isEmpty(trigger.getTargetSystems())) {
-				subscriptions = subscriptionDbService.query(List.of(trigger.getRequesterSystem()), List.of(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+				subscriptions = subscriptionDbService.query(
+						List.of(trigger.getRequesterSystem()),
+						List.of(),
+						List.of(),
+						PageRequest.of(0, Integer.MAX_VALUE))
+						.getContent();
 			} else if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {
 				subscriptions = subscriptionDbService.get(trigger.getSubscriptionIds().stream().map(id -> UUID.fromString(id)).toList());
 			} else {
-				subscriptions = subscriptionDbService.query(List.of(), trigger.getTargetSystems(), List.of(), PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+				subscriptions = subscriptionDbService.query(
+						List.of(),
+						trigger.getTargetSystems(),
+						List.of(),
+						PageRequest.of(0, Integer.MAX_VALUE))
+						.getContent();
 			}
 
 			final List<OrchestrationJob> existingJobs = new ArrayList<>();
@@ -131,12 +140,18 @@ public class OrchestrationPushManagementService {
 						List.of(),
 						null,
 						List.of(subscription.getId().toString())),
-						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD)).toList();
+						PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD))
+						.toList();
 
 				if (!Utilities.isEmpty(possiblySameJob)) {
 					existingJobs.addAll(possiblySameJob);
 				} else {
-					newJobs.add(new OrchestrationJob(OrchestrationType.PUSH, trigger.getRequesterSystem(), subscription.getTargetSystem(), subscription.getServiceDefinition(), subscription.getId().toString()));
+					newJobs.add(new OrchestrationJob(
+							OrchestrationType.PUSH,
+							trigger.getRequesterSystem(),
+							subscription.getTargetSystem(),
+							subscription.getServiceDefinition(),
+							subscription.getId().toString()));
 				}
 			}
 
@@ -145,7 +160,6 @@ public class OrchestrationPushManagementService {
 			existingJobs.addAll(saved);
 
 			return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -155,6 +169,7 @@ public class OrchestrationPushManagementService {
 	public void pushUnsubscribe(final String requesterSystem, final List<String> ids, final String origin) {
 		logger.debug("pushUnsubscribe started...");
 
+		final String normalizedRequesterSystem = validator.validateAndNormalizeRequesterSystem(requesterSystem, origin);
 		final List<String> normalized = validator.validateAndNormalizePublishUnsubscribeService(ids, origin);
 		final List<UUID> subscriptionIds = normalized.stream().map(id -> UUID.fromString(id)).toList();
 
@@ -162,8 +177,8 @@ public class OrchestrationPushManagementService {
 			synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
 				final List<Subscription> subscriptions = subscriptionDbService.get(subscriptionIds);
 				for (final Subscription subscription : subscriptions) {
-					if (!subscription.getOwnerSystem().equals(requesterSystem)) {
-						throw new ForbiddenException(subscription.getId().toString() + " is not owned by the requester.", origin);
+					if (!subscription.getOwnerSystem().equals(normalizedRequesterSystem)) {
+						throw new ForbiddenException(subscription.getId().toString() + " is not owned by the requester", origin);
 					}
 				}
 
@@ -179,13 +194,12 @@ public class OrchestrationPushManagementService {
 		logger.debug("queryPushSubscriptions started...");
 
 		final OrchestrationSubscriptionQueryRequestDTO normalized = validator.validateAndNormalizeQueryPushSubscriptionsService(dto, origin);
-
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, Subscription.SORTABLE_FIELDS_BY, Subscription.DEFAULT_SORT_FIELD, origin);
 
 		try {
 			final Page<Subscription> results = subscriptionDbService.query(dto.ownerSystems(), dto.targetSystems(), dto.serviceDefinitions(), pageRequest);
+			
 			return dtoConverter.convertSubscriptionListToDTO(results.getContent(), results.getTotalElements());
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -201,7 +215,9 @@ public class OrchestrationPushManagementService {
 		final Set<String> keys = new HashSet<>(subscriptions.size());
 
 		for (final OrchestrationSubscription subsReq : subscriptions) {
-			final String key = subsReq.getOrchestrationForm().getRequesterSystemName() + DELIMITER + subsReq.getOrchestrationForm().getTargetSystemName() + DELIMITER + subsReq.getOrchestrationForm().getServiceDefinition();
+			final String key = subsReq.getOrchestrationForm().getRequesterSystemName() + DELIMITER
+					+ subsReq.getOrchestrationForm().getTargetSystemName() + DELIMITER
+					+ subsReq.getOrchestrationForm().getServiceDefinition();
 			if (keys.contains(key)) {
 				throw new InvalidParameterException("Duplicate subscription request for: " + key, origin);
 			}

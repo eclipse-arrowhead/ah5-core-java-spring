@@ -24,7 +24,13 @@ public class OrchestrationLockFilter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationLockFilter(final List<Long> ids, final List<String> orchestrationJobIds, final List<String> serviceInstanceIds, final List<String> owners, final ZonedDateTime expiresBefore, final ZonedDateTime expiresAfter) {
+	public OrchestrationLockFilter(
+			final List<Long> ids,
+			final List<String> orchestrationJobIds,
+			final List<String> serviceInstanceIds,
+			final List<String> owners,
+			final ZonedDateTime expiresBefore,
+			final ZonedDateTime expiresAfter) {
 		this.ids = ids;
 		this.orchestrationJobIds = orchestrationJobIds;
 		this.serviceInstanceIds = serviceInstanceIds;

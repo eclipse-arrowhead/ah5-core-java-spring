@@ -7,10 +7,12 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceOperationNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
@@ -23,7 +25,16 @@ public class OrchestrationFormValidation {
 	// members
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
+	
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
+	
+	@Autowired
+	private ServiceOperationNameValidator serviceOpNameValidator;
+	
+	@Autowired
+	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
 
 	@Autowired
 	private OrchestrationFormNormalization normalizer;
@@ -43,24 +54,12 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Requester system name is empty", origin);
 		}
 
-		if (form.getRequesterSystemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Requester system name is too long", origin);
-		}
-
 		if (Utilities.isEmpty(form.getTargetSystemName())) {
 			throw new InvalidParameterException("Target system name is empty", origin);
 		}
 
-		if (form.getTargetSystemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Target system name is too long", origin);
-		}
-
 		if (Utilities.isEmpty(form.getServiceDefinition())) {
 			throw new InvalidParameterException("Service definition is empty", origin);
-		}
-
-		if (form.getServiceDefinition().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Service definition is too long", origin);
 		}
 
 		if (!Utilities.isEmpty(form.getOperations()) && Utilities.containsNullOrEmpty(form.getOperations())) {
@@ -80,7 +79,7 @@ public class OrchestrationFormValidation {
 		}
 
 		if (form.getExclusivityDuration() != null && form.getExclusivityDuration() <= 0) {
-			throw new InvalidParameterException("Exclusivity duration must be greater than 0.", origin);
+			throw new InvalidParameterException("Exclusivity duration must be greater than 0", origin);
 		}
 
 		if (!Utilities.isEmpty(form.getAlivesAt())) {
@@ -119,23 +118,25 @@ public class OrchestrationFormValidation {
 		if (!Utilities.isEmpty(form.getQosRequirements())) {
 			form.getQosRequirements().forEach((k, v) -> {
 				if (Utilities.isEmpty(v)) {
-					throw new InvalidParameterException("QoS Requirement map contains empty value", origin);
+					throw new InvalidParameterException("QoS requirement map contains empty value", origin);
 				}
 			});
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateAndNormalizeOrchestrationForm(final OrchestrationForm form, final String origin) {
+	public void validateAndNormalizeOrchestrationForm(final OrchestrationForm form, final boolean skipPrevalidation, final String origin) {
 		logger.debug("validateAndNormalizeOrchestrationForm...");
 
-		validateOrchestrationForm(form, origin);
+		if (!skipPrevalidation) {
+			validateOrchestrationForm(form, origin);
+		}
 		normalizer.normalizeOrchestrationForm(form);
 
 		try {
-			nameValidator.validateName(form.getRequesterSystemName());
-			nameValidator.validateName(form.getTargetSystemName());
-			nameValidator.validateName(form.getServiceDefinition());
+			systemNameValidator.validateSystemName(form.getRequesterSystemName());
+			systemNameValidator.validateSystemName(form.getTargetSystemName());
+			serviceDefNameValidator.validateServiceDefinitionName(form.getServiceDefinition());
 
 			if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
 				form.getOrchestrationFlags().keySet().forEach(f -> {
@@ -144,11 +145,13 @@ public class OrchestrationFormValidation {
 					}
 				});
 			}
+			
+			if (!Utilities.isEmpty(form.getOperations()) ) {
+				form.getOperations().forEach(op -> serviceOpNameValidator.validateServiceOperationName(op));
+			}
 
 			if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
-				form.getInterfaceTemplateNames().forEach(itn -> {
-					nameValidator.validateName(itn);
-				});
+				form.getInterfaceTemplateNames().forEach(itn -> interfaceTemplateNameValidator.validateInterfaceTemplateName(itn));
 			}
 
 			if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
@@ -168,11 +171,8 @@ public class OrchestrationFormValidation {
 			}
 
 			if (!Utilities.isEmpty(form.getPreferredProviders())) {
-				form.getPreferredProviders().forEach(pp -> {
-					nameValidator.validateName(pp);
-				});
+				form.getPreferredProviders().forEach(pp -> systemNameValidator.validateSystemName(pp));
 			}
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}

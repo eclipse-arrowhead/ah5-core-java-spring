@@ -44,7 +44,7 @@ public class OrchestrationHistoryManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationHistoryQueryRequestDTO validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
-		logger.debug("validateQueryService started...");
+		logger.debug("validateAndNormalizeQueryService started...");
 
 		validateQueryService(dto, origin);
 		final OrchestrationHistoryQueryRequestDTO normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto);

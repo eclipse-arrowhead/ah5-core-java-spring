@@ -7,11 +7,10 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
 
 @Service
@@ -21,10 +20,10 @@ public class OrchestrationPushTriggerValidation {
 	// members
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -36,29 +35,19 @@ public class OrchestrationPushTriggerValidation {
 		logger.debug("validateOrchestrationPushTrigger started...");
 
 		if (trigger == null) {
-			throw new InvalidParameterException("Request payload is missing.", origin);
+			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
 		if (Utilities.isEmpty(trigger.getRequesterSystem())) {
-			throw new InvalidParameterException("Requester system is missing.", origin);
-		}
-
-		if (trigger.getRequesterSystem().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Requester system name is too long", origin);
+			throw new InvalidParameterException("Requester system is missing", origin);
 		}
 
 		if (!Utilities.isEmpty(trigger.getTargetSystems()) && Utilities.containsNullOrEmpty(trigger.getTargetSystems())) {
-			throw new InvalidParameterException("Target system list contains empty element.", origin);
-		}
-
-		for (final String targetSystem : trigger.getTargetSystems()) {
-			if (targetSystem.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Target system name is too long: " + targetSystem, origin);
-			}
+			throw new InvalidParameterException("Target system list contains empty element", origin);
 		}
 
 		if (!Utilities.isEmpty(trigger.getSubscriptionIds()) && Utilities.containsNullOrEmpty(trigger.getSubscriptionIds())) {
-			throw new InvalidParameterException("Subscription id list contains empty element.", origin);
+			throw new InvalidParameterException("Subscription id list contains empty element", origin);
 		}
 	}
 
@@ -67,15 +56,23 @@ public class OrchestrationPushTriggerValidation {
 		logger.debug("validateAndNormalizeOrchestrationPushTrigger started...");
 
 		validateOrchestrationPushTrigger(trigger, origin);
+		trigger.setRequesterSystem(systemNameNormalizer.normalize(trigger.getRequesterSystem()));
 
-		trigger.setRequesterSystem(nameNormalizer.normalize(trigger.getRequesterSystem()));
+		try {
+			systemNameValidator.validateSystemName(trigger.getRequesterSystem());
 
-		if (!Utilities.isEmpty(trigger.getTargetSystems())) {
-			trigger.setTargetSystems(trigger.getTargetSystems().stream().map(sys -> {
-				final String normalized = nameNormalizer.normalize(sys);
-				nameValidator.validateName(normalized);
-				return normalized;
-			}).toList());
+			if (!Utilities.isEmpty(trigger.getTargetSystems())) {
+				trigger.setTargetSystems(trigger.getTargetSystems()
+						.stream()
+						.map(sys -> {
+							final String normalized = systemNameNormalizer.normalize(sys);
+							systemNameValidator.validateSystemName(normalized);
+
+							return normalized;
+						}).toList());
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
 		if (!Utilities.isEmpty(trigger.getSubscriptionIds())) {

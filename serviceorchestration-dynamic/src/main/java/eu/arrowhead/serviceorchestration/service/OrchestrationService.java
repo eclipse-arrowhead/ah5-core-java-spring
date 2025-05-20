@@ -110,7 +110,12 @@ public class OrchestrationService {
 		}
 
 		if (trigger) {
-			final OrchestrationJob orchestrationJob = new OrchestrationJob(OrchestrationType.PUSH, requesterSystem, requesterSystem, dto.orchestrationRequest().serviceRequirement().serviceDefinition(), response.getValue());
+			final OrchestrationJob orchestrationJob = new OrchestrationJob(
+					OrchestrationType.PUSH,
+					requesterSystem,
+					requesterSystem,
+					dto.orchestrationRequest().serviceRequirement().serviceDefinition(),
+					response.getValue());
 			orchJobDbService.create(List.of(orchestrationJob));
 			pushOrchJobQueue.add(orchestrationJob.getId());
 		}
@@ -128,11 +133,13 @@ public class OrchestrationService {
 			final Optional<Subscription> recordOpt = subscriptionDbService.get(normalized.getRight());
 			if (recordOpt.isPresent()) {
 				if (!recordOpt.get().getOwnerSystem().equals(normalized.getLeft())) {
-					throw new ForbiddenException(requesterSystem + " is not the subscription owner.", origin);
+					throw new ForbiddenException(normalized.getLeft() + " is not the subscription owner", origin);
 				}
 				subscriptionDbService.deleteById(normalized.getRight());
+				
 				return true;
 			}
+			
 			return false;
 		}
 	}
