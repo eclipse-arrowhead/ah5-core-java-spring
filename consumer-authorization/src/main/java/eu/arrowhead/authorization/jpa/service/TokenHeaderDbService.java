@@ -1,7 +1,9 @@
 package eu.arrowhead.authorization.jpa.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -87,8 +89,67 @@ public class TokenHeaderDbService {
 		Assert.notNull(pagination, "pagination is null");
 		
 		try {
-			// TODO
-			return null;
+			
+			BaseFilter baseFilter = BaseFilter.NONE;
+			List<TokenHeader> baseList = null;
+			if (!Utilities.isEmpty(requester)) {
+				baseList = headerRepo.findAllByRequester(requester);
+				baseFilter = BaseFilter.REQUESTER;
+				baseList = headerRepo.findAllByConsumer(consumer);
+				baseFilter = BaseFilter.CONSUMER;
+			} else if (!Utilities.isEmpty(provider)) {
+				baseList = headerRepo.findAllByProvider(provider);
+				baseFilter = BaseFilter.PROVIDER;
+			} else if (!Utilities.isEmpty(serviceDefinition)) {
+				baseList = headerRepo.findAllByServiceDefinition(serviceDefinition);
+				baseFilter = BaseFilter.SERVICE;
+			} else if (!Utilities.isEmpty(consumerCloud)) {
+				baseList = headerRepo.findAllByConsumerCloud(consumerCloud);
+				baseFilter = BaseFilter.CLOUD;
+			} else if (!Utilities.isEmpty(consumer)) {
+			} else if (tokenType != null) {
+				baseList = headerRepo.findAllByTokenType(tokenType);
+				baseFilter = BaseFilter.TOKEN_TYPE;
+			} else {
+				return headerRepo.findAll(pagination);
+			}
+			
+			final Set<Long> matchingIds = new HashSet<>();
+			for (final TokenHeader header : baseList) {
+				// Match against requester
+				if (baseFilter != BaseFilter.REQUESTER && !Utilities.isEmpty(requester) && !header.getRequester().equals(requester)) {
+					continue;
+				}
+				
+				// Match against consumer
+				if (baseFilter != BaseFilter.CONSUMER && !Utilities.isEmpty(consumer) && !header.getConsumer().equals(consumer)) {
+					continue;
+				}
+				
+				// Match against provider
+				if (baseFilter != BaseFilter.PROVIDER && !Utilities.isEmpty(provider) && !header.getProvider().equals(provider)) {
+					continue;
+				}
+				
+				// Match against service definition
+				if (baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(serviceDefinition) && !header.getServiceDefinition().equals(serviceDefinition)) {
+					continue;
+				}
+				
+				// Match against cloud
+				if (baseFilter != BaseFilter.CLOUD && !Utilities.isEmpty(consumerCloud) && !header.getConsumerCloud().equals(consumerCloud)) {
+					continue;
+				}
+				
+				// Match against token type
+				if (baseFilter != BaseFilter.TOKEN_TYPE && tokenType != null && header.getTokenType() != tokenType) {
+					continue;
+				}
+				
+				matchingIds.add(header.getId());
+			}
+			
+			return headerRepo.findAllByIdIn(matchingIds, pagination);
 			
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
