@@ -12,12 +12,12 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
-import eu.arrowhead.authorization.jpa.repository.CryptographerAuxiliaryRepository;
 import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
 import eu.arrowhead.authorization.jpa.repository.UsageLimitedTokenRepository;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 @Service
@@ -32,39 +32,37 @@ public class UsageLimitedTokenDbService {
 	@Autowired
 	private TokenHeaderRepository tokenHeaderRepo;
 
-	@Autowired
-	private CryptographerAuxiliaryRepository auxiliaryRepo;
-
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:parameternumber")
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Pair<UsageLimitedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
-			final String token,
+			final String tokenHash,
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
 			final String provider,
-			final String serviceDefinition,
-			final String serviceOperation,
+			final AuthorizationTargetType targetType,
+			final String target,
+			final String scope,
 			final int usageLimit) {
 		logger.debug("save started...");
 		Assert.notNull(tokenType, "tokenType is null");
-		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
+		Assert.isTrue(!Utilities.isEmpty(tokenHash), "tokenHash is empty");
 		Assert.isTrue(!Utilities.isEmpty(requester), "requester is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumerCloud), "consumerCloud is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumer), "consumer is empty");
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
-		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
+		Assert.notNull(targetType, "targetType is null");
+		Assert.isTrue(!Utilities.isEmpty(target), "target is empty");
 
 		try {
 			boolean override = false;
-			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndServiceDefinition(consumerCloud, consumer, provider, serviceDefinition);
+			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(consumerCloud, consumer, provider, target, targetType);
 			if (tokenHeaderOpt.isPresent()) {
 				final Optional<UsageLimitedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
 				if (tokenOpt.isPresent()) {
@@ -74,7 +72,7 @@ public class UsageLimitedTokenDbService {
 				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, null, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
 			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
 			return Pair.of(tokenRecord, !override);
 

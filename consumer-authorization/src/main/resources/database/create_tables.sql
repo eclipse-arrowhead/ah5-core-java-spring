@@ -87,17 +87,16 @@ CREATE TABLE IF NOT EXISTS `encryption_key` (
 CREATE TABLE IF NOT EXISTS `token_header` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
 	`token_type` varchar(30) NOT NULL,
-	`token` mediumtext NOT NULL,
-	`internal_auxiliary_id` bigint(20),
+	`token_hash` mediumtext NOT NULL,
 	`consumer_cloud` varchar(255) NOT NULL DEFAULT 'LOCAL',
 	`consumer` varchar(63) NOT NULL,
 	`provider` varchar(63) NOT NULL,
-	`service_definition` varchar(63) NOT NULL,
-	`service_operation` varchar(63) NULL,
+	`target_type` varchar(30) NOT NULL,
+	`target` varchar(63) NOT NULL,
+	`scope` varchar(63) NULL,
 	`requester` varchar(63) NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY (`id`),
-	CONSTRAINT `fk_th_ica_id` FOREIGN KEY (`internal_auxiliary_id`) REFERENCES `cryptographer_auxiliary` (`id`) ON DELETE CASCADE
+	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Time Limited Tokens
@@ -126,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `usage_limited_token` (
 CREATE TABLE IF NOT EXISTS `self_contained_token` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,
 	`header_id` bigint(20) NOT NULL,
-	`type` varchar(63) NOT NULL,
+	`variant` varchar(63) NOT NULL,
 	`expires_at` timestamp NOT NULL,
 	PRIMARY KEY (`id`),
 	CONSTRAINT `fk_token_header_id3` FOREIGN KEY (`header_id`) REFERENCES `token_header` (`id`) ON DELETE CASCADE

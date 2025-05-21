@@ -5,14 +5,12 @@ import java.util.List;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.UnmodifiableArrowheadEntity;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 
 @Entity
 public class TokenHeader extends UnmodifiableArrowheadEntity {
@@ -20,7 +18,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//=================================================================================================
 	// members
 
-	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "tokenType", "requester", "consumerCloud", "consumer", "provider", "serviceDefinition", "createdBy");
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "tokenType", "requester", "consumerCloud", "consumer", "provider", "targetType", "serviceDefinition", "createdBy");
 	public static final String DEFAULT_SORT_FIELD = "createdBy";
 
 	@Column(nullable = false)
@@ -28,11 +26,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	private AuthorizationTokenType tokenType;
 
 	@Column(nullable = false)
-	private String token;
-
-	@OneToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "internalAuxiliaryId", referencedColumnName = "id", nullable = true)
-	private CryptographerAuxiliary internalAuxiliary;
+	private String tokenHash;
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String requester;
@@ -45,12 +39,16 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String provider;
+	
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private AuthorizationTargetType targetType;
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
-	private String serviceDefinition;
+	private String target;
 
 	@Column(nullable = true, length = VARCHAR_SMALL)
-	private String serviceOperation;
+	private String scope;
 
 	//=================================================================================================
 	// methods
@@ -61,33 +59,32 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:parameternumber")
 	public TokenHeader(
 			final AuthorizationTokenType tokenType,
-			final String token,
-			final CryptographerAuxiliary internalAuxiliary,
+			final String tokenHash,
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
 			final String provider,
-			final String serviceDefinition,
-			final String serviceOperation) {
+			final AuthorizationTargetType targetType,
+			final String target,
+			final String scope) {
 		this.tokenType = tokenType;
-		this.token = token;
-		this.internalAuxiliary = internalAuxiliary;
+		this.tokenHash = tokenHash;
 		this.requester = requester;
 		this.consumerCloud = consumerCloud;
 		this.consumer = consumer;
 		this.provider = provider;
-		this.serviceDefinition = serviceDefinition;
-		this.serviceOperation = Utilities.isEmpty(serviceOperation) ? null : serviceOperation;
+		this.targetType = targetType;
+		this.target = target;
+		this.scope = Utilities.isEmpty(scope) ? null : scope;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "TokenHeader [tokenType=" + tokenType + ", token=" + token + ", internalAuxiliary=" + internalAuxiliary + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
-				+ ", serviceDefinition=" + serviceDefinition + ", serviceOperation=" + serviceOperation + ", id=" + id + ", createdAt=" + createdAt + "]";
+		return "TokenHeader [tokenType=" + tokenType + ", tokenHash=" + tokenHash + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
+				+ ", targetType=" + targetType + ", target=" + target + ", scope=" + scope + ", id=" + id + ", createdAt=" + createdAt + "]";
 	}
 
 	//=================================================================================================
@@ -104,23 +101,13 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getToken() {
-		return token;
+	public String getTokenHash() {
+		return tokenHash;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setToken(final String token) {
-		this.token = token;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public CryptographerAuxiliary getInternalAuxiliary() {
-		return internalAuxiliary;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void setInternalAuxiliary(final CryptographerAuxiliary internalAuxiliary) {
-		this.internalAuxiliary = internalAuxiliary;
+	public void setTokenHash(final String tokenHash) {
+		this.tokenHash = tokenHash;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -162,24 +149,34 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	public void setProvider(final String provider) {
 		this.provider = provider;
 	}
-
+		
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return serviceDefinition;
+	public AuthorizationTargetType getTargetType() {
+		return targetType;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
+	public void setTargetType(final AuthorizationTargetType targetType) {
+		this.targetType = targetType;
+	}	
+	
+	//-------------------------------------------------------------------------------------------------
+	public String getTarget() {
+		return target;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceOperation() {
-		return serviceOperation;
+	public void setTarget(final String target) {
+		this.target = target;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceOperation(final String serviceOperation) {
-		this.serviceOperation = serviceOperation;
+	public String getScope() {
+		return scope;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setScope(final String serviceOperation) {
+		this.scope = serviceOperation;
 	}
 }

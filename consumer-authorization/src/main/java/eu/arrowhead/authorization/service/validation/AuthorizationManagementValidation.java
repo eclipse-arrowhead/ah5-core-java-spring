@@ -436,11 +436,10 @@ public class AuthorizationManagementValidation {
 			}
 			sysNames.add(request.systemName());
 			
-			if (!(request.algorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM) || request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM))) {
+			if (!(request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALOGRITHM) || request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED))) {
 				throw new InvalidParameterException("Unsupported algorithm", origin);
 			}
-			if (request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)
-					&& request.key().getBytes().length != SecretCryptographer.AES_KEY_SIZE) {
+			if (request.key().getBytes().length != SecretCryptographer.AES_KEY_SIZE) {
 				throw new InvalidParameterException("Key size is not " + SecretCryptographer.AES_KEY_SIZE + " byte long for system: " + request.systemName());
 			}
 		}

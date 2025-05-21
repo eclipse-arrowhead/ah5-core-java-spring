@@ -27,7 +27,7 @@ public class SelfContainedToken {
 	private TokenHeader header;
 	
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String type;
+	private String variant;
 
 	@Column(nullable = false)
 	protected ZonedDateTime expiresAt;
@@ -43,17 +43,17 @@ public class SelfContainedToken {
 	//-------------------------------------------------------------------------------------------------
 	public SelfContainedToken(
 			final TokenHeader header,
-			final String type,
+			final String variant,
 			final ZonedDateTime expiresAt) {
 		this.header = header;
-		this.type = type;
+		this.variant = variant;
 		this.expiresAt = expiresAt;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "JsonWebToken [id=" + id + ", header=" + header + ", type=" + type + ", expiresAt=" + expiresAt + "]";
+		return "JsonWebToken [id=" + id + ", header=" + header + ", variant=" + variant + ", expiresAt=" + expiresAt + "]";
 	}
 
 	//=================================================================================================
@@ -80,13 +80,13 @@ public class SelfContainedToken {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getType() {
-		return type;
+	public String getVariant() {
+		return variant;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setType(String type) {
-		this.type = type;
+	public void setVariant(String variant) {
+		this.variant = variant;
 	}
 
 	//-------------------------------------------------------------------------------------------------

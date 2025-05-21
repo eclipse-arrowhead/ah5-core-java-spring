@@ -189,13 +189,13 @@ public class DTOConverter {
 				token.getTokenType(),
 				token.getVariant(),
 				token.isEncrypted() ? token.getEnrcyptedToken() : token.getRawToken(),
-				token.getTokenAsStored(),
+				token.getHashedToken(),
 				token.getRequester(),
 				token.getConsumerCloud(),
 				token.getConsumer(),
 				token.getProvider(),
-				token.getServiceDefinition(),
-				token.getServiceOperation(),
+				token.getTarget(),
+				token.getScope(),
 				Utilities.convertZonedDateTimeToUTCString(token.getCreatedAt()),
 				token.getUsageLimit(),
 				token.getUsageLeft(),
@@ -211,7 +211,7 @@ public class DTOConverter {
 			return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), null, null, null, null);
 		}
 
-		return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), result.getSecond().getConsumerCloud(), result.getSecond().getConsumer(), result.getSecond().getServiceDefinition(), result.getSecond().getServiceOperation());
+		return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), result.getSecond().getConsumerCloud(), result.getSecond().getConsumer(), result.getSecond().getTarget(), result.getSecond().getScope());
 	}
 
 	//-------------------------------------------------------------------------------------------------

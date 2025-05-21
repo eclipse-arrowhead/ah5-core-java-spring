@@ -75,35 +75,36 @@ public class TokenEngine {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<TokenModel, Boolean> produce(final String requesterSystem, final String consumerSystem, final ServiceInterfacePolicy tokenType, final String providerSystem, final String serviceDefinition, final String operation,
+	public Pair<TokenModel, Boolean> produce(final String requesterSystem, final String consumerSystem, final ServiceInterfacePolicy tokenType, final String providerSystem, final AuthorizationTargetType targetType, final String serviceDefinition, final String operation,
 			final String origin) {
 		logger.debug("produce started...");
 
-		return produce(requesterSystem, consumerSystem, null, tokenType, providerSystem, serviceDefinition, operation, null, null, origin);
+		return produce(requesterSystem, consumerSystem, null, tokenType, providerSystem, targetType, serviceDefinition, operation, null, null, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public Pair<TokenModel, Boolean> produce(final String requesterSystem, final String consumerSystem, final String consumerCloud, final ServiceInterfacePolicy tokenType, final String providerSystem,
-			final String serviceDefinition, final String operation, final Integer usageLimit, final ZonedDateTime expiry, final String origin) {
+			 final AuthorizationTargetType targetType, final String serviceDefinition, final String operation, final Integer usageLimit, final ZonedDateTime expiry, final String origin) {
 		logger.debug("produce started...");
 
 		try {
 			String rawToken = null;
-			String encryptedToSaveHMAC = null;
+			String hashedToken = null;
 			final String cloud = Utilities.isEmpty(consumerCloud) ? Defaults.DEFAULT_CLOUD : consumerCloud;
 
 			// SIMMPLE USAGE LIMITED TOKEN
 
 			if (tokenType == ServiceInterfacePolicy.USAGE_LIMITED_TOKEN_AUTH) {
 				rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				encryptedToSaveHMAC = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+				hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
 				final Pair<UsageLimitedToken, Boolean> usageLimitTokenResult = usageLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
-						encryptedToSaveHMAC,
+						hashedToken,
 						requesterSystem,
 						cloud,
 						consumerSystem,
 						providerSystem,
+						targetType,
 						serviceDefinition,
 						operation,
 						usageLimit == null ? sysInfo.getSimpleTokenUsageLimit() : usageLimit);
@@ -114,15 +115,16 @@ public class TokenEngine {
 
 			if (tokenType == ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH) {
 				rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				encryptedToSaveHMAC = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+				hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
 				final ZonedDateTime expiresAt = expiry != null ? expiry : Utilities.utcNow().plusSeconds(sysInfo.getTokenTimeLimit());
 				final Pair<TimeLimitedToken, Boolean> timeLimitTokenResult = timeLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
-						encryptedToSaveHMAC,
+						hashedToken,
 						requesterSystem,
 						cloud,
 						consumerSystem,
 						providerSystem,
+						targetType,
 						serviceDefinition,
 						operation,
 						expiresAt);
@@ -130,8 +132,6 @@ public class TokenEngine {
 			}
 
 			// SELF CONTAINED TOKENS
-
-			Pair<String, String> encryptedToSaveAES = null;
 
 			// -- BASE64 SELF CONTAINED TOKEN
 			final ZonedDateTime expiresAt = expiry != null ? expiry : Utilities.utcNow().plusSeconds(sysInfo.getTokenTimeLimit());
@@ -161,15 +161,15 @@ public class TokenEngine {
 
 			Assert.isTrue(!Utilities.isEmpty(rawToken), "Unhandled token type: " + tokenType);
 
-			encryptedToSaveAES = secretCryptographer.encryptAESCBCPKCS5P(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
 			final Pair<SelfContainedToken, Boolean> selfContainedTokenResult = selfContainedTokenDbService.save(
 					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
-					encryptedToSaveAES.getFirst(),
-					encryptedToSaveAES.getSecond(),
+					hashedToken,
 					requesterSystem,
 					cloud,
 					consumerSystem,
 					providerSystem,
+					targetType,
 					serviceDefinition,
 					operation,
 					tokenType.name(),
@@ -193,10 +193,9 @@ public class TokenEngine {
 	public Pair<Boolean, TokenModel> verify(final String requesterSystem, final String rawToken, final String origin) {
 		logger.debug("verify started...");
 
-		String tokenAsSaved = null;
+		String hashedToken = null;
 		try {
-			// Only the not self contained token can be verified this way and those are encrypted with HMAC (to not to have auxiliary, otherwise we could not find it)
-			tokenAsSaved = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -204,14 +203,13 @@ public class TokenEngine {
 		}
 
 		try {
-			final Optional<TokenHeader> optional = tokenHeaderDbService.find(requesterSystem, tokenAsSaved);
+			final Optional<TokenHeader> optional = tokenHeaderDbService.find(requesterSystem, hashedToken);
 			if (optional.isEmpty()) {
 				return Pair.of(false, null);
 			}
 			final TokenHeader tokenHeader = optional.get();
 
 			if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
-				// Cannot happen, but who knows...
 				throw new InvalidParameterException("Self contained tokens can't be verified this way.", origin);
 			}
 
@@ -241,15 +239,15 @@ public class TokenEngine {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void revoke(final List<String> tokensAsStored, final String origin) {
+	public void revoke(final List<String> hashedTokens, final String origin) {
 		logger.debug("revoke started...");
 
-		if (Utilities.isEmpty(tokensAsStored)) {
+		if (Utilities.isEmpty(hashedTokens)) {
 			return;
 		}
 
 		try {
-			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenList(tokensAsStored);
+			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenList(hashedTokens);
 			tokenHeaderDbService.deleteById(tokenHeaders.stream().map((header) -> header.getId()).toList()); // Delete on cascade removes also the belonged token details 
 
 		} catch (final InternalServerError ex) {
@@ -259,12 +257,12 @@ public class TokenEngine {
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<TokenModel> query(final Pageable pagination, final String requester, final AuthorizationTokenType tokenType, final String consumerCloud, final String consumer, final String provider,
-			final String serviceDefinition, final String origin) {
+			final AuthorizationTargetType targetType, final String target, final String origin) {
 		logger.debug("query started...");
 
 		try {
 			final List<TokenModel> results = new ArrayList<>();
-			final Page<TokenHeader> tokenHeaderPage = tokenHeaderDbService.query(pagination, requester, tokenType, consumerCloud, consumer, provider, serviceDefinition);
+			final Page<TokenHeader> tokenHeaderPage = tokenHeaderDbService.query(pagination, requester, tokenType, consumerCloud, consumer, provider, target, targetType);
 			for (final TokenHeader tokenHeader : tokenHeaderPage) {
 				// USAGE LIMITED TOKEN
 				if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {

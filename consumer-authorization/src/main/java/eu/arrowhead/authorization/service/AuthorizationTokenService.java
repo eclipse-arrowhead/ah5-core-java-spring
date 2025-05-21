@@ -96,7 +96,7 @@ public class AuthorizationTokenService {
 		}
 
 		// Generate token
-		final Pair<TokenModel, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, serviceInstanceIdParts.systemName(), serviceInstanceIdParts.serviceDefinition(),
+		final Pair<TokenModel, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, serviceInstanceIdParts.systemName(), AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(),
 				Utilities.isEmpty(normalizedDTO.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.serviceOperation(), origin);
 
 		// Encrypt token if required
@@ -106,13 +106,13 @@ public class AuthorizationTokenService {
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
+					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
 
-					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
-						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptHMACSHA256(tokenResult.getFirst().getRawToken(), plainEncriptionKey));
+					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALOGRITHM)) {
+						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getFirst().getRawToken(), plainEncriptionKey));
 
-					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)) {
-						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P(tokenResult.getFirst().getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
+					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED)) {
+						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getFirst().getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
 
 					} else {
 						throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -161,13 +161,13 @@ public class AuthorizationTokenService {
 		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.normalizeAndValidateRegisterEncryptionKeyRequest(dto, origin);
 
 		String externalAuxiliary = "";
-		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)) {
+		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED)) {
 			externalAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 		}
 
 		Pair<String, String> encryptedToSave = null;
 		try {
-			encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
+			encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P_IV(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.common.jpa.RefreshableRepository;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 @Repository
@@ -19,7 +20,7 @@ public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader
 	// methods
 	
 	//-------------------------------------------------------------------------------------------------
-	public List<TokenHeader> findAllByTokenIn(final List<String> tokens);
+	public List<TokenHeader> findAllByTokenHashIn(final List<String> tokenHashes);
 	
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByRequester(final String requester);
@@ -37,13 +38,16 @@ public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader
 	public List<TokenHeader> findAllByProvider(final String provider);
 	
 	//-------------------------------------------------------------------------------------------------
-	public List<TokenHeader> findAllByServiceDefinition(final String serviceDefinition);
+	public List<TokenHeader> findAllByTarget(final String target);
 	
 	//-------------------------------------------------------------------------------------------------
-	public Optional<TokenHeader> findByProviderAndToken(final String provider, final String token);
+	public List<TokenHeader> findAllByTargetType(final AuthorizationTargetType targetType);
 	
 	//-------------------------------------------------------------------------------------------------
-	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndServiceDefinition(final String consumerCloud, final String counsumer, final String provider, final String serviceDefinition);
+	public Optional<TokenHeader> findByProviderAndTokenHash(final String provider, final String tokenHash);
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(final String consumerCloud, final String counsumer, final String provider, final String target, final AuthorizationTargetType targetType);
 	
 	//-------------------------------------------------------------------------------------------------
 	public Page<TokenHeader> findAllByIdIn(final Collection<Long> ids, final Pageable pageble);

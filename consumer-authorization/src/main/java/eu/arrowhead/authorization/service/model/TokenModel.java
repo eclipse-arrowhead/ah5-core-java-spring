@@ -7,6 +7,7 @@ import eu.arrowhead.authorization.jpa.entity.TimeLimitedToken;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 public class TokenModel {
@@ -72,7 +73,7 @@ public class TokenModel {
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final SelfContainedToken token) {
 		this.header = token.getHeader();
-		this.variant = token.getType();
+		this.variant = token.getVariant();
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = null;
 	}
@@ -80,13 +81,13 @@ public class TokenModel {
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final SelfContainedToken token, final String rawToken) {
 		this.header = token.getHeader();
-		this.variant = token.getType();
+		this.variant = token.getVariant();
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = rawToken;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public boolean isEncrypted() { // Encrypted for use (and not for storing in DB)
+	public boolean isEncrypted() {
 		return !Utilities.isEmpty(enrcyptedToken);
 	}
 
@@ -104,8 +105,8 @@ public class TokenModel {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public String getTokenAsStored() {
-		return header.getToken();
+	public String getHashedToken() {
+		return header.getTokenHash();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -129,13 +130,18 @@ public class TokenModel {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return header.getServiceDefinition();
+	public AuthorizationTargetType getTargetType() {
+		return header.getTargetType();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public String getTarget() {
+		return header.getTarget();
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getServiceOperation() {
-		return header.getServiceOperation();
+	public String getScope() {
+		return header.getScope();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -149,7 +155,7 @@ public class TokenModel {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setEnrcyptedToken(String enrcyptedToken) {
+	public void setEnrcyptedToken(final String enrcyptedToken) {
 		this.enrcyptedToken = enrcyptedToken;
 	}
 

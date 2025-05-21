@@ -11,15 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.authorization.jpa.entity.CryptographerAuxiliary;
 import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
-import eu.arrowhead.authorization.jpa.repository.CryptographerAuxiliaryRepository;
 import eu.arrowhead.authorization.jpa.repository.SelfContainedTokenRepository;
 import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 @Service
@@ -34,43 +33,39 @@ public class SelfContainedTokenDbService {
 	@Autowired
 	private TokenHeaderRepository tokenHeaderRepo;
 
-	@Autowired
-	private CryptographerAuxiliaryRepository auxiliaryRepo;
-
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:parameternumber")
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Pair<SelfContainedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
-			final String token,
-			final String internalAuxiliary,
+			final String tokenHash,
 			final String requester,
 			final String consumerCloud,
 			final String consumer,
 			final String provider,
-			final String serviceDefinition,
-			final String serviceOperation,
-			final String selfContainedtype,
+			final AuthorizationTargetType targetType,
+			final String target,
+			final String scope,
+			final String variant,
 			final ZonedDateTime expiresAt) {
 		Assert.notNull(tokenType, "tokenType is null");
-		Assert.isTrue(!Utilities.isEmpty(internalAuxiliary), "internalAuxiliary is empty");
-		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
+		Assert.isTrue(!Utilities.isEmpty(tokenHash), "tokenHash is empty");
 		Assert.isTrue(!Utilities.isEmpty(requester), "requester is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumerCloud), "consumerCloud is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumer), "consumer is empty");
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
-		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
-		Assert.isTrue(!Utilities.isEmpty(selfContainedtype), "selfContainedtype is empty");
+		Assert.notNull(targetType, "toketargetTypenType is null");
+		Assert.isTrue(!Utilities.isEmpty(target), "serviceDefinition is empty");
+		Assert.isTrue(!Utilities.isEmpty(variant), "variant is empty");
 		Assert.notNull(expiresAt, "expiresAt is null");
 
 		try {
 			boolean override = false;
-			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndServiceDefinition(consumerCloud, consumer, provider, serviceDefinition);
+			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(consumerCloud, consumer, provider, target, targetType);
 			if (tokenHeaderOpt.isPresent()) {
 				final Optional<SelfContainedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
 				if (tokenOpt.isPresent()) {
@@ -80,9 +75,8 @@ public class SelfContainedTokenDbService {
 				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 
-			final CryptographerAuxiliary auxiliaryRecord = auxiliaryRepo.saveAndFlush(new CryptographerAuxiliary(internalAuxiliary));
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, token, auxiliaryRecord, requester, consumerCloud, consumer, provider, serviceDefinition, serviceOperation));
-			final SelfContainedToken tokenRecord = tokenRepo.saveAndFlush(new SelfContainedToken(tokenHeaderRecord, selfContainedtype, expiresAt));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
+			final SelfContainedToken tokenRecord = tokenRepo.saveAndFlush(new SelfContainedToken(tokenHeaderRecord, variant, expiresAt));
 			return Pair.of(tokenRecord, !override);
 
 		} catch (final Exception ex) {
