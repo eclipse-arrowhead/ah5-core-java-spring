@@ -121,11 +121,11 @@ public class AuthorizationTokenAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@GetMapping(path = AuthorizationConstants.HTTP_API_OP_PUBLIC_KEY_PATH, produces = MediaType.TEXT_PLAIN_VALUE)
-	public String publicKey() {
+	public String getPublicKey() {
 		logger.debug("publicKey started...");
 
 		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_PUBLIC_KEY_PATH;
-		return authTokenService.publicKey(origin);
+		return authTokenService.getPublicKey(origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -229,7 +229,7 @@ public class AuthorizationManagementService {
 						if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
 							tokenResult.setEnrcyptedToken(secretCryptographer.encryptHMACSHA256(tokenResult.getRawToken(), plainEncriptionKey));
 
-						} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+						} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)) {
 							tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P(tokenResult.getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
 
 						} else {
@@ -293,7 +293,7 @@ public class AuthorizationManagementService {
 		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO item : normalizedDTO.list()) {
 
 			String externalKeyAuxiliary = null;
-			if (item.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+			if (item.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)) {
 				externalKeyAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 			}
 

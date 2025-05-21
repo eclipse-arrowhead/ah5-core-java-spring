@@ -111,7 +111,7 @@ public class AuthorizationTokenService {
 					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.HMAC_ALGORITHM)) {
 						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptHMACSHA256(tokenResult.getFirst().getRawToken(), plainEncriptionKey));
 
-					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)) {
 						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P(tokenResult.getFirst().getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
 
 					} else {
@@ -141,7 +141,7 @@ public class AuthorizationTokenService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String publicKey(final String origin) {
+	public String getPublicKey(final String origin) {
 		logger.debug("registerEncryptionKey started...");
 
 		final Optional<Object> pubKeyOpt = Optional.ofNullable(arrowheadContext.get(Constants.SERVER_PUBLIC_KEY));
@@ -161,7 +161,7 @@ public class AuthorizationTokenService {
 		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.normalizeAndValidateRegisterEncryptionKeyRequest(dto, origin);
 
 		String externalAuxiliary = "";
-		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ALOGRITHM)) {
+		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM)) {
 			externalAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 		}
 

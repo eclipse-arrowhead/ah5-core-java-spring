@@ -26,7 +26,7 @@ public class SecretCryptographer {
 	//=================================================================================================
 	// members
 
-	public static final String AES_ALOGRITHM = "AES/CBC/PKCS5Padding";
+	public static final String AES_CBC_ALOGRITHM = "AES/CBC/PKCS5Padding";
 	private static final String AES_KEY_ALGORITHM = "AES";
 	public static final int AES_KEY_SIZE = 16; // 128 bits
 	
@@ -90,7 +90,7 @@ public class SecretCryptographer {
 		final SecretKeySpec keySpec = getKeyFromStringAESCBCPKCS5P(key);
 		final byte[] iv = Base64.getDecoder().decode(ivBase64);
 		final IvParameterSpec ivSpec = new IvParameterSpec(iv);
-		final Cipher cipher = Cipher.getInstance(AES_ALOGRITHM);
+		final Cipher cipher = Cipher.getInstance(AES_CBC_ALOGRITHM);
 		
 	    cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 	    final byte[] encryptedBytes = Base64.getDecoder().decode(encryptedSecretBase64);
@@ -132,7 +132,7 @@ public class SecretCryptographer {
 		Assert.notNull(ivSpec, "ivSpec is null");
 
 		final SecretKeySpec keySpec = getKeyFromStringAESCBCPKCS5P(key);
-		final Cipher cipher = Cipher.getInstance(AES_ALOGRITHM);
+		final Cipher cipher = Cipher.getInstance(AES_CBC_ALOGRITHM);
 
 		cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
 		final byte[] encrypted = cipher.doFinal(plainSecret.getBytes());
