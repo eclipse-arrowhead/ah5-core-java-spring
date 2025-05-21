@@ -239,7 +239,7 @@ public class AuthorizationManagementValidation {
 			if (Utilities.isEmpty(request.provider())) {
 				throw new InvalidParameterException("Provider system name is missing", origin);
 			}
-			if (Utilities.isEmpty(request.serviceDefinition())) {
+			if (Utilities.isEmpty(request.target())) {
 				throw new InvalidParameterException("Service definition is missing", origin);
 			}
 		}
@@ -351,15 +351,19 @@ public class AuthorizationManagementValidation {
 					|| !request.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
 				throw new InvalidParameterException("Invalid token type: " + request.tokenType(), origin);
 			}
+			
+			if (!Utilities.isEnumValue(request.targetType(), AuthorizationTargetType.class)) {
+				throw new InvalidParameterException("Invalid target type: " + request.targetType(), origin);
+			}
 
 			try {
 				nameValidator.validateName(request.consumerCloud());
 				nameValidator.validateName(request.consumer());
 				nameValidator.validateName(request.provider());
-				nameValidator.validateName(request.serviceDefinition());
+				nameValidator.validateName(request.target());
 
-				if (!request.serviceOperation().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
-					nameValidator.validateName(request.serviceOperation());
+				if (!request.scope().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
+					nameValidator.validateName(request.scope());
 				}
 
 			} catch (final InvalidParameterException ex) {
@@ -399,8 +403,8 @@ public class AuthorizationManagementValidation {
 			if (!Utilities.isEmpty(normalized.provider())) {
 				nameValidator.validateName(normalized.provider());
 			}
-			if (!Utilities.isEmpty(normalized.serviceDefinition())) {
-				nameValidator.validateName(normalized.serviceDefinition());
+			if (!Utilities.isEmpty(normalized.target())) {
+				nameValidator.validateName(normalized.target());
 			}
 			
 		} catch (final InvalidParameterException ex) {
@@ -410,6 +414,11 @@ public class AuthorizationManagementValidation {
 		if (!Utilities.isEmpty(dto.tokenType())
 				&& !Utilities.isEnumValue(dto.tokenType(), AuthorizationTokenType.class)) {
 			throw new InvalidParameterException("Invalid token type: " + dto.tokenType(), origin);
+		}
+		
+		if (!Utilities.isEmpty(dto.targetType())
+				&& !Utilities.isEnumValue(dto.targetType(), AuthorizationTargetType.class)) {
+			throw new InvalidParameterException("Invalid target type: " + dto.targetType(), origin);
 		}
 		
 		return normalized;

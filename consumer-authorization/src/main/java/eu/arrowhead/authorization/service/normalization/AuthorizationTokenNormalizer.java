@@ -17,6 +17,7 @@ import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenQueryRequestDTO;
 import eu.arrowhead.dto.DTODefaults;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
 @Service
 public class AuthorizationTokenNormalizer {
@@ -55,8 +56,10 @@ public class AuthorizationTokenNormalizer {
 
 		return new AuthorizationTokenGenerationRequestDTO(
 				dto.tokenType().toUpperCase().trim(),
-				nameNormalizer.normalize(dto.serviceInstanceId()),
-				Utilities.isEmpty(dto.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(dto.serviceOperation()));
+				nameNormalizer.normalize(dto.provider()),
+				Utilities.isEmpty(dto.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : dto.targetType().toUpperCase().trim(),
+				nameNormalizer.normalize(dto.target()),
+				Utilities.isEmpty(dto.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(dto.scope()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -79,11 +82,12 @@ public class AuthorizationTokenNormalizer {
 				dto.list().stream()
 						.map((item) -> new AuthorizationTokenGenerationMgmtRequestDTO(
 								item.tokenType().trim().toUpperCase(),
+								Utilities.isEmpty(item.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : item.targetType().toUpperCase().trim(),
 								Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : nameNormalizer.normalize(item.consumerCloud()),
 								nameNormalizer.normalize(item.consumer()),
 								nameNormalizer.normalize(item.provider()),
-								nameNormalizer.normalize(item.serviceDefinition()),
-								Utilities.isEmpty(item.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(item.serviceOperation()),
+								nameNormalizer.normalize(item.target()),
+								Utilities.isEmpty(item.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(item.scope()),
 								Utilities.isEmpty(item.expireAt()) ? null : item.expireAt().trim(),
 								item.usageLimit()))
 						.toList());
@@ -101,7 +105,8 @@ public class AuthorizationTokenNormalizer {
 				Utilities.isEmpty(dto.consumerCloud()) ? null : nameNormalizer.normalize(dto.consumerCloud()),
 				Utilities.isEmpty(dto.consumer()) ? null : nameNormalizer.normalize(dto.consumer()),
 				Utilities.isEmpty(dto.provider()) ? null : nameNormalizer.normalize(dto.provider()),
-				Utilities.isEmpty(dto.serviceDefinition()) ? null : nameNormalizer.normalize(dto.serviceDefinition()));
+				Utilities.isEmpty(dto.targetType()) ? null : dto.targetType().trim().toUpperCase(),
+				Utilities.isEmpty(dto.target()) ? null : nameNormalizer.normalize(dto.target()));
 	}
 
 	//-------------------------------------------------------------------------------------------------

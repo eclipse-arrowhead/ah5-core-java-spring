@@ -194,7 +194,7 @@ public class AuthorizationManagementService {
 			// Check permission
 			authorizedRequests = normalizedDTO.list().stream()
 					.filter((request) -> policyEngine.isAccessGranted(
-							new NormalizedVerifyRequest(request.provider(), request.consumer(), request.consumerCloud(), AuthorizationTargetType.SERVICE_DEF, request.serviceDefinition(), request.serviceOperation())))
+							new NormalizedVerifyRequest(request.provider(), request.consumer(), request.consumerCloud(), AuthorizationTargetType.valueOf(request.targetType()), request.target(), request.scope())))
 					.toList();
 
 			if (Utilities.isEmpty(authorizedRequests)) {
@@ -206,8 +206,8 @@ public class AuthorizationManagementService {
 		final List<TokenModel> tokenResults = new ArrayList<>(authorizedRequests.size());
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : authorizedRequests) {
 			tokenResults.add(
-					tokenEngine.produce(requester, request.consumer(), request.consumerCloud(), ServiceInterfacePolicy.valueOf(request.tokenType()), request.provider(), AuthorizationTargetType.SERVICE_DEF, request.serviceDefinition(),
-							Utilities.isEmpty(request.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.serviceOperation(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expireAt()), origin).getFirst());
+					tokenEngine.produce(requester, request.consumer(), request.consumerCloud(), ServiceInterfacePolicy.valueOf(request.tokenType()), request.provider(), AuthorizationTargetType.valueOf(request.targetType()), request.target(),
+							Utilities.isEmpty(request.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.scope(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expireAt()), origin).getFirst());
 		}
 
 		// Encrypt token if required
@@ -267,8 +267,8 @@ public class AuthorizationManagementService {
 				TokenHeader.DEFAULT_SORT_FIELD,
 				origin);
 
-		final Page<TokenModel> page = tokenEngine.query(pageRequest, normalized.requester(), AuthorizationTokenType.valueOf(normalized.tokenType()), normalized.consumerCloud(), normalized.consumer(),
-				normalized.provider(), AuthorizationTargetType.SERVICE_DEF, normalized.serviceDefinition(), origin);
+		final Page<TokenModel> page = tokenEngine.query(pageRequest, normalized.requester(), Utilities.isEmpty(normalized.tokenType()) ? null : AuthorizationTokenType.valueOf(normalized.tokenType()), normalized.consumerCloud(), normalized.consumer(),
+				normalized.provider(), Utilities.isEmpty(normalized.targetType()) ? null : AuthorizationTargetType.valueOf(normalized.targetType()), normalized.target(), origin);
 
 		return new AuthorizationTokenMgmtListResponseDTO(page.getContent().stream().map(t -> dtoConverter.convertTokenModelToMgmtResponse(t)).toList(), page.getTotalElements());
 	}

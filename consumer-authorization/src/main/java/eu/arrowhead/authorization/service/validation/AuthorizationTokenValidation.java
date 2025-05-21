@@ -16,6 +16,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.NameValidator;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 @Service
@@ -84,8 +85,12 @@ public class AuthorizationTokenValidation {
 			throw new InvalidParameterException("Token type is missing", origin);
 		}
 		
-		if (Utilities.isEmpty(dto.serviceInstanceId())) {
-			throw new InvalidParameterException("Service instance ID is missing", origin);
+		if (Utilities.isEmpty(dto.provider())) {
+			throw new InvalidParameterException("Provider system is missing", origin);
+		}
+		
+		if (Utilities.isEmpty(dto.target())) {
+			throw new InvalidParameterException("Target is missing", origin);
 		}
 	}
 	
@@ -140,10 +145,15 @@ public class AuthorizationTokenValidation {
 				throw new InvalidParameterException("Token type is invalid", origin);
 			}
 			
-			// TODO validate service instance id with the future validator
+			if (!Utilities.isEnumValue(normalized.targetType(), AuthorizationTargetType.class)) {
+				throw new InvalidParameterException("Target type is invalid", origin);
+			}
 			
-			if (!normalized.serviceOperation().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
-				nameValidator.validateName(normalized.serviceOperation());
+			nameValidator.validateName(normalized.provider());
+			nameValidator.validateName(normalized.target());
+			
+			if (!normalized.scope().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
+				nameValidator.validateName(normalized.scope());
 			}
 			
 		} catch (final InvalidParameterException ex) {

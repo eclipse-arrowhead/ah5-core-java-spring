@@ -27,8 +27,6 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.DataNotFoundException;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.common.service.util.ServiceInstanceIdParts;
-import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
@@ -80,29 +78,28 @@ public class AuthorizationTokenService {
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final AuthorizationTokenGenerationRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateRequest(dto, origin);
 		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
-		final ServiceInstanceIdParts serviceInstanceIdParts = ServiceInstanceIdUtils.breakDownInstanceId(normalizedDTO.serviceInstanceId());
 
 		// Check permission
 		final boolean isAuthorized = policyEngine.isAccessGranted(new NormalizedVerifyRequest(
-				serviceInstanceIdParts.systemName(),
+				normalizedDTO.provider(),
 				normalizedRequester,
 				Defaults.DEFAULT_CLOUD,
-				AuthorizationTargetType.SERVICE_DEF,
-				serviceInstanceIdParts.serviceDefinition(),
-				dto.serviceOperation()));
+				AuthorizationTargetType.valueOf(normalizedDTO.targetType()),
+				normalizedDTO.target(),
+				dto.scope()));
 
 		if (!isAuthorized) {
 			throw new ForbiddenException("Requester has no permisson to the service instance and/or operation.", origin);
 		}
 
 		// Generate token
-		final Pair<TokenModel, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, serviceInstanceIdParts.systemName(), AuthorizationTargetType.SERVICE_DEF, serviceInstanceIdParts.serviceDefinition(),
-				Utilities.isEmpty(normalizedDTO.serviceOperation()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.serviceOperation(), origin);
+		final Pair<TokenModel, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, normalizedDTO.provider(), AuthorizationTargetType.valueOf(normalizedDTO.targetType()), normalizedDTO.target(),
+				Utilities.isEmpty(normalizedDTO.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.scope(), origin);
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
 		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
-			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(serviceInstanceIdParts.systemName());
+			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(normalizedDTO.provider());
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();

@@ -169,37 +169,39 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenGenerationResponseDTO convertTokenModelToResponse(final TokenModel token) {
+	public AuthorizationTokenGenerationResponseDTO convertTokenModelToResponse(final TokenModel model) {
 		logger.debug("convertTokenModelToResponse started...");
-		Assert.notNull(token, "TokenModel is null");
+		Assert.notNull(model, "TokenModel is null");
 
 		return new AuthorizationTokenGenerationResponseDTO(
-				token.getTokenType(),
-				token.isEncrypted() ? token.getEnrcyptedToken() : token.getRawToken(),
-				token.getUsageLimit(),
-				token.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(token.getExpiresAt()));
+				model.getTokenType(),
+				model.getTargetType(),
+				model.isEncrypted() ? model.getEnrcyptedToken() : model.getRawToken(),
+				model.getUsageLimit(),
+				model.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(model.getExpiresAt()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenResponseDTO convertTokenModelToMgmtResponse(final TokenModel token) {
+	public AuthorizationTokenResponseDTO convertTokenModelToMgmtResponse(final TokenModel model) {
 		logger.debug("convertTokenModelToResponse started...");
-		Assert.notNull(token, "TokenModel is null");
+		Assert.notNull(model, "TokenModel is null");
 
 		return new AuthorizationTokenResponseDTO(
-				token.getTokenType(),
-				token.getVariant(),
-				token.isEncrypted() ? token.getEnrcyptedToken() : token.getRawToken(),
-				token.getHashedToken(),
-				token.getRequester(),
-				token.getConsumerCloud(),
-				token.getConsumer(),
-				token.getProvider(),
-				token.getTarget(),
-				token.getScope(),
-				Utilities.convertZonedDateTimeToUTCString(token.getCreatedAt()),
-				token.getUsageLimit(),
-				token.getUsageLeft(),
-				token.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(token.getExpiresAt()));
+				model.getTokenType(),
+				model.getVariant(),
+				model.isEncrypted() ? model.getEnrcyptedToken() : model.getRawToken(),
+				model.getHashedToken(),
+				model.getRequester(),
+				model.getConsumerCloud(),
+				model.getConsumer(),
+				model.getProvider(),
+				model.getTargetType(),
+				model.getTarget(),
+				model.getScope(),
+				Utilities.convertZonedDateTimeToUTCString(model.getCreatedAt()),
+				model.getUsageLimit(),
+				model.getUsageLeft(),
+				model.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(model.getExpiresAt()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
