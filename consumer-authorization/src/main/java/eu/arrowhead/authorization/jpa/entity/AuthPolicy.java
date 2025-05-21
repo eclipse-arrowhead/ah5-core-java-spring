@@ -29,7 +29,7 @@ public class AuthPolicy {
 	private AuthorizationLevel level;
 
 	@Column(nullable = false)
-	private long headerId; // can't be a foreign key because it can references a record from one of two tables
+	private long headerId; // can't be a foreign key because it can reference a record from one of two tables
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String scope = AuthorizationDefaults.DEFAULT_SCOPE;

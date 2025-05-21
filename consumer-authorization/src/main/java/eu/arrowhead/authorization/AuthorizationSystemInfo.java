@@ -29,7 +29,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return AuthorizationConstants.SYSTEM_NAME;
+		return Constants.SYS_NAME_CONSUMER_AUTHORIZATION;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -97,7 +97,8 @@ public class AuthorizationSystemInfo extends SystemInfo {
 						Constants.MANAGEMENT_POLICY,
 						Constants.ENABLE_BLACKLIST_FILTER,
 						Constants.FORCE_BLACKLIST_FILTER,
-						Constants.MAX_PAGE_SIZE),
+						Constants.MAX_PAGE_SIZE,
+						Constants.NORMALIZATION_MODE),
 				AuthorizationDefaults.class);
 	}
 

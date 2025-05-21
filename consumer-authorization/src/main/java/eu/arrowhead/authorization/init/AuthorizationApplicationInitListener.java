@@ -6,5 +6,4 @@ import eu.arrowhead.common.init.ApplicationInitListener;
 
 @Component
 public class AuthorizationApplicationInitListener extends ApplicationInitListener {
-
 }

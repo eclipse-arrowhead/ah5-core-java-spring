@@ -18,12 +18,15 @@ import eu.arrowhead.common.SystemInfo;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.http.HttpUtilities;
 import eu.arrowhead.common.http.filter.ArrowheadFilter;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -40,7 +43,13 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 	private SystemInfo sysInfo;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
+
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+	@Autowired
+	private ServiceOperationNameNormalizer serviceOpNameNormalizer;
 
 	@Autowired
 	private AuthorizationPolicyEngine policyEngine;
@@ -60,7 +69,7 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 		final String requestTarget = request.getRequestURL().toString();
 		if (requestTarget.contains(mgmtPath)) {
 			final String systemName = (String) request.getAttribute(Constants.HTTP_ATTR_ARROWHEAD_AUTHENTICATED_SYSTEM);
-			final String normalizedSystemName = nameNormalizer.normalize(systemName);
+			final String normalizedSystemName = systemNameNormalizer.normalize(systemName);
 			boolean allowed = false;
 
 			switch (sysInfo.getManagementPolicy()) {
@@ -83,19 +92,16 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 			if (!allowed) {
 				throw new ForbiddenException("Requester has no management permission", requestTarget);
 			}
-
 		}
 
 		super.doFilterInternal(request, response, chain);
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private boolean isSystemOperator(final HttpServletRequest request) {
 		logger.debug("InternalManagementServiceFilter.isSystemOperator started...");
 
-		final Object isSysOp = request.getAttribute(Constants.HTTP_ATTR_ARROWHEAD_SYSOP_REQUEST);
-		return isSysOp == null ? false : (Boolean) isSysOp;
+		return HttpUtilities.isSysop(request, request.getRequestURI());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -117,12 +123,12 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 		}
 
 		final NormalizedVerifyRequest verifyRequest = new NormalizedVerifyRequest(
-				nameNormalizer.normalize(sysInfo.getSystemName()),
+				systemNameNormalizer.normalize(sysInfo.getSystemName()),
 				systemName,
 				Defaults.DEFAULT_CLOUD,
 				AuthorizationTargetType.SERVICE_DEF,
-				nameNormalizer.normalize(match.get().getFirst()),
-				nameNormalizer.normalize(match.get().getSecond()));
+				serviceDefNameNormalizer.normalize(match.get().getFirst()),
+				serviceOpNameNormalizer.normalize(match.get().getSecond()));
 
 		return policyEngine.isAccessGranted(verifyRequest);
 	}

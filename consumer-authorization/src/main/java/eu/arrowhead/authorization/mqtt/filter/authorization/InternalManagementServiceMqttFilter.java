@@ -19,7 +19,9 @@ import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.mqtt.filter.ArrowheadMqttFilter;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 
 public class InternalManagementServiceMqttFilter implements ArrowheadMqttFilter {
@@ -31,7 +33,13 @@ public class InternalManagementServiceMqttFilter implements ArrowheadMqttFilter 
 	private SystemInfo sysInfo;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
+
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+	@Autowired
+	private ServiceOperationNameNormalizer serviceOpNameNormalizer;
 
 	@Autowired
 	private AuthorizationPolicyEngine policyEngine;
@@ -55,7 +63,7 @@ public class InternalManagementServiceMqttFilter implements ArrowheadMqttFilter 
 		logger.debug("InternalManagementServiceMqttFilter.doFilter started...");
 
 		if (request.getBaseTopic().contains(mgmtPath)) {
-			final String normalizedSystemName = nameNormalizer.normalize(request.getRequester());
+			final String normalizedSystemName = systemNameNormalizer.normalize(request.getRequester());
 			boolean allowed = false;
 
 			switch (sysInfo.getManagementPolicy()) {
@@ -103,12 +111,12 @@ public class InternalManagementServiceMqttFilter implements ArrowheadMqttFilter 
 		}
 
 		final NormalizedVerifyRequest verifyRequest = new NormalizedVerifyRequest(
-				nameNormalizer.normalize(sysInfo.getSystemName()),
+				systemNameNormalizer.normalize(sysInfo.getSystemName()),
 				systemName,
 				Defaults.DEFAULT_CLOUD,
 				AuthorizationTargetType.SERVICE_DEF,
-				nameNormalizer.normalize(match.get()),
-				nameNormalizer.normalize(operation));
+				serviceDefNameNormalizer.normalize(match.get()),
+				serviceOpNameNormalizer.normalize(operation));
 
 		return policyEngine.isAccessGranted(verifyRequest);
 	}
