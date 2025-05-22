@@ -19,16 +19,21 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
+import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
+import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationResultDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.QoSEvaulationType;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
@@ -115,7 +120,7 @@ public class LocalServiceOrchestration {
 
 			// Authorization cross-check
 			if (sysInfo.isAuthorizationEnabled()) {
-				candidates = filterOutUnauthorizedOnes(candidates);
+				candidates = filterOutUnauthorizedOnes(form, candidates);
 			}
 
 			if (Utilities.isEmpty(candidates)) {
@@ -228,7 +233,7 @@ public class LocalServiceOrchestration {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> serviceDiscovery(final OrchestrationForm form, final boolean withoutInterace, final boolean onlyPreferred) {
+	private List<OrchestrationCandidate> serviceDiscovery(final OrchestrationForm form, final boolean withoutInterface, final boolean onlyPreferred) {
 		logger.debug("serviceDiscovery started...");
 
 		final ServiceInstanceLookupRequestDTO lookupDTO = new ServiceInstanceLookupRequestDTO.Builder()
@@ -237,9 +242,9 @@ public class LocalServiceOrchestration {
 				.alivesAt(form.getAlivesAt())
 				.metadataRequirementsList(form.getMetadataRequirements())
 				.policies(form.getSecurityPolicies())
-				.interfaceTemplateNames(withoutInterace ? null : form.getInterfaceTemplateNames())
-				.interfacePropertyRequirementsList(withoutInterace ? null : form.getInterfacePropertyRequirements())
-				.addressTypes(withoutInterace ? null : form.getInterfaceAddressTypes())
+				.interfaceTemplateNames(withoutInterface ? null : form.getInterfaceTemplateNames())
+				.interfacePropertyRequirementsList(withoutInterface ? null : form.getInterfacePropertyRequirements())
+				.addressTypes(withoutInterface ? null : form.getInterfaceAddressTypes())
 				.providerNames(onlyPreferred ? form.getPreferredProviders() : null)
 				.build();
 
@@ -356,12 +361,66 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutUnauthorizedOnes(final List<OrchestrationCandidate> candidates) {
+	private List<OrchestrationCandidate> filterOutUnauthorizedOnes(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutUnauthorizedOnes started...");
 
-		// TODO call auth service once it is implemented
-		logger.warn("Authorization crosscheck is not implemented yet");
-		return candidates;
+		final AuthorizationVerifyListRequestDTO payload = calculateVerifyPayload(form.getTargetSystemName(), form.getOperations(), candidates);
+		final AuthorizationVerifyListResponseDTO response = ahHttpService.consumeService(
+				Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT,
+				Constants.SERVICE_OP_CHECK,
+				Constants.SYS_NAME_CONSUMER_AUTHORIZATION,
+				AuthorizationVerifyListResponseDTO.class,
+				payload);
+
+		if (response.entries().isEmpty()) {
+			return List.of();
+		}
+
+		final List<OrchestrationCandidate> result = new ArrayList<>();
+		candidates.forEach(c -> {
+			final boolean denied = response
+					.entries()
+					.stream()
+					.anyMatch(e -> e.provider().equals(c.getServiceInstance().provider().name()) && !e.granted());
+
+			if (!denied) {
+				// have access to all specified operations (or all operations if nothing is specified)
+				result.add(c);
+			}
+		});
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private AuthorizationVerifyListRequestDTO calculateVerifyPayload(final String consumerName, final List<String> operations, final List<OrchestrationCandidate> candidates) {
+		logger.debug("calculateVerifyPayload started...");
+
+		final int capacity = Utilities.isEmpty(operations) ? candidates.size() : candidates.size() * operations.size();
+		final List<AuthorizationVerifyRequestDTO> list = new ArrayList<>(capacity);
+		candidates.forEach(c -> {
+			if (Utilities.isEmpty(operations)) {
+				list.add(new AuthorizationVerifyRequestDTO(
+						c.getServiceInstance().provider().name(),
+						consumerName,
+						null, // local cloud
+						AuthorizationTargetType.SERVICE_DEF.name(),
+						c.getServiceInstance().serviceDefinition().name(),
+						null)); // no scope
+			} else {
+				for (final String operation : operations) {
+					list.add(new AuthorizationVerifyRequestDTO(
+							c.getServiceInstance().provider().name(),
+							consumerName,
+							null, // local cloud
+							AuthorizationTargetType.SERVICE_DEF.name(),
+							c.getServiceInstance().serviceDefinition().name(),
+							operation));
+				}
+			}
+		});
+
+		return new AuthorizationVerifyListRequestDTO(list);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -585,7 +644,7 @@ public class LocalServiceOrchestration {
 		final List<OrchestrationResultDTO> results = candidates.stream()
 				.map(c -> new OrchestrationResultDTO(
 						c.getServiceInstance().instanceId(),
-						null, // local cloud
+						Defaults.DEFAULT_CLOUD, // local cloud
 						c.getServiceInstance().provider().name(),
 						c.getServiceInstance().serviceDefinition().name(),
 						c.getServiceInstance().version(),

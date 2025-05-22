@@ -27,6 +27,7 @@ import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.authorization.jpa.repository.AuthMgmtPolicyHeaderRepository;
 import eu.arrowhead.authorization.jpa.repository.AuthPolicyRepository;
 import eu.arrowhead.authorization.jpa.repository.AuthProviderPolicyHeaderRepository;
+import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
@@ -38,6 +39,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.AuthorizationPolicyDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 
 @Service
@@ -55,6 +57,9 @@ public class AuthorizationPolicyDbService {
 	@Autowired
 	private AuthPolicyRepository authPolicyRepository;
 
+	@Autowired
+	private DTOConverter dtoConverter;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
@@ -62,7 +67,7 @@ public class AuthorizationPolicyDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Pair<AuthProviderPolicyHeader, List<AuthPolicy>> createProviderLevelPolicy(final NormalizedGrantRequest request) {
+	public Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> createProviderLevelPolicy(final NormalizedGrantRequest request) {
 		logger.debug("createProviderLevelPolicy started...");
 		Assert.notNull(request, "request is null");
 
@@ -75,12 +80,24 @@ public class AuthorizationPolicyDbService {
 					request.target());
 
 			if (existing.isPresent()) {
-				throw new InvalidParameterException("A provider level policy is already existing for this cloud / provider / target type / target combination: "
-						+ request.cloud() + " / "
-						+ request.provider() + " / "
-						+ request.targetType().name() + " / "
-						+ request.target());
+				final AuthProviderPolicyHeader header = existing.get();
+				final List<AuthPolicy> policies = authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, header.getId());
+				Pair<AuthProviderPolicyHeader, List<AuthPolicy>> existingPolicy = Pair.of(header, policies);
+
+				// check if every details are the same
+				final boolean needDescriptionUpdate = checkExistingProviderLevelPolicyDetails(existingPolicy, request);
+				if (needDescriptionUpdate) {
+					header.setDescription(request.description());
+					existingPolicy = Pair.of(providerHeaderRepository.saveAndFlush(header), policies);
+				}
+
+				// return existing entries
+				return Pair.of(
+						existingPolicy,
+						false);
 			}
+
+			// new policy
 
 			// create header
 			AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
@@ -94,7 +111,9 @@ public class AuthorizationPolicyDbService {
 			header = providerHeaderRepository.saveAndFlush(header);
 			final List<AuthPolicy> policies = createAuthPolicies(AuthorizationLevel.PROVIDER, header, request.policies());
 
-			return Pair.of(header, policies);
+			return Pair.of(
+					Pair.of(header, policies),
+					true);
 		} catch (final InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
@@ -226,7 +245,7 @@ public class AuthorizationPolicyDbService {
 			}
 
 			// delete from Provider level
-			List<AuthProviderPolicyHeader> referencedProviderHeaders = providerHeaderRepository.findByInstanceIdIn(instanceIds);
+			final List<AuthProviderPolicyHeader> referencedProviderHeaders = providerHeaderRepository.findByInstanceIdIn(instanceIds);
 			if (!referencedProviderHeaders.isEmpty()) {
 				final List<Long> ids = referencedProviderHeaders
 						.stream()
@@ -616,6 +635,61 @@ public class AuthorizationPolicyDbService {
 				Pair.of(
 						header,
 						policies));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	// throws exception, if the two policy doesn't have the same attributes
+	private boolean checkExistingProviderLevelPolicyDetails(final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> existingPolicy, final NormalizedGrantRequest request) {
+		logger.debug("checkExistingProviderLevelPolicyDetails started...");
+
+		boolean needChange = false;
+
+		// omitting cloud, provider, target type and target check, because we use those to find the existing policy
+
+		// description does not matter in the comparison, but caller method should update it if necessary
+		needChange = !existingPolicy.getFirst().getDescription().equals(request.description());
+
+		if (existingPolicy.getSecond().size() != request.policies().size()) {
+			throw new InvalidParameterException("A provider level policy is already existing with the specified cloud / provider / target type / target combination, but the policy details"
+					+ " are different");
+		}
+
+		// policy details
+		final Map<String, NormalizedAuthorizationPolicyRequest> policies = request.policies();
+		for (final AuthPolicy authPolicy : existingPolicy.getSecond()) {
+			final NormalizedAuthorizationPolicyRequest matchingCandidate = policies.get(authPolicy.getScope());
+
+			if (matchingCandidate == null
+					|| !policyDetailsEquals(authPolicy, matchingCandidate)) {
+				throw new InvalidParameterException("A provider level policy is already existing with the specified cloud / provider / target type / target combination, but the policy details"
+						+ " are different");
+			}
+		}
+
+		return needChange;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private boolean policyDetailsEquals(final AuthPolicy existingEntity, final NormalizedAuthorizationPolicyRequest candidate) {
+		logger.debug("policyDetailsEquals started...");
+
+		if (existingEntity.getPolicyType() != candidate.policyType()) {
+			return false;
+		}
+
+		final AuthorizationPolicyDTO existing = dtoConverter.convertAuthPolicyToDTO(existingEntity);
+		switch (existing.policyType()) {
+		case ALL:
+			return true;
+		case BLACKLIST:
+		case WHITELIST:
+			// order of the lists is not important
+			return existing.policyList().size() == candidate.policyList().size() && existing.policyList().containsAll(candidate.policyList());
+		case SYS_METADATA:
+			return existing.policyMetadataRequirement().equals(candidate.policyMetadataRequirement());
+		default:
+			return false;
+		}
 	}
 
 	//=================================================================================================

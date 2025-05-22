@@ -16,7 +16,7 @@ public class OrchestrationForm {
 	// members
 
 	private String requesterSystemName;
-	private String targetSystemName;
+	private String targetSystemName; // consumer
 	private Map<String, Boolean> orchestrationFlags = new HashMap<>();
 	private Map<String, String> qosRequirements;
 	private Integer exclusivityDuration;

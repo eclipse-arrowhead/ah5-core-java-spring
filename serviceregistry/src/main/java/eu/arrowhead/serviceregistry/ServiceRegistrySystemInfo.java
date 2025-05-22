@@ -127,7 +127,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	public boolean hasClientDirectAccess(final String systemName) {
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
 
-		return serviceDiscoveryDirectAccess.contains(systemName);
+		return !Utilities.isEmpty(serviceDiscoveryDirectAccess) && serviceDiscoveryDirectAccess.contains(systemName);
 	}
 
 	//-------------------------------------------------------------------------------------------------

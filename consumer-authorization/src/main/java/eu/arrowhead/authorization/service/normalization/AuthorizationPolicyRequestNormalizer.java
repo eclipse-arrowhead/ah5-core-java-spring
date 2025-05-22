@@ -1,7 +1,10 @@
 package eu.arrowhead.authorization.service.normalization;
 
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,8 +66,11 @@ public class AuthorizationPolicyRequestNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	private List<String> normalizeSystemList(final List<String> systemList) {
 		logger.debug("normalizeSystemList started...");
-		return systemList.stream()
+		final Set<String> set = systemList
+				.stream()
 				.map(sys -> nameNormalizer.normalize(sys))
-				.toList();
+				.collect(Collectors.toSet()); // to remove any duplicates
+
+		return new ArrayList<>(set);
 	}
 }
