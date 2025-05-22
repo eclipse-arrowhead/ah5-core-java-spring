@@ -75,6 +75,11 @@
     "description": "A description for 'disable.hostname.verifier'"
   },
   {
+    "name": "token.max.age",
+    "type": "java.lang.Integer",
+    "description": "A description for 'token.max.age'"
+  },
+  {
     "name": "token.time.limit",
     "type": "java.lang.Integer",
     "description": "A description for 'token.time.limit'"

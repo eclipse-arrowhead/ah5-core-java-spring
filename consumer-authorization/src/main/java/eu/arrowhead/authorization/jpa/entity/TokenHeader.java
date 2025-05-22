@@ -19,7 +19,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	// members
 
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "tokenType", "requester", "consumerCloud", "consumer", "provider", "targetType", "serviceDefinition", "createdBy");
-	public static final String DEFAULT_SORT_FIELD = "createdBy";
+	public static final String DEFAULT_SORT_FIELD = "createdAt";
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)

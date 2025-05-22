@@ -1,5 +1,6 @@
 package eu.arrowhead.authorization.jpa.service;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +70,7 @@ public class TokenHeaderDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public void deleteById(final List<Long> ids) {
+	public void deleteById(final Collection<Long> ids) {
 		logger.debug("deleteById started");
 		Assert.isTrue(!Utilities.containsNull(ids), "ID list contains null element");
 

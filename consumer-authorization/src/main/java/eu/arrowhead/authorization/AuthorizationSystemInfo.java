@@ -23,6 +23,9 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	//=================================================================================================
 	// members
 	
+	@Value(AuthorizationConstants.$TOKEN_MAX_AGE_WD)
+	private int tokenMaxAge;
+	
 	@Value(AuthorizationConstants.$TOKEN_TIME_LIMIT_WD)
 	private int tokenTimeLimit;
 	
@@ -97,6 +100,11 @@ public class AuthorizationSystemInfo extends SystemInfo {
 		return List.of(generalManagement, authorizationManagement, authorization);
 	}
 		
+	//-------------------------------------------------------------------------------------------------
+	public int getTokenMaxAge() {
+		return tokenMaxAge;
+	}
+	
 	//-------------------------------------------------------------------------------------------------
 	public int getTokenTimeLimit() {
 		return tokenTimeLimit;

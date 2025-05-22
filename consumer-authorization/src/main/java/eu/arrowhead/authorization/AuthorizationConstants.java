@@ -49,6 +49,8 @@ public final class AuthorizationConstants {
 	
 	// Configuration related
 
+	public static final String TOKEN_MAX_AGE = "token.max.age";
+	public static final String $TOKEN_MAX_AGE_WD = "${" + TOKEN_MAX_AGE + ":" + AuthorizationDefaults.DEFAULT_TOKEN_MAX_AGE + "}";
 	public static final String TOKEN_TIME_LIMIT = "token.time.limit";
 	public static final String $TOKEN_TIME_LIMIT_WD = "${" + TOKEN_TIME_LIMIT + ":" + AuthorizationDefaults.DEFAULT_TOKEN_TIME_LIMIT + "}";
 	public static final String SIMPLE_TOKEN_BYTE_SIZE = "simple.token.byte.size";
@@ -59,6 +61,10 @@ public final class AuthorizationConstants {
 	public static final String $SECRET_CRYPTOGRAPHER_KEY_WD = "${" + SECRET_CRYPTOGRAPHER_KEY + ":" + AuthorizationDefaults.DEFAULT_SECRET_CRYPTOGRAPHER_KEY + "}";
 	public static final String UNBOUNDED_TOKEN_GENERATION_WHITELIST = "unbounded.token.generation.whitelist";
 	public static final String $UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD = "${" + UNBOUNDED_TOKEN_GENERATION_WHITELIST + ":" + AuthorizationDefaults.DEFAULT_UNBOUNDED_TOKEN_GENERATION_WHITELIST + "}";
+	
+	// Quartz related
+	public static final String CLEANER_TRIGGER = "consumerAuthorizationCleanerTrigger";
+	public static final String CLEANER_JOB = "consumerAuthorizationCleanerJob";
 
 	//=================================================================================================
 	// assistant methods
