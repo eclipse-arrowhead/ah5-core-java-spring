@@ -12,6 +12,7 @@ public final class AuthorizationConstants {
 
 	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
 	public static final String VERSION_AUTHORIZATION = "1.0.0";
+	public static final String VERSION_AUTHORIZATION_TOKEN = "1.0.0";
 	public static final String VERSION_AUTHORIZATION_MANAGEMENT = "1.0.0";
 
 	public static final String HTTP_API_BASE_PATH = "/consumerauthorization";

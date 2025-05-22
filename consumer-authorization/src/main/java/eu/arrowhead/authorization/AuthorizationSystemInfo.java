@@ -22,22 +22,22 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// members
-	
+
 	@Value(AuthorizationConstants.$TOKEN_MAX_AGE_WD)
 	private int tokenMaxAge;
-	
+
 	@Value(AuthorizationConstants.$TOKEN_TIME_LIMIT_WD)
 	private int tokenTimeLimit;
-	
+
 	@Value(AuthorizationConstants.$SIMPLE_TOKEN_BYTE_SIZE_WD)
 	private int simpleTokenByteSize;
-	
+
 	@Value(AuthorizationConstants.$SIMPLE_TOKEN_USAGE_LIMIT_WD)
 	private int simpleTokenUsageLimit;
-	
+
 	@Value(AuthorizationConstants.$UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD)
 	private List<String> unboundedTokenGenerationWhitelist;
-	
+
 	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY_WD)
 	private String secretCryptographerKey;
 
@@ -80,6 +80,12 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.serviceInterface(getHttpServiceInterfaceForAuthorization())
 				.serviceInterface(getMqttServiceInterfaceForAuthorization())
 				.build();
+		final ServiceModel authorizationToken = new ServiceModel.Builder()
+				.serviceDefinition(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN)
+				.version(AuthorizationConstants.VERSION_AUTHORIZATION_TOKEN)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
+				.serviceInterface(getHttpServiceInterfaceForAuthorizationToken())
+				.build();
 
 		final ServiceModel authorizationManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT)
@@ -97,14 +103,14 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 		// TODO extend this
 		// starting with management services speeds up management filters
-		return List.of(generalManagement, authorizationManagement, authorization);
+		return List.of(generalManagement, authorizationManagement, authorization, authorizationToken);
 	}
-		
+
 	//-------------------------------------------------------------------------------------------------
 	public int getTokenMaxAge() {
 		return tokenMaxAge;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public int getTokenTimeLimit() {
 		return tokenTimeLimit;
@@ -124,7 +130,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	public String getSecretCryptographerKey() {
 		return secretCryptographerKey;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasSystemUnboundedTokenGenerationRight(final String systemName) {
 		if (Utilities.isEmpty(unboundedTokenGenerationWhitelist)) {
@@ -135,7 +141,6 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// assistant methods
-
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
@@ -202,6 +207,41 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getHttpServiceInterfaceForAuthorizationToken() {
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+
+		final HttpOperationModel generate = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_OP_GENERATE_PATH)
+				.build();
+		final HttpOperationModel verify = new HttpOperationModel.Builder()
+				.method(HttpMethod.GET.name())
+				.path(AuthorizationConstants.HTTP_API_OP_TOKEN_VERIFY_PATH)
+				.build();
+		final HttpOperationModel getPublicKey = new HttpOperationModel.Builder()
+				.method(HttpMethod.GET.name())
+				.path(AuthorizationConstants.HTTP_API_OP_PUBLIC_KEY_PATH)
+				.build();
+		final HttpOperationModel registerEncryptionKey = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
+				.build();
+		final HttpOperationModel unregisterEncryptionKey = new HttpOperationModel.Builder()
+				.method(HttpMethod.DELETE.name())
+				.path(AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
+				.build();
+
+		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
+				.basePath(AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH)
+				.operation(Constants.SERVICE_OP_GENERATE, generate)
+				.operation(Constants.SERVICE_OP_VERIFY, verify)
+				.operation(Constants.SERVICE_OP_GET_PUBLIC_KEY, getPublicKey)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_TOKEN_REGISTER_ENCRYPTION_KEY, registerEncryptionKey)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_TOKEN_UNREGISTER_ENCRYPTION_KEY, unregisterEncryptionKey)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getHttpServiceInterfaceForAuthorizationManagement() {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
@@ -221,6 +261,26 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.method(HttpMethod.POST.name())
 				.path(AuthorizationConstants.HTTP_API_OP_CHECK_PATH)
 				.build();
+		final HttpOperationModel gereateTokens = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH)
+				.build();
+		final HttpOperationModel queryTokens = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_QUERY_PATH)
+				.build();
+		final HttpOperationModel revokeTokens = new HttpOperationModel.Builder()
+				.method(HttpMethod.DELETE.name())
+				.path(AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_REVOKE_PATH)
+				.build();
+		final HttpOperationModel addEncryptionKeys = new HttpOperationModel.Builder()
+				.method(HttpMethod.POST.name())
+				.path(AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
+				.build();
+		final HttpOperationModel removeEncryptionKeys = new HttpOperationModel.Builder()
+				.method(HttpMethod.DELETE.name())
+				.path(AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
+				.build();
 
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
 				.basePath(AuthorizationConstants.HTTP_API_MANAGEMENT_PATH)
@@ -228,6 +288,11 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_REVOKE_POLICIES, revoke)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_QUERY_POLICIES, query)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES, check)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS, gereateTokens)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_QUERY_TOKENS, queryTokens)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_REVOKE_TOKENS, revokeTokens)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_ADD_ENCRYPTION_KEYS, addEncryptionKeys)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_REMOVE_ENCRYPTION_KEYS, removeEncryptionKeys)
 				.build();
 	}
 
