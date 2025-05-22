@@ -132,8 +132,14 @@ public class EncryptionKeyDbService {
 				}
 			}
 			
+			keyRepo.deleteAll(keysToDelete);
+			auxiliaryRepo.deleteAll(auxiliariesToDelete);
+			auxiliaryRepo.flush();
+			keyRepo.flush();
+			
 			auxiliaryRepo.saveAll(auxiliariesToSave);
 			final List<EncryptionKey> results = keyRepo.saveAll(keysToSave);
+
 			auxiliaryRepo.flush();
 			keyRepo.flush();
 			return results;

@@ -231,7 +231,7 @@ public class DTOConverter {
 		logger.debug("convertEncryptionKeyToResponse started...");
 		Assert.notNull(key, "EncryptionKey is null");
 
-		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getKeyValue(), key.getAlgorithm(), key.getExternalAuxiliary().getAuxiliary(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
+		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getKeyValue(), key.getAlgorithm(), key.getExternalAuxiliary() == null ? null : key.getExternalAuxiliary().getAuxiliary(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
 	}
 
 	//=================================================================================================
