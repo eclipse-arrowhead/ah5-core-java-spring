@@ -139,7 +139,7 @@ public class TokenEngine {
 			final SelfContainedTokenPayload tokenPayload = new SelfContainedTokenPayload(providerSystem, consumerSystem, cloud, AuthorizationTargetType.SERVICE_DEF, serviceDefinition,
 					operation);
 
-			if (tokenType == ServiceInterfacePolicy.BASE64_SELF_CONTAINED_AUTH_TOKEN) {
+			if (tokenType == ServiceInterfacePolicy.BASE64_SELF_CONTAINED_TOKEN_AUTH) {
 				rawToken = tokenGenerator.generateBas64SelfSignedToken(expiresAt, tokenPayload);
 
 			} else {
@@ -190,7 +190,7 @@ public class TokenEngine {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<Boolean, TokenModel> verify(final String requesterSystem, final String rawToken, final String origin) {
+	public Pair<Boolean, Optional<TokenModel>> verify(final String requesterSystem, final String rawToken, final String origin) {
 		logger.debug("verify started...");
 
 		String hashedToken = null;
@@ -205,7 +205,7 @@ public class TokenEngine {
 		try {
 			final Optional<TokenHeader> optional = tokenHeaderDbService.find(requesterSystem, hashedToken);
 			if (optional.isEmpty()) {
-				return Pair.of(false, null);
+				return Pair.of(false, Optional.empty());
 			}
 			final TokenHeader tokenHeader = optional.get();
 
@@ -220,14 +220,14 @@ public class TokenEngine {
 				if (verified) {
 					usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
 				}
-				return Pair.of(verified, new TokenModel(tokenHeader));
+				return Pair.of(verified, Optional.of(new TokenModel(tokenHeader)));
 			}
 
 			// TIME LIMITED TOKEN
 			if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
 				final TimeLimitedToken timeLimitedToken = timeLimitedTokenDbService.getByHeader(tokenHeader).get();
 				final boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
-				return Pair.of(verified, new TokenModel(tokenHeader));
+				return Pair.of(verified, Optional.of(new TokenModel(tokenHeader)));
 			}
 
 			throw new InternalServerError("Unhandled token type: " + tokenHeader.getTokenType());

@@ -4,6 +4,7 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -205,15 +206,16 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenVerifyResponseDTO convertTokenVerificationResultToResponse(final Pair<Boolean, TokenModel> result) {
+	public AuthorizationTokenVerifyResponseDTO convertTokenVerificationResultToResponse(final Pair<Boolean, Optional<TokenModel>> result) {
 		logger.debug("convertTokenVerificationResultToResponse started...");
 		Assert.notNull(result, "result is null");
 
-		if (result.getSecond() == null) {
-			return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), null, null, null, null);
+		if (result.getSecond().isEmpty()) {
+			return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), null, null, null, null, null);
 		}
 
-		return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), result.getSecond().getConsumerCloud(), result.getSecond().getConsumer(), result.getSecond().getTarget(), result.getSecond().getScope());
+		final TokenModel model = result.getSecond().get();
+		return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), model.getConsumerCloud(), model.getConsumer(), model.getTargetType(), model.getTarget(), model.getScope());
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -133,7 +133,7 @@ public class AuthorizationTokenService {
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final String normalizedToken = validator.validateAndNormalizeToken(token, origin);
 
-		final Pair<Boolean, TokenModel> result = tokenEngine.verify(normalizedRequester, normalizedToken, origin);
+		final Pair<Boolean, Optional<TokenModel>> result = tokenEngine.verify(normalizedRequester, normalizedToken, origin);
 		return dtoConverter.convertTokenVerificationResultToResponse(result);
 	}
 
