@@ -15,16 +15,21 @@ import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyReque
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
+import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyInstanceIdentifierNormalizer;
 import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyRequestNormalizer;
-import eu.arrowhead.common.Constants;
+import eu.arrowhead.authorization.service.normalization.AuthorizationScopeNormalizer;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.EventTypeNameNormalizer;
+import eu.arrowhead.common.service.validation.name.EventTypeNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.AuthorizationMgmtGrantListRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtGrantRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
@@ -42,10 +47,10 @@ public class AuthorizationManagementValidation {
 	// members
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	@Autowired
 	private CloudIdentifierValidator cloudIdentifierValidator;
@@ -54,10 +59,34 @@ public class AuthorizationManagementValidation {
 	private CloudIdentifierNormalizer cloudIdentifierNormalizer;
 
 	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
+
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+	@Autowired
+	private EventTypeNameValidator eventTypeNameValidator;
+
+	@Autowired
+	private EventTypeNameNormalizer eventTypeNameNormalizer;
+
+	@Autowired
+	private AuthorizationScopeValidator scopeValidator;
+
+	@Autowired
+	private AuthorizationScopeNormalizer scopeNormalizer;
+
+	@Autowired
 	private AuthorizationPolicyRequestValidator policyRequestValidator;
 
 	@Autowired
 	private AuthorizationPolicyRequestNormalizer policyRequestNormalizer;
+
+	@Autowired
+	private AuthorizationPolicyInstanceIdentifierValidator instanceIdValidator;
+
+	@Autowired
+	private AuthorizationPolicyInstanceIdentifierNormalizer instanceIdNormalizer;
 
 	@Autowired
 	private PageValidator pageValidator;
@@ -67,35 +96,158 @@ public class AuthorizationManagementValidation {
 	//=================================================================================================
 	// methods
 
+	//-------------------------------------------------------------------------------------------------
+	// VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public String validateAndNormalizeSystemName(final String systemName, final String origin) {
+		logger.debug("validateAndNormalizeSystemName started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateSystemName(systemName, origin);
+		final String normalized = systemNameNormalizer.normalize(systemName);
+
+		try {
+			systemNameValidator.validateSystemName(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedGrantRequest> validateAndNormalizeGrantListRequest(final AuthorizationMgmtGrantListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeGrantListRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateGrantListRequest(dto, origin);
+		final List<NormalizedGrantRequest> normalized = normalizeGrantListRequest(dto);
+
+		try {
+			normalized.forEach(r -> {
+				cloudIdentifierValidator.validateCloudIdentifier(r.cloud());
+				systemNameValidator.validateSystemName(r.provider());
+				if (AuthorizationTargetType.SERVICE_DEF == r.targetType()) {
+					serviceDefNameValidator.validateServiceDefinitionName(r.target());
+				} else {
+					eventTypeNameValidator.validateEventTypeName(r.target());
+				}
+
+				r.policies().forEach((k, v) -> {
+					scopeValidator.validateScope(k);
+					policyRequestValidator.validateNormalizedAuthorizationPolicy(v);
+				});
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRevokePoliciesInput(final List<String> instanceIds, final String origin) {
+		logger.debug("validateAndNormalizeRevokePoliciesInput started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateRevokePoliciesInput(instanceIds, origin);
+		final List<String> normalized = normalizeInstanceIds(instanceIds);
+
+		try {
+			normalized.forEach(i -> instanceIdValidator.validateInstanceIdentifier(i));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedQueryRequest validateAndNormalizeQueryRequest(final AuthorizationQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateQueryRequest(dto, origin);
+		final NormalizedQueryRequest normalized = normalizeQueryRequest(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.providers())) {
+				normalized.providers().forEach(p -> systemNameValidator.validateSystemName(p));
+			}
+
+			if (!Utilities.isEmpty(normalized.instanceIds())) {
+				normalized.instanceIds().forEach(i -> instanceIdValidator.validateInstanceIdentifier(i));
+			}
+
+			if (!Utilities.isEmpty(normalized.cloudIdentifiers())) {
+				normalized.cloudIdentifiers().forEach(c -> cloudIdentifierValidator.validateCloudIdentifier(c));
+			}
+
+			if (!Utilities.isEmpty(normalized.targetNames())) {
+				if (AuthorizationTargetType.SERVICE_DEF == normalized.targetType()) {
+					normalized.targetNames().forEach(t -> serviceDefNameValidator.validateServiceDefinitionName(t));
+				} else {
+					normalized.targetNames().forEach(t -> eventTypeNameValidator.validateEventTypeName(t));
+				}
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedVerifyRequest> validateAndNormalizeVerifyListRequest(final AuthorizationVerifyListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeVerifyListRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		validateVerifyListRequest(dto, origin);
+
+		final List<NormalizedVerifyRequest> normalized = normalizeVerifyListRequest(dto);
+
+		try {
+			normalized.forEach(r -> {
+				systemNameValidator.validateSystemName(r.provider());
+				systemNameValidator.validateSystemName(r.consumer());
+				cloudIdentifierValidator.validateCloudIdentifier(r.cloud());
+				if (AuthorizationTargetType.SERVICE_DEF == r.targetType()) {
+					serviceDefNameValidator.validateServiceDefinitionName(r.target());
+				} else {
+					eventTypeNameValidator.validateEventTypeName(r.target());
+				}
+
+				if (r.scope() != null) {
+					scopeValidator.validateScope(r.scope());
+				}
+			});
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateSystemName(final String systemName, final String origin) {
+	private void validateSystemName(final String systemName, final String origin) {
 		logger.debug("validateSystemName started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(systemName)) {
 			throw new InvalidParameterException("System name is empty", origin);
 		}
-
-		if (systemName.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("System name is too long: " + systemName, origin);
-		}
-
-		try {
-			nameValidator.validateName(systemName);
-		} catch (final InvalidParameterException ex) {
-			if (Utilities.isEmpty(ex.getOrigin())) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			}
-
-			throw ex;
-		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateGrantListRequest(final AuthorizationMgmtGrantListRequestDTO dto, final String origin) {
-		logger.debug("validateSystemName started...");
+	private void validateGrantListRequest(final AuthorizationMgmtGrantListRequestDTO dto, final String origin) {
+		logger.debug("validateGrantListRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null || Utilities.isEmpty(dto.list())) {
@@ -108,7 +260,45 @@ public class AuthorizationManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRevokePoliciesInput(final List<String> instanceIds, final String origin) {
+	private void validateGrantRequest(final AuthorizationMgmtGrantRequestDTO dto, final String origin) {
+		logger.debug("validateGrantRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		// provider
+		validateSystemName(dto.provider(), origin);
+
+		// target type
+		if (Utilities.isEmpty(dto.targetType())) {
+			throw new InvalidParameterException("Target type is missing", origin);
+		}
+
+		final String targetTypeName = dto.targetType().trim().toUpperCase();
+		if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
+			throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+		}
+
+		// target
+		if (Utilities.isEmpty(dto.target())) {
+			throw new InvalidParameterException("Target is missing", origin);
+		}
+
+		// default policy
+		policyRequestValidator.validateAuthorizationPolicy(dto.defaultPolicy(), true, origin);
+
+		// scoped policies
+		if (!Utilities.isEmpty(dto.scopedPolicies())) {
+			for (final Entry<String, AuthorizationPolicyRequestDTO> entry : dto.scopedPolicies().entrySet()) {
+				if (Utilities.isEmpty(entry.getKey())) {
+					throw new InvalidParameterException("Scope is missing", origin);
+				}
+
+				policyRequestValidator.validateAuthorizationPolicy(entry.getValue(), false, origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateRevokePoliciesInput(final List<String> instanceIds, final String origin) {
 		logger.debug("validateRevokePoliciesInput started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -122,7 +312,7 @@ public class AuthorizationManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateQueryRequest(final AuthorizationQueryRequestDTO dto, final String origin) {
+	private void validateQueryRequest(final AuthorizationQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -136,7 +326,6 @@ public class AuthorizationManagementValidation {
 		}
 
 		final String levelName = dto.level().trim().toUpperCase();
-
 		if (!Utilities.isEnumValue(levelName, AuthorizationLevel.class)) {
 			throw new InvalidParameterException("Level is invalid: " + levelName, origin);
 		}
@@ -165,16 +354,6 @@ public class AuthorizationManagementValidation {
 			throw new InvalidParameterException("Instance id list contains null or empty element", origin);
 		}
 
-		// target names
-		if (!Utilities.isEmpty(dto.targetNames()) && Utilities.containsNullOrEmpty(dto.targetNames())) {
-			throw new InvalidParameterException("Target names list contains null or empty element", origin);
-		}
-
-		// cloud identifiers
-		if (!Utilities.isEmpty(dto.cloudIdentifiers()) && Utilities.containsNullOrEmpty(dto.cloudIdentifiers())) {
-			throw new InvalidParameterException("Cloud identifiers list contains null or empty element", origin);
-		}
-
 		// target type
 		if (!Utilities.isEmpty(dto.targetType())) {
 			final String targetTypeName = dto.targetType().trim().toUpperCase();
@@ -183,10 +362,28 @@ public class AuthorizationManagementValidation {
 				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
 			}
 		}
+
+		// target names (in this case target type is mandatory)
+		if (!Utilities.isEmpty(dto.targetNames())) {
+			if (Utilities.containsNullOrEmpty(dto.targetNames())) {
+				throw new InvalidParameterException("Target names list contains null or empty element", origin);
+			}
+
+			if (Utilities.isEmpty(dto.targetType())
+					|| !Utilities.isEnumValue(dto.targetType().trim().toUpperCase(), AuthorizationTargetType.class)) {
+				throw new InvalidParameterException("If target names list is specified then a valid target type is mandatory", origin);
+			}
+		}
+
+		// cloud identifiers
+		if (!Utilities.isEmpty(dto.cloudIdentifiers()) && Utilities.containsNullOrEmpty(dto.cloudIdentifiers())) {
+			throw new InvalidParameterException("Cloud identifiers list contains null or empty element", origin);
+		}
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateVerifyListRequest(final AuthorizationVerifyListRequestDTO dto, final String origin) {
+	private void validateVerifyListRequest(final AuthorizationVerifyListRequestDTO dto, final String origin) {
 		logger.debug("validateVerifyListRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -199,130 +396,47 @@ public class AuthorizationManagementValidation {
 		}
 	}
 
-	// VALIDATION AND NORMALIZATION
-
 	//-------------------------------------------------------------------------------------------------
-	public String validateAndNormalizeSystemName(final String systemName, final String origin) {
-		logger.debug("validateAndNormalizeSystemName started...");
+	private void validateVerifyRequest(final AuthorizationVerifyRequestDTO dto, final String origin) {
+		logger.debug("validateVerifyRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validateSystemName(systemName, origin);
-		return nameNormalizer.normalize(systemName);
-	}
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
 
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedGrantRequest> validateAndNormalizeGrantListRequest(final AuthorizationMgmtGrantListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeGrantListRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		// provider
+		if (Utilities.isEmpty(dto.provider())) {
+			throw new InvalidParameterException("Provider is missing", origin);
+		}
 
-		validateGrantListRequest(dto, origin);
+		// consumer
+		if (Utilities.isEmpty(dto.consumer())) {
+			throw new InvalidParameterException("Consumer is missing", origin);
+		}
 
-		return normalizedGrantListRequest(dto);
-	}
+		// target type
+		if (Utilities.isEmpty(dto.targetType())) {
+			throw new InvalidParameterException("Target type is missing", origin);
+		}
 
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRevokePoliciesInput(final List<String> instanceIds, final String origin) {
-		logger.debug("validateAndNormalizeRevokePoliciesInput started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		final String targetTypeName = dto.targetType().trim().toUpperCase();
+		if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
+			throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+		}
 
-		validateRevokePoliciesInput(instanceIds, origin);
-
-		return instanceIds
-				.stream()
-				.map(id -> id.trim())
-				.toList();
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public NormalizedQueryRequest validateAndNormalizeQueryRequest(final AuthorizationQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeQueryRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		validateQueryRequest(dto, origin);
-
-		return normalizeQueryRequest(dto);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedVerifyRequest> validateAndNormalizeVerifyListRequest(final AuthorizationVerifyListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeVerifyListRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		validateVerifyListRequest(dto, origin);
-
-		return normalizeVerifyListRequest(dto);
-	}
-
-	//=================================================================================================
-	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateGrantRequest(final AuthorizationMgmtGrantRequestDTO dto, final String origin) {
-		logger.debug("validateGrantRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		try {
-			// cloud
-			if (!Utilities.isEmpty(dto.cloud())) {
-				if (dto.cloud().length() > Constants.CLOUD_IDENTIFIER_MAX_LENGTH) {
-					throw new InvalidParameterException("Cloud identifier is too long: " + dto.cloud(), origin);
-				}
-
-				cloudIdentifierValidator.validateCloudIdentifier(dto.cloud());
-			}
-
-			// provider
-			validateSystemName(dto.provider(), origin);
-
-			// target type
-			if (Utilities.isEmpty(dto.targetType())) {
-				throw new InvalidParameterException("Target type is missing", origin);
-			}
-
-			final String targetTypeName = dto.targetType().trim().toUpperCase();
-
-			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
-			}
-
-			// target
-			if (Utilities.isEmpty(dto.target())) {
-				throw new InvalidParameterException("Target is missing", origin);
-			}
-
-			final int threshold = AuthorizationTargetType.SERVICE_DEF.name().equals(targetTypeName) ? Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH : Constants.EVENT_TYPE_NAME_MAX_LENGTH;
-			if (dto.target().length() > threshold) {
-				throw new InvalidParameterException("Target is too long: " + dto.cloud(), origin);
-			}
-
-			nameValidator.validateName(dto.target());
-
-			// default policy
-			policyRequestValidator.validateAuthorizationPolicy(dto.defaultPolicy(), true, origin);
-
-			// scoped policies
-			if (dto.scopedPolicies() != null) {
-				dto.scopedPolicies().entrySet().forEach(e -> {
-					if (e.getKey().length() > Constants.SCOPE_MAX_LENGTH) {
-						throw new InvalidParameterException("Scope is too long: " + e.getKey(), origin);
-					}
-
-					nameValidator.validateName(e.getKey());
-					policyRequestValidator.validateAuthorizationPolicy(e.getValue(), false, origin);
-				});
-			}
-		} catch (final InvalidParameterException ex) {
-			if (Utilities.isEmpty(ex.getOrigin())) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			}
-
-			throw ex;
+		// target
+		if (Utilities.isEmpty(dto.target())) {
+			throw new InvalidParameterException("Target is missing", origin);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<NormalizedGrantRequest> normalizedGrantListRequest(final AuthorizationMgmtGrantListRequestDTO dto) {
-		logger.debug("normalizedGrantListRequest started...");
+	// NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	private List<NormalizedGrantRequest> normalizeGrantListRequest(final AuthorizationMgmtGrantListRequestDTO dto) {
+		logger.debug("normalizeGrantListRequest started...");
 
 		return dto
 				.list()
@@ -337,14 +451,16 @@ public class AuthorizationManagementValidation {
 
 		final NormalizedGrantRequest result = new NormalizedGrantRequest(AuthorizationLevel.MGMT);
 		result.setCloud(Utilities.isEmpty(dto.cloud()) ? Defaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(dto.cloud()));
-		result.setProvider(nameNormalizer.normalize(dto.provider()));
+		result.setProvider(systemNameNormalizer.normalize(dto.provider()));
 		result.setTargetType(AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()));
-		result.setTarget(nameNormalizer.normalize(dto.target()));
+		result.setTarget(AuthorizationTargetType.SERVICE_DEF == result.targetType()
+				? serviceDefNameNormalizer.normalize(dto.target())
+				: eventTypeNameNormalizer.normalize(dto.target()));
 		result.setDescription(dto.description());
 
 		if (!Utilities.isEmpty(dto.scopedPolicies())) {
 			for (final Entry<String, AuthorizationPolicyRequestDTO> entry : dto.scopedPolicies().entrySet()) {
-				final String scope = nameNormalizer.normalize(entry.getKey());
+				final String scope = scopeNormalizer.normalize(entry.getKey());
 				final NormalizedAuthorizationPolicyRequest normalized = policyRequestNormalizer.normalize(entry.getValue());
 				result.addPolicy(scope, normalized);
 			}
@@ -353,6 +469,16 @@ public class AuthorizationManagementValidation {
 		result.addPolicy(Defaults.DEFAULT_AUTHORIZATION_SCOPE, policyRequestNormalizer.normalize(dto.defaultPolicy()));
 
 		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<String> normalizeInstanceIds(final List<String> instanceIds) {
+		logger.debug("normalizeInstanceIds started...");
+
+		return instanceIds
+				.stream()
+				.map(i -> instanceIdNormalizer.normalize(i))
+				.toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -366,14 +492,14 @@ public class AuthorizationManagementValidation {
 				? null
 				: dto.providers()
 						.stream()
-						.map(p -> nameNormalizer.normalize(p))
+						.map(p -> systemNameNormalizer.normalize(p))
 						.toList());
 
 		result.setInstanceIds(Utilities.isEmpty(dto.instanceIds())
 				? null
 				: dto.instanceIds()
 						.stream()
-						.map(String::trim)
+						.map(i -> instanceIdNormalizer.normalize(i))
 						.toList());
 
 		result.setCloudIdentifiers(Utilities.isEmpty(dto.cloudIdentifiers())
@@ -383,75 +509,17 @@ public class AuthorizationManagementValidation {
 						.map(cId -> cloudIdentifierNormalizer.normalize(cId))
 						.toList());
 
-		result.setTargetNames(Utilities.isEmpty(dto.targetNames())
-				? null
-				: dto.targetNames()
-						.stream()
-						.map(target -> nameNormalizer.normalize(target))
-						.toList());
-
 		result.setTargetType(Utilities.isEmpty(dto.targetType()) ? null : AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()));
 
+		if (Utilities.isEmpty(dto.targetNames())) {
+			result.setTargetNames(null);
+		} else {
+			result.setTargetNames(AuthorizationTargetType.SERVICE_DEF == result.targetType()
+					? dto.targetNames().stream().map(t -> serviceDefNameNormalizer.normalize(t)).toList()
+					: dto.targetNames().stream().map(t -> eventTypeNameNormalizer.normalize(t)).toList());
+		}
+
 		return result;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateVerifyRequest(final AuthorizationVerifyRequestDTO dto, final String origin) {
-		logger.debug("validateVerifyRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-
-		try {
-
-			// provider
-			if (Utilities.isEmpty(dto.provider())) {
-				throw new InvalidParameterException("Provider is missing", origin);
-			}
-			nameValidator.validateName(dto.provider());
-
-			// consumer
-			if (Utilities.isEmpty(dto.consumer())) {
-				throw new InvalidParameterException("Consumer is missing", origin);
-			}
-			nameValidator.validateName(dto.consumer());
-
-			// cloud
-			if (!Utilities.isEmpty(dto.cloud())) {
-				cloudIdentifierValidator.validateCloudIdentifier(dto.cloud());
-			}
-
-			// target type
-			if (Utilities.isEmpty(dto.targetType())) {
-				throw new InvalidParameterException("Target type is missing", origin);
-			}
-
-			final String targetTypeName = dto.targetType().trim().toUpperCase();
-
-			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
-			}
-
-			// target
-			if (Utilities.isEmpty(dto.target())) {
-				throw new InvalidParameterException("Target is missing", origin);
-			}
-
-			nameValidator.validateName(dto.target());
-
-			// scope
-			if (!Utilities.isEmpty(dto.scope())) {
-				nameValidator.validateName(dto.scope());
-			}
-		} catch (final InvalidParameterException ex) {
-			if (Utilities.isEmpty(ex.getOrigin())) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			}
-
-			throw ex;
-		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -469,12 +537,17 @@ public class AuthorizationManagementValidation {
 	private NormalizedVerifyRequest normalizeVerifyRequest(final AuthorizationVerifyRequestDTO dto) {
 		logger.debug("normalizeVerifyRequest started...");
 
+		final AuthorizationTargetType normalizedTargetType = AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase());
+		final String normalizedTarget = AuthorizationTargetType.SERVICE_DEF == normalizedTargetType
+				? serviceDefNameNormalizer.normalize(dto.target())
+				: eventTypeNameNormalizer.normalize(dto.target());
+
 		return new NormalizedVerifyRequest(
-				nameNormalizer.normalize(dto.provider()),
-				nameNormalizer.normalize(dto.consumer()),
+				systemNameNormalizer.normalize(dto.provider()),
+				systemNameNormalizer.normalize(dto.consumer()),
 				Utilities.isEmpty(dto.cloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(dto.cloud()),
-				AuthorizationTargetType.valueOf(dto.targetType().trim().toUpperCase()),
-				nameNormalizer.normalize(dto.target()),
-				Utilities.isEmpty(dto.scope()) ? null : nameNormalizer.normalize(dto.scope()));
+				normalizedTargetType,
+				normalizedTarget,
+				Utilities.isEmpty(dto.scope()) ? null : scopeNormalizer.normalize(dto.scope()));
 	}
 }

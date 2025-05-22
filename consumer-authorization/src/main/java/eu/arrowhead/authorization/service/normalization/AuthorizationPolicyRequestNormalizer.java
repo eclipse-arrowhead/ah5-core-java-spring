@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AuthorizationPolicyType;
@@ -24,7 +24,7 @@ public class AuthorizationPolicyRequestNormalizer {
 	// members
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -34,6 +34,10 @@ public class AuthorizationPolicyRequestNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedAuthorizationPolicyRequest normalize(final AuthorizationPolicyRequestDTO dto) {
 		logger.debug("AuthorizationPolicyRequestNormalizer.normalize started...");
+
+		if (dto == null) {
+			return null;
+		}
 
 		final AuthorizationPolicyType policyType = AuthorizationPolicyType.valueOf(dto.policyType().trim().toUpperCase());
 		List<String> list = null;
@@ -68,7 +72,7 @@ public class AuthorizationPolicyRequestNormalizer {
 		logger.debug("normalizeSystemList started...");
 		final Set<String> set = systemList
 				.stream()
-				.map(sys -> nameNormalizer.normalize(sys))
+				.map(sys -> systemNameNormalizer.normalize(sys))
 				.collect(Collectors.toSet()); // to remove any duplicates
 
 		return new ArrayList<>(set);

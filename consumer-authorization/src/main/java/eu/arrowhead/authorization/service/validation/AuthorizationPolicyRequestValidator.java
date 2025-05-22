@@ -7,9 +7,10 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AuthorizationPolicyType;
@@ -21,7 +22,7 @@ public class AuthorizationPolicyRequestValidator {
 	// members
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -65,6 +66,24 @@ public class AuthorizationPolicyRequestValidator {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public void validateNormalizedAuthorizationPolicy(final NormalizedAuthorizationPolicyRequest dto) {
+		logger.debug("validateNormalizedAuthorizationPolicy started...");
+
+		switch (dto.policyType()) {
+		case BLACKLIST:
+		case WHITELIST:
+			validateNormalizedList(dto.policyList());
+			break;
+		case SYS_METADATA:
+		case ALL:
+			// do nothing
+			break;
+		default:
+			throw new InvalidParameterException("Unknown policy type: " + dto.policyType().name());
+		}
+	}
+
 	//=================================================================================================
 	// assistant methods
 
@@ -79,10 +98,6 @@ public class AuthorizationPolicyRequestValidator {
 		if (Utilities.containsNullOrEmpty(policyList)) {
 			throw new InvalidParameterException("List contains null or empty element", origin);
 		}
-
-		for (final String systemName : policyList) {
-			nameValidator.validateName(systemName);
-		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -92,6 +107,15 @@ public class AuthorizationPolicyRequestValidator {
 		if (Utilities.isEmpty(policyMetadataRequirement)) {
 			throw new InvalidParameterException("Metadata requirements is empty", origin);
 
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateNormalizedList(final List<String> policyList) {
+		logger.debug("validateNormalizedList started...");
+
+		for (final String systemName : policyList) {
+			systemNameValidator.validateSystemName(systemName);
 		}
 	}
 }
