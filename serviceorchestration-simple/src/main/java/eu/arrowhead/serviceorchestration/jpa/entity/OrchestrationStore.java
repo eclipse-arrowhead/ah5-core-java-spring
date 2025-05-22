@@ -17,31 +17,31 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 
 	//=================================================================================================
 	// members
-	
+
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "consumer", "serviceDefinition", "priority", "serviceInstanceId", "createdAt");
 	public static final String DEFAULT_SORT_FIELD = "id";
-	
+
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String consumer;
 
 	@Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String serviceDefinition;
-	
+
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String serviceInstanceId;
-	
+
 	@Column(nullable = false)
 	private int priority;
-	
+
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String createdBy;
-	
+
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String updatedBy;
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	@PrePersist
@@ -50,10 +50,10 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 		this.updatedAt = this.createdAt;
 		this.updatedBy = this.createdBy;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationStore() {
-		
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -63,16 +63,16 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 		this.serviceInstanceId = serviceInstanceId;
 		this.priority = priority;
 		this.createdBy = createdBy;
-		
+
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
 		return "ServiceInstance [id = " + id + ", serviceDefinition = " + serviceDefinition + ", serviceInstanceId = " + serviceInstanceId + ", priority = " + priority
 				+ ", createdBy = " + createdBy + ", updatedBy = " + updatedBy + " createdAt " + createdAt + " updatedAt " + updatedAt + "]";
 	}
-	
+
 	//=================================================================================================
 	// boilerplate
 

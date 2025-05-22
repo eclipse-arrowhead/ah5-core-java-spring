@@ -4,15 +4,17 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
+import eu.arrowhead.common.jpa.UUIDArrowheadEntity;
+import eu.arrowhead.common.jpa.UnmodifiableArrowheadEntity;
 import eu.arrowhead.common.jpa.UnmodifiableUUIDArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 
 @Entity
-@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "ownerSystem", "targetSystem", "serviceDefinition" }) })
 public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 
 	//=================================================================================================
@@ -27,7 +29,7 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String targetSystem;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	@Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String serviceDefinition;
 
 	@Column(nullable = true)
@@ -39,7 +41,7 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 	@Column(nullable = false)
 	private String notifyProperties;
 
-	@Column(nullable = false)
+	@Column(nullable = true)
 	private String orchestrationRequest;
 
 	//=================================================================================================
@@ -61,7 +63,6 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 		this.notifyProperties = notifyProperties;
 		this.orchestrationRequest = orchestrationRequest;
 	}
-
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
@@ -71,6 +72,16 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 
 	//=================================================================================================
 	// boilerplate
+
+	//-------------------------------------------------------------------------------------------------
+	public UUID getId() {
+		return id;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setId(final UUID id) {
+		this.id = id;
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String getOwnerSystem() {
@@ -140,6 +151,16 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	public void setOrchestrationRequest(final String orchestrationRequest) {
 		this.orchestrationRequest = orchestrationRequest;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setCreatedAt(final ZonedDateTime createdAt) {
+		this.createdAt = createdAt;
 	}
 
 }

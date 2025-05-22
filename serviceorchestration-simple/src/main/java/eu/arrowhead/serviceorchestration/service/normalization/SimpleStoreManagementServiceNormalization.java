@@ -15,31 +15,31 @@ import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 
 @Service
 public class SimpleStoreManagementServiceNormalization {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	@Autowired
 	private NameNormalizer nameNormalizer;
 
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreRequestDTO normalizeCreate(final OrchestrationSimpleStoreRequestDTO dto) {
 		logger.debug("normalizeCreate started...");
 		Assert.notNull(dto, "DTO is null");
-		
+
 		return new OrchestrationSimpleStoreRequestDTO(
-				
+
 				//TODO: replace with the new implementation
 				nameNormalizer.normalize(dto.consumer()),
-				
+
 				//TODO: replace with the new implementation
-				nameNormalizer.normalize(dto.serviceInstanceId()), 
-				
+				nameNormalizer.normalize(dto.serviceInstanceId()),
+
 				dto.priority());
 	}
 
@@ -50,24 +50,24 @@ public class SimpleStoreManagementServiceNormalization {
 		return new OrchestrationSimpleStoreQueryRequestDTO(
 				// no need to normalize, because it will happen in the getPageRequest method
 				dto.pagination(),
-				
+
 				dto.ids(),
-						
+
 				//TODO: replace with the new implementation
-				Utilities.isEmpty(dto.consumerNames()) ? null 
+				Utilities.isEmpty(dto.consumerNames()) ? null
 						: dto.consumerNames().stream().map(c -> nameNormalizer.normalize(c)).collect(Collectors.toList()),
-				
+
 				//TODO: replace with the new implementation
 				Utilities.isEmpty(dto.serviceDefinitions()) ? null 
 						: dto.serviceDefinitions().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
-				
-				//TODO: replace with the new implementation
-				Utilities.isEmpty(dto.serviceInstanceIds()) ? null 
-						: dto.serviceInstanceIds().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
 						
+				//TODO: replace with the new implementation
+				Utilities.isEmpty(dto.serviceInstanceIds()) ? null
+						: dto.serviceInstanceIds().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
+
 				dto.minPriority(),
 				dto.maxPriority(),
-				
+
 				//TODO: replace with the new implementation
 				Utilities.isEmpty(dto.createdBy()) ? null :
 					nameNormalizer.normalize(dto.createdBy()));
