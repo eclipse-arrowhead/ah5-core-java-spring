@@ -171,7 +171,7 @@ public class AuthorizationTokenService {
 			throw new InternalServerError("Secret encryption failed!", origin);
 		}
 
-		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(new EncryptionKeyModel(normalizedRequester, normalizedDTO.key(), encryptedToSave.getFirst(), normalizedDTO.algorithm(), encryptedToSave.getFirst(), externalAuxiliary));
+		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(new EncryptionKeyModel(normalizedRequester, normalizedDTO.key(), encryptedToSave.getFirst(), normalizedDTO.algorithm(), encryptedToSave.getSecond(), externalAuxiliary));
 		return Pair.of(externalAuxiliary, result.getSecond());
 	}
 

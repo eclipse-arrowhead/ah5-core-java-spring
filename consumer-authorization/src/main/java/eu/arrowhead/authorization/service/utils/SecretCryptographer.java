@@ -133,7 +133,7 @@ public class SecretCryptographer {
 
 	//-------------------------------------------------------------------------------------------------
 	private byte[] generateIV() {
-		final byte[] iv = new byte[16];
+		final byte[] iv = new byte[AES_KEY_SIZE];
 		new SecureRandom().nextBytes(iv);
 		return iv;
 	}
