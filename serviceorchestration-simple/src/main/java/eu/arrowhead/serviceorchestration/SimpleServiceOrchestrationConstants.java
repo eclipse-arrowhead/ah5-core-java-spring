@@ -1,5 +1,7 @@
 package eu.arrowhead.serviceorchestration;
 
+import java.util.Map;
+
 public final class SimpleServiceOrchestrationConstants {
 
 	//=================================================================================================
@@ -25,6 +27,20 @@ public final class SimpleServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_MODIFY_PRIORITIES_PATH = "/modify-priorities";
 	public static final String HTTP_API_OP_REMOVE_PATH = "/remove";
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
+	
+	// for ignore warnings
+	public static final String IGNORED_FIELDS = "ignored fields:";
+	public static final String IGNORED_FLAGS = "ignored flags:";
+	public static final String FIELD_OPERATIONS = " operations,";
+	public static final String FIELD_ALIVES_AT = " alives at,";
+	public static final String FIELD_METADATA_REQ = " metadataRequirements,";
+	public static final String FIELD_INTF_TEMPLATE_NAMES = " interfaceTemplateNames,";
+	public static final String FIELD_INTF_ADDRESS_TYPES = " interfaceAddressTypes,";
+	public static final String FIELD_INTF_PROP_REQ = " interfacePropertyRequirements,";
+	public static final String FIELD_SECURITY_POLICIES = " securityPolicies,";
+	public static final String FIELD_PREFFERED_PROVIDERS = " preferredProviders,";-
+	public static final String FIELD_QOS_REQ = " qosRequirements,";
+	public static final String FIELD_EXCLUSIVITY_DURATION = " exclusivityDuration,";
 
 	//=================================================================================================
 	// assistant methods

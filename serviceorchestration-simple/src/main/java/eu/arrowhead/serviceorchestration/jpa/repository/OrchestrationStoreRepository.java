@@ -6,13 +6,12 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
-
 import eu.arrowhead.common.jpa.RefreshableRepository;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 
 @Repository
 public interface OrchestrationStoreRepository extends RefreshableRepository<OrchestrationStore, UUID> {
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationStore> findAllByConsumerAndServiceInstanceIdAndPriority(
 			final String consumer, final String serviceInstanceId, final int priority);
@@ -31,5 +30,5 @@ public interface OrchestrationStoreRepository extends RefreshableRepository<Orch
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<OrchestrationStore> findAllByIdIn(final List<UUID> matchingIds, final PageRequest pagination);
-	
+
 }
