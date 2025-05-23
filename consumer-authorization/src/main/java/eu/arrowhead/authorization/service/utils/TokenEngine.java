@@ -220,14 +220,14 @@ public class TokenEngine {
 				if (verified) {
 					usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
 				}
-				return Pair.of(verified, Optional.of(new TokenModel(tokenHeader)));
+				return Pair.of(verified, !verified ? Optional.empty() : Optional.of(new TokenModel(tokenHeader)));
 			}
 
 			// TIME LIMITED TOKEN
 			if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
 				final TimeLimitedToken timeLimitedToken = timeLimitedTokenDbService.getByHeader(tokenHeader).get();
 				final boolean verified = timeLimitedToken.getExpiresAt().isAfter(Utilities.utcNow());
-				return Pair.of(verified, Optional.of(new TokenModel(tokenHeader)));
+				return Pair.of(verified, !verified ? Optional.empty() : Optional.of(new TokenModel(tokenHeader)));
 			}
 
 			throw new InternalServerError("Unhandled token type: " + tokenHeader.getTokenType());
