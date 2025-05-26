@@ -27,6 +27,13 @@ public class NormalizedQueryRequest extends NormalizedLookupRequest {
 		return super.hasFilter();
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "NormalizedQueryRequest [level=" + level + ", providers=" + providers + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
+				+ ", targetType=" + targetType + "]";
+	}
+
 	//=================================================================================================
 	// boilerplate code
 
@@ -38,11 +45,5 @@ public class NormalizedQueryRequest extends NormalizedLookupRequest {
 	//-------------------------------------------------------------------------------------------------
 	public void setLevel(final AuthorizationLevel level) {
 		this.level = level;
-	}
-
-	@Override
-	public String toString() {
-		return "NormalizedQueryRequest [level=" + level + ", providers=" + providers + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
-				+ ", targetType=" + targetType + "]";
 	}
 }

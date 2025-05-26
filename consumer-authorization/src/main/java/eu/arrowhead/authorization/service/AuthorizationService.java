@@ -82,7 +82,7 @@ public class AuthorizationService {
 		logger.debug("revokeOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final Pair<String, String> normalized = validator.validateAndNormalizeRevokeInput(identifiedSystemName, instanceId, origin);
+		final Pair<String, String> normalized = validator.validateAndNormalizeRevokeInput(identifiedSystemName, instanceId, origin); // contains normalized system name and instance id in that order
 
 		if (!InstanceIdUtils.retrieveProviderName(normalized.getSecond()).equals(normalized.getFirst())) {
 			throw new ForbiddenException("Revoking other systems' policy is forbidden", origin);
