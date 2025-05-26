@@ -206,16 +206,16 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenVerifyResponseDTO convertTokenVerificationResultToResponse(final Pair<Boolean, Optional<TokenModel>> result) {
+	public AuthorizationTokenVerifyResponseDTO convertTokenVerificationResultToResponse(final Pair<Boolean, Optional<TokenModel>> pair) {
 		logger.debug("convertTokenVerificationResultToResponse started...");
-		Assert.notNull(result, "result is null");
+		Assert.notNull(pair, "pair is null");
 
-		if (result.getSecond().isEmpty()) {
-			return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), null, null, null, null, null);
+		if (pair.getSecond().isEmpty()) {
+			return new AuthorizationTokenVerifyResponseDTO(pair.getFirst(), null, null, null, null, null);
 		}
 
-		final TokenModel model = result.getSecond().get();
-		return new AuthorizationTokenVerifyResponseDTO(result.getFirst(), model.getConsumerCloud(), model.getConsumer(), model.getTargetType(), model.getTarget(), model.getScope());
+		final TokenModel model = pair.getSecond().get();
+		return new AuthorizationTokenVerifyResponseDTO(pair.getFirst(), model.getConsumerCloud(), model.getConsumer(), model.getTargetType(), model.getTarget(), model.getScope());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -231,7 +231,7 @@ public class DTOConverter {
 		logger.debug("convertEncryptionKeyToResponse started...");
 		Assert.notNull(key, "EncryptionKey is null");
 
-		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getKeyValue(), key.getAlgorithm(), key.getExternalAuxiliary() == null ? null : key.getExternalAuxiliary().getAuxiliary(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
+		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getEncryptedKey(), key.getAlgorithm(), key.getExternalAuxiliary() == null ? null : key.getExternalAuxiliary().getValue(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
 	}
 
 	//=================================================================================================

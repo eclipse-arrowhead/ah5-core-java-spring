@@ -88,7 +88,7 @@ public class AuthorizationTokenNormalizer {
 								nameNormalizer.normalize(item.provider()),
 								nameNormalizer.normalize(item.target()),
 								Utilities.isEmpty(item.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(item.scope()),
-								Utilities.isEmpty(item.expireAt()) ? null : item.expireAt().trim(),
+								Utilities.isEmpty(item.expiresAt()) ? null : item.expiresAt().trim(),
 								item.usageLimit()))
 						.toList());
 	}

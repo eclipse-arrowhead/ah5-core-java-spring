@@ -104,13 +104,13 @@ public class AuthorizationTokenService {
 			try {
 				if (encryptionKeyRecordOpt.isPresent()) {
 					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-					final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
+					final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getEncryptedKey(), encryptionKeyRecord.getInternalAuxiliary().getValue(), sysInfo.getSecretCryptographerKey());
 
-					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALOGRITHM)) {
-						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getFirst().getRawToken(), plainEncriptionKey));
+					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
+						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getFirst().getRawToken(), plainEncryptionKey));
 
-					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED)) {
-						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getFirst().getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
+					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
+						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getFirst().getRawToken(), plainEncryptionKey, encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
 
 					} else {
 						throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -159,7 +159,7 @@ public class AuthorizationTokenService {
 		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.normalizeAndValidateRegisterEncryptionKeyRequest(dto, origin);
 
 		String externalAuxiliary = "";
-		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED)) {
+		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
 			externalAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 		}
 

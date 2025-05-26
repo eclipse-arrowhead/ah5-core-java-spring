@@ -34,6 +34,8 @@ public class TokenGenerator {
 
 	private static final String BASE64_SELF_CONTAINED_TOKEN_DELIMITER = "::";
 
+	private static final String JWT_HEADER_KEY_TOKEN_TYPE = "typ";
+	private static final String JWT_HEADER_VALUE_TOKEN_TYPE = "JWT";
 	private static final String JWT_PAYLOAD_KEY_PROVIDER_SYSTEM_NAME = "psn";
 	private static final String JWT_PAYLOAD_KEY_CONSUMER_SYSTEM_NAME = "csn";
 	private static final String JWT_PAYLOAD_KEY_CONSUMER_CLOUD_NAME = "ccn";
@@ -117,7 +119,7 @@ public class TokenGenerator {
 	//-------------------------------------------------------------------------------------------------
 	private String signJWT(final String signAlgorithm, final PrivateKey privateKey, final JwtClaims claims) throws JoseException {
 		final JsonWebSignature jws = new JsonWebSignature();
-		jws.setHeader("typ", "JWT");
+		jws.setHeader(JWT_HEADER_KEY_TOKEN_TYPE, JWT_HEADER_VALUE_TOKEN_TYPE);
 		jws.setPayload(claims.toJson());
 		jws.setKey(privateKey);
 

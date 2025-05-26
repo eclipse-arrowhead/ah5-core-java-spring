@@ -17,7 +17,7 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	private String systemName;
 
 	@Column(nullable = false)
-	private String keyValue;
+	private String encryptedKey;
 	
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String algorithm;
@@ -41,7 +41,7 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	public EncryptionKey(final String systemName, final String keyValue, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
 		this.systemName = systemName;
-		this.keyValue = keyValue;
+		this.encryptedKey = keyValue;
 		this.algorithm = algorithm;
 		this.internalAuxiliary = internalAuxiliary;
 		this.externalAuxiliary = externalAuxiliary;
@@ -50,7 +50,7 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", keyValue=" + keyValue+ ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary + ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
+		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", encryptedKey=" + encryptedKey+ ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary + ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
 	}
 	
 	//=================================================================================================
@@ -67,13 +67,13 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String getKeyValue() {
-		return keyValue;
+	public String getEncryptedKey() {
+		return encryptedKey;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setKeyValue(final String keyValue) {
-		this.keyValue = keyValue;
+	public void setEncryptedKey(final String keyValue) {
+		this.encryptedKey = keyValue;
 	}
 
 	//-------------------------------------------------------------------------------------------------

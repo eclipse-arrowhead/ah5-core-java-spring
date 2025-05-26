@@ -59,7 +59,7 @@ public final class AuthorizationConstants {
 	public static final String SIMPLE_TOKEN_USAGE_LIMIT = "simple.token.usage.limit";
 	public static final String $SIMPLE_TOKEN_USAGE_LIMIT_WD = "${" + SIMPLE_TOKEN_USAGE_LIMIT + ":" + AuthorizationDefaults.DEFAULT_SIMPLE_TOKEN_USAGE_LIMIT + "}";
 	public static final String SECRET_CRYPTOGRAPHER_KEY = "secret.cryptographer.key";
-	public static final String $SECRET_CRYPTOGRAPHER_KEY_WD = "${" + SECRET_CRYPTOGRAPHER_KEY + ":" + AuthorizationDefaults.DEFAULT_SECRET_CRYPTOGRAPHER_KEY + "}";
+	public static final String $SECRET_CRYPTOGRAPHER_KEY = "${" + SECRET_CRYPTOGRAPHER_KEY + "}";
 	public static final String UNBOUNDED_TOKEN_GENERATION_WHITELIST = "unbounded.token.generation.whitelist";
 	public static final String $UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD = "${" + UNBOUNDED_TOKEN_GENERATION_WHITELIST + ":" + AuthorizationDefaults.DEFAULT_UNBOUNDED_TOKEN_GENERATION_WHITELIST + "}";
 	

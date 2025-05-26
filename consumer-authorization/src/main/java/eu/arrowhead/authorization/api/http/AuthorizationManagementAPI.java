@@ -155,7 +155,7 @@ public class AuthorizationManagementAPI {
 	}
 	
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the generated authorization tokens and their paramters.")
+	@Operation(summary = "Returns the generated authorization tokens and their parameters.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationTokenMgmtListResponseDTO.class)) }),
@@ -174,8 +174,8 @@ public class AuthorizationManagementAPI {
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final AuthorizationTokenGenerationMgmtListRequestDTO dto,
 			@Parameter(name = "unbound",
-			   description = "Set true if you want to skip the authorization check. (It should be configured in the Application properties as well.)",
-			   example = "true") @RequestParam final boolean unbound) {
+			   description = "Set true if you want to skip the authorization check. (It should be configured in the application.properties as well.)",
+			   example = "true") @RequestParam(required = false, defaultValue = "false") final boolean unbound) {
 		logger.debug("generateTokens started");
 		
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
@@ -265,7 +265,7 @@ public class AuthorizationManagementAPI {
 	})
 	@DeleteMapping(path = AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
 	public void removeEncryptionKeys(@RequestParam final List<String> systemNames) {
-		logger.debug("addEncryptionKeys started");
+		logger.debug("removeEncryptionKeys started");
 		
 		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
 		mgmtService.removeEncryptionKeysOperation(systemNames, origin);

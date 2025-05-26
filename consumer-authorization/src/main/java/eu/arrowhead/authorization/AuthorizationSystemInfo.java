@@ -38,7 +38,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	@Value(AuthorizationConstants.$UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD)
 	private List<String> unboundedTokenGenerationWhitelist;
 
-	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY_WD)
+	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY)
 	private String secretCryptographerKey;
 
 	private SystemModel systemModel;
@@ -133,6 +133,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasSystemUnboundedTokenGenerationRight(final String systemName) {
+		// TODO normalize the list in the app init
 		if (Utilities.isEmpty(unboundedTokenGenerationWhitelist)) {
 			return false;
 		}
@@ -156,7 +157,11 @@ public class AuthorizationSystemInfo extends SystemInfo {
 						Constants.MANAGEMENT_POLICY,
 						Constants.ENABLE_BLACKLIST_FILTER,
 						Constants.FORCE_BLACKLIST_FILTER,
-						Constants.MAX_PAGE_SIZE),
+						Constants.MAX_PAGE_SIZE,
+						AuthorizationConstants.TOKEN_MAX_AGE,
+						AuthorizationConstants.TOKEN_TIME_LIMIT,
+						AuthorizationConstants.SIMPLE_TOKEN_BYTE_SIZE,
+						AuthorizationConstants.SIMPLE_TOKEN_USAGE_LIMIT),
 				AuthorizationDefaults.class);
 	}
 

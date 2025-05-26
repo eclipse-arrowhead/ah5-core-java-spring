@@ -10,8 +10,8 @@ public class CryptographerAuxiliary extends UnmodifiableArrowheadEntity {
 	//=================================================================================================
 	// members
 	
-	@Column(nullable = false, length = VARCHAR_MEDIUM)
-	private String auxiliary;
+	@Column(nullable = false)
+	private String value;
 	
 	//=================================================================================================
 	// methods
@@ -23,25 +23,25 @@ public class CryptographerAuxiliary extends UnmodifiableArrowheadEntity {
 
 	//-------------------------------------------------------------------------------------------------
 	public CryptographerAuxiliary(final String auxiliary) {
-		this.auxiliary = auxiliary;
+		this.value = auxiliary;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "CryptographerAuxiliary [id=" + id + ", auxiliary=" + auxiliary + ", createdAt=" + createdAt + "]";
+		return "CryptographerAuxiliary [id=" + id + ", value=" + value + ", createdAt=" + createdAt + "]";
 	}
 
 	//=================================================================================================
 	// boilerplate methods
 	
 	//-------------------------------------------------------------------------------------------------
-	public String getAuxiliary() {
-		return auxiliary;
+	public String getValue() {
+		return value;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setAuxiliary(final String auxiliary) {
-		this.auxiliary = auxiliary;
+	public void setValue(final String auxiliary) {
+		this.value = auxiliary;
 	}
 }

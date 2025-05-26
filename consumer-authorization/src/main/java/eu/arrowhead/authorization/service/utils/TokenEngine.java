@@ -177,7 +177,7 @@ public class TokenEngine {
 			return Pair.of(new TokenModel(selfContainedTokenResult.getFirst(), rawToken), selfContainedTokenResult.getSecond());
 
 		} catch (final InvalidParameterException ex) {
-			throw ex;
+			throw new InvalidParameterException(ex.getMessage(), origin);
 
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

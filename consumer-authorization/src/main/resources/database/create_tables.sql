@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS `auth_policy` (
 
 CREATE TABLE IF NOT EXISTS `cryptographer_auxiliary` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
-	`auxiliary` varchar(255) NOT NULL,
+	`value` mediumtext NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `cryptographer_auxiliary` (
 CREATE TABLE IF NOT EXISTS `encryption_key` (
 	`id` bigint(20) NOT NULL AUTO_INCREMENT,	
 	`system_name` varchar(63) NOT NULL,
-	`key_value` mediumtext NOT NULL,
+	`encrypted_key` mediumtext NOT NULL,
 	`algorithm` varchar(63) NOT NULL,
 	`internal_auxiliary_id` bigint(20) NOT NULL,
 	`external_auxiliary_id` bigint(20),

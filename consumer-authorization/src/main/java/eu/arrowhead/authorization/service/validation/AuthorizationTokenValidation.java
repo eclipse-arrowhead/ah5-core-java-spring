@@ -174,12 +174,12 @@ public class AuthorizationTokenValidation {
 		validateRegisterEncryptionKeyRequest(dto, origin);
 		final AuthorizationEncryptionKeyRegistrationRequestDTO normalized = normalizer.normalizeAuthorizationEncryptionKeyRegistrationRequestDTO(dto);
 		
-		if (!(normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALOGRITHM) || normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED))) {
+		if (!(normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM) || normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED))) {
 			throw new InvalidParameterException("Unsupported algorithm", origin);
 		}		
 		
-		if (normalized.key().getBytes().length != SecretCryptographer.AES_KEY_SIZE) {
-			throw new InvalidParameterException("Key size is not " + SecretCryptographer.AES_KEY_SIZE + " byte long");
+		if (normalized.key().getBytes().length != SecretCryptographer.IV_KEY_SIZE) {
+			throw new InvalidParameterException("Key size is not " + SecretCryptographer.IV_KEY_SIZE + " bytes long");
 		}
 		
 		return normalized;

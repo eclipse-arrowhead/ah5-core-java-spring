@@ -217,8 +217,8 @@ public class AuthorizationManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateGenerateTokenRequets(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
-		logger.debug("validateGenerateTokenRequets started...");
+	public void validateGenerateTokenRequests(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
+		logger.debug("validateGenerateTokenRequests started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null || Utilities.isEmpty(dto.list())) {
@@ -240,7 +240,7 @@ public class AuthorizationManagementValidation {
 				throw new InvalidParameterException("Provider system name is missing", origin);
 			}
 			if (Utilities.isEmpty(request.target())) {
-				throw new InvalidParameterException("Service definition is missing", origin);
+				throw new InvalidParameterException("Target is missing", origin);
 			}
 		}
 	}
@@ -338,11 +338,11 @@ public class AuthorizationManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenGenerationMgmtListRequestDTO validateAndNormalizeGenerateTokenRequets(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeGenerateTokenRequets started...");
+	public AuthorizationTokenGenerationMgmtListRequestDTO validateAndNormalizeGenerateTokenRequests(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeGenerateTokenRequests started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		validateGenerateTokenRequets(dto, origin);
+		validateGenerateTokenRequests(dto, origin);
 
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationTokenGenerationMgmtListRequestDTO(dto);
 
@@ -370,11 +370,11 @@ public class AuthorizationManagementValidation {
 				throw new InvalidParameterException(ex.getMessage(), origin);
 			}
 
-			if (!Utilities.isEmpty(request.expireAt())) {
+			if (!Utilities.isEmpty(request.expiresAt())) {
 				try {
-					Utilities.parseUTCStringToZonedDateTime(request.expireAt());
+					Utilities.parseUTCStringToZonedDateTime(request.expiresAt());
 				} catch (final DateTimeParseException ex) {
-					throw new InvalidParameterException("Invalid expires at: " + request.expireAt(), origin);
+					throw new InvalidParameterException("Invalid expires at: " + request.expiresAt(), origin);
 				}
 			}
 		}
@@ -445,11 +445,11 @@ public class AuthorizationManagementValidation {
 			}
 			sysNames.add(request.systemName());
 			
-			if (!(request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALOGRITHM) || request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED))) {
+			if (!(request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM) || request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED))) {
 				throw new InvalidParameterException("Unsupported algorithm", origin);
 			}
-			if (request.key().getBytes().length != SecretCryptographer.AES_KEY_SIZE) {
-				throw new InvalidParameterException("Key size is not " + SecretCryptographer.AES_KEY_SIZE + " byte long for system: " + request.systemName());
+			if (request.key().getBytes().length != SecretCryptographer.IV_KEY_SIZE) {
+				throw new InvalidParameterException("Key size is not " + SecretCryptographer.IV_KEY_SIZE + " bytes long for system: " + request.systemName());
 			}
 		}
 		

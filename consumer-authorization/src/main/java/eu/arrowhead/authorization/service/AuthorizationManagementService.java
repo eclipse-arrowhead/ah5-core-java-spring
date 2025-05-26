@@ -180,7 +180,7 @@ public class AuthorizationManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requester, origin);
-		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateTokenRequets(dto, origin);
+		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateTokenRequests(dto, origin);
 		List<AuthorizationTokenGenerationMgmtRequestDTO> authorizedRequests = normalizedDTO.list();
 
 		boolean skipAuth = false;
@@ -208,7 +208,7 @@ public class AuthorizationManagementService {
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : authorizedRequests) {
 			tokenResults.add(
 					tokenEngine.produce(requester, request.consumer(), request.consumerCloud(), ServiceInterfacePolicy.valueOf(request.tokenType()), request.provider(), AuthorizationTargetType.valueOf(request.targetType()), request.target(),
-							Utilities.isEmpty(request.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.scope(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expireAt()), origin).getFirst());
+							Utilities.isEmpty(request.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.scope(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expiresAt()), origin).getFirst());
 		}
 
 		// Encrypt token if required
@@ -225,13 +225,13 @@ public class AuthorizationManagementService {
 				} else {
 					try {
 						final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-						final String plainEncriptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getKeyValue(), encryptionKeyRecord.getInternalAuxiliary().getAuxiliary(), sysInfo.getSecretCryptographerKey());
+						final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getEncryptedKey(), encryptionKeyRecord.getInternalAuxiliary().getValue(), sysInfo.getSecretCryptographerKey());
 
-						if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALOGRITHM)) {
-							tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getRawToken(), plainEncriptionKey));
+						if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
+							tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getRawToken(), plainEncryptionKey));
 
-						} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED)) {
-							tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getRawToken(), plainEncriptionKey, encryptionKeyRecord.getExternalAuxiliary().getAuxiliary()).getFirst());
+						} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
+							tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getRawToken(), plainEncryptionKey, encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
 
 						} else {
 							throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
@@ -294,7 +294,7 @@ public class AuthorizationManagementService {
 		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO item : normalizedDTO.list()) {
 
 			String externalKeyAuxiliary = null;
-			if (item.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALOGRITHM_IV_BASED)) {
+			if (item.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
 				externalKeyAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 			}
 
@@ -317,7 +317,7 @@ public class AuthorizationManagementService {
 			// Change the keyValue from encrypted to raw
 			for (final EncryptionKey encryptionKey : result) {
 				final String rawKeyValue = models.stream().filter((item) -> item.getSystemName().equals(encryptionKey.getSystemName())).findFirst().get().getKeyValue();
-				encryptionKey.setKeyValue(rawKeyValue);
+				encryptionKey.setEncryptedKey(rawKeyValue);
 			}
 
 			return dtoConverter.convertEncryptionKeyListToResponse(result, result.size());
