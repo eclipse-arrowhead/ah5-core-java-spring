@@ -178,8 +178,8 @@ public class AuthorizationTokenValidation {
 			throw new InvalidParameterException("Unsupported algorithm", origin);
 		}		
 		
-		if (normalized.key().getBytes().length != SecretCryptographer.IV_KEY_SIZE) {
-			throw new InvalidParameterException("Key size is not " + SecretCryptographer.IV_KEY_SIZE + " bytes long");
+		if (normalized.key().getBytes().length < SecretCryptographer.AES_KEY_MIN_SIZE) {
+			throw new InvalidParameterException("Key size must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long");
 		}
 		
 		return normalized;

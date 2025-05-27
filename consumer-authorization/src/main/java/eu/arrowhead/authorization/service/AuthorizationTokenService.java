@@ -100,28 +100,7 @@ public class AuthorizationTokenService {
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
 		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
-			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(normalizedDTO.provider());
-			try {
-				if (encryptionKeyRecordOpt.isPresent()) {
-					final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-					final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getEncryptedKey(), encryptionKeyRecord.getInternalAuxiliary().getValue(), sysInfo.getSecretCryptographerKey());
-
-					if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
-						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getFirst().getRawToken(), plainEncryptionKey));
-
-					} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
-						tokenResult.getFirst().setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getFirst().getRawToken(), plainEncryptionKey, encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
-
-					} else {
-						throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
-					}
-				}
-
-			} catch (final Exception ex) {
-				logger.error(ex.getMessage());
-				logger.debug(ex);
-				throw new InternalServerError("Token encryption failed!", origin);
-			}
+			encryptTokenIfNeeded(tokenResult.getFirst(), origin);
 		}
 
 		return Pair.of(dtoConverter.convertTokenModelToResponse(tokenResult.getFirst()), tokenResult.getSecond());
@@ -182,5 +161,36 @@ public class AuthorizationTokenService {
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		return encryptionKeyDbService.delete(normalizedRequester);
+	}
+	
+	//=================================================================================================
+	// assistant methods
+	
+	//-------------------------------------------------------------------------------------------------
+	private void encryptTokenIfNeeded(final TokenModel tokenModel, final String origin) {
+		logger.debug("encryptTokenIfNeeded started...");
+		
+		final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(tokenModel.getProvider());
+		try {
+			if (encryptionKeyRecordOpt.isPresent()) {
+				final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
+				final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getEncryptedKey(), encryptionKeyRecord.getInternalAuxiliary().getValue(), sysInfo.getSecretCryptographerKey());
+
+				if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
+					tokenModel.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenModel.getRawToken(), plainEncryptionKey));
+
+				} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
+					tokenModel.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenModel.getRawToken(), plainEncryptionKey, encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
+
+				} else {
+					throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
+				}
+			}
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Token encryption failed!", origin);
+		}
 	}
 }

@@ -1,5 +1,7 @@
 package eu.arrowhead.authorization.service.utils;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -92,11 +94,12 @@ public class TokenEngine {
 			String hashedToken = null;
 			final String cloud = Utilities.isEmpty(consumerCloud) ? Defaults.DEFAULT_CLOUD : consumerCloud;
 
-			// SIMMPLE USAGE LIMITED TOKEN
+			// SIMPLE USAGE LIMITED TOKEN
 
 			if (tokenType == ServiceInterfacePolicy.USAGE_LIMITED_TOKEN_AUTH) {
-				rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+				final Pair<String, String> simpleTokenResult = generateSimpleToken();
+				rawToken = simpleTokenResult.getFirst();
+				hashedToken = simpleTokenResult.getSecond();
 				final Pair<UsageLimitedToken, Boolean> usageLimitTokenResult = usageLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 						hashedToken,
@@ -114,8 +117,9 @@ public class TokenEngine {
 			// SIMPLE TIME LIMITED TOKEN
 
 			if (tokenType == ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH) {
-				rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-				hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+				final Pair<String, String> simpleTokenResult = generateSimpleToken();
+				rawToken = simpleTokenResult.getFirst();
+				hashedToken = simpleTokenResult.getSecond();
 				final ZonedDateTime expiresAt = expiry != null ? expiry : Utilities.utcNow().plusSeconds(sysInfo.getTokenTimeLimit());
 				final Pair<TimeLimitedToken, Boolean> timeLimitTokenResult = timeLimitedTokenDbService.save(
 						AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
@@ -215,11 +219,8 @@ public class TokenEngine {
 
 			// USAGE LIMITED TOKEN
 			if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {
-				final UsageLimitedToken usageLimitedToken = usageLimitedTokenDbService.getByHeader(tokenHeader).get();
-				final boolean verified = usageLimitedToken.getUsageLeft() > 0;
-				if (verified) {
-					usageLimitedTokenDbService.decrease(usageLimitedToken.getId());
-				}
+				final Optional<Pair<Integer, Integer>> decreased = usageLimitedTokenDbService.decrease(tokenHeader); // Pair<from, to>
+				boolean verified = decreased.isEmpty() ? false : decreased.get().getFirst() > 0;
 				return Pair.of(verified, !verified ? Optional.empty() : Optional.of(new TokenModel(tokenHeader)));
 			}
 
@@ -247,7 +248,7 @@ public class TokenEngine {
 		}
 
 		try {
-			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenList(hashedTokens);
+			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenHashList(hashedTokens);
 			tokenHeaderDbService.deleteById(tokenHeaders.stream().map((header) -> header.getId()).toList()); // Delete on cascade removes also the belonged token details 
 
 		} catch (final InternalServerError ex) {
@@ -288,5 +289,22 @@ public class TokenEngine {
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
+	}
+	
+	//=================================================================================================
+	// assistant methods
+	
+	//-------------------------------------------------------------------------------------------------
+	private Pair<String, String> generateSimpleToken() throws InvalidKeyException, NoSuchAlgorithmException {
+		String rawToken = null;
+		String hashedToken = null;
+		boolean isUnique = false;
+		do {
+			rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
+			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			isUnique = tokenHeaderDbService.find(hashedToken).isEmpty();
+			
+		} while (!isUnique);
+		return Pair.of(rawToken, hashedToken);
 	}
 }

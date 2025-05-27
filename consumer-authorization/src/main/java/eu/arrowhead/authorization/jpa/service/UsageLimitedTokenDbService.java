@@ -88,22 +88,39 @@ public class UsageLimitedTokenDbService {
 		logger.debug("getByHeader started...");
 		Assert.notNull(header, "header is null");
 
-		return tokenRepo.findByHeader(header);
+		try {
+			return tokenRepo.findByHeader(header);
+			
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
 	}
-
+	
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public Optional<UsageLimitedToken> decrease(final long id) {
+	public Optional<Pair<Integer, Integer>> decrease(final TokenHeader header) {
 		logger.debug("decrease started...");
 
-		final Optional<UsageLimitedToken> optional = tokenRepo.findById(id);
-		if (optional.isEmpty()) {
-			return optional;
+		try {
+			final Optional<UsageLimitedToken> optional = tokenRepo.findByHeader(header);
+			if (optional.isEmpty()) {
+				return Optional.empty();
+			}
+			
+			UsageLimitedToken usageLimitedToken = optional.get();
+			final int from = usageLimitedToken.getUsageLeft();
+			if (from > 0) {
+				usageLimitedToken.setUsageLeft(usageLimitedToken.getUsageLeft() - 1);			
+				usageLimitedToken = tokenRepo.saveAndFlush(usageLimitedToken);
+			}
+			return Optional.of(Pair.of(from, usageLimitedToken.getUsageLeft()));
+			
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
 		}
-
-		final UsageLimitedToken usageLimitedToken = optional.get();
-		usageLimitedToken.setUsageLeft(usageLimitedToken.getUsageLeft() - 1);
-		final UsageLimitedToken result = tokenRepo.saveAndFlush(usageLimitedToken);
-		return Optional.of(result);
 	}
 }

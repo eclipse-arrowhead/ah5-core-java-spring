@@ -38,13 +38,28 @@ public class TokenHeaderDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<TokenHeader> find(final String provider, final String token) {
+	public Optional<TokenHeader> find(final String provider, final String tokenHash) {
 		logger.debug("find started");
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
-		Assert.isTrue(!Utilities.isEmpty(token), "token is empty");
+		Assert.isTrue(!Utilities.isEmpty(tokenHash), "tokenHash is empty");
 
 		try {
-			return headerRepo.findByProviderAndTokenHash(provider, token);
+			return headerRepo.findByProviderAndTokenHash(provider, tokenHash);
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	public Optional<TokenHeader> find(final String tokenHash) {
+		logger.debug("find started");
+		Assert.isTrue(!Utilities.isEmpty(tokenHash), "tokenHash is empty");
+
+		try {
+			return headerRepo.findByTokenHash(tokenHash);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -54,12 +69,12 @@ public class TokenHeaderDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<TokenHeader> findByTokenList(final List<String> tokens) {
-		logger.debug("findByTokenList started");
-		Assert.isTrue(!Utilities.containsNullOrEmpty(tokens), "token list contains null or empty element");
+	public List<TokenHeader> findByTokenHashList(final List<String> tokenHashes) {
+		logger.debug("findByTokenHashList started");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(tokenHashes), "token hash list contains null or empty element");
 
 		try {
-			return headerRepo.findAllByTokenHashIn(tokens);
+			return headerRepo.findAllByTokenHashIn(tokenHashes);
 
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

@@ -14,6 +14,7 @@ public final class AuthorizationConstants {
 	public static final String VERSION_AUTHORIZATION = "1.0.0";
 	public static final String VERSION_AUTHORIZATION_TOKEN = "1.0.0";
 	public static final String VERSION_AUTHORIZATION_MANAGEMENT = "1.0.0";
+	public static final String VERSION_AUTHORIZATION_TOKEN_MANAGEMENT = "1.0.0";
 
 	public static final String HTTP_API_BASE_PATH = "/consumerauthorization";
 	public static final String HTTP_API_AUTHORIZATION_PATH = HTTP_API_BASE_PATH + "/authorization";
@@ -62,6 +63,8 @@ public final class AuthorizationConstants {
 	public static final String $SECRET_CRYPTOGRAPHER_KEY = "${" + SECRET_CRYPTOGRAPHER_KEY + "}";
 	public static final String UNBOUNDED_TOKEN_GENERATION_WHITELIST = "unbounded.token.generation.whitelist";
 	public static final String $UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD = "${" + UNBOUNDED_TOKEN_GENERATION_WHITELIST + ":" + AuthorizationDefaults.DEFAULT_UNBOUNDED_TOKEN_GENERATION_WHITELIST + "}";
+	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
+	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":" + AuthorizationDefaults.CLEANER_JOB_INTERVAL_DEFAULT + "}";
 	
 	// Quartz related
 	public static final String CLEANER_TRIGGER = "consumerAuthorizationCleanerTrigger";

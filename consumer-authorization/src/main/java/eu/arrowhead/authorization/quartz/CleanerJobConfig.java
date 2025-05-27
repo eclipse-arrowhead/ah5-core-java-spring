@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.quartz.JobDetail;
 import org.quartz.SimpleTrigger;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,8 @@ public class CleanerJobConfig {
 	//=================================================================================================
 	// members
 
-	private final long interval = 30000;
+	@Value(AuthorizationConstants.$CLEANER_JOB_INTERVAL_WD)
+	private long interval = 30000;
 	
 	private final Logger logger = LogManager.getLogger(this.getClass());
 	
@@ -33,7 +35,7 @@ public class CleanerJobConfig {
 	JobDetailFactoryBean cleanerJobDetail() {
 		final JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
 		jobDetailFactory.setJobClass(CleanerJob.class);
-		jobDetailFactory.setDescription("Removing expired or old tokens");
+		jobDetailFactory.setDescription("Removing expired and/or old tokens");
 		jobDetailFactory.setDurability(true);
 		return jobDetailFactory;
 	}

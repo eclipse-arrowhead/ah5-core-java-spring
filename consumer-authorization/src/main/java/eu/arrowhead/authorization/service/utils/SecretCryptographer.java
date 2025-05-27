@@ -1,5 +1,6 @@
 package eu.arrowhead.authorization.service.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -29,6 +30,7 @@ public class SecretCryptographer {
 	public static final String AES_ECB_ALGORITHM = "AES/ECB/PKCS5Padding"; // Without initialization vector
 	public static final String AES_CBC_ALGORITHM_IV_BASED = "AES/CBC/PKCS5Padding"; // With initialization vector
 	private static final String AES_KEY_ALGORITHM = "AES";
+	public static final int AES_KEY_MIN_SIZE = 16; // 128 bits
 	public static final int IV_KEY_SIZE = 16; // 128 bits
 
 	public static final String HMAC_ALGORITHM = "HmacSHA256";
@@ -110,7 +112,7 @@ public class SecretCryptographer {
 		cipher.init(Cipher.DECRYPT_MODE, keySpec);
 		final byte[] encryptedBytes = Base64.getDecoder().decode(encryptedDataBase64);
 		final byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
-		return new String(decryptedBytes);
+		return new String(decryptedBytes, StandardCharsets.ISO_8859_1);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -127,7 +129,7 @@ public class SecretCryptographer {
 		cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 		final byte[] encryptedBytes = Base64.getDecoder().decode(encryptedDataBase64);
 		final byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
-		return new String(decryptedBytes);
+		return new String(decryptedBytes, StandardCharsets.ISO_8859_1);
 	}
 
 	//=================================================================================================
@@ -153,7 +155,7 @@ public class SecretCryptographer {
 	//-------------------------------------------------------------------------------------------------
 	private SecretKeySpec getAESKeySpecFromString(final String key) {
 		final byte[] keyBytes = key.getBytes();
-		Assert.isTrue(keyBytes.length == IV_KEY_SIZE, "Key size is not " + IV_KEY_SIZE + " bytes long");
+		Assert.isTrue(keyBytes.length < AES_KEY_MIN_SIZE, "Key size must be minimum " + AES_KEY_MIN_SIZE + " bytes long");
 		return new SecretKeySpec(keyBytes, AES_KEY_ALGORITHM);
 	}
 

@@ -20,6 +20,9 @@ public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader
 	// methods
 	
 	//-------------------------------------------------------------------------------------------------
+	public Optional<TokenHeader> findByTokenHash(final String tokenHash);
+	
+	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByTokenHashIn(final List<String> tokenHashes);
 	
 	//-------------------------------------------------------------------------------------------------
