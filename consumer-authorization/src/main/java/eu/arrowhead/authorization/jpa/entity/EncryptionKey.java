@@ -39,9 +39,9 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public EncryptionKey(final String systemName, final String keyValue, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
+	public EncryptionKey(final String systemName, final String encryptedKey, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
 		this.systemName = systemName;
-		this.encryptedKey = keyValue;
+		this.encryptedKey = encryptedKey;
 		this.algorithm = algorithm;
 		this.internalAuxiliary = internalAuxiliary;
 		this.externalAuxiliary = externalAuxiliary;
@@ -72,8 +72,8 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setEncryptedKey(final String keyValue) {
-		this.encryptedKey = keyValue;
+	public void setEncryptedKey(final String encryptedKey) {
+		this.encryptedKey = encryptedKey;
 	}
 
 	//-------------------------------------------------------------------------------------------------

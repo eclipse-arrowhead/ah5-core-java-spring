@@ -101,7 +101,7 @@ public class AuthorizationTokenManagementAPI {
 	})
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody AuthorizationTokenMgmtListResponseDTO queryTokens(@RequestBody final AuthorizationTokenQueryRequestDTO dto) {
-		logger.debug("generateTokens started");
+		logger.debug("queryTokens started");
 		
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_QUERY_PATH;
 		return mgmtService.queryTokensOperation(dto, origin);
