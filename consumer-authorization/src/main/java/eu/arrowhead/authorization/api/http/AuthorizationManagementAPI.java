@@ -126,7 +126,7 @@ public class AuthorizationManagementAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the whether consumers has access to specified services/service operations/event types.")
+	@Operation(summary = "Returns whether consumers have access to specified services/service operations/event types.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ServiceInstanceListResponseDTO.class)) }),

@@ -133,7 +133,7 @@ public class AuthorizationAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the whether a consumer has access to a specified service/service operation/event type.")
+	@Operation(summary = "Returns whether a consumer has access to a specified service/service operation/event type.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Boolean.class)) }),
