@@ -4,16 +4,16 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
 
+import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
-import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.common.jpa.RefreshableRepository;
 
 @Repository
-public interface UsageLimitedTokenRepository extends RefreshableRepository<UsageLimitedToken, Long> {
-
+public interface SelfContainedTokenRepository extends RefreshableRepository<SelfContainedToken, Long> {
+	
 	//=================================================================================================
 	// methods
 	
 	//-------------------------------------------------------------------------------------------------
-	public Optional<UsageLimitedToken> findByHeader(final TokenHeader header);
+	public Optional<SelfContainedToken> findByHeader(final TokenHeader header);
 }

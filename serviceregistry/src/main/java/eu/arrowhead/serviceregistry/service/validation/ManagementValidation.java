@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
@@ -59,7 +60,6 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
-import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 
 @Service

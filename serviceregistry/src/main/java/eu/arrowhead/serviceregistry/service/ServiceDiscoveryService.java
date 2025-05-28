@@ -19,6 +19,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -35,7 +36,6 @@ import eu.arrowhead.serviceregistry.jpa.service.ServiceInstanceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
-import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.ServiceDiscoveryValidation;
 
 @Service
