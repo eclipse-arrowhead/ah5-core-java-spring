@@ -20,7 +20,7 @@ public class OrchestrationHistoryManagementNormalization {
 
 	@Autowired
 	private SystemNameNormalizer systemNameNormalizer;
-	
+
 	@Autowired
 	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
 

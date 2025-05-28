@@ -39,6 +39,7 @@ public class TimeLimitedTokenDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:ParameterNumberCheck")
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Pair<TimeLimitedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
@@ -76,8 +77,8 @@ public class TimeLimitedTokenDbService {
 
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
 			final TimeLimitedToken tokenRecord = tokenRepo.saveAndFlush(new TimeLimitedToken(tokenHeaderRecord, expiresAt));
-			return Pair.of(tokenRecord, !override);
 
+			return Pair.of(tokenRecord, !override);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

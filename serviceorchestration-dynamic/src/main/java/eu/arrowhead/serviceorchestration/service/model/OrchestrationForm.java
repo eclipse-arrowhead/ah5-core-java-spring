@@ -87,7 +87,7 @@ public class OrchestrationForm {
 			}
 		}
 		orchestrationFlags.put(flag.name(), value);
-		
+
 		return changed;
 	}
 
@@ -119,7 +119,7 @@ public class OrchestrationForm {
 				interfacePropertyRequirements,
 				securityPolicies,
 				preferredProviders);
-		
+
 		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qosRequirements, exclusivityDuration);
 	}
 

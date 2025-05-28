@@ -39,6 +39,7 @@ public class SelfContainedTokenDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:ParameterNumberCheck")
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Pair<SelfContainedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
@@ -58,7 +59,7 @@ public class SelfContainedTokenDbService {
 		Assert.isTrue(!Utilities.isEmpty(consumerCloud), "consumerCloud is empty");
 		Assert.isTrue(!Utilities.isEmpty(consumer), "consumer is empty");
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
-		Assert.notNull(targetType, "toketargetTypenType is null");
+		Assert.notNull(targetType, "targetType is null");
 		Assert.isTrue(!Utilities.isEmpty(target), "serviceDefinition is empty");
 		Assert.isTrue(!Utilities.isEmpty(variant), "variant is empty");
 		Assert.notNull(expiresAt, "expiresAt is null");
@@ -77,15 +78,15 @@ public class SelfContainedTokenDbService {
 
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
 			final SelfContainedToken tokenRecord = tokenRepo.saveAndFlush(new SelfContainedToken(tokenHeaderRecord, variant, expiresAt));
-			return Pair.of(tokenRecord, !override);
 
+			return Pair.of(tokenRecord, !override);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<SelfContainedToken> getByHeader(final TokenHeader header) {
 		logger.debug("getByHeader started...");

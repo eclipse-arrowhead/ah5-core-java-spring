@@ -1,5 +1,6 @@
 package eu.arrowhead.authorization;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +38,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 	@Value(AuthorizationConstants.$UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD)
 	private List<String> unboundedTokenGenerationWhitelist;
+	private List<String> normalizedUnboundedTokenGenerationWhitelist = new ArrayList<>();
 
 	@Value(AuthorizationConstants.$SECRET_CRYPTOGRAPHER_KEY)
 	private String secretCryptographerKey;
@@ -80,11 +82,13 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.serviceInterface(getHttpServiceInterfaceForAuthorization())
 				.serviceInterface(getMqttServiceInterfaceForAuthorization())
 				.build();
+
 		final ServiceModel authorizationToken = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN)
 				.version(AuthorizationConstants.VERSION_AUTHORIZATION_TOKEN)
 				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForAuthorizationToken())
+				.serviceInterface(getMqttServiceInterfaceForAuthorizationToken())
 				.build();
 
 		final ServiceModel authorizationManagement = new ServiceModel.Builder()
@@ -93,11 +97,12 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.serviceInterface(getHttpServiceInterfaceForAuthorizationManagement())
 				.serviceInterface(getMqttServiceInterfaceForAuthorizationManagement())
 				.build();
-		
+
 		final ServiceModel authorizationTokenManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT)
 				.version(AuthorizationConstants.VERSION_AUTHORIZATION_TOKEN_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForAuthorizationTokenManagement())
+				.serviceInterface(getMqttServiceInterfaceForAuthorizationTokenManagement())
 				.build();
 
 		final ServiceModel generalManagement = new ServiceModel.Builder()
@@ -138,11 +143,16 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasSystemUnboundedTokenGenerationRight(final String systemName) {
-		// TODO normalize the list in the app init
 		if (Utilities.isEmpty(unboundedTokenGenerationWhitelist)) {
 			return false;
+		} else if (Utilities.isEmpty(normalizedUnboundedTokenGenerationWhitelist)) {
+			normalizedUnboundedTokenGenerationWhitelist = unboundedTokenGenerationWhitelist
+					.stream()
+					.map(sys -> systemNameNormalizer.normalize(sys))
+					.toList();
 		}
-		return unboundedTokenGenerationWhitelist.contains(systemName);
+
+		return normalizedUnboundedTokenGenerationWhitelist.contains(systemName);
 	}
 
 	//=================================================================================================
@@ -151,7 +161,6 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	protected PublicConfigurationKeysAndDefaults getPublicConfigurationKeysAndDefaults() {
-		// TODO extend with authorization specific configuration
 		return new PublicConfigurationKeysAndDefaults(
 				Set.of(Constants.SERVER_ADDRESS,
 						Constants.SERVER_PORT,
@@ -253,6 +262,23 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForAuthorizationToken() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(AuthorizationConstants.MQTT_API_AUTHORIZATION_TOKEN_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_GENERATE,
+						Constants.SERVICE_OP_VERIFY,
+						Constants.SERVICE_OP_GET_PUBLIC_KEY,
+						Constants.SERVICE_OP_AUTHORIZATION_TOKEN_REGISTER_ENCRYPTION_KEY,
+						Constants.SERVICE_OP_AUTHORIZATION_TOKEN_UNREGISTER_ENCRYPTION_KEY))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private InterfaceModel getHttpServiceInterfaceForAuthorizationManagement() {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
@@ -330,6 +356,23 @@ public class AuthorizationSystemInfo extends SystemInfo {
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_REVOKE_TOKENS, revokeTokens)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_ADD_ENCRYPTION_KEYS, addEncryptionKeys)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_REMOVE_ENCRYPTION_KEYS, removeEncryptionKeys)
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForAuthorizationTokenManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(AuthorizationConstants.MQTT_API_TOKEN_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS,
+						Constants.SERVICE_OP_AUTHORIZATION_QUERY_TOKENS,
+						Constants.SERVICE_OP_AUTHORIZATION_REVOKE_TOKENS,
+						Constants.SERVICE_OP_AUTHORIZATION_ADD_ENCRYPTION_KEYS,
+						Constants.SERVICE_OP_AUTHORIZATION_REMOVE_ENCRYPTION_KEYS))
 				.build();
 	}
 

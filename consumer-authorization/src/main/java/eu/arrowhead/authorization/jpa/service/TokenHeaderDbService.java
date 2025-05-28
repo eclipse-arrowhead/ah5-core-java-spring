@@ -45,14 +45,13 @@ public class TokenHeaderDbService {
 
 		try {
 			return headerRepo.findByProviderAndTokenHash(provider, tokenHash);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<TokenHeader> find(final String tokenHash) {
 		logger.debug("find started");
@@ -60,7 +59,6 @@ public class TokenHeaderDbService {
 
 		try {
 			return headerRepo.findByTokenHash(tokenHash);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -75,7 +73,6 @@ public class TokenHeaderDbService {
 
 		try {
 			return headerRepo.findAllByTokenHashIn(tokenHashes);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -92,7 +89,6 @@ public class TokenHeaderDbService {
 		try {
 			headerRepo.deleteAllByIdInBatch(ids);
 			headerRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -101,8 +97,16 @@ public class TokenHeaderDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Page<TokenHeader> query(final Pageable pagination, final String requester, final AuthorizationTokenType tokenType, final String consumerCloud, final String consumer, final String provider,
-			final String target, final AuthorizationTargetType targetType) {
+	@SuppressWarnings("checkstyle:ParameterNumberCheck")
+	public Page<TokenHeader> query(
+			final Pageable pagination,
+			final String requester,
+			final AuthorizationTokenType tokenType,
+			final String consumerCloud,
+			final String consumer,
+			final String provider,
+			final String target,
+			final AuthorizationTargetType targetType) {
 		logger.debug("query started");
 		Assert.notNull(pagination, "pagination is null");
 
@@ -124,7 +128,7 @@ public class TokenHeaderDbService {
 				baseFilter = BaseFilter.CLOUD;
 			} else if (!Utilities.isEmpty(consumer)) {
 				baseList = headerRepo.findAllByConsumer(consumer);
-				baseFilter = BaseFilter.CONSUMER;				
+				baseFilter = BaseFilter.CONSUMER;
 			} else if (tokenType != null) {
 				baseList = headerRepo.findAllByTokenType(tokenType);
 				baseFilter = BaseFilter.TOKEN_TYPE;
@@ -166,7 +170,7 @@ public class TokenHeaderDbService {
 				if (baseFilter != BaseFilter.TOKEN_TYPE && tokenType != null && header.getTokenType() != tokenType) {
 					continue;
 				}
-				
+
 				// Match against target type
 				if (baseFilter != BaseFilter.TARGET_TYPE && targetType != null && header.getTargetType() != targetType) {
 					continue;
@@ -176,7 +180,6 @@ public class TokenHeaderDbService {
 			}
 
 			return headerRepo.findAllByIdIn(matchingIds, pagination);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

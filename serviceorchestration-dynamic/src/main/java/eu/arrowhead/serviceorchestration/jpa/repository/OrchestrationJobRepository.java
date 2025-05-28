@@ -14,7 +14,7 @@ import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 
 @Repository
 public interface OrchestrationJobRepository extends RefreshableRepository<OrchestrationJob, UUID> {
-	
+
 	//=================================================================================================
 	// methods
 

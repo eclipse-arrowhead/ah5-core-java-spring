@@ -7,5 +7,4 @@ import eu.arrowhead.common.jpa.RefreshableRepository;
 
 @Repository
 public interface CryptographerAuxiliaryRepository extends RefreshableRepository<CryptographerAuxiliary, Long> {
-
 }

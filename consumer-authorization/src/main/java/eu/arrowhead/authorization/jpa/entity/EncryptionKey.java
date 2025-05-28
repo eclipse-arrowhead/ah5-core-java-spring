@@ -18,14 +18,14 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 
 	@Column(nullable = false)
 	private String encryptedKey;
-	
+
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String algorithm;
-	
+
 	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "internal_auxiliary_id", referencedColumnName = "id", nullable = false)
 	private CryptographerAuxiliary internalAuxiliary;
-	
+
 	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "external_auxiliary_id", referencedColumnName = "id", nullable = true)
 	private CryptographerAuxiliary externalAuxiliary;
@@ -35,24 +35,29 @@ public class EncryptionKey extends UnmodifiableArrowheadEntity {
 
 	//-------------------------------------------------------------------------------------------------
 	public EncryptionKey() {
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public EncryptionKey(final String systemName, final String encryptedKey, final String algorithm, final CryptographerAuxiliary internalAuxiliary, final CryptographerAuxiliary externalAuxiliary) {
+	public EncryptionKey(
+			final String systemName,
+			final String encryptedKey,
+			final String algorithm,
+			final CryptographerAuxiliary internalAuxiliary,
+			final CryptographerAuxiliary externalAuxiliary) {
 		this.systemName = systemName;
 		this.encryptedKey = encryptedKey;
 		this.algorithm = algorithm;
 		this.internalAuxiliary = internalAuxiliary;
 		this.externalAuxiliary = externalAuxiliary;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", encryptedKey=" + encryptedKey+ ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary + ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
+		return "EncryptionKey [id=" + id + ", systemName=" + systemName + ", encryptedKey=" + encryptedKey + ", algorithm=" + algorithm + ", internalAuxiliary=" + internalAuxiliary
+				+ ", externalAuxiliary=" + externalAuxiliary + ", createdAt=" + createdAt + "]";
 	}
-	
+
 	//=================================================================================================
 	// boilerplate methods
 

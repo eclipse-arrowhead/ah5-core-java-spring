@@ -14,7 +14,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 
 @Repository
 public interface SubscriptionRepository extends RefreshableRepository<Subscription, UUID> {
-	
+
 	//=================================================================================================
 	// methods
 

@@ -89,7 +89,7 @@ public class OrchestrationLockDbService {
 		try {
 			final BaseFilter baseFilter = filter.getBaseFilter();
 			List<OrchestrationLock> toFilter;
-			
+
 			if (baseFilter == BaseFilter.ID) {
 				toFilter = lockRepo.findAllById(filter.getIds());
 			} else if (baseFilter == BaseFilter.JOB) {

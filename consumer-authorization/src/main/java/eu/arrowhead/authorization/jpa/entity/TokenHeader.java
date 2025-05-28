@@ -39,7 +39,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 
 	@Column(nullable = false, length = VARCHAR_SMALL)
 	private String provider;
-	
+
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private AuthorizationTargetType targetType;
@@ -55,10 +55,10 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 
 	//-------------------------------------------------------------------------------------------------
 	public TokenHeader() {
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:ParameterNumberCheck")
 	public TokenHeader(
 			final AuthorizationTokenType tokenType,
 			final String tokenHash,
@@ -83,8 +83,8 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "TokenHeader [tokenType=" + tokenType + ", tokenHash=" + tokenHash + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider=" + provider
-				+ ", targetType=" + targetType + ", target=" + target + ", scope=" + scope + ", id=" + id + ", createdAt=" + createdAt + "]";
+		return "TokenHeader [tokenType=" + tokenType + ", tokenHash=" + tokenHash + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider="
+				+ provider + ", targetType=" + targetType + ", target=" + target + ", scope=" + scope + ", id=" + id + ", createdAt=" + createdAt + "]";
 	}
 
 	//=================================================================================================
@@ -149,7 +149,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	public void setProvider(final String provider) {
 		this.provider = provider;
 	}
-		
+
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTargetType getTargetType() {
 		return targetType;
@@ -158,8 +158,8 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	public void setTargetType(final AuthorizationTargetType targetType) {
 		this.targetType = targetType;
-	}	
-	
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public String getTarget() {
 		return target;

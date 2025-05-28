@@ -75,14 +75,14 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 					.stream()
 					.filter(s -> s.candidate().getExclusivityDuration() == bestExclusivityDuration)
 					.toList();
-			
+
 			if (bestCandidates.size() == 1) {
 				return bestCandidates.getFirst().candidate();
 			}
 		}
 
 		final SecureRandom rng = new SecureRandom();
-		
+
 		return bestCandidates.get(rng.nextInt(bestCandidates.size())).candidate();
 	}
 

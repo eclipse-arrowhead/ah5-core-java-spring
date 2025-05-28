@@ -51,7 +51,7 @@ public class OrchestrationHistoryManagementService {
 
 		try {
 			final Page<OrchestrationJob> results = jobDbService.query(filter, pageRequest);
-			
+
 			return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

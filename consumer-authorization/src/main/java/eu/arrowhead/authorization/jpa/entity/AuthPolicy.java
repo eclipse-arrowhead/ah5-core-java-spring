@@ -1,6 +1,6 @@
 package eu.arrowhead.authorization.jpa.entity;
 
-import eu.arrowhead.authorization.AuthorizationDefaults;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationPolicyType;
@@ -32,7 +32,7 @@ public class AuthPolicy {
 	private long headerId; // can't be a foreign key because it can reference a record from one of two tables
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String scope = AuthorizationDefaults.DEFAULT_SCOPE;
+	private String scope = Defaults.DEFAULT_AUTHORIZATION_SCOPE;
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)

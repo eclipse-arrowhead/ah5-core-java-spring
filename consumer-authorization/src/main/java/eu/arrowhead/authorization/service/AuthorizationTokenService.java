@@ -73,7 +73,7 @@ public class AuthorizationTokenService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<AuthorizationTokenGenerationResponseDTO, Boolean> generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
+	public AuthorizationTokenGenerationResponseDTO generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
 		logger.debug("generate started...");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
@@ -131,7 +131,7 @@ public class AuthorizationTokenService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
+	public String registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
 		logger.debug("registerEncryptionKey started...");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);

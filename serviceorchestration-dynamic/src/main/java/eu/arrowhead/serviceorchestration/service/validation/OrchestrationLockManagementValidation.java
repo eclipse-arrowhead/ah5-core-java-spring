@@ -32,7 +32,7 @@ public class OrchestrationLockManagementValidation {
 
 	@Autowired
 	private SystemNameValidator systemNameValidator;
-	
+
 	@Autowired
 	private ServiceInstanceIdentifierValidator serviceInstanceIdValidator;
 
@@ -81,7 +81,7 @@ public class OrchestrationLockManagementValidation {
 					}
 				});
 			}
-			
+
 			if (!Utilities.isEmpty(normalized.serviceInstanceIds())) {
 				normalized.serviceInstanceIds().forEach(id -> serviceInstanceIdValidator.validateServiceInstanceIdentifier(id));
 			}
@@ -118,20 +118,20 @@ public class OrchestrationLockManagementValidation {
 
 		validateRemoveService(serviceInstanceIds, owner, origin);
 		final Pair<String, List<String>> normalized = Pair.of(normalization.normalizeSystemName(owner), normalization.normalizeServiceInstanceIds(serviceInstanceIds));
-		
+
 		try {
 			systemNameValidator.validateSystemName(normalized.getLeft());
 			normalized.getRight().forEach(id -> serviceInstanceIdValidator.validateServiceInstanceIdentifier(id));
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
-		
+
 		return normalized;
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ public class OrchestrationLockManagementValidation {
 			}
 		});
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private void validateQueryService(final OrchestrationLockQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryService started...");
@@ -197,7 +197,7 @@ public class OrchestrationLockManagementValidation {
 			throw new InvalidParameterException("Owner list contains empty element", origin);
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private void validateRemoveService(final List<String> serviceInstanceIds, final String owner, final String origin) {
 		logger.debug("validateRemoveService started...");

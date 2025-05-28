@@ -27,7 +27,10 @@ public final class AuthorizationConstants {
 	public static final String MQTT_API_MANAGEMENT_BASE_TOPIC = MQTT_API_AUTHORIZATION_BASE_TOPIC + "management/";
 	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
 	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
-	
+	public static final String MQTT_API_AUTHORIZATION_TOKEN_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/authorization-token/";
+	public static final String MQTT_API_TOKEN_MANAGEMENT_BASE_TOPIC = MQTT_API_AUTHORIZATION_TOKEN_BASE_TOPIC + "management/";
+
+
 	public static final String HTTP_PATH_PARAM_TOKEN = "{token}";
 	public static final String HTTP_PARAM_INSTANCE_ID = "{instanceId}";
 
@@ -46,7 +49,7 @@ public final class AuthorizationConstants {
 	public static final String INSTANCE_ID_PREFIX_MGMT = "MGMT";
 	public static final String INSTANCE_ID_PREFIX_PR = "PR";
 	public static final String TOKEN_TYPE_AUTH_SUFFIX = "TOKEN_AUTH";
-	
+
 	// Configuration related
 
 	public static final String TOKEN_MAX_AGE = "token.max.age";
@@ -63,7 +66,7 @@ public final class AuthorizationConstants {
 	public static final String $UNBOUNDED_TOKEN_GENERATION_WHITELIST_WD = "${" + UNBOUNDED_TOKEN_GENERATION_WHITELIST + ":" + AuthorizationDefaults.DEFAULT_UNBOUNDED_TOKEN_GENERATION_WHITELIST + "}";
 	public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
 	public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":" + AuthorizationDefaults.CLEANER_JOB_INTERVAL_DEFAULT + "}";
-	
+
 	// Quartz related
 	public static final String CLEANER_TRIGGER = "consumerAuthorizationCleanerTrigger";
 	public static final String CLEANER_JOB = "consumerAuthorizationCleanerJob";

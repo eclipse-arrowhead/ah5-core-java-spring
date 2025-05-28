@@ -9,8 +9,8 @@
 	<artifactId>arrowhead-serviceregistry</artifactId>
 	<version>5.0.0</version>
 	<packaging>jar</packaging>
-	<name>Arrowhead Service Registry</name>
-	<description>Arrowhead Service Registry using Spring Boot</description>
+	<name>Arrowhead ServiceRegistry</name>
+	<description>Arrowhead ServiceRegistry using Spring Boot</description>
 
 	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
 	

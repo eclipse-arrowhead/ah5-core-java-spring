@@ -1,5 +1,7 @@
 package eu.arrowhead.authorization.service.validation;
 
+import java.time.DateTimeException;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,8 +21,11 @@ import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.cloud.CloudIdentifierValidator;
+import eu.arrowhead.common.service.validation.name.EventTypeNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
@@ -37,10 +42,22 @@ public class AuthorizationTokenManagementValidation {
 	// members
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
+	
+	@Autowired
+	private CloudIdentifierValidator cloudIdentifierValidator;
+	
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefinitionNameValidator;
+	
+	@Autowired
+	private EventTypeNameValidator eventTypeNameValidator;
+	
+	@Autowired
+	private AuthorizationScopeValidator scopeValidator;
 
 	@Autowired
 	private AuthorizationTokenNormalizer tokenNormalizer;
@@ -52,61 +69,6 @@ public class AuthorizationTokenManagementValidation {
 
 	//=================================================================================================
 	// methods
-
-	// VALIDATION
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateSystemName(final String systemName, final String origin) {
-		logger.debug("validateSystemName started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		if (Utilities.isEmpty(systemName)) {
-			throw new InvalidParameterException("System name is empty", origin);
-		}
-
-		if (systemName.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("System name is too long: " + systemName, origin);
-		}
-
-		try {
-			nameValidator.validateName(systemName);
-		} catch (final InvalidParameterException ex) {
-			if (Utilities.isEmpty(ex.getOrigin())) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			}
-
-			throw ex;
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateGenerateTokenRequests(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
-		logger.debug("validateGenerateTokenRequests started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		if (dto == null || Utilities.isEmpty(dto.list())) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-
-		if (Utilities.containsNull(dto.list())) {
-			throw new InvalidParameterException("Request payload list contains null element", origin);
-		}
-
-		for (final AuthorizationTokenGenerationMgmtRequestDTO request : dto.list()) {
-			if (Utilities.isEmpty(request.tokenType())) {
-				throw new InvalidParameterException("Token type is missing", origin);
-			}
-			if (Utilities.isEmpty(request.consumer())) {
-				throw new InvalidParameterException("Consumer system name is missing", origin);
-			}
-			if (Utilities.isEmpty(request.provider())) {
-				throw new InvalidParameterException("Provider system name is missing", origin);
-			}
-			if (Utilities.isEmpty(request.target())) {
-				throw new InvalidParameterException("Target is missing", origin);
-			}
-		}
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateQueryTokensRequest(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
@@ -146,6 +108,7 @@ public class AuthorizationTokenManagementValidation {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -154,7 +117,15 @@ public class AuthorizationTokenManagementValidation {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateSystemName(systemName, origin);
-		return nameNormalizer.normalize(systemName);
+		final String normalized = systemNameNormalizer.normalize(systemName);
+		
+		try {
+			systemNameValidator.validateSystemName(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+		
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -163,39 +134,29 @@ public class AuthorizationTokenManagementValidation {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateGenerateTokenRequests(dto, origin);
-
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationTokenGenerationMgmtListRequestDTO(dto);
 
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : normalized.list()) {
-			if (!Utilities.isEnumValue(request.tokenType(), ServiceInterfacePolicy.class)
-					|| !request.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
+			if (!request.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
 				throw new InvalidParameterException("Invalid token type: " + request.tokenType(), origin);
 			}
 
-			if (!Utilities.isEnumValue(request.targetType(), AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Invalid target type: " + request.targetType(), origin);
-			}
-
 			try {
-				nameValidator.validateName(request.consumerCloud());
-				nameValidator.validateName(request.consumer());
-				nameValidator.validateName(request.provider());
-				nameValidator.validateName(request.target());
-
-				if (!request.scope().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
-					nameValidator.validateName(request.scope());
+				cloudIdentifierValidator.validateCloudIdentifier(request.consumerCloud());
+				systemNameValidator.validateSystemName(request.consumer());
+				systemNameValidator.validateSystemName(request.provider());
+				
+				if (AuthorizationTargetType.SERVICE_DEF.name().equals(request.targetType())) {
+					serviceDefinitionNameValidator.validateServiceDefinitionName(request.target());
+				} else {
+					eventTypeNameValidator.validateEventTypeName(request.target());
 				}
 
+				if (request.scope() != null) {
+					scopeValidator.validateScope(request.scope());
+				}
 			} catch (final InvalidParameterException ex) {
 				throw new InvalidParameterException(ex.getMessage(), origin);
-			}
-
-			if (!Utilities.isEmpty(request.expiresAt())) {
-				try {
-					Utilities.parseUTCStringToZonedDateTime(request.expiresAt());
-				} catch (final DateTimeParseException ex) {
-					throw new InvalidParameterException("Invalid expires at: " + request.expiresAt(), origin);
-				}
 			}
 		}
 
@@ -274,5 +235,86 @@ public class AuthorizationTokenManagementValidation {
 		}
 
 		return normalized;
+	}
+	
+	//=================================================================================================
+	// assistant methods
+	
+	//-------------------------------------------------------------------------------------------------
+	// VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateSystemName(final String systemName, final String origin) {
+		logger.debug("validateSystemName started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (Utilities.isEmpty(systemName)) {
+			throw new InvalidParameterException("System name is empty", origin);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private void validateGenerateTokenRequests(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
+		logger.debug("validateGenerateTokenRequests started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null || Utilities.isEmpty(dto.list())) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.containsNull(dto.list())) {
+			throw new InvalidParameterException("Request payload list contains null element", origin);
+		}
+
+		for (final AuthorizationTokenGenerationMgmtRequestDTO request : dto.list()) {
+			if (Utilities.isEmpty(request.tokenType())) {
+				throw new InvalidParameterException("Token type is missing", origin);
+			}
+			
+			final String tokenTypeName = request.tokenType().trim().toUpperCase();
+			if (!Utilities.isEnumValue(tokenTypeName, ServiceInterfacePolicy.class)) {
+				throw new InvalidParameterException("Token type is invalid: " + tokenTypeName, origin);
+			}
+			
+			if (!Utilities.isEmpty(request.targetType())) {
+				final String targetTypeName = request.targetType().trim().toUpperCase();
+				if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
+					throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+				}
+			}
+			
+			if (Utilities.isEmpty(request.consumer())) {
+				throw new InvalidParameterException("Consumer system name is missing", origin);
+			}
+			
+			if (Utilities.isEmpty(request.provider())) {
+				throw new InvalidParameterException("Provider system name is missing", origin);
+			}
+			
+			if (Utilities.isEmpty(request.target())) {
+				throw new InvalidParameterException("Target is missing", origin);
+			}
+			
+			if (!Utilities.isEmpty(request.expiresAt())) {
+				if (!Utilities.isEmpty(request.expiresAt())) {
+					ZonedDateTime expiresAt = null;
+					try {
+						expiresAt = Utilities.parseUTCStringToZonedDateTime(request.expiresAt().trim());
+					} catch (final DateTimeException ex) {
+						throw new InvalidParameterException("Expiration time has an invalid time format", origin);
+					}
+
+					if (Utilities.utcNow().isAfter(expiresAt)) {
+						throw new InvalidParameterException("Expiration time is in the past", origin);
+					}
+				}
+			}
+			
+			if (request.usageLimit() != null) {
+				if (request.usageLimit().intValue() <= 0) {
+					throw new InvalidParameterException("Usage limit is invalid", origin);
+				}
+			}
+		}
 	}
 }

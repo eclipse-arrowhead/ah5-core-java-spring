@@ -136,10 +136,10 @@ public class OrchestrationService {
 					throw new ForbiddenException(normalized.getLeft() + " is not the subscription owner", origin);
 				}
 				subscriptionDbService.deleteById(normalized.getRight());
-				
+
 				return true;
 			}
-			
+
 			return false;
 		}
 	}

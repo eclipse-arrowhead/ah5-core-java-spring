@@ -25,7 +25,7 @@ public class SelfContainedToken {
 	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "headerId", referencedColumnName = "id", nullable = false)
 	private TokenHeader header;
-	
+
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String variant;
 
@@ -37,7 +37,6 @@ public class SelfContainedToken {
 
 	//-------------------------------------------------------------------------------------------------
 	public SelfContainedToken() {
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -85,7 +84,7 @@ public class SelfContainedToken {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setVariant(String variant) {
+	public void setVariant(final String variant) {
 		this.variant = variant;
 	}
 

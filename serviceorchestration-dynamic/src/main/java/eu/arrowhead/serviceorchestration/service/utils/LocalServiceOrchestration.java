@@ -147,7 +147,7 @@ public class LocalServiceOrchestration {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
 					releaseTemporaryLockIfItWasLocked(jobId, candidates);
 					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found");
-					
+
 					return convertToOrchestrationResponse(List.of(), warnings);
 				}
 				candidates = doQoSCompliance(candidates);
@@ -222,7 +222,7 @@ public class LocalServiceOrchestration {
 
 			final OrchestrationResponseDTO result = convertToOrchestrationResponse(candidates, warnings);
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, candidates.size() + " local result");
-			
+
 			return result;
 		} catch (final Exception ex) {
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, ex.getMessage());
@@ -298,7 +298,7 @@ public class LocalServiceOrchestration {
 			if (!Utilities.isEmpty(expiredLocks)) {
 				orchLockDbService.deleteInBatch(expiredLocks);
 			}
-			
+
 			return candidates
 					.stream()
 					.filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId()))
@@ -358,7 +358,7 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutWhereExclusivityIsNotPossible started...");
-		
+
 		return candidates
 				.stream()
 				.filter(c -> c.canBeExclusive())
@@ -374,7 +374,7 @@ public class LocalServiceOrchestration {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -445,13 +445,13 @@ public class LocalServiceOrchestration {
 	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean considerAddressTypes) {
 		logger.debug("assortInterfacesAndMarkIfNonNative started...");
 
-		if (Utilities.isEmpty(form.getInterfaceTemplateNames()) 
-				&& Utilities.isEmpty(form.getInterfacePropertyRequirements()) 
+		if (Utilities.isEmpty(form.getInterfaceTemplateNames())
+				&& Utilities.isEmpty(form.getInterfacePropertyRequirements())
 				&& Utilities.isEmpty(form.getInterfaceAddressTypes())) {
 			for (final OrchestrationCandidate candidate : candidates) {
 				candidate.addMatchingInterfaces(candidate.getServiceInstance().interfaces());
 			}
-			
+
 			return;
 		}
 
@@ -475,7 +475,7 @@ public class LocalServiceOrchestration {
 				}
 
 				// Checking address types
-				if (considerAddressTypes 
+				if (considerAddressTypes
 						&& isMatchingInterface
 						&& !Utilities.isEmpty(form.getInterfaceAddressTypes())) {
 					isMatchingInterface = interfaceAddressPropertyProcessor.filterOnAddressTypes(offeredInterface.properties(), form.getInterfaceAddressTypes());
@@ -520,7 +520,7 @@ public class LocalServiceOrchestration {
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -554,7 +554,7 @@ public class LocalServiceOrchestration {
 				candidate.setPreferred(true);
 			}
 		}
-		
+
 		return hasPreferred;
 	}
 

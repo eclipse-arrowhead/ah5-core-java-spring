@@ -8,7 +8,10 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
+import eu.arrowhead.common.service.validation.name.EventTypeNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO;
 import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyRegistrationRequestDTO;
@@ -26,7 +29,19 @@ public class AuthorizationTokenNormalizer {
 	// members
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
+	
+	@Autowired
+	private CloudIdentifierNormalizer cloudIdentifierNormalizer;
+	
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+	
+	@Autowired
+	private EventTypeNameNormalizer eventTypeNameNormalizer;
+	
+	@Autowired
+	private AuthorizationScopeNormalizer scopeNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -80,16 +95,23 @@ public class AuthorizationTokenNormalizer {
 
 		return new AuthorizationTokenGenerationMgmtListRequestDTO(
 				dto.list().stream()
-						.map((item) -> new AuthorizationTokenGenerationMgmtRequestDTO(
+						.map((item) -> {
+							final String normalizedTargetType = Utilities.isEmpty(item.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : item.targetType().toUpperCase().trim();
+							final String normalizedTarget = AuthorizationTargetType.SERVICE_DEF.name().equals(normalizedTargetType)
+									? serviceDefNameNormalizer.normalize(item.target())
+									: eventTypeNameNormalizer.normalize(item.target());
+							
+							return new AuthorizationTokenGenerationMgmtRequestDTO(
 								item.tokenType().trim().toUpperCase(),
-								Utilities.isEmpty(item.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : item.targetType().toUpperCase().trim(),
-								Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : nameNormalizer.normalize(item.consumerCloud()),
-								nameNormalizer.normalize(item.consumer()),
-								nameNormalizer.normalize(item.provider()),
-								nameNormalizer.normalize(item.target()),
-								Utilities.isEmpty(item.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(item.scope()),
+								normalizedTargetType,
+								Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(item.consumerCloud()),
+								systemNameNormalizer.normalize(item.consumer()),
+								systemNameNormalizer.normalize(item.provider()),
+								normalizedTarget,
+								Utilities.isEmpty(item.scope()) ? null : scopeNormalizer.normalize(item.scope()),
 								Utilities.isEmpty(item.expiresAt()) ? null : item.expiresAt().trim(),
-								item.usageLimit()))
+								item.usageLimit()); 
+						})
 						.toList());
 	}
 

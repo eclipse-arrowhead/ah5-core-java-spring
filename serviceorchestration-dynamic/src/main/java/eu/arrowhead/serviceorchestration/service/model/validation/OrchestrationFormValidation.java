@@ -26,13 +26,13 @@ public class OrchestrationFormValidation {
 
 	@Autowired
 	private SystemNameValidator systemNameValidator;
-	
+
 	@Autowired
 	private ServiceDefinitionNameValidator serviceDefNameValidator;
-	
+
 	@Autowired
 	private ServiceOperationNameValidator serviceOpNameValidator;
-	
+
 	@Autowired
 	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
 
@@ -145,8 +145,8 @@ public class OrchestrationFormValidation {
 					}
 				});
 			}
-			
-			if (!Utilities.isEmpty(form.getOperations()) ) {
+
+			if (!Utilities.isEmpty(form.getOperations())) {
 				form.getOperations().forEach(op -> serviceOpNameValidator.validateServiceOperationName(op));
 			}
 

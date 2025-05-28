@@ -15,43 +15,48 @@ import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
 @Repository
 public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader, Long> {
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<TokenHeader> findByTokenHash(final String tokenHash);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByTokenHashIn(final List<String> tokenHashes);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByRequester(final String requester);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByTokenType(final AuthorizationTokenType tokenType);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByConsumerCloud(final String consumerCloud);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByConsumer(final String consumer);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByProvider(final String provider);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByTarget(final String target);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findAllByTargetType(final AuthorizationTargetType targetType);
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<TokenHeader> findByProviderAndTokenHash(final String provider, final String tokenHash);
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(final String consumerCloud, final String counsumer, final String provider, final String target, final AuthorizationTargetType targetType);
-	
+	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(
+			final String consumerCloud,
+			final String counsumer,
+			final String provider,
+			final String target,
+			final AuthorizationTargetType targetType);
+
 	//-------------------------------------------------------------------------------------------------
 	public Page<TokenHeader> findAllByIdIn(final Collection<Long> ids, final Pageable pageble);
 }

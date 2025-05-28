@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -20,7 +19,6 @@ import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
-import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
 
@@ -45,9 +43,6 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 	@Value(Constants.$SERVICE_ADDRESS_ALIAS)
 	private List<String> serviceAddressAliases;
-
-	@Autowired
-	private SystemNameNormalizer systemNameNormalizer;
 
 	private SystemModel systemModel;
 

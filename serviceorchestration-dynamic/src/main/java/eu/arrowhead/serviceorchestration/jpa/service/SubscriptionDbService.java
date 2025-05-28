@@ -73,7 +73,7 @@ public class SubscriptionDbService {
 
 			subscriptionRepo.deleteAllById(toRemove);
 			subscriptionRepo.flush();
-			
+
 			return subscriptionRepo.saveAllAndFlush(toSave);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -146,7 +146,7 @@ public class SubscriptionDbService {
 		try {
 			BaseFilter baseFilter = BaseFilter.NONE;
 			List<Subscription> toFilter;
-			
+
 			if (!Utilities.isEmpty(ownerSystems)) {
 				toFilter = subscriptionRepo.findByOwnerSystemIn(ownerSystems);
 				baseFilter = BaseFilter.OWNER;
@@ -197,10 +197,10 @@ public class SubscriptionDbService {
 			if (subscriptionRepo.existsById(id)) {
 				subscriptionRepo.deleteById(id);
 				subscriptionRepo.flush();
-				
+
 				return true;
 			}
-			
+
 			return false;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());

@@ -14,7 +14,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 
 @Repository
 public interface OrchestrationLockRepository extends RefreshableRepository<OrchestrationLock, Long> {
-	
+
 	//=================================================================================================
 	// methods
 

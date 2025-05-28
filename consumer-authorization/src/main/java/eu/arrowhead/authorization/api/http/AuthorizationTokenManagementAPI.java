@@ -54,8 +54,9 @@ public class AuthorizationTokenManagementAPI {
 
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:linelength")
 	@Operation(summary = "Returns the generated authorization tokens and their parameters.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
@@ -69,22 +70,21 @@ public class AuthorizationTokenManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@ResponseStatus(HttpStatus.CREATED)
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_GENERATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(HttpStatus.CREATED)
 	public @ResponseBody AuthorizationTokenMgmtListResponseDTO generateTokens(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final AuthorizationTokenGenerationMgmtListRequestDTO dto,
-			@Parameter(name = "unbound",
-			   description = "Set true if you want to skip the authorization check. (It should be configured in the application.properties as well.)",
-			   example = "true") @RequestParam(required = false, defaultValue = "false") final boolean unbound) {
+			@Parameter(name = Constants.UNBOUND, description = "Set true if you want to skip the authorization check. (It should be configured in the application.properties as well)", example = "true") @RequestParam(required = false, defaultValue = "false") final boolean unbound) {
 		logger.debug("generateTokens started");
-		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
+
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH
+				+ AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
 		final String requester = sysNamePreprocessor.process(httpServletRequest, origin);
-		
+
 		return mgmtService.generateTokensOperation(requester, dto, unbound, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the matching token entries according to the given filters.")
 	@ApiResponses(value = {
@@ -102,11 +102,13 @@ public class AuthorizationTokenManagementAPI {
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody AuthorizationTokenMgmtListResponseDTO queryTokens(@RequestBody final AuthorizationTokenQueryRequestDTO dto) {
 		logger.debug("queryTokens started");
-		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_QUERY_PATH;
+
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH
+				+ AuthorizationConstants.HTTP_API_OP_QUERY_PATH;
+
 		return mgmtService.queryTokensOperation(dto, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes token entries by tokenReference if exists")
 	@ApiResponses(value = {
@@ -123,11 +125,13 @@ public class AuthorizationTokenManagementAPI {
 	@DeleteMapping(path = AuthorizationConstants.HTTP_API_OP_REVOKE_PATH)
 	public void revokeTokens(@RequestParam final List<String> tokenReferences) {
 		logger.debug("revokeTokens started");
-		
-		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_REVOKE_PATH;
+
+		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH
+				+ AuthorizationConstants.HTTP_API_OP_REVOKE_PATH;
+
 		mgmtService.revokeTokensOperation(tokenReferences, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Returns the created encryption key entries.")
 	@ApiResponses(value = {
@@ -142,15 +146,17 @@ public class AuthorizationTokenManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@ResponseStatus(HttpStatus.CREATED)
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(HttpStatus.CREATED)
 	public @ResponseBody AuthorizationMgmtEncryptionKeyListResponseDTO addEncryptionKeys(@RequestBody final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto) {
 		logger.debug("addEncryptionKeys started");
-		
-		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+
+		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH
+				+ AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+
 		return mgmtService.addEncryptionKeysOperation(dto, origin);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Operation(summary = "Deletes encryption key entries if exists")
 	@ApiResponses(value = {
@@ -167,8 +173,10 @@ public class AuthorizationTokenManagementAPI {
 	@DeleteMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH)
 	public void removeEncryptionKeys(@RequestParam final List<String> systemNames) {
 		logger.debug("removeEncryptionKeys started");
-		
-		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+
+		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH
+				+ AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
+
 		mgmtService.removeEncryptionKeysOperation(systemNames, origin);
 	}
 }

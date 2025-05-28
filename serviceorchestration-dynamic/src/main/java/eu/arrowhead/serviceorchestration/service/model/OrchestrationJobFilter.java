@@ -75,7 +75,7 @@ public class OrchestrationJobFilter {
 		if (!Utilities.isEmpty(serviceDefinitions)) {
 			return BaseFilter.SERVICE;
 		}
-		
+
 		return BaseFilter.NONE;
 	}
 

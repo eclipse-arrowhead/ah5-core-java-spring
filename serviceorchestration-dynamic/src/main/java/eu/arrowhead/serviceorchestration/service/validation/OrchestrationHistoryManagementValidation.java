@@ -27,7 +27,7 @@ public class OrchestrationHistoryManagementValidation {
 
 	@Autowired
 	private SystemNameValidator systemNameValidator;
-	
+
 	@Autowired
 	private ServiceDefinitionNameValidator serviceDefNameValidator;
 
@@ -72,7 +72,7 @@ public class OrchestrationHistoryManagementValidation {
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
-		
+
 		normalized.subscriptionIds().forEach(id -> {
 			if (!Utilities.isUUID(id)) {
 				throw new InvalidParameterException("Invalid id: " + id, origin);
@@ -81,10 +81,10 @@ public class OrchestrationHistoryManagementValidation {
 
 		return normalized;
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	// VALIDATION
 

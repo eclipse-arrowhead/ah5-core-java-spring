@@ -79,13 +79,19 @@ public class AuthorizationTokenManagementService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenMgmtListResponseDTO generateTokensOperation(final String requester, final AuthorizationTokenGenerationMgmtListRequestDTO dto, final boolean unbounded, final String origin) {
+	public AuthorizationTokenMgmtListResponseDTO generateTokensOperation(
+			final String requester,
+			final AuthorizationTokenGenerationMgmtListRequestDTO dto,
+			final boolean unbounded,
+			final String origin) {
 		logger.debug("generateTokensOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requester, origin);
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateTokenRequests(dto, origin);
 		List<AuthorizationTokenGenerationMgmtRequestDTO> authorizedRequests = normalizedDTO.list();
+
+		// TODO: continue
 
 		boolean skipAuth = false;
 		if (unbounded) {

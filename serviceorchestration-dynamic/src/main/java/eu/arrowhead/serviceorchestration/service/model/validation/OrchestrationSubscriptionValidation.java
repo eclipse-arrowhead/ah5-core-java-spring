@@ -71,7 +71,7 @@ public class OrchestrationSubscriptionValidation {
 		logger.debug("validateAndNormalizeOrchestrationSubscription started...");
 
 		validateOrchestrationSubscription(subscription, origin);
-		orchFormValidator.validateAndNormalizeOrchestrationForm(subscription.getOrchestrationForm(), true, origin); // we skip form pre-validation, because previous method already done that 
+		orchFormValidator.validateAndNormalizeOrchestrationForm(subscription.getOrchestrationForm(), true, origin); // we skip form pre-validation, because previous method already done that
 
 		subscription.setNotifyProtocol(subscription.getNotifyProtocol().trim().toUpperCase());
 		if (!Utilities.isEnumValue(subscription.getNotifyProtocol(), NotifyProtocol.class)) {

@@ -198,7 +198,7 @@ public class OrchestrationPushManagementService {
 
 		try {
 			final Page<Subscription> results = subscriptionDbService.query(dto.ownerSystems(), dto.targetSystems(), dto.serviceDefinitions(), pageRequest);
-			
+
 			return dtoConverter.convertSubscriptionListToDTO(results.getContent(), results.getTotalElements());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

@@ -31,7 +31,7 @@ public class OrchestrationValidation {
 
 	@Autowired
 	private OrchestrationSubscriptionValidation orchSubsValidator;
-	
+
 	@Autowired
 	private SystemNameValidator systemNameValidator;
 
@@ -67,19 +67,19 @@ public class OrchestrationValidation {
 
 		validatePushUnsubscribeService(requesterSystem, subscriptionId, origin);
 		final Pair<String, UUID> normalized = normalization.normalizePushUnsubscribe(requesterSystem, subscriptionId);
-		
+
 		try {
 			systemNameValidator.validateSystemName(normalized.getLeft());
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
-		
+
 		return normalized;
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public void validatePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
 		logger.debug("validatePushUnsubscribeService started...");

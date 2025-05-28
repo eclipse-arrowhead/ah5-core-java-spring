@@ -83,6 +83,14 @@ public class OrchestrationJob {
 		this.subscriptionId = subscriptionId;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestartionJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
+				+ serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
+				+ finishedAt + "]";
+	}
+
 	//=================================================================================================
 	// boilerplate
 
@@ -194,13 +202,5 @@ public class OrchestrationJob {
 	//-------------------------------------------------------------------------------------------------
 	public void setFinishedAt(final ZonedDateTime finishedAt) {
 		this.finishedAt = finishedAt;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public String toString() {
-		return "OrchestartionJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
-				+ serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
-				+ finishedAt + "]";
 	}
 }

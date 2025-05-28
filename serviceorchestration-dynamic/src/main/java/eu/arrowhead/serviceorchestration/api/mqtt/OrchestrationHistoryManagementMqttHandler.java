@@ -68,7 +68,7 @@ public class OrchestrationHistoryManagementMqttHandler extends MqttTopicHandler 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto) {
 		logger.debug("OrchestrationHistoryManagementMqttHandler.query started");
-		
+
 		return historyMgmtService.query(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_QUERY);
 	}
 }

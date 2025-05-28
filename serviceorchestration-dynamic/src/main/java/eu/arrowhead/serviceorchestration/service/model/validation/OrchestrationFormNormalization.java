@@ -24,13 +24,13 @@ public class OrchestrationFormNormalization {
 
 	@Autowired
 	private SystemNameNormalizer systemNameNormalizer;
-	
+
 	@Autowired
 	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
-	
+
 	@Autowired
 	private ServiceOperationNameNormalizer serviceOpNameNormalizer;
-	
+
 	@Autowired
 	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
 

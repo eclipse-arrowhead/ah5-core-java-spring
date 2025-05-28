@@ -78,6 +78,7 @@ public class OrchestrationAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:linelength")
 	@Operation(summary = "Returns a subscription id. Existing subscriptions will be overwritten.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
@@ -97,7 +98,7 @@ public class OrchestrationAPI {
 	public ResponseEntity<String> pushSubscribe(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final OrchestrationSubscriptionRequestDTO dto,
-			@Parameter(name = DynamicServiceOrchestrationConstants.PARAM_NAME_TRIGGER, description = "Set to true in order to initiate a push orchestration after the successful subscription.") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
+			@Parameter(name = DynamicServiceOrchestrationConstants.PARAM_NAME_TRIGGER, description = "Set to true in order to initiate a push orchestration after the successful subscription") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
 		logger.debug("pushSubscribe started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;

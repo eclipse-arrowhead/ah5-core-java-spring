@@ -9,8 +9,8 @@
 	<artifactId>arrowhead-serviceorchestration-dynamic</artifactId>
 	<version>5.0.0</version>
 	<packaging>jar</packaging>
-	<name>Arrowhead Service Orchestration - Dynamic</name>
-	<description>Arrowhead Service Orchestration (Dynamic) using Spring Boot</description>
+	<name>Arrowhead System DynamicServiceOrchestration</name>
+	<description>Arrowhead DynamicServiceOrchestration using Spring Boot</description>
 
 	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
 	

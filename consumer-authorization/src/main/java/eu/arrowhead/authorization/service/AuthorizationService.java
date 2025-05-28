@@ -65,7 +65,7 @@ public class AuthorizationService {
 		final NormalizedGrantRequest normalized = validator.validateAndNormalizeGrantRequest(normalizedProvider, dto, origin);
 
 		try {
-			final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(normalized);
+			final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(normalized); // second is whether we created a new policy or not
 
 			return Pair.of(
 					dtoConverter.convertPolicyToResponse(AuthorizationLevel.PROVIDER, result.getFirst()),
