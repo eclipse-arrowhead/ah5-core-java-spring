@@ -119,16 +119,24 @@ public class AuthorizationTokenNormalizer {
 	public AuthorizationTokenQueryRequestDTO normalizeAuthorizationTokenQueryRequestDTO(final AuthorizationTokenQueryRequestDTO dto) {
 		logger.debug("normalizeAuthorizationTokenQueryRequestDTO started...");
 		Assert.notNull(dto, "AuthorizationTokenQueryRequestDTO is null.");
+		
+		final String normalizedTargetTypeStr = Utilities.isEmpty(dto.targetType()) ? null : dto.targetType().trim().toUpperCase();
+		String normalizedTarget = null;
+		if (!Utilities.isEmpty(dto.target())) {
+			normalizedTarget = normalizedTargetTypeStr == null || AuthorizationTargetType.SERVICE_DEF.name().equals(normalizedTargetTypeStr)
+					? serviceDefNameNormalizer.normalize(dto.target())
+					: eventTypeNameNormalizer.normalize(dto.target());
+		}
 
 		return new AuthorizationTokenQueryRequestDTO(
 				dto.pagination(),
-				Utilities.isEmpty(dto.requester()) ? null : nameNormalizer.normalize(dto.requester()),
+				Utilities.isEmpty(dto.requester()) ? null : systemNameNormalizer.normalize(dto.requester()),
 				Utilities.isEmpty(dto.tokenType()) ? null : dto.tokenType().trim().toUpperCase(),
-				Utilities.isEmpty(dto.consumerCloud()) ? null : nameNormalizer.normalize(dto.consumerCloud()),
-				Utilities.isEmpty(dto.consumer()) ? null : nameNormalizer.normalize(dto.consumer()),
-				Utilities.isEmpty(dto.provider()) ? null : nameNormalizer.normalize(dto.provider()),
-				Utilities.isEmpty(dto.targetType()) ? null : dto.targetType().trim().toUpperCase(),
-				Utilities.isEmpty(dto.target()) ? null : nameNormalizer.normalize(dto.target()));
+				Utilities.isEmpty(dto.consumerCloud()) ? null : cloudIdentifierNormalizer.normalize(dto.consumerCloud()),
+				Utilities.isEmpty(dto.consumer()) ? null : systemNameNormalizer.normalize(dto.consumer()),
+				Utilities.isEmpty(dto.provider()) ? null : systemNameNormalizer.normalize(dto.provider()),
+				normalizedTargetTypeStr,
+				normalizedTarget);
 	}
 
 	//-------------------------------------------------------------------------------------------------

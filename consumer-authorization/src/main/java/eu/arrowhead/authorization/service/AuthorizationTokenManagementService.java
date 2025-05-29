@@ -26,7 +26,6 @@ import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationTokenManagementValidation;
-import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
@@ -91,8 +90,6 @@ public class AuthorizationTokenManagementService {
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateTokenRequests(dto, origin);
 		List<AuthorizationTokenGenerationMgmtRequestDTO> authorizedRequests = normalizedDTO.list();
 
-		// TODO: continue
-
 		boolean skipAuth = false;
 		if (unbounded) {
 			skipAuth = sysInfo.hasSystemUnboundedTokenGenerationRight(normalizedRequester);
@@ -105,7 +102,13 @@ public class AuthorizationTokenManagementService {
 			// Check permission
 			authorizedRequests = normalizedDTO.list().stream()
 					.filter((request) -> policyEngine.isAccessGranted(
-							new NormalizedVerifyRequest(request.provider(), request.consumer(), request.consumerCloud(), AuthorizationTargetType.valueOf(request.targetType()), request.target(), request.scope())))
+							new NormalizedVerifyRequest(
+									request.provider(),
+									request.consumer(),
+									request.consumerCloud(),
+									AuthorizationTargetType.valueOf(request.targetType()),
+									request.target(),
+									request.scope())))
 					.toList();
 
 			if (Utilities.isEmpty(authorizedRequests)) {
@@ -116,9 +119,18 @@ public class AuthorizationTokenManagementService {
 		// Generate Tokens
 		final List<TokenModel> tokenResults = new ArrayList<>(authorizedRequests.size());
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : authorizedRequests) {
-			tokenResults.add(
-					tokenEngine.produce(requester, request.consumer(), request.consumerCloud(), ServiceInterfacePolicy.valueOf(request.tokenType()), request.provider(), AuthorizationTargetType.valueOf(request.targetType()), request.target(),
-							Utilities.isEmpty(request.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : request.scope(), request.usageLimit(), Utilities.parseUTCStringToZonedDateTime(request.expiresAt()), origin).getFirst());
+			tokenResults.add(tokenEngine.produce(
+					requester,
+					request.consumer(),
+					request.consumerCloud(),
+					ServiceInterfacePolicy.valueOf(request.tokenType()),
+					request.provider(),
+					AuthorizationTargetType.valueOf(request.targetType()),
+					request.target(),
+					Utilities.isEmpty(request.scope()) ? null : request.scope(),
+					request.usageLimit(),
+					Utilities.parseUTCStringToZonedDateTime(request.expiresAt()),
+					origin).getFirst());
 		}
 
 		// Encrypt token if required
@@ -126,7 +138,6 @@ public class AuthorizationTokenManagementService {
 		for (final TokenModel tokenResult : tokenResults) {
 			if (tokenResult.getTokenType() != AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
 				finalResults.add(dtoConverter.convertTokenModelToMgmtResponse(tokenResult));
-
 			} else {
 				encryptTokenIfNeeded(tokenResult, origin);
 				finalResults.add(dtoConverter.convertTokenModelToMgmtResponse(tokenResult));
@@ -142,7 +153,6 @@ public class AuthorizationTokenManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final AuthorizationTokenQueryRequestDTO normalized = validator.validateAndNormalizedQueryTokensRequest(dto, origin);
-
 		final PageRequest pageRequest = pageService.getPageRequest(
 				normalized.pagination(),
 				Direction.ASC,
@@ -150,12 +160,24 @@ public class AuthorizationTokenManagementService {
 				TokenHeader.DEFAULT_SORT_FIELD,
 				origin);
 
-		final Page<TokenModel> page = tokenEngine.query(pageRequest, normalized.requester(), Utilities.isEmpty(normalized.tokenType()) ? null : AuthorizationTokenType.valueOf(normalized.tokenType()), normalized.consumerCloud(), normalized.consumer(),
-				normalized.provider(), Utilities.isEmpty(normalized.targetType()) ? null : AuthorizationTargetType.valueOf(normalized.targetType()), normalized.target(), origin);
+		final Page<TokenModel> page = tokenEngine.query(
+				pageRequest,
+				normalized.requester(),
+				Utilities.isEmpty(normalized.tokenType()) ? null : AuthorizationTokenType.valueOf(normalized.tokenType()),
+				normalized.consumerCloud(),
+				normalized.consumer(),
+				normalized.provider(),
+				Utilities.isEmpty(normalized.targetType()) ? null : AuthorizationTargetType.valueOf(normalized.targetType()),
+				normalized.target(),
+				origin);
 
-		return new AuthorizationTokenMgmtListResponseDTO(page.getContent().stream().map(t -> dtoConverter.convertTokenModelToMgmtResponse(t)).toList(), page.getTotalElements());
+		return new AuthorizationTokenMgmtListResponseDTO(
+				page.getContent().stream().map(t -> dtoConverter.convertTokenModelToMgmtResponse(t)).toList(),
+				page.getTotalElements());
 	}
 
+	// TODO: cont
+	
 	//-------------------------------------------------------------------------------------------------
 	public void revokeTokensOperation(final List<String> tokenReferences, final String origin) {
 		logger.debug("revokeTokensOperation started...");
@@ -235,21 +257,23 @@ public class AuthorizationTokenManagementService {
 		if (encryptionKeyRecordOpt.isPresent()) {
 			try {
 				final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-				final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getEncryptedKey(), encryptionKeyRecord.getInternalAuxiliary().getValue(), sysInfo.getSecretCryptographerKey());
+				final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(
+						encryptionKeyRecord.getEncryptedKey(),
+						encryptionKeyRecord.getInternalAuxiliary().getValue(),
+						sysInfo.getSecretCryptographerKey());
 
 				if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
 					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getRawToken(), plainEncryptionKey));
-
 				} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
-					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenResult.getRawToken(), plainEncryptionKey, encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
-
+					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(
+							tokenResult.getRawToken(),
+							plainEncryptionKey,
+							encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
 				} else {
 					throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
 				}
-
 			} catch (final InternalServerError ex) {
 				throw new InternalServerError(ex.getMessage(), origin);
-
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
 				logger.debug(ex);
