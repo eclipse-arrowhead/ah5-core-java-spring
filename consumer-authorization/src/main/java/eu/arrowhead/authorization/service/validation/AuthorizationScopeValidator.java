@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import eu.arrowhead.authorization.AuthorizationDefaults;
 import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 
@@ -30,7 +31,7 @@ public class AuthorizationScopeValidator {
 	public void validateScope(final String scope) {
 		logger.debug("validateScope started: {}", scope);
 
-		if (AuthorizationDefaults.DEFAULT_SCOPE.equals(scope)) {
+		if (Defaults.DEFAULT_AUTHORIZATION_SCOPE.equals(scope)) {
 			return;
 		}
 

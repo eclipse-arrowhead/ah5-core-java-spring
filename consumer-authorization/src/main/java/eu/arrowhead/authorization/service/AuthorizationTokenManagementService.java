@@ -2,7 +2,6 @@ package eu.arrowhead.authorization.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,10 +20,10 @@ import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
+import eu.arrowhead.authorization.service.engine.TokenEngine;
 import eu.arrowhead.authorization.service.model.EncryptionKeyModel;
 import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
-import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationTokenManagementValidation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
@@ -130,7 +129,7 @@ public class AuthorizationTokenManagementService {
 					Utilities.isEmpty(request.scope()) ? null : request.scope(),
 					request.usageLimit(),
 					Utilities.parseUTCStringToZonedDateTime(request.expiresAt()),
-					origin).getFirst());
+					origin));
 		}
 
 		// Encrypt token if required
@@ -139,7 +138,7 @@ public class AuthorizationTokenManagementService {
 			if (tokenResult.getTokenType() != AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
 				finalResults.add(dtoConverter.convertTokenModelToMgmtResponse(tokenResult));
 			} else {
-				encryptTokenIfNeeded(tokenResult, origin);
+				tokenEngine.encryptTokenIfNeeded(tokenResult, origin);
 				finalResults.add(dtoConverter.convertTokenModelToMgmtResponse(tokenResult));
 			}
 		}
@@ -176,13 +175,12 @@ public class AuthorizationTokenManagementService {
 				page.getTotalElements());
 	}
 
-	// TODO: cont
-	
 	//-------------------------------------------------------------------------------------------------
 	public void revokeTokensOperation(final List<String> tokenReferences, final String origin) {
 		logger.debug("revokeTokensOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
+		validator.validateTokenReferences(tokenReferences, origin);
 		tokenEngine.revoke(tokenReferences, origin);
 	}
 
@@ -194,25 +192,29 @@ public class AuthorizationTokenManagementService {
 		final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalizedDTO = validator.validateAndNormalizeAddEncryptionKeysRequest(dto, origin);
 
 		final List<EncryptionKeyModel> models = new ArrayList<EncryptionKeyModel>(normalizedDTO.list().size());
-
 		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO item : normalizedDTO.list()) {
-
 			String externalKeyAuxiliary = null;
 			if (item.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
 				externalKeyAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 			}
 
 			// Encrypt the key for saving into the DB
-			Pair<String, String> encryptedKeyToSave = null;
+			Pair<String, String> encryptedKeyToSave = null; // encrypted key and internal IV in that order
 			try {
 				encryptedKeyToSave = secretCryptographer.encryptAESCBCPKCS5P_IV(item.key(), sysInfo.getSecretCryptographerKey());
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
 				logger.debug(ex);
-				throw new InternalServerError("Secret encryption failed!", origin);
+				throw new InternalServerError("Secret encryption failed", origin);
 			}
 
-			models.add(new EncryptionKeyModel(item.systemName(), item.key(), encryptedKeyToSave.getFirst(), item.algorithm(), encryptedKeyToSave.getSecond(), externalKeyAuxiliary));
+			models.add(new EncryptionKeyModel(
+					item.systemName(),
+					item.key(),
+					encryptedKeyToSave.getFirst(), // encrypted key
+					item.algorithm(),
+					encryptedKeyToSave.getSecond(), // internal IV
+					externalKeyAuxiliary));
 		}
 
 		try {
@@ -220,12 +222,16 @@ public class AuthorizationTokenManagementService {
 
 			// Change the keyValue from encrypted to raw
 			for (final EncryptionKey encryptionKey : result) {
-				final String rawKeyValue = models.stream().filter((item) -> item.getSystemName().equals(encryptionKey.getSystemName())).findFirst().get().getKeyValue();
+				final String rawKeyValue = models
+						.stream()
+						.filter((item) -> item.getSystemName().equals(encryptionKey.getSystemName()))
+						.findFirst()
+						.get()
+						.getKeyValue();
 				encryptionKey.setEncryptedKey(rawKeyValue);
 			}
 
 			return dtoConverter.convertEncryptionKeyListToResponse(result, result.size());
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -236,49 +242,15 @@ public class AuthorizationTokenManagementService {
 		logger.debug("removeEncriptionKeysOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final List<String> normalized = systemNames.stream().map((name) -> validator.validateAndNormalizeSystemName(name, origin)).toList();
+		final List<String> normalized = systemNames
+				.stream()
+				.map((name) -> validator.validateAndNormalizeSystemName(name, origin))
+				.toList();
 
 		try {
 			encryptionKeyDbService.delete(normalized);
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
-		}
-	}
-
-	//=================================================================================================
-	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private void encryptTokenIfNeeded(final TokenModel tokenResult, final String origin) {
-		logger.debug("encryptTokenIfNeeded started...");
-
-		final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(tokenResult.getProvider());
-		if (encryptionKeyRecordOpt.isPresent()) {
-			try {
-				final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-				final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(
-						encryptionKeyRecord.getEncryptedKey(),
-						encryptionKeyRecord.getInternalAuxiliary().getValue(),
-						sysInfo.getSecretCryptographerKey());
-
-				if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
-					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getRawToken(), plainEncryptionKey));
-				} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
-					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(
-							tokenResult.getRawToken(),
-							plainEncryptionKey,
-							encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
-				} else {
-					throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
-				}
-			} catch (final InternalServerError ex) {
-				throw new InternalServerError(ex.getMessage(), origin);
-			} catch (final Exception ex) {
-				logger.error(ex.getMessage());
-				logger.debug(ex);
-				throw new InternalServerError("Token encryption failed!", origin);
-			}
 		}
 	}
 }

@@ -2,8 +2,8 @@ package eu.arrowhead.authorization.service.validation;
 
 import java.time.DateTimeException;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,8 +16,6 @@ import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
 import eu.arrowhead.authorization.service.normalization.AuthorizationTokenNormalizer;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
-import eu.arrowhead.common.Constants;
-import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
@@ -71,28 +69,16 @@ public class AuthorizationTokenManagementValidation {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateAddEncryptionKeysRequest(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
-		logger.debug("validateAddEncryptionKeysRequest started...");
+	public void validateTokenReferences(final List<String> tokenReferences, final String origin) {
+		logger.debug("validateTokenReferences started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		if (dto == null || Utilities.isEmpty(dto.list())) {
-			throw new InvalidParameterException("Request payload is missing", origin);
+		if (Utilities.isEmpty(tokenReferences)) {
+			throw new InvalidParameterException("Token references list is empty", origin);
 		}
 
-		if (Utilities.containsNull(dto.list())) {
-			throw new InvalidParameterException("Request payload list contains null element", origin);
-		}
-
-		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO request : dto.list()) {
-			if (Utilities.isEmpty(request.systemName())) {
-				throw new InvalidParameterException("System name is missing", origin);
-			}
-			if (Utilities.isEmpty(request.algorithm())) {
-				throw new InvalidParameterException("Algorithm is missing.", origin);
-			}
-			if (Utilities.isEmpty(request.key())) {
-				throw new InvalidParameterException("Key is missing.", origin);
-			}
+		if (Utilities.containsNullOrEmpty(tokenReferences)) {
+			throw new InvalidParameterException("Token references list contains null or empty element", origin);
 		}
 	}
 
@@ -192,16 +178,16 @@ public class AuthorizationTokenManagementValidation {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateAddEncryptionKeysRequest(dto, origin);
-
 		final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(dto);
 
 		final Set<String> sysNames = new HashSet<>(normalized.list().size());
 		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO request : normalized.list()) {
 			try {
-				nameValidator.validateName(request.systemName());
+				systemNameValidator.validateSystemName(request.systemName());
 			} catch (final InvalidParameterException ex) {
 				throw new InvalidParameterException(ex.getMessage(), origin);
 			}
+
 			if (sysNames.contains(request.systemName())) {
 				throw new InvalidParameterException("Duplicate system name: " + request.systemName(), origin);
 			}
@@ -210,8 +196,9 @@ public class AuthorizationTokenManagementValidation {
 			if (!(request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM) || request.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED))) {
 				throw new InvalidParameterException("Unsupported algorithm", origin);
 			}
+
 			if (request.key().getBytes().length < SecretCryptographer.AES_KEY_MIN_SIZE) {
-				throw new InvalidParameterException("Key size must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long for system: " + request.systemName());
+				throw new InvalidParameterException("Key must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long for system: " + request.systemName());
 			}
 		}
 
@@ -312,14 +299,41 @@ public class AuthorizationTokenManagementValidation {
 
 		if (!Utilities.isEmpty(dto.tokenType())) {
 			final String tokenTypeStr = dto.tokenType().toUpperCase().trim();
-			if (!Utilities.isEnumValue(tokenTypeStr, AuthorizationTokenType.class))
+			if (!Utilities.isEnumValue(tokenTypeStr, AuthorizationTokenType.class)) {
 				throw new InvalidParameterException("Invalid token type: " + tokenTypeStr, origin);
+			}
 		}
 
 		if (!Utilities.isEmpty(dto.targetType())) {
 			final String targetTypeStr = dto.targetType().toUpperCase().trim();
 			if (!Utilities.isEnumValue(targetTypeStr, AuthorizationTargetType.class)) {
 				throw new InvalidParameterException("Invalid target type: " + targetTypeStr, origin);
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateAddEncryptionKeysRequest(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
+		logger.debug("validateAddEncryptionKeysRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null || Utilities.isEmpty(dto.list())) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.containsNull(dto.list())) {
+			throw new InvalidParameterException("Request payload list contains null element", origin);
+		}
+
+		for (final AuthorizationMgmtEncryptionKeyRegistrationRequestDTO request : dto.list()) {
+			if (Utilities.isEmpty(request.systemName())) {
+				throw new InvalidParameterException("System name is missing", origin);
+			}
+			if (Utilities.isEmpty(request.algorithm())) {
+				throw new InvalidParameterException("Algorithm is missing", origin);
+			}
+			if (Utilities.isEmpty(request.key())) {
+				throw new InvalidParameterException("Key is missing", origin);
 			}
 		}
 	}

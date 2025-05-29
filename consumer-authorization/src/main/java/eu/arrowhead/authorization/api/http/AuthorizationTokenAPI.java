@@ -104,7 +104,7 @@ public class AuthorizationTokenAPI {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Return the public key of the server if any.")
+	@Operation(summary = "Returns the public key of the server if any.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),

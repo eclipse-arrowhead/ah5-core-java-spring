@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.name.EventTypeNameNormalizer;
@@ -30,16 +29,16 @@ public class AuthorizationTokenNormalizer {
 
 	@Autowired
 	private SystemNameNormalizer systemNameNormalizer;
-	
+
 	@Autowired
 	private CloudIdentifierNormalizer cloudIdentifierNormalizer;
-	
+
 	@Autowired
 	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
-	
+
 	@Autowired
 	private EventTypeNameNormalizer eventTypeNameNormalizer;
-	
+
 	@Autowired
 	private AuthorizationScopeNormalizer scopeNormalizer;
 
@@ -53,7 +52,7 @@ public class AuthorizationTokenNormalizer {
 		logger.debug("normalizeSystemName started...");
 		Assert.isTrue(!Utilities.isEmpty(name), "System name is empty.");
 
-		return nameNormalizer.normalize(name);
+		return systemNameNormalizer.normalize(name);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -69,18 +68,23 @@ public class AuthorizationTokenNormalizer {
 		logger.debug("normalizeAuthorizationTokenGenerationRequestDTO started...");
 		Assert.notNull(dto, "AuthorizationTokenGenerationRequestDTO is null.");
 
+		final String normalizedTargetType = Utilities.isEmpty(dto.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : dto.targetType().toUpperCase().trim();
+		final String normalizedTarget = AuthorizationTargetType.SERVICE_DEF.name().equals(normalizedTargetType)
+				? serviceDefNameNormalizer.normalize(dto.target())
+				: eventTypeNameNormalizer.normalize(dto.target());
+
 		return new AuthorizationTokenGenerationRequestDTO(
 				dto.tokenType().toUpperCase().trim(),
-				nameNormalizer.normalize(dto.provider()),
-				Utilities.isEmpty(dto.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : dto.targetType().toUpperCase().trim(),
-				nameNormalizer.normalize(dto.target()),
-				Utilities.isEmpty(dto.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : nameNormalizer.normalize(dto.scope()));
+				systemNameNormalizer.normalize(dto.provider()),
+				normalizedTargetType,
+				normalizedTarget,
+				Utilities.isEmpty(dto.scope()) ? null : scopeNormalizer.normalize(dto.scope()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationEncryptionKeyRegistrationRequestDTO normalizeAuthorizationEncryptionKeyRegistrationRequestDTO(final AuthorizationEncryptionKeyRegistrationRequestDTO dto) {
 		logger.debug("normalizeAuthorizationEncryptionKeyRegistrationRequestDTO started...");
-		Assert.notNull(dto, "AuthorizationEncryptionKeyRegistrationRequestDTO is null.");
+		Assert.notNull(dto, "AuthorizationEncryptionKeyRegistrationRequestDTO is null");
 
 		return new AuthorizationEncryptionKeyRegistrationRequestDTO(
 				dto.key(),
@@ -100,17 +104,17 @@ public class AuthorizationTokenNormalizer {
 							final String normalizedTarget = AuthorizationTargetType.SERVICE_DEF.name().equals(normalizedTargetType)
 									? serviceDefNameNormalizer.normalize(item.target())
 									: eventTypeNameNormalizer.normalize(item.target());
-							
+
 							return new AuthorizationTokenGenerationMgmtRequestDTO(
-								item.tokenType().trim().toUpperCase(),
-								normalizedTargetType,
-								Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(item.consumerCloud()),
-								systemNameNormalizer.normalize(item.consumer()),
-								systemNameNormalizer.normalize(item.provider()),
-								normalizedTarget,
-								Utilities.isEmpty(item.scope()) ? null : scopeNormalizer.normalize(item.scope()),
-								Utilities.isEmpty(item.expiresAt()) ? null : item.expiresAt().trim(),
-								item.usageLimit()); 
+									item.tokenType().trim().toUpperCase(),
+									normalizedTargetType,
+									Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(item.consumerCloud()),
+									systemNameNormalizer.normalize(item.consumer()),
+									systemNameNormalizer.normalize(item.provider()),
+									normalizedTarget,
+									Utilities.isEmpty(item.scope()) ? null : scopeNormalizer.normalize(item.scope()),
+									Utilities.isEmpty(item.expiresAt()) ? null : item.expiresAt().trim(),
+									item.usageLimit());
 						})
 						.toList());
 	}
@@ -119,7 +123,7 @@ public class AuthorizationTokenNormalizer {
 	public AuthorizationTokenQueryRequestDTO normalizeAuthorizationTokenQueryRequestDTO(final AuthorizationTokenQueryRequestDTO dto) {
 		logger.debug("normalizeAuthorizationTokenQueryRequestDTO started...");
 		Assert.notNull(dto, "AuthorizationTokenQueryRequestDTO is null.");
-		
+
 		final String normalizedTargetTypeStr = Utilities.isEmpty(dto.targetType()) ? null : dto.targetType().trim().toUpperCase();
 		String normalizedTarget = null;
 		if (!Utilities.isEmpty(dto.target())) {
@@ -146,8 +150,12 @@ public class AuthorizationTokenNormalizer {
 		Assert.notNull(dto.list(), "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO.list is null.");
 
 		return new AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(
-				dto.list().stream()
-						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(nameNormalizer.normalize(item.systemName()), item.key(), item.algorithm().trim().toUpperCase()))
+				dto.list()
+						.stream()
+						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(
+								systemNameNormalizer.normalize(item.systemName()),
+								item.key(),
+								item.algorithm().trim().toUpperCase()))
 						.toList());
 	}
 }

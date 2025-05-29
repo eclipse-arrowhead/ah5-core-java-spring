@@ -1,4 +1,4 @@
-package eu.arrowhead.authorization.service.utils;
+package eu.arrowhead.authorization.service.engine;
 
 import java.security.PrivateKey;
 import java.security.SecureRandom;

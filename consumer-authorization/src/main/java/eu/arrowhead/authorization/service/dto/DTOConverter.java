@@ -210,12 +210,20 @@ public class DTOConverter {
 		logger.debug("convertTokenVerificationResultToResponse started...");
 		Assert.notNull(pair, "pair is null");
 
-		if (pair.getSecond().isEmpty()) {
+		// input contains whether the token is verified or not as first item, if the token is verified then the second item contains the details
+		if (!pair.getFirst()) {
 			return new AuthorizationTokenVerifyResponseDTO(pair.getFirst(), null, null, null, null, null);
 		}
 
 		final TokenModel model = pair.getSecond().get();
-		return new AuthorizationTokenVerifyResponseDTO(pair.getFirst(), model.getConsumerCloud(), model.getConsumer(), model.getTargetType(), model.getTarget(), model.getScope());
+
+		return new AuthorizationTokenVerifyResponseDTO(
+				pair.getFirst(),
+				model.getConsumerCloud(),
+				model.getConsumer(),
+				model.getTargetType(),
+				model.getTarget(),
+				model.getScope());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -223,7 +231,10 @@ public class DTOConverter {
 		logger.debug("convertEncryptionKeyListToResponse started...");
 		Assert.notNull(keys, "EncryptionKey list is null");
 
-		return new AuthorizationMgmtEncryptionKeyListResponseDTO(keys.stream().map((item) -> convertEncryptionKeyToResponse(item)).toList(), size);
+		return new AuthorizationMgmtEncryptionKeyListResponseDTO(keys
+				.stream()
+				.map((item) -> convertEncryptionKeyToResponse(item))
+				.toList(), size);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -231,7 +242,12 @@ public class DTOConverter {
 		logger.debug("convertEncryptionKeyToResponse started...");
 		Assert.notNull(key, "EncryptionKey is null");
 
-		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getEncryptedKey(), key.getAlgorithm(), key.getExternalAuxiliary() == null ? null : key.getExternalAuxiliary().getValue(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
+		return new AuthorizationMgmtEncryptionKeyResponseDTO(
+				key.getSystemName(),
+				key.getEncryptedKey(),
+				key.getAlgorithm(),
+				key.getExternalAuxiliary() == null ? null : key.getExternalAuxiliary().getValue(),
+				Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
 	}
 
 	//=================================================================================================
