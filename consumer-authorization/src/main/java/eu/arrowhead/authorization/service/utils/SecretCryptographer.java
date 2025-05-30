@@ -29,11 +29,11 @@ public class SecretCryptographer {
 
 	public static final String AES_ECB_ALGORITHM = "AES/ECB/PKCS5Padding"; // Without initialization vector
 	public static final String AES_CBC_ALGORITHM_IV_BASED = "AES/CBC/PKCS5Padding"; // With initialization vector
-	private static final String AES_KEY_ALGORITHM = "AES";
 	public static final int AES_KEY_MIN_SIZE = 16; // 128 bits
 	public static final int IV_KEY_SIZE = 16; // 128 bits
 
-	public static final String HMAC_ALGORITHM = "HmacSHA256";
+	private static final String AES_KEY_ALGORITHM = "AES";
+	private static final String HMAC_ALGORITHM = "HmacSHA256";
 
 	//=================================================================================================
 	// methods
@@ -46,7 +46,9 @@ public class SecretCryptographer {
 	// ENCRYPTION
 
 	//-------------------------------------------------------------------------------------------------
-	public String encryptAESECBPKCS5P(final String rawData, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+	@SuppressWarnings("checkstyle:MethodName")
+	public String encrypt_AES_ECB_PKCS5P(final String rawData, final String key)
+			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 
@@ -55,34 +57,45 @@ public class SecretCryptographer {
 
 		cipher.init(Cipher.ENCRYPT_MODE, keySpec);
 		final byte[] encrypted = cipher.doFinal(rawData.getBytes());
+
 		return Base64.getEncoder().encodeToString(encrypted);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, String> encryptAESCBCPKCS5P_IV(final String rawData, final String key) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		return encryptAESCBCPKCS5P_IV(rawData, key, generateIV());
+	// returns a pair with the following items: encrypted and Base64 encoded version of rawData, Base64 encoded version of a generated initialization vector
+	@SuppressWarnings("checkstyle:MethodName")
+	public Pair<String, String> encrypt_AES_CBC_PKCS5P_IV(final String rawData, final String key)
+			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+
+		return encrypt_AES_CBC_PKCS5P_IV(rawData, key, generateIV());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, String> encryptAESCBCPKCS5P_IV(final String rawData, final String key, final byte[] iv)
+	// returns a pair with the following items: encrypted and Base64 encoded version of rawData, Base64 encoded version of the initialization vector (iv)
+	@SuppressWarnings("checkstyle:MethodName")
+	public Pair<String, String> encrypt_AES_CBC_PKCS5P_IV(final String rawData, final String key, final byte[] iv)
 			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		Assert.isTrue(!Utilities.isEmpty(rawData), "plainSecret is empty");
+		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		Assert.notNull(iv, "iv is null");
 		Assert.isTrue(iv.length == IV_KEY_SIZE, "Invlaid iv length");
 
-		final String encryptedBase64 = encryptAESCBCPKCS5P_IV(rawData, key, getIvParameterSpec(iv));
+		final String encryptedBase64 = encrypt_AES_CBC_PKCS5P_IV(rawData, key, getIvParameterSpec(iv));
 		final String ivBase64 = Base64.getEncoder().encodeToString(iv);
+
 		return Pair.of(encryptedBase64, ivBase64);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, String> encryptAESCBCPKCS5P_IV(final String rawData, final String key, final String ivBase64)
+	// returns a pair with the following items: encrypted and Base64 encoded version of rawData, ivBase64
+	@SuppressWarnings("checkstyle:MethodName")
+	public Pair<String, String> encrypt_AES_CBC_PKCS5P_IV(final String rawData, final String key, final String ivBase64)
 			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 
-		final String encryptedBase64 = encryptAESCBCPKCS5P_IV(rawData, key, getIvParameterSpec(ivBase64));
+		final String encryptedBase64 = encrypt_AES_CBC_PKCS5P_IV(rawData, key, getIvParameterSpec(ivBase64));
+
 		return Pair.of(encryptedBase64, ivBase64);
 	}
 
@@ -96,27 +109,33 @@ public class SecretCryptographer {
 		sha256HMAC.init(keySpec);
 
 		final byte[] hash = sha256HMAC.doFinal(rawData.getBytes());
+
 		return Base64.getEncoder().encodeToString(hash);
 	}
 
 	// DECRYPTION
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public String decryptAESECBPKCS5P(final String encryptedDataBase64, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+	@SuppressWarnings("checkstyle:MethodName")
+	public String decrypt_AES_ECB_PKCS5P(final String encryptedDataBase64, final String key)
+			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		Assert.isTrue(!Utilities.isEmpty(encryptedDataBase64), "encryptedDataBase64 is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
-		
+
 		final SecretKeySpec keySpec = getAESKeySpecFromString(key);
 		final Cipher cipher = Cipher.getInstance(AES_ECB_ALGORITHM);
-		
+
 		cipher.init(Cipher.DECRYPT_MODE, keySpec);
 		final byte[] encryptedBytes = Base64.getDecoder().decode(encryptedDataBase64);
 		final byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+
 		return new String(decryptedBytes, StandardCharsets.ISO_8859_1);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String decryptAESCBCPKCS5P_IV(final String encryptedDataBase64, final String ivBase64, final String key) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+	@SuppressWarnings("checkstyle:MethodName")
+	public String decrypt_AES_CBC_PKCS5P_IV(final String encryptedDataBase64, final String ivBase64, final String key)
+			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
 		Assert.isTrue(!Utilities.isEmpty(encryptedDataBase64), "encryptedDataBase64 is empty");
 		Assert.isTrue(!Utilities.isEmpty(ivBase64), "ivBase64 is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
@@ -129,6 +148,7 @@ public class SecretCryptographer {
 		cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 		final byte[] encryptedBytes = Base64.getDecoder().decode(encryptedDataBase64);
 		final byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+
 		return new String(decryptedBytes, StandardCharsets.ISO_8859_1);
 	}
 
@@ -139,6 +159,7 @@ public class SecretCryptographer {
 	private byte[] generateIV() {
 		final byte[] iv = new byte[IV_KEY_SIZE];
 		new SecureRandom().nextBytes(iv);
+
 		return iv;
 	}
 
@@ -155,13 +176,16 @@ public class SecretCryptographer {
 	//-------------------------------------------------------------------------------------------------
 	private SecretKeySpec getAESKeySpecFromString(final String key) {
 		final byte[] keyBytes = key.getBytes();
-		Assert.isTrue(keyBytes.length < AES_KEY_MIN_SIZE, "Key size must be minimum " + AES_KEY_MIN_SIZE + " bytes long");
+		Assert.isTrue(keyBytes.length < AES_KEY_MIN_SIZE, "Key must be minimum " + AES_KEY_MIN_SIZE + " bytes long");
+
 		return new SecretKeySpec(keyBytes, AES_KEY_ALGORITHM);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private String encryptAESCBCPKCS5P_IV(final String plainSecret, final String key, final IvParameterSpec ivSpec) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		Assert.isTrue(!Utilities.isEmpty(plainSecret), "plainSecret is empty");
+	@SuppressWarnings("checkstyle:MethodName")
+	private String encrypt_AES_CBC_PKCS5P_IV(final String rawData, final String key, final IvParameterSpec ivSpec)
+			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
+		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		Assert.notNull(ivSpec, "ivSpec is null");
 
@@ -169,7 +193,8 @@ public class SecretCryptographer {
 		final Cipher cipher = Cipher.getInstance(AES_CBC_ALGORITHM_IV_BASED);
 
 		cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-		final byte[] encrypted = cipher.doFinal(plainSecret.getBytes());
+		final byte[] encrypted = cipher.doFinal(rawData.getBytes());
+
 		return Base64.getEncoder().encodeToString(encrypted);
 	}
 }

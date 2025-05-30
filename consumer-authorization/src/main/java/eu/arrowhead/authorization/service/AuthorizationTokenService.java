@@ -151,7 +151,7 @@ public class AuthorizationTokenService {
 
 		Pair<String, String> encryptedToSave = null; // encrypted key and internal IV in that order
 		try {
-			encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P_IV(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
+			encryptedToSave = secretCryptographer.encrypt_AES_CBC_PKCS5P_IV(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

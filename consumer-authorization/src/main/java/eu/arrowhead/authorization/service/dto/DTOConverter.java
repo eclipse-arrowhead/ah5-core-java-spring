@@ -177,7 +177,7 @@ public class DTOConverter {
 		return new AuthorizationTokenGenerationResponseDTO(
 				model.getTokenType(),
 				model.getTargetType(),
-				model.isEncrypted() ? model.getEnrcyptedToken() : model.getRawToken(),
+				model.isEncrypted() ? model.getEncryptedToken() : model.getRawToken(),
 				model.getUsageLimit(),
 				model.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(model.getExpiresAt()));
 	}
@@ -190,7 +190,7 @@ public class DTOConverter {
 		return new AuthorizationTokenResponseDTO(
 				model.getTokenType(),
 				model.getVariant(),
-				model.isEncrypted() ? model.getEnrcyptedToken() : model.getRawToken(),
+				model.isEncrypted() ? model.getEncryptedToken() : model.getRawToken(),
 				model.getHashedToken(),
 				model.getRequester(),
 				model.getConsumerCloud(),

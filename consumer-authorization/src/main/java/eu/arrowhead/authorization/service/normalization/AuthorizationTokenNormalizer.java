@@ -98,7 +98,8 @@ public class AuthorizationTokenNormalizer {
 		Assert.notNull(dto.list(), "AuthorizationTokenGenerationMgmtListRequestDTO.list is null.");
 
 		return new AuthorizationTokenGenerationMgmtListRequestDTO(
-				dto.list().stream()
+				dto.list()
+						.stream()
 						.map((item) -> {
 							final String normalizedTargetType = Utilities.isEmpty(item.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : item.targetType().toUpperCase().trim();
 							final String normalizedTarget = AuthorizationTargetType.SERVICE_DEF.name().equals(normalizedTargetType)

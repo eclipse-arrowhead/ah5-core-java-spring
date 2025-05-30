@@ -201,7 +201,7 @@ public class AuthorizationTokenManagementService {
 			// Encrypt the key for saving into the DB
 			Pair<String, String> encryptedKeyToSave = null; // encrypted key and internal IV in that order
 			try {
-				encryptedKeyToSave = secretCryptographer.encryptAESCBCPKCS5P_IV(item.key(), sysInfo.getSecretCryptographerKey());
+				encryptedKeyToSave = secretCryptographer.encrypt_AES_CBC_PKCS5P_IV(item.key(), sysInfo.getSecretCryptographerKey());
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
 				logger.debug(ex);

@@ -14,32 +14,32 @@ public class TokenModel {
 
 	//=================================================================================================
 	// members
-	
+
 	private final TokenHeader header;
-	
+
 	private final String rawToken;
-	private String enrcyptedToken;
-	
+	private String encryptedToken;
+
 	private String variant;
 	private Integer usageLimit;
 	private Integer usageLeft;
 	private ZonedDateTime expiresAt;
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final TokenHeader header) {
 		this.header = header;
 		this.rawToken = null;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final TokenHeader header, final String rawToken) {
 		this.header = header;
 		this.rawToken = rawToken;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final UsageLimitedToken token) {
 		this.header = token.getHeader();
@@ -47,7 +47,7 @@ public class TokenModel {
 		this.usageLeft = token.getUsageLeft();
 		this.rawToken = null;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final UsageLimitedToken token, final String rawToken) {
 		this.header = token.getHeader();
@@ -55,21 +55,21 @@ public class TokenModel {
 		this.usageLeft = token.getUsageLeft();
 		this.rawToken = rawToken;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final TimeLimitedToken token) {
 		this.header = token.getHeader();
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = null;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final TimeLimitedToken token, final String rawToken) {
 		this.header = token.getHeader();
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = rawToken;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final SelfContainedToken token) {
 		this.header = token.getHeader();
@@ -77,7 +77,7 @@ public class TokenModel {
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = null;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final SelfContainedToken token, final String rawToken) {
 		this.header = token.getHeader();
@@ -85,15 +85,15 @@ public class TokenModel {
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = rawToken;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public boolean isEncrypted() {
-		return !Utilities.isEmpty(enrcyptedToken);
+		return !Utilities.isEmpty(encryptedToken);
 	}
 
 	//=================================================================================================
 	// boilerplate methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenType getTokenType() {
 		return header.getTokenType();
@@ -103,7 +103,7 @@ public class TokenModel {
 	public String getRawToken() {
 		return rawToken;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String getHashedToken() {
 		return header.getTokenHash();
@@ -118,7 +118,7 @@ public class TokenModel {
 	public String getConsumerCloud() {
 		return header.getConsumerCloud();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String getConsumer() {
 		return header.getConsumer();
@@ -128,12 +128,12 @@ public class TokenModel {
 	public String getProvider() {
 		return header.getProvider();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTargetType getTargetType() {
 		return header.getTargetType();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String getTarget() {
 		return header.getTarget();
@@ -148,15 +148,15 @@ public class TokenModel {
 	public ZonedDateTime getCreatedAt() {
 		return header.getCreatedAt();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public String getEnrcyptedToken() {
-		return enrcyptedToken;
+	public String getEncryptedToken() {
+		return encryptedToken;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setEnrcyptedToken(final String enrcyptedToken) {
-		this.enrcyptedToken = enrcyptedToken;
+	public void setEncryptedToken(final String encryptedToken) {
+		this.encryptedToken = encryptedToken;
 	}
 
 	//-------------------------------------------------------------------------------------------------

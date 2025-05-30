@@ -173,7 +173,7 @@ public class TokenEngine {
 
 			// BASE64 SELF-CONTAINED TOKEN
 			if (tokenType == ServiceInterfacePolicy.BASE64_SELF_CONTAINED_TOKEN_AUTH) {
-				rawToken = tokenGenerator.generateBas64SelfSignedToken(expiresAt, tokenPayload);
+				rawToken = tokenGenerator.generateBas64SelfContainedToken(expiresAt, tokenPayload);
 			} else {
 				//  JSON WEB TOKEN
 				if (!arrowheadContext.containsKey(Constants.SERVER_PRIVATE_KEY)) {
@@ -267,8 +267,6 @@ public class TokenEngine {
 		}
 	}
 
-	// TODO: cont
-
 	//-------------------------------------------------------------------------------------------------
 	public void revoke(final List<String> hashedTokens, final String origin) {
 		logger.debug("revoke started...");
@@ -279,43 +277,49 @@ public class TokenEngine {
 
 		try {
 			final List<TokenHeader> tokenHeaders = tokenHeaderDbService.findByTokenHashList(hashedTokens);
-			tokenHeaderDbService.deleteById(tokenHeaders.stream().map((header) -> header.getId()).toList()); // Delete on cascade removes also the belonged token details 
-
+			tokenHeaderDbService.deleteById(tokenHeaders
+					.stream()
+					.map((header) -> header.getId())
+					.toList()); // Delete on cascade removes also the belonged token details
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Page<TokenModel> query(final Pageable pagination, final String requester, final AuthorizationTokenType tokenType, final String consumerCloud, final String consumer, final String provider,
-			final AuthorizationTargetType targetType, final String target, final String origin) {
+	@SuppressWarnings("checkstyle:ParameterNumber")
+	public Page<TokenModel> query(
+			final Pageable pagination,
+			final String requester,
+			final AuthorizationTokenType tokenType,
+			final String consumerCloud,
+			final String consumer,
+			final String provider,
+			final AuthorizationTargetType targetType,
+			final String target,
+			final String origin) {
 		logger.debug("query started...");
 
 		try {
 			final List<TokenModel> results = new ArrayList<>();
 			final Page<TokenHeader> tokenHeaderPage = tokenHeaderDbService.query(pagination, requester, tokenType, consumerCloud, consumer, provider, target, targetType);
 			for (final TokenHeader tokenHeader : tokenHeaderPage) {
-				// USAGE LIMITED TOKEN
 				if (tokenHeader.getTokenType() == AuthorizationTokenType.USAGE_LIMITED_TOKEN) {
+					// USAGE LIMITED TOKEN
 					final Optional<UsageLimitedToken> detailsOpt = usageLimitedTokenDbService.getByHeader(tokenHeader);
 					results.add(detailsOpt.isEmpty() ? new TokenModel(tokenHeader) : new TokenModel(detailsOpt.get()));
-				}
-
-				// TIME LIMITED TOKEN
-				if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
+				} else if (tokenHeader.getTokenType() == AuthorizationTokenType.TIME_LIMITED_TOKEN) {
+					// TIME LIMITED TOKEN
 					final Optional<TimeLimitedToken> detailsOpt = timeLimitedTokenDbService.getByHeader(tokenHeader);
 					results.add(detailsOpt.isEmpty() ? new TokenModel(tokenHeader) : new TokenModel(detailsOpt.get()));
-				}
-
-				// SELF CONTAINED TOKEN
-				if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
+				} else if (tokenHeader.getTokenType() == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
+					// SELF-CONTAINED TOKEN
 					final Optional<SelfContainedToken> detailsOpt = selfContainedTokenDbService.getByHeader(tokenHeader);
 					results.add(detailsOpt.isEmpty() ? new TokenModel(tokenHeader) : new TokenModel(detailsOpt.get()));
 				}
 			}
 
 			return new PageImpl<TokenModel>(results, pagination, tokenHeaderPage.getTotalElements());
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -329,15 +333,15 @@ public class TokenEngine {
 			final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(tokenResult.getProvider());
 			if (encryptionKeyRecordOpt.isPresent()) {
 				final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-				final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(
+				final String plainEncryptionKey = secretCryptographer.decrypt_AES_CBC_PKCS5P_IV(
 						encryptionKeyRecord.getEncryptedKey(),
 						encryptionKeyRecord.getInternalAuxiliary().getValue(),
 						sysInfo.getSecretCryptographerKey());
 
 				if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
-					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenResult.getRawToken(), plainEncryptionKey));
+					tokenResult.setEncryptedToken(secretCryptographer.encrypt_AES_ECB_PKCS5P(tokenResult.getRawToken(), plainEncryptionKey));
 				} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
-					tokenResult.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(
+					tokenResult.setEncryptedToken(secretCryptographer.encrypt_AES_CBC_PKCS5P_IV(
 							tokenResult.getRawToken(),
 							plainEncryptionKey,
 							encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
@@ -366,8 +370,8 @@ public class TokenEngine {
 			rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
 			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
 			isUnique = tokenHeaderDbService.find(hashedToken).isEmpty();
-
 		} while (!isUnique);
+
 		return Pair.of(rawToken, hashedToken);
 	}
 }
