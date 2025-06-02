@@ -198,7 +198,7 @@ public class AuthorizationManagementValidation {
 			validateVerifyRequest(request, origin);
 		}
 	}
-
+	
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -252,7 +252,7 @@ public class AuthorizationManagementValidation {
 
 		return normalizeVerifyListRequest(dto);
 	}
-
+	
 	//=================================================================================================
 	// assistant methods
 

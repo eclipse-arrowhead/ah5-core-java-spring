@@ -4,6 +4,7 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -17,11 +18,18 @@ import eu.arrowhead.authorization.jpa.entity.AuthMgmtPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
+import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
+import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyListResponseDTO;
+import eu.arrowhead.dto.AuthorizationMgmtEncryptionKeyResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyDTO;
 import eu.arrowhead.dto.AuthorizationPolicyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationPolicyResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenVerifyResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
@@ -159,6 +167,71 @@ public class DTOConverter {
 				.toList();
 
 		return new AuthorizationVerifyListResponseDTO(convertedList, result.size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenGenerationResponseDTO convertTokenModelToResponse(final TokenModel model) {
+		logger.debug("convertTokenModelToResponse started...");
+		Assert.notNull(model, "TokenModel is null");
+
+		return new AuthorizationTokenGenerationResponseDTO(
+				model.getTokenType(),
+				model.getTargetType(),
+				model.isEncrypted() ? model.getEnrcyptedToken() : model.getRawToken(),
+				model.getUsageLimit(),
+				model.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(model.getExpiresAt()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenResponseDTO convertTokenModelToMgmtResponse(final TokenModel model) {
+		logger.debug("convertTokenModelToResponse started...");
+		Assert.notNull(model, "TokenModel is null");
+
+		return new AuthorizationTokenResponseDTO(
+				model.getTokenType(),
+				model.getVariant(),
+				model.isEncrypted() ? model.getEnrcyptedToken() : model.getRawToken(),
+				model.getHashedToken(),
+				model.getRequester(),
+				model.getConsumerCloud(),
+				model.getConsumer(),
+				model.getProvider(),
+				model.getTargetType(),
+				model.getTarget(),
+				model.getScope(),
+				Utilities.convertZonedDateTimeToUTCString(model.getCreatedAt()),
+				model.getUsageLimit(),
+				model.getUsageLeft(),
+				model.getExpiresAt() == null ? null : Utilities.convertZonedDateTimeToUTCString(model.getExpiresAt()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationTokenVerifyResponseDTO convertTokenVerificationResultToResponse(final Pair<Boolean, Optional<TokenModel>> pair) {
+		logger.debug("convertTokenVerificationResultToResponse started...");
+		Assert.notNull(pair, "pair is null");
+
+		if (pair.getSecond().isEmpty()) {
+			return new AuthorizationTokenVerifyResponseDTO(pair.getFirst(), null, null, null, null, null);
+		}
+
+		final TokenModel model = pair.getSecond().get();
+		return new AuthorizationTokenVerifyResponseDTO(pair.getFirst(), model.getConsumerCloud(), model.getConsumer(), model.getTargetType(), model.getTarget(), model.getScope());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyListResponseDTO convertEncryptionKeyListToResponse(final List<EncryptionKey> keys, final long size) {
+		logger.debug("convertEncryptionKeyListToResponse started...");
+		Assert.notNull(keys, "EncryptionKey list is null");
+
+		return new AuthorizationMgmtEncryptionKeyListResponseDTO(keys.stream().map((item) -> convertEncryptionKeyToResponse(item)).toList(), size);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public AuthorizationMgmtEncryptionKeyResponseDTO convertEncryptionKeyToResponse(final EncryptionKey key) {
+		logger.debug("convertEncryptionKeyToResponse started...");
+		Assert.notNull(key, "EncryptionKey is null");
+
+		return new AuthorizationMgmtEncryptionKeyResponseDTO(key.getSystemName(), key.getEncryptedKey(), key.getAlgorithm(), key.getExternalAuxiliary() == null ? null : key.getExternalAuxiliary().getValue(), Utilities.convertZonedDateTimeToUTCString(key.getCreatedAt()));
 	}
 
 	//=================================================================================================
