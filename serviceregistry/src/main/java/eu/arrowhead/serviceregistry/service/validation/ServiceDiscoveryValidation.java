@@ -136,17 +136,17 @@ public class ServiceDiscoveryValidation {
 		logger.debug("validateAndNormalizeRevokeService started");
 
 		validateRevokeService(systemName, instanceId, origin);
-		final String normalizeSystemName = normalizer.normalizeSystemName(systemName);
+		final String normalizedSystemName = normalizer.normalizeSystemName(systemName);
 		final String normalizedInstanceId = normalizer.normalizeServiceInstanceId(instanceId);
 
 		try {
-			systemNameValidator.validateSystemName(normalizeSystemName);
+			systemNameValidator.validateSystemName(normalizedSystemName);
 			serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(normalizedInstanceId);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		return Map.entry(normalizeSystemName, normalizedInstanceId);
+		return Map.entry(normalizedSystemName, normalizedInstanceId);
 	}
 
 	//=================================================================================================

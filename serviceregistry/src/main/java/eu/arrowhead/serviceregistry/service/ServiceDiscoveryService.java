@@ -134,12 +134,12 @@ public class ServiceDiscoveryService {
 
 		final Entry<String, String> normalized = validator.validateAndNormalizeRevokeService(identifiedSystemName, instanceId, origin);
 
-		if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(normalized.getValue()).equals(normalized.getKey())) {
+		if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(normalized.getValue()).equals(normalized.getKey())) {
 			throw new ForbiddenException("Revoking other systems' service is forbidden", origin);
 		}
 
 		try {
-			return instanceDbService.deleteByInstanceId(instanceId);
+			return instanceDbService.deleteByInstanceId(normalized.getValue());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
