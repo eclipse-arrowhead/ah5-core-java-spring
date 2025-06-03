@@ -163,14 +163,14 @@ public class EncryptionKeyDbService {
 
 			final EncryptionKey entry = optional.get();
 
+			keyRepo.deleteById(entry.getId());
 			auxiliaryRepo.deleteById(entry.getInternalAuxiliary().getId());
 			if (entry.getExternalAuxiliary() != null) {
 				auxiliaryRepo.deleteById(entry.getExternalAuxiliary().getId());
 			}
-			keyRepo.deleteById(entry.getId());
 
-			auxiliaryRepo.flush();
 			keyRepo.flush();
+			auxiliaryRepo.flush();
 
 			return true;
 		} catch (final Exception ex) {

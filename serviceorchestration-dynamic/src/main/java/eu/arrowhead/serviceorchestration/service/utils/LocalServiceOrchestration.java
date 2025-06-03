@@ -385,7 +385,7 @@ public class LocalServiceOrchestration {
 		final AuthorizationVerifyListRequestDTO payload = calculateVerifyPayload(form.getTargetSystemName(), form.getOperations(), candidates);
 		final AuthorizationVerifyListResponseDTO response = ahHttpService.consumeService(
 				Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT,
-				Constants.SERVICE_OP_CHECK,
+				Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES,
 				Constants.SYS_NAME_CONSUMER_AUTHORIZATION,
 				AuthorizationVerifyListResponseDTO.class,
 				payload);

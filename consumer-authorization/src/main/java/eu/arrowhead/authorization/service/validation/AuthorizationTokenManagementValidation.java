@@ -329,9 +329,6 @@ public class AuthorizationTokenManagementValidation {
 			if (Utilities.isEmpty(request.systemName())) {
 				throw new InvalidParameterException("System name is missing", origin);
 			}
-			if (Utilities.isEmpty(request.algorithm())) {
-				throw new InvalidParameterException("Algorithm is missing", origin);
-			}
 			if (Utilities.isEmpty(request.key())) {
 				throw new InvalidParameterException("Key is missing", origin);
 			}

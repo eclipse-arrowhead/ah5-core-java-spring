@@ -79,6 +79,6 @@ public class AuthorizationPolicyInstanceIdentifierNormalizer {
 			normalized.add(eventTypeNameNormalizer.normalize(target));
 		}
 
-		return String.join(Constants.COMPOSITE_ID_DELIMITER, parts);
+		return String.join(Constants.COMPOSITE_ID_DELIMITER, normalized);
 	}
 }

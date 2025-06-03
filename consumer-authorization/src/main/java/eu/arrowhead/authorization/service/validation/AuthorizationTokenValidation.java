@@ -194,10 +194,6 @@ public class AuthorizationTokenValidation {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
-		if (Utilities.isEmpty(dto.algorithm())) {
-			throw new InvalidParameterException("Algorithm is empty", origin);
-		}
-
 		if (Utilities.isEmpty(dto.key())) {
 			throw new InvalidParameterException("Key is empty", origin);
 		}

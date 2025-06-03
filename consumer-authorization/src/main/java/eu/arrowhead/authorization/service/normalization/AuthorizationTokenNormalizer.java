@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.name.EventTypeNameNormalizer;
@@ -88,7 +89,7 @@ public class AuthorizationTokenNormalizer {
 
 		return new AuthorizationEncryptionKeyRegistrationRequestDTO(
 				dto.key(),
-				dto.algorithm().trim());
+				Utilities.isEmpty(dto.algorithm()) ? SecretCryptographer.AES_ECB_ALGORITHM : dto.algorithm().trim());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -156,7 +157,7 @@ public class AuthorizationTokenNormalizer {
 						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(
 								systemNameNormalizer.normalize(item.systemName()),
 								item.key(),
-								item.algorithm().trim().toUpperCase()))
+								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.AES_ECB_ALGORITHM : item.algorithm().trim().toUpperCase()))
 						.toList());
 	}
 }

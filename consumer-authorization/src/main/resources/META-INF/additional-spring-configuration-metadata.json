@@ -108,5 +108,10 @@
     "name": "unbounded.token.generation.whitelist",
     "type": "java.util.List",
     "description": "A description for 'unbounded.token.generation.whitelist'"
+  },
+  {
+    "name": "cleaner.job.interval",
+    "type": "java.lang.Long",
+    "description": "A description for 'cleaner.job.interval'"
   }
 ]}

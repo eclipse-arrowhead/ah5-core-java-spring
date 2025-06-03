@@ -78,7 +78,7 @@ public class SecretCryptographer {
 		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		Assert.notNull(iv, "iv is null");
-		Assert.isTrue(iv.length == IV_KEY_SIZE, "Invlaid iv length");
+		Assert.isTrue(iv.length == IV_KEY_SIZE, "Invalid iv length");
 
 		final String encryptedBase64 = encrypt_AES_CBC_PKCS5P_IV(rawData, key, getIvParameterSpec(iv));
 		final String ivBase64 = Base64.getEncoder().encodeToString(iv);
@@ -176,7 +176,7 @@ public class SecretCryptographer {
 	//-------------------------------------------------------------------------------------------------
 	private SecretKeySpec getAESKeySpecFromString(final String key) {
 		final byte[] keyBytes = key.getBytes();
-		Assert.isTrue(keyBytes.length < AES_KEY_MIN_SIZE, "Key must be minimum " + AES_KEY_MIN_SIZE + " bytes long");
+		Assert.isTrue(keyBytes.length >= AES_KEY_MIN_SIZE, "Key must be minimum " + AES_KEY_MIN_SIZE + " bytes long");
 
 		return new SecretKeySpec(keyBytes, AES_KEY_ALGORITHM);
 	}

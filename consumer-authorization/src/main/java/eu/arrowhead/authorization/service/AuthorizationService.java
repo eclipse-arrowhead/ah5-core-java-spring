@@ -89,7 +89,7 @@ public class AuthorizationService {
 		}
 
 		try {
-			return dbService.deleteProviderLevelPolicyByInstanceId(instanceId);
+			return dbService.deleteProviderLevelPolicyByInstanceId(normalized.getSecond());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
