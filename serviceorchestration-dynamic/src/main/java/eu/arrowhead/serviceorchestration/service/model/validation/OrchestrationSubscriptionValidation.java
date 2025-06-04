@@ -42,7 +42,7 @@ public class OrchestrationSubscriptionValidation {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
-		if (subscription.getDuration() != null && subscription.getDuration() <= 0) {
+		if (subscription.getDuration() != null && subscription.getDuration().longValue() <= 0) {
 			throw new InvalidParameterException("Subscription duration must be greater than 0", origin);
 		}
 

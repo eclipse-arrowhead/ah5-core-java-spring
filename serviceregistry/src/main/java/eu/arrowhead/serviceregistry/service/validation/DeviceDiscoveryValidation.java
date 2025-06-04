@@ -36,6 +36,7 @@ public class DeviceDiscoveryValidation {
 	//=================================================================================================
 	// methods
 
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -66,7 +67,7 @@ public class DeviceDiscoveryValidation {
 				: normalizer.normalizeDeviceLookupRequestDTO(dto);
 
 		try {
-			if (!Utilities.isEmpty(dto.deviceNames())) {
+			if (!Utilities.isEmpty(normalized.deviceNames())) {
 				normalized.deviceNames().forEach(d -> deviceNameValidator.validateDeviceName(d));
 			}
 
@@ -100,6 +101,7 @@ public class DeviceDiscoveryValidation {
 	//=================================================================================================
 	// assistant methods
 
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------

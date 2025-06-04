@@ -124,15 +124,15 @@ public class OrchestrationPushManagementValidation {
 
 		try {
 			if (!Utilities.isEmpty(normalized.ownerSystems())) {
-				dto.ownerSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
+				normalized.ownerSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
 			}
 
 			if (!Utilities.isEmpty(normalized.targetSystems())) {
-				dto.targetSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
+				normalized.targetSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
 			}
 
 			if (!Utilities.isEmpty(normalized.serviceDefinitions())) {
-				dto.serviceDefinitions().forEach(def -> serviceDefNameValidator.validateServiceDefinitionName(def));
+				normalized.serviceDefinitions().forEach(def -> serviceDefNameValidator.validateServiceDefinitionName(def));
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
