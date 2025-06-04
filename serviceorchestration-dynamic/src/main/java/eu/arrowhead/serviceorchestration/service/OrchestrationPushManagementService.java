@@ -197,7 +197,7 @@ public class OrchestrationPushManagementService {
 		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, Subscription.SORTABLE_FIELDS_BY, Subscription.DEFAULT_SORT_FIELD, origin);
 
 		try {
-			final Page<Subscription> results = subscriptionDbService.query(dto.ownerSystems(), dto.targetSystems(), dto.serviceDefinitions(), pageRequest);
+			final Page<Subscription> results = subscriptionDbService.query(normalized.ownerSystems(), normalized.targetSystems(), normalized.serviceDefinitions(), pageRequest);
 
 			return dtoConverter.convertSubscriptionListToDTO(results.getContent(), results.getTotalElements());
 		} catch (final InternalServerError ex) {
