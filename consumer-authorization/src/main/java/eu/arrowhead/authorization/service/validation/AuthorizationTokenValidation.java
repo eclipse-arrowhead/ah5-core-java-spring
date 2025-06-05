@@ -9,11 +9,11 @@ import org.springframework.util.Assert;
 import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.service.normalization.AuthorizationTokenNormalizer;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
-import eu.arrowhead.common.Constants;
-import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.EventTypeNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.AuthorizationEncryptionKeyRegistrationRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationRequestDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
@@ -21,97 +21,31 @@ import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 @Service
 public class AuthorizationTokenValidation {
-	
+
 	//-------------------------------------------------------------------------------------------------
 	// members
-	
+
 	@Autowired
-	private NameValidator nameValidator;
-	
+	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefinitionNameValidator;
+
+	@Autowired
+	private EventTypeNameValidator eventTypeNameValidator;
+
+	@Autowired
+	private AuthorizationScopeValidator scopeValidator;
+
 	@Autowired
 	private AuthorizationTokenNormalizer normalizer;
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	//=================================================================================================
 	// methods
-	
-	// VALIDATION
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public void validateSystemName(final String systemName, final String origin) {
-		logger.debug("validateSystemName started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		if (Utilities.isEmpty(systemName)) {
-			throw new InvalidParameterException("System name is empty", origin);
-		}
-
-		if (systemName.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("System name is too long: " + systemName, origin);
-		}
-
-		try {
-			nameValidator.validateName(systemName);
-		} catch (final InvalidParameterException ex) {
-			if (Utilities.isEmpty(ex.getOrigin())) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			}
-
-			throw ex;
-		}
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	public void validateToken(final String token, final String origin) {
-		logger.debug("validateToken started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		if (Utilities.isEmpty(token)) {
-			throw new InvalidParameterException("Token is empty", origin);
-		}		
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	public void validateGenerateRequest(final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
-		logger.debug("validateGenerateRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-		
-		if (Utilities.isEmpty(dto.tokenType())) {
-			throw new InvalidParameterException("Token type is missing", origin);
-		}
-		
-		if (Utilities.isEmpty(dto.provider())) {
-			throw new InvalidParameterException("Provider system is missing", origin);
-		}
-		
-		if (Utilities.isEmpty(dto.target())) {
-			throw new InvalidParameterException("Target is missing", origin);
-		}
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	public void validateRegisterEncryptionKeyRequest(final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
-		logger.debug("validateRegisterEncryptionKey started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-		
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
-		
-		if (Utilities.isEmpty(dto.algorithm())) {
-			throw new InvalidParameterException("Algorithm is empty.", origin);
-		}
-		
-		if (Utilities.isEmpty(dto.key())) {
-			throw new InvalidParameterException("Key is empty.", origin);
-		}
-	}
-	
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -119,43 +53,49 @@ public class AuthorizationTokenValidation {
 		logger.debug("validateAndNormalizeSystemName started...");
 
 		validateSystemName(systemName, origin);
-		return normalizer.normalizeSystemName(systemName);
+		final String normalized = normalizer.normalizeSystemName(systemName);
+
+		try {
+			systemNameValidator.validateSystemName(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeToken(final String token, final String origin) {
 		logger.debug("validateAndNormalizeToken started...");
-		
+
 		validateToken(token, origin);
-		
+
 		return normalizer.normalizeToken(token);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenGenerationRequestDTO validateAndNormalizeGenerateRequest(final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeGenerateRequest started...");
-		
+
 		validateGenerateRequest(dto, origin);
-		
 		final AuthorizationTokenGenerationRequestDTO normalized = normalizer.normalizeAuthorizationTokenGenerationRequestDTO(dto);
-		
+
 		try {
-			if (!Utilities.isEnumValue(normalized.tokenType(), ServiceInterfacePolicy.class)
-					|| !normalized.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
+			if (!normalized.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
 				throw new InvalidParameterException("Token type is invalid", origin);
 			}
-			
-			if (!Utilities.isEnumValue(normalized.targetType(), AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid", origin);
+
+			systemNameValidator.validateSystemName(normalized.provider());
+
+			if (AuthorizationTargetType.SERVICE_DEF.name().equals(normalized.targetType())) {
+				serviceDefinitionNameValidator.validateServiceDefinitionName(normalized.target());
+			} else {
+				eventTypeNameValidator.validateEventTypeName(normalized.target());
 			}
-			
-			nameValidator.validateName(normalized.provider());
-			nameValidator.validateName(normalized.target());
-			
-			if (!normalized.scope().equals(Defaults.DEFAULT_AUTHORIZATION_SCOPE)) {
-				nameValidator.validateName(normalized.scope());
+
+			if (!Utilities.isEmpty(normalized.scope())) {
+				scopeValidator.validateScope(normalized.scope());
 			}
-			
 		} catch (final InvalidParameterException ex) {
 			if (Utilities.isEmpty(ex.getOrigin())) {
 				throw new InvalidParameterException(ex.getMessage(), origin);
@@ -163,25 +103,99 @@ public class AuthorizationTokenValidation {
 
 			throw ex;
 		}
-		
+
 		return normalized;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationEncryptionKeyRegistrationRequestDTO normalizeAndValidateRegisterEncryptionKeyRequest(final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeGenerateRequest started...");
-		
+	public AuthorizationEncryptionKeyRegistrationRequestDTO validateAndNormalizeRegisterEncryptionKeyRequest(final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeRegisterEncryptionKeyRequest started...");
+
 		validateRegisterEncryptionKeyRequest(dto, origin);
 		final AuthorizationEncryptionKeyRegistrationRequestDTO normalized = normalizer.normalizeAuthorizationEncryptionKeyRegistrationRequestDTO(dto);
-		
+
 		if (!(normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM) || normalized.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED))) {
 			throw new InvalidParameterException("Unsupported algorithm", origin);
-		}		
-		
-		if (normalized.key().getBytes().length < SecretCryptographer.AES_KEY_MIN_SIZE) {
-			throw new InvalidParameterException("Key size must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long");
 		}
-		
+
+		if (normalized.key().getBytes().length < SecretCryptographer.AES_KEY_MIN_SIZE) {
+			throw new InvalidParameterException("Key must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long");
+		}
+
 		return normalized;
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	// VALIDATION
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateSystemName(final String systemName, final String origin) {
+		logger.debug("validateSystemName started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (Utilities.isEmpty(systemName)) {
+			throw new InvalidParameterException("System name is empty", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateGenerateRequest(final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
+		logger.debug("validateGenerateRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.tokenType())) {
+			throw new InvalidParameterException("Token type is missing", origin);
+		}
+
+		final String tokenTypeName = dto.tokenType().trim().toUpperCase();
+		if (!Utilities.isEnumValue(tokenTypeName, ServiceInterfacePolicy.class)) {
+			throw new InvalidParameterException("Token type is invalid: " + tokenTypeName, origin);
+		}
+
+		if (Utilities.isEmpty(dto.provider())) {
+			throw new InvalidParameterException("Provider system is missing", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.targetType())) {
+			final String targetTypeName = dto.targetType().trim().toUpperCase();
+			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
+				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+			}
+		}
+
+		if (Utilities.isEmpty(dto.target())) {
+			throw new InvalidParameterException("Target is missing", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateToken(final String token, final String origin) {
+		logger.debug("validateToken started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (Utilities.isEmpty(token)) {
+			throw new InvalidParameterException("Token is empty", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateRegisterEncryptionKeyRequest(final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
+		logger.debug("validateRegisterEncryptionKey started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.isEmpty(dto.key())) {
+			throw new InvalidParameterException("Key is empty", origin);
+		}
 	}
 }

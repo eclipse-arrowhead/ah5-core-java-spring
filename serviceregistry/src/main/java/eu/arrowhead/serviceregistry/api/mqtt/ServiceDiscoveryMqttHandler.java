@@ -84,7 +84,14 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 	private ServiceInstanceResponseDTO register(final String identifiedRequester, final ServiceInstanceCreateRequestDTO dto) {
 		logger.debug("ServiceDiscoveryMqttHandler.register started");
 
-		return sdService.registerService(new ServiceInstanceRequestDTO(identifiedRequester, dto.serviceDefinitionName(), dto.version(), dto.expiresAt(), dto.metadata(), dto.interfaces()), baseTopic() + Constants.SERVICE_OP_REGISTER);
+		return sdService.registerService(new ServiceInstanceRequestDTO(
+				identifiedRequester,
+				dto.serviceDefinitionName(),
+				dto.version(),
+				dto.expiresAt(),
+				dto.metadata(),
+				dto.interfaces()),
+				baseTopic() + Constants.SERVICE_OP_REGISTER);
 	}
 
 	//-------------------------------------------------------------------------------------------------

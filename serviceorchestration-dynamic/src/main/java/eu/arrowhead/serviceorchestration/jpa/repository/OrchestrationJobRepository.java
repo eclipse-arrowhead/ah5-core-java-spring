@@ -10,15 +10,19 @@ import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
+import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 
 @Repository
 public interface OrchestrationJobRepository extends RefreshableRepository<OrchestrationJob, UUID> {
+
+	//=================================================================================================
+	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<OrchestrationJob> findAllByIdIn(final Collection<UUID> ids, final Pageable pageable);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationJob> findAllByStatusIn(final List<String> statuses);
+	public List<OrchestrationJob> findAllByStatusIn(final List<OrchestrationJobStatus> statuses);
 
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationJob> findAllByRequesterSystemIn(final List<String> requesterSystems);

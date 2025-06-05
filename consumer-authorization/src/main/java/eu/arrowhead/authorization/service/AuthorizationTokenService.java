@@ -12,15 +12,14 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
-import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
+import eu.arrowhead.authorization.service.engine.TokenEngine;
 import eu.arrowhead.authorization.service.model.EncryptionKeyModel;
 import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
-import eu.arrowhead.authorization.service.utils.TokenEngine;
 import eu.arrowhead.authorization.service.validation.AuthorizationTokenValidation;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
@@ -73,12 +72,11 @@ public class AuthorizationTokenService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<AuthorizationTokenGenerationResponseDTO, Boolean> generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
+	public AuthorizationTokenGenerationResponseDTO generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
 		logger.debug("generate started...");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final AuthorizationTokenGenerationRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateRequest(dto, origin);
-		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
 
 		// Check permission
 		final boolean isAuthorized = policyEngine.isAccessGranted(new NormalizedVerifyRequest(
@@ -87,23 +85,31 @@ public class AuthorizationTokenService {
 				Defaults.DEFAULT_CLOUD,
 				AuthorizationTargetType.valueOf(normalizedDTO.targetType()),
 				normalizedDTO.target(),
-				dto.scope()));
+				normalizedDTO.scope()));
 
 		if (!isAuthorized) {
-			throw new ForbiddenException("Requester has no permisson to the service instance and/or operation.", origin);
+			throw new ForbiddenException("Requester has no permisson to the service instance and/or operation", origin);
 		}
 
 		// Generate token
-		final Pair<TokenModel, Boolean> tokenResult = tokenEngine.produce(normalizedRequester, normalizedRequester, tokenType, normalizedDTO.provider(), AuthorizationTargetType.valueOf(normalizedDTO.targetType()), normalizedDTO.target(),
-				Utilities.isEmpty(normalizedDTO.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : normalizedDTO.scope(), origin);
+		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
+		final TokenModel tokenResult = tokenEngine.produce(
+				normalizedRequester,
+				normalizedRequester,
+				tokenType,
+				normalizedDTO.provider(),
+				AuthorizationTargetType.valueOf(normalizedDTO.targetType()),
+				normalizedDTO.target(),
+				Utilities.isEmpty(normalizedDTO.scope()) ? null : normalizedDTO.scope(),
+				origin);
 
 		// Encrypt token if required
 		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
 		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
-			encryptTokenIfNeeded(tokenResult.getFirst(), origin);
+			tokenEngine.encryptTokenIfNeeded(tokenResult, origin);
 		}
 
-		return Pair.of(dtoConverter.convertTokenModelToResponse(tokenResult.getFirst()), tokenResult.getSecond());
+		return dtoConverter.convertTokenModelToResponse(tokenResult);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -112,8 +118,8 @@ public class AuthorizationTokenService {
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final String normalizedToken = validator.validateAndNormalizeToken(token, origin);
-
 		final Pair<Boolean, Optional<TokenModel>> result = tokenEngine.verify(normalizedRequester, normalizedToken, origin);
+
 		return dtoConverter.convertTokenVerificationResultToResponse(result);
 	}
 
@@ -127,32 +133,44 @@ public class AuthorizationTokenService {
 		}
 
 		final PublicKey pubKey = (PublicKey) pubKeyOpt.get();
+
 		return Base64.getEncoder().encodeToString(pubKey.getEncoded());
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<String, Boolean> registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
+	public String registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
 		logger.debug("registerEncryptionKey started...");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
-		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.normalizeAndValidateRegisterEncryptionKeyRequest(dto, origin);
+		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.validateAndNormalizeRegisterEncryptionKeyRequest(dto, origin);
 
 		String externalAuxiliary = "";
 		if (normalizedDTO.algorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
 			externalAuxiliary = secretCryptographer.generateInitializationVectorBase64();
 		}
 
-		Pair<String, String> encryptedToSave = null;
+		Pair<String, String> encryptedToSave = null; // encrypted key and internal IV in that order
 		try {
-			encryptedToSave = secretCryptographer.encryptAESCBCPKCS5P_IV(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
+			encryptedToSave = secretCryptographer.encrypt_AES_CBC_PKCS5P_IV(normalizedDTO.key(), sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
-			throw new InternalServerError("Secret encryption failed!", origin);
+			throw new InternalServerError("Secret encryption failed", origin);
 		}
 
-		final Pair<EncryptionKey, Boolean> result = encryptionKeyDbService.save(new EncryptionKeyModel(normalizedRequester, normalizedDTO.key(), encryptedToSave.getFirst(), normalizedDTO.algorithm(), encryptedToSave.getSecond(), externalAuxiliary));
-		return Pair.of(externalAuxiliary, result.getSecond());
+		try {
+			encryptionKeyDbService.save(new EncryptionKeyModel(
+					normalizedRequester,
+					normalizedDTO.key(),
+					encryptedToSave.getFirst(), // encrypted key
+					normalizedDTO.algorithm(),
+					encryptedToSave.getSecond(), // internal IV
+					externalAuxiliary));
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+
+		return externalAuxiliary;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -160,37 +178,7 @@ public class AuthorizationTokenService {
 		logger.debug("unregisterEncryptionKey started...");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
+
 		return encryptionKeyDbService.delete(normalizedRequester);
-	}
-	
-	//=================================================================================================
-	// assistant methods
-	
-	//-------------------------------------------------------------------------------------------------
-	private void encryptTokenIfNeeded(final TokenModel tokenModel, final String origin) {
-		logger.debug("encryptTokenIfNeeded started...");
-		
-		final Optional<EncryptionKey> encryptionKeyRecordOpt = encryptionKeyDbService.get(tokenModel.getProvider());
-		try {
-			if (encryptionKeyRecordOpt.isPresent()) {
-				final EncryptionKey encryptionKeyRecord = encryptionKeyRecordOpt.get();
-				final String plainEncryptionKey = secretCryptographer.decryptAESCBCPKCS5P_IV(encryptionKeyRecord.getEncryptedKey(), encryptionKeyRecord.getInternalAuxiliary().getValue(), sysInfo.getSecretCryptographerKey());
-
-				if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_ECB_ALGORITHM)) {
-					tokenModel.setEnrcyptedToken(secretCryptographer.encryptAESECBPKCS5P(tokenModel.getRawToken(), plainEncryptionKey));
-
-				} else if (encryptionKeyRecord.getAlgorithm().equalsIgnoreCase(SecretCryptographer.AES_CBC_ALGORITHM_IV_BASED)) {
-					tokenModel.setEnrcyptedToken(secretCryptographer.encryptAESCBCPKCS5P_IV(tokenModel.getRawToken(), plainEncryptionKey, encryptionKeyRecord.getExternalAuxiliary().getValue()).getFirst());
-
-				} else {
-					throw new IllegalArgumentException("Unhandled token encryption algorithm: " + encryptionKeyRecord.getAlgorithm());
-				}
-			}
-
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Token encryption failed!", origin);
-		}
 	}
 }

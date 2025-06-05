@@ -61,6 +61,13 @@ public class OrchestrationLock {
 		this.expiresAt = expiresAt;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestrationLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = "
+				+ expiresAt + ", temporary = " + temporary + "]";
+	}
+
 	//=================================================================================================
 	// boilerplate
 
@@ -122,11 +129,5 @@ public class OrchestrationLock {
 	//-------------------------------------------------------------------------------------------------
 	public void setTemporary(final boolean temporary) {
 		this.temporary = temporary;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public String toString() {
-		return "OrchestrationLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = " + expiresAt + ", temporary = " + temporary + "]";
 	}
 }

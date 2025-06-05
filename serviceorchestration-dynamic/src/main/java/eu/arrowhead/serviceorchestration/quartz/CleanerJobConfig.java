@@ -37,6 +37,7 @@ public class CleanerJobConfig {
 		jobDetailFactory.setJobClass(CleanerJob.class);
 		jobDetailFactory.setDescription("Removing expired subscriptions, service locks and old orchestration jobs");
 		jobDetailFactory.setDurability(true);
+
 		return jobDetailFactory;
 	}
 
@@ -48,6 +49,7 @@ public class CleanerJobConfig {
 		trigger.setRepeatInterval(interval);
 		trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
 		trigger.setStartDelay(interval);
+
 		return trigger;
 	}
 

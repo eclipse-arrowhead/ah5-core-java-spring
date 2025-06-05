@@ -22,15 +22,15 @@ public class EncryptionKeyModel {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public EncryptionKeyModel(final String systemName, final String keyValue, final String keyEncriptedValue, final String algorithm, final String internalAuxiliary, final String externalAuxiliary) {
+	public EncryptionKeyModel(final String systemName, final String keyValue, final String keyEncryptedValue, final String algorithm, final String internalAuxiliary, final String externalAuxiliary) {
 		this.systemName = systemName;
 		this.keyValue = keyValue;
-		this.keyEncryptedValue = keyEncriptedValue;
+		this.keyEncryptedValue = keyEncryptedValue;
 		this.algorithm = algorithm;
 		this.internalAuxiliary = internalAuxiliary;
 		this.externalAuxiliary = externalAuxiliary;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasExternalAuxiliary() {
 		return !Utilities.isEmpty(externalAuxiliary);
@@ -98,5 +98,4 @@ public class EncryptionKeyModel {
 	public void setExternalAuxiliary(final String externalAuxiliary) {
 		this.externalAuxiliary = externalAuxiliary;
 	}
-
 }

@@ -10,10 +10,10 @@ import eu.arrowhead.common.jpa.RefreshableRepository;
 
 @Repository
 public interface SelfContainedTokenRepository extends RefreshableRepository<SelfContainedToken, Long> {
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public Optional<SelfContainedToken> findByHeader(final TokenHeader header);
 }

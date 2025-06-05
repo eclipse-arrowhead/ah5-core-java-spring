@@ -87,6 +87,7 @@ public class OrchestrationForm {
 			}
 		}
 		orchestrationFlags.put(flag.name(), value);
+
 		return changed;
 	}
 
@@ -107,8 +108,18 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationRequestDTO extractOrchestrationRequestDTO() {
-		final OrchestrationServiceRequirementDTO serviceReq = new OrchestrationServiceRequirementDTO(serviceDefinition, operations, versions, alivesAt, metadataRequirements, interfaceTemplateNames, interfaceAddressTypes,
-				interfacePropertyRequirements, securityPolicies, preferredProviders);
+		final OrchestrationServiceRequirementDTO serviceReq = new OrchestrationServiceRequirementDTO(
+				serviceDefinition,
+				operations,
+				versions,
+				alivesAt,
+				metadataRequirements,
+				interfaceTemplateNames,
+				interfaceAddressTypes,
+				interfacePropertyRequirements,
+				securityPolicies,
+				preferredProviders);
+
 		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qosRequirements, exclusivityDuration);
 	}
 
@@ -264,5 +275,4 @@ public class OrchestrationForm {
 	public void setPreferredProviders(final List<String> preferredProviders) {
 		this.preferredProviders = preferredProviders;
 	}
-
 }

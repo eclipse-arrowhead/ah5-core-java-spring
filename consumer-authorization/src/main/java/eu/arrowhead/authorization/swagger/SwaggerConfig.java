@@ -12,6 +12,6 @@ public class SwaggerConfig extends DefaultSwaggerConfig {
 
 	//-------------------------------------------------------------------------------------------------
 	public SwaggerConfig() {
-		super("Arrowhead Consumer Authorization");
+		super("Arrowhead ConsumerAuthorization");
 	}
 }

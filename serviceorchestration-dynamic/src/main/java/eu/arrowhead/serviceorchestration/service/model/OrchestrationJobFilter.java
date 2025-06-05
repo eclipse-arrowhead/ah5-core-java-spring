@@ -27,7 +27,13 @@ public class OrchestrationJobFilter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationJobFilter(final List<UUID> ids, final List<OrchestrationJobStatus> statuses, final OrchestrationType type, final List<String> requesterSystems, final List<String> targetSystems, final List<String> serviceDefinitions,
+	public OrchestrationJobFilter(
+			final List<UUID> ids,
+			final List<OrchestrationJobStatus> statuses,
+			final OrchestrationType type,
+			final List<String> requesterSystems,
+			final List<String> targetSystems,
+			final List<String> serviceDefinitions,
 			final List<String> subscriptionIds) {
 		this.ids = ids;
 		this.statuses = statuses;
@@ -69,6 +75,7 @@ public class OrchestrationJobFilter {
 		if (!Utilities.isEmpty(serviceDefinitions)) {
 			return BaseFilter.SERVICE;
 		}
+
 		return BaseFilter.NONE;
 	}
 
@@ -109,5 +116,4 @@ public class OrchestrationJobFilter {
 	public List<String> getSubscriptionIds() {
 		return subscriptionIds;
 	}
-
 }

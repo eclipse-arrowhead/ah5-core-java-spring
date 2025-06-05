@@ -3,7 +3,6 @@ package eu.arrowhead.authorization.api.http;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.Pair;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.authorization.AuthorizationConstants;
@@ -58,8 +58,6 @@ public class AuthorizationTokenAPI {
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationTokenGenerationResponseDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthorizationTokenGenerationResponseDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
@@ -70,14 +68,14 @@ public class AuthorizationTokenAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_GENERATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<AuthorizationTokenGenerationResponseDTO> generate(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationTokenGenerationRequestDTO dto) {
+	@ResponseStatus(HttpStatus.CREATED)
+	public AuthorizationTokenGenerationResponseDTO generate(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationTokenGenerationRequestDTO dto) {
 		logger.debug("generate started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_GENERATE_PATH;
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
-		final Pair<AuthorizationTokenGenerationResponseDTO, Boolean> result = authTokenService.generate(requesterSystem, dto, origin);
-		return new ResponseEntity<AuthorizationTokenGenerationResponseDTO>(result.getFirst(), result.getSecond() ? HttpStatus.CREATED : HttpStatus.OK);
+		return authTokenService.generate(requesterSystem, dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -98,14 +96,15 @@ public class AuthorizationTokenAPI {
 	public @ResponseBody AuthorizationTokenVerifyResponseDTO verify(final HttpServletRequest httpServletRequest, @PathVariable(required = true) final String token) {
 		logger.debug("verify started...");
 
-		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_TOKEN_VERIFY_PATH.replace(AuthorizationConstants.HTTP_PATH_PARAM_TOKEN, token);
+		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH
+				+ AuthorizationConstants.HTTP_API_OP_TOKEN_VERIFY_PATH.replace(AuthorizationConstants.HTTP_PATH_PARAM_TOKEN, token);
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
 		return authTokenService.verify(requesterSystem, token, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Return the public key of the server if any.")
+	@Operation(summary = "Returns the public key of the server if any.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
@@ -123,6 +122,7 @@ public class AuthorizationTokenAPI {
 		logger.debug("getPublicKey started...");
 
 		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_PUBLIC_KEY_PATH;
+
 		return authTokenService.getPublicKey(origin);
 	}
 
@@ -130,8 +130,6 @@ public class AuthorizationTokenAPI {
 	@Operation(summary = "Registers the provided encryption key and returns the belonged auxiliary if any.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
-					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
@@ -143,14 +141,14 @@ public class AuthorizationTokenAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> registerEncryptionKey(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationEncryptionKeyRegistrationRequestDTO dto) {
+	@ResponseStatus(HttpStatus.CREATED)
+	public String registerEncryptionKey(final HttpServletRequest httpServletRequest, @RequestBody final AuthorizationEncryptionKeyRegistrationRequestDTO dto) {
 		logger.debug("registerEncryptionKey started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 
-		final Pair<String, Boolean> result = authTokenService.registerEncryptionKey(requesterSystem, dto, origin);
-		return new ResponseEntity<String>(result.getFirst(), result.getSecond() ? HttpStatus.CREATED : HttpStatus.OK);
+		return authTokenService.registerEncryptionKey(requesterSystem, dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -171,8 +169,8 @@ public class AuthorizationTokenAPI {
 
 		final String origin = HttpMethod.DELETE.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_TOKEN_PATH + AuthorizationConstants.HTTP_API_OP_ENCRYPTION_KEY_PATH;
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-
 		final boolean result = authTokenService.unregisterEncryptionKey(requesterSystem, origin);
+
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }

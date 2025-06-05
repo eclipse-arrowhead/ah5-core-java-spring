@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
@@ -45,11 +46,15 @@ public class OrchestrationHistoryManagementService {
 		logger.debug("query started...");
 
 		final OrchestrationHistoryQueryRequestDTO normalized = validator.validateAndNormalizeQueryService(dto, origin);
-
-		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
 		final OrchestrationJobFilter filter = new OrchestrationJobFilter(normalized);
+		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
 
-		final Page<OrchestrationJob> results = jobDbService.query(filter, pageRequest);
-		return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
+		try {
+			final Page<OrchestrationJob> results = jobDbService.query(filter, pageRequest);
+
+			return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 	}
 }

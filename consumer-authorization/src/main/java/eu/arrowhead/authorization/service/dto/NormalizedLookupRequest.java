@@ -32,6 +32,13 @@ public class NormalizedLookupRequest {
 				|| targetType != null;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "NormalizedLookupRequest [providers=" + providers + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
+				+ ", targetType=" + targetType + "]";
+	}
+
 	//=================================================================================================
 	// boilerplate code
 
@@ -83,12 +90,5 @@ public class NormalizedLookupRequest {
 	//-------------------------------------------------------------------------------------------------
 	public void setTargetType(final AuthorizationTargetType targetType) {
 		this.targetType = targetType;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public String toString() {
-		return "NormalizedLookupRequest [providers=" + providers + ", instanceIds=" + instanceIds + ", cloudIdentifiers=" + cloudIdentifiers + ", targetNames=" + targetNames
-				+ ", targetType=" + targetType + "]";
 	}
 }

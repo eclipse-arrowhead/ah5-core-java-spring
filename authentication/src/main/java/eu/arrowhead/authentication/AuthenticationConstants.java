@@ -1,11 +1,11 @@
 package eu.arrowhead.authentication;
 
+import eu.arrowhead.common.jpa.ArrowheadEntity;
+
 public final class AuthenticationConstants {
 
 	//=================================================================================================
 	// members
-
-	public static final String SYSTEM_NAME = "authentication";
 
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.authentication.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.authentication.jpa.repository";
@@ -52,6 +52,9 @@ public final class AuthenticationConstants {
 	// Quartz related
 	public static final String CLEANER_TRIGGER = "authenticationCleanerTrigger";
 	public static final String CLEANER_JOB = "authenticationCleanerJob";
+
+	// Db related
+	public static final int PASSWORD_MAX_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	//=================================================================================================
 	// assistant methods

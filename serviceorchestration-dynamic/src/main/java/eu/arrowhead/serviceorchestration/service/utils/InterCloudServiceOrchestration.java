@@ -41,5 +41,4 @@ public class InterCloudServiceOrchestration {
 		logger.warn("Inter-cloud orchestration is not supported yet");
 		return new OrchestrationResponseDTO(List.of(), warnings.stream().toList());
 	}
-
 }

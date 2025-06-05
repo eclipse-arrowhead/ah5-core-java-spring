@@ -62,5 +62,4 @@ public class OrchestrationSubscription {
 	public void setNotifyProperties(final Map<String, String> notifyProperties) {
 		this.notifyProperties = notifyProperties;
 	}
-
 }

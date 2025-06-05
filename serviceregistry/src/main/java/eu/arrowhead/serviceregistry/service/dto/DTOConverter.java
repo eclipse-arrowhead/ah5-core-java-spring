@@ -77,7 +77,8 @@ public class DTOConverter {
 				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>() {
 				}),
 				Utilities.isEmpty(addressEntities) ? null
-						: addressEntities.stream()
+						: addressEntities
+								.stream()
 								.map(address -> new AddressDTO(address.getAddressType().name(), address.getAddress()))
 								.collect(Collectors.toList()),
 				Utilities.convertZonedDateTimeToUTCString(deviceEntity.getCreatedAt()),
@@ -89,7 +90,8 @@ public class DTOConverter {
 		logger.debug("convertServiceDefinitionEntityListToDTO started...");
 		Assert.notNull(entities, "entity list is null");
 
-		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
+		final List<ServiceDefinitionResponseDTO> converted = entities
+				.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))
 				.collect(Collectors.toList());
 		return new ServiceDefinitionListResponseDTO(converted, converted.size());
@@ -100,7 +102,8 @@ public class DTOConverter {
 		logger.debug("convertServiceDefinitionEntityPageToDTO started...");
 		Assert.notNull(entities, "entity page is null");
 
-		final List<ServiceDefinitionResponseDTO> converted = entities.stream()
+		final List<ServiceDefinitionResponseDTO> converted = entities
+				.stream()
 				.map(e -> convertServiceDefinitionEntityToDTO(e))
 				.collect(Collectors.toList());
 		return new ServiceDefinitionListResponseDTO(converted, entities.getTotalElements());
@@ -145,8 +148,8 @@ public class DTOConverter {
 	public SystemResponseDTO convertSystemTripletToDTO(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity) {
 		logger.debug("convertSystemTripletToDTO started...");
 		Assert.notNull(entity, "entity is null");
-		Assert.notNull(entity.getLeft(), "the System in the triple is null");
-		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triple is null");
+		Assert.notNull(entity.getLeft(), "the System in the triplet is null");
+		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the address list in the triplet is null");
 
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
@@ -224,13 +227,13 @@ public class DTOConverter {
 				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
 				instance.getVersion(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
-				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>()	{
+				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
 				}),
 				interfaceList.stream().map(interf -> new ServiceInstanceInterfaceResponseDTO(
 						interf.getServiceInterfaceTemplate().getName(),
 						interf.getServiceInterfaceTemplate().getProtocol(),
 						interf.getPolicy().toString(),
-						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>()	{
+						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 						}))).toList(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt()));
@@ -340,7 +343,4 @@ public class DTOConverter {
 				dto.interfacePropertyRequirementsList(),
 				dto.policies()));
 	}
-
-	//=================================================================================================
-	// assistant methods
 }

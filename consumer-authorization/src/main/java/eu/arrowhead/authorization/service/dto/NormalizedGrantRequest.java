@@ -41,6 +41,13 @@ public class NormalizedGrantRequest {
 		}
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "NormalizedGrantRequest [level=" + level + ", cloud=" + cloud + ", provider=" + provider + ", targetType=" + targetType + ", target=" + target + ", description=" + description
+				+ ", policies=" + policies + "]";
+	}
+
 	//=================================================================================================
 	// boilerplate code
 
@@ -108,11 +115,4 @@ public class NormalizedGrantRequest {
 	public AuthorizationLevel level() {
 		return level;
 	}
-
-	@Override
-	public String toString() {
-		return "NormalizedGrantRequest [level=" + level + ", cloud=" + cloud + ", provider=" + provider + ", targetType=" + targetType + ", target=" + target + ", description=" + description
-				+ ", policies=" + policies + "]";
-	}
-
 }

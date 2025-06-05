@@ -150,7 +150,7 @@ public class SystemDiscoveryService {
 	// throws exception, if the two systems doesn't have the same attributes
 	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final NormalizedSystemRequestDTO dto) {
 		logger.debug("checkSameSystemAttributes started");
-		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical!");
+		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical");
 
 		final System existingSystem = existing.getLeft();
 

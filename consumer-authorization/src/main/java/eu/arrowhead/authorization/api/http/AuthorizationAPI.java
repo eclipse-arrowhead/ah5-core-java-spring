@@ -75,7 +75,6 @@ public class AuthorizationAPI {
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_AUTHORIZATION_PATH + AuthorizationConstants.HTTP_API_OP_GRANT_PATH;
 		final String provider = sysNamePreprocessor.process(httpServletRequest, origin);
-
 		final Pair<AuthorizationPolicyResponseDTO, Boolean> result = authService.grantOperation(provider, dto, origin);
 
 		return new ResponseEntity<>(result.getFirst(), result.getSecond() ? HttpStatus.CREATED : HttpStatus.OK);

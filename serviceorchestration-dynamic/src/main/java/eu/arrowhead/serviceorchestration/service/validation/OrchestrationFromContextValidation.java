@@ -31,36 +31,36 @@ public class OrchestrationFromContextValidation {
 
 		if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
 			if (!sysInfo.isIntercloudEnabled()) {
-				throw new InvalidParameterException("ONLY_INTERCLOUD flag is present, but intercloud orchestration is not enabled.", origin);
+				throw new InvalidParameterException("ONLY_INTERCLOUD flag is present, but intercloud orchestration is not enabled", origin);
 			}
 
 			if (form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION)) {
 				// Inter-cloud translation is not supported
-				throw new InvalidParameterException("ONLY_INTERCLOUD and ALLOW_TRANSLATION flags cannot be present at the same time.", origin);
+				throw new InvalidParameterException("ONLY_INTERCLOUD and ALLOW_TRANSLATION flags cannot be present at the same time", origin);
 			}
 
 			if (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1) {
 				// The creation of an inter-cloud bridge is limited to exactly one operation that the requester wants to use.
-				throw new InvalidParameterException("Exactly one operation must be defined, when only inter-cloud orchestration is required.", origin);
+				throw new InvalidParameterException("Exactly one operation must be defined when only inter-cloud orchestration is required", origin);
 			}
 		}
 
 		if (form.getFlag(OrchestrationFlag.ALLOW_INTERCLOUD) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
 			// The creation of an inter-cloud bridge is limited to exactly one operation that the requester wants to use.
-			throw new InvalidParameterException("Exactly one operation must be defined, when only inter-cloud orchestration is allowed.", origin);
+			throw new InvalidParameterException("Exactly one operation must be defined when only inter-cloud orchestration is allowed", origin);
 		}
 
 		if (form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && (Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1)) {
 			// The creation of a translation bridge is limited to exactly one operation that the requester wants to use.
-			throw new InvalidParameterException("Exactly one operation must be defined, when translation is allowed", origin);
+			throw new InvalidParameterException("Exactly one operation must be defined when translation is allowed", origin);
 		}
 
 		if (form.getFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {
-			throw new InvalidParameterException("ONLY_PREFERRED falg is present, but no preferred provider is defined.", origin);
+			throw new InvalidParameterException("ONLY_PREFERRED falg is present, but no preferred provider is defined", origin);
 		}
 
 		if (form.hasQoSRequirements() && !sysInfo.isQoSEnabled()) {
-			throw new InvalidParameterException("QoS requirements are present, but QoS support is not enabled.", origin);
+			throw new InvalidParameterException("QoS requirements are present, but QoS support is not enabled", origin);
 		}
 	}
 }

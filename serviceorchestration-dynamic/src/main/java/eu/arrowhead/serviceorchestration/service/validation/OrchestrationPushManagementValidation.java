@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationSubscriptionQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationPushTrigger;
@@ -36,74 +38,23 @@ public class OrchestrationPushManagementValidation {
 	private PageValidator pageValidator;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
+
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
+
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
-	//-------------------------------------------------------------------------------------------------
+	//=================================================================================================
 	// methods
 
-	// VALIDATION
-
 	//-------------------------------------------------------------------------------------------------
-	public void validatePushSubscribeService(final String requesterSystem, final List<OrchestrationSubscription> subscription, final String origin) {
-		logger.debug("validatePushSubscribeService started");
-
-		if (Utilities.isEmpty(subscription)) {
-			throw new InvalidParameterException("Subscription request list is empty.", origin);
-		}
-
-		for (final OrchestrationSubscription subs : subscription) {
-			orchSubsValidator.validateOrchestrationSubscription(subs, origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validatePushTriggerService(final OrchestrationPushTrigger trigger, final String origin) {
-		logger.debug("validatePushTriggerService started");
-
-		orchPushTriggerValidator.validateOrchestrationPushTrigger(trigger, origin);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validatePublishUnsubscribeService(final List<String> ids, final String origin) {
-		logger.debug("validatePublishUnsubscribeService started...");
-
-		if (Utilities.isEmpty(ids)) {
-			throw new InvalidParameterException("ID list is empty", origin);
-		}
-
-		if (Utilities.containsNullOrEmpty(ids)) {
-			throw new InvalidParameterException("ID list contains empty element", origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateQueryPushSubscriptionsService(final OrchestrationSubscriptionQueryRequestDTO dto, final String origin) {
-		logger.debug("validateQueryPushSubscriptionsService started...");
-
-		if (dto == null) {
-			return;
-		}
-
-		pageValidator.validatePageParameter(dto.pagination(), Subscription.SORTABLE_FIELDS_BY, origin);
-
-		if (!Utilities.isEmpty(dto.ownerSystems()) && Utilities.containsNullOrEmpty(dto.ownerSystems())) {
-			throw new InvalidParameterException("Owner system list contains empty element", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.targetSystems()) && Utilities.containsNullOrEmpty(dto.targetSystems())) {
-			throw new InvalidParameterException("Target system list contains empty element", origin);
-		}
-
-		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
-			throw new InvalidParameterException("Service definition list contains empty element", origin);
-		}
-	}
-
 	// VALIDATION AND NORMALIZATION
 
 	//-------------------------------------------------------------------------------------------------
@@ -127,6 +78,21 @@ public class OrchestrationPushManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public String validateAndNormalizeRequesterSystem(final String requesterSystem, final String origin) {
+		logger.debug("validateAndNormalizeRequesterSystem started");
+
+		final String normalized = systemNameNormalizer.normalize(requesterSystem);
+
+		try {
+			systemNameValidator.validateSystemName(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizePublishUnsubscribeService(final List<String> ids, final String origin) {
 		logger.debug("validateAndNormalizePublishUnsubscribeService started...");
 
@@ -134,7 +100,7 @@ public class OrchestrationPushManagementValidation {
 
 		final List<String> normalizedList = new ArrayList<>();
 		ids.forEach(id -> {
-			final String normalized = id.trim().toUpperCase();
+			final String normalized = id.trim();
 			if (!Utilities.isUUID(normalized)) {
 				throw new InvalidParameterException("Invalid subscription ID: " + id, origin);
 			}
@@ -152,27 +118,65 @@ public class OrchestrationPushManagementValidation {
 
 		final OrchestrationSubscriptionQueryRequestDTO normalized = new OrchestrationSubscriptionQueryRequestDTO(
 				dto.pagination(),
-				Utilities.isEmpty(dto.ownerSystems()) ? List.of() : dto.ownerSystems().stream().map(sys -> nameNormalizer.normalize(sys)).toList(),
-				Utilities.isEmpty(dto.targetSystems()) ? List.of() : dto.targetSystems().stream().map(sys -> nameNormalizer.normalize(sys)).toList(),
-				Utilities.isEmpty(dto.serviceDefinitions()) ? List.of() : dto.serviceDefinitions().stream().map(def -> nameNormalizer.normalize(def)).toList());
+				Utilities.isEmpty(dto.ownerSystems()) ? List.of() : dto.ownerSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.targetSystems()) ? List.of() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.serviceDefinitions()) ? List.of() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList());
 
 		try {
 			if (!Utilities.isEmpty(normalized.ownerSystems())) {
-				dto.ownerSystems().forEach(sys -> nameValidator.validateName(sys));
+				normalized.ownerSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
 			}
 
 			if (!Utilities.isEmpty(normalized.targetSystems())) {
-				dto.targetSystems().forEach(sys -> nameValidator.validateName(sys));
+				normalized.targetSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
 			}
 
 			if (!Utilities.isEmpty(normalized.serviceDefinitions())) {
-				dto.serviceDefinitions().forEach(def -> nameValidator.validateName(def));
+				normalized.serviceDefinitions().forEach(def -> serviceDefNameValidator.validateServiceDefinitionName(def));
 			}
-
-			return normalized;
-
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
+	private void validatePublishUnsubscribeService(final List<String> ids, final String origin) {
+		logger.debug("validatePublishUnsubscribeService started...");
+
+		if (Utilities.isEmpty(ids)) {
+			throw new InvalidParameterException("ID list is empty", origin);
+		}
+
+		if (Utilities.containsNullOrEmpty(ids)) {
+			throw new InvalidParameterException("ID list contains empty element", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateQueryPushSubscriptionsService(final OrchestrationSubscriptionQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryPushSubscriptionsService started...");
+
+		if (dto == null) {
+			return;
+		}
+
+		pageValidator.validatePageParameter(dto.pagination(), Subscription.SORTABLE_FIELDS_BY, origin);
+
+		if (!Utilities.isEmpty(dto.ownerSystems()) && Utilities.containsNullOrEmpty(dto.ownerSystems())) {
+			throw new InvalidParameterException("Owner system list contains empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.targetSystems()) && Utilities.containsNullOrEmpty(dto.targetSystems())) {
+			throw new InvalidParameterException("Target system list contains empty element", origin);
+		}
+
+		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
+			throw new InvalidParameterException("Service definition list contains empty element", origin);
 		}
 	}
 }

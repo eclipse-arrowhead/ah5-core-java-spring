@@ -128,7 +128,7 @@ public class ManagementService {
 
 		try {
 			// finding related systems
-			final List<System> systems = dbService.getSystemsByNames(names, false);
+			final List<System> systems = dbService.getSystemsByNames(normalizedNames, false);
 
 			if (Utilities.isEmpty(systems)) {
 				// nothing to do

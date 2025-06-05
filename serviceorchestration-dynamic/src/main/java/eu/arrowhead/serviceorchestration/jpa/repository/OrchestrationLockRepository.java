@@ -15,6 +15,9 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 @Repository
 public interface OrchestrationLockRepository extends RefreshableRepository<OrchestrationLock, Long> {
 
+	//=================================================================================================
+	// methods
+
 	//-------------------------------------------------------------------------------------------------
 	public Page<OrchestrationLock> findAllByIdIn(final Collection<Long> ids, final Pageable pageable);
 

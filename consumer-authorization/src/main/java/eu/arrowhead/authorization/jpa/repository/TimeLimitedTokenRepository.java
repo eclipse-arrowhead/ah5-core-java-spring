@@ -10,9 +10,10 @@ import eu.arrowhead.common.jpa.RefreshableRepository;
 
 @Repository
 public interface TimeLimitedTokenRepository extends RefreshableRepository<TimeLimitedToken, Long> {
-	
+
 	//=================================================================================================
 	// methods
-	
+
+	//-------------------------------------------------------------------------------------------------
 	public Optional<TimeLimitedToken> findByHeader(final TokenHeader header);
 }

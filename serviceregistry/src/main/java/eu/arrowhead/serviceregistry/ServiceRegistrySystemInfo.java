@@ -1,5 +1,6 @@
 package eu.arrowhead.serviceregistry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -32,6 +33,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_DIRECT_ACCESS_WD)
 	private List<String> serviceDiscoveryDirectAccess;
+	private List<String> normalizedServiceDiscoveryDirectAccess = new ArrayList<>();
 
 	@Value(ServiceRegistryConstants.$SERVICE_DISCOVERY_POLICY_WD)
 	private ServiceDiscoveryPolicy serviceDiscoveryPolicy;
@@ -50,7 +52,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return ServiceRegistryConstants.SYSTEM_NAME;
+		return Constants.SYS_NAME_SERVICE_REGISTRY;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -127,7 +129,15 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 	public boolean hasClientDirectAccess(final String systemName) {
 		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
 
-		return !Utilities.isEmpty(serviceDiscoveryDirectAccess) && serviceDiscoveryDirectAccess.contains(systemName);
+		if (!Utilities.isEmpty(serviceDiscoveryDirectAccess) && Utilities.isEmpty(normalizedServiceDiscoveryDirectAccess)) {
+			for (final String name : serviceDiscoveryDirectAccess) {
+				if (!Utilities.isEmpty(name)) {
+					normalizedServiceDiscoveryDirectAccess.add(systemNameNormalizer.normalize(name));
+				}
+			}
+		}
+
+		return !Utilities.isEmpty(normalizedServiceDiscoveryDirectAccess) && normalizedServiceDiscoveryDirectAccess.contains(systemName);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -164,6 +174,7 @@ public class ServiceRegistrySystemInfo extends SystemInfo {
 						Constants.ALLOW_SELF_ADDRESSING,
 						Constants.ALLOW_NON_ROUTABLE_ADDRESSING,
 						Constants.MAX_PAGE_SIZE,
+						Constants.NORMALIZATION_MODE,
 						Constants.SERVICE_ADDRESS_ALIAS,
 						ServiceRegistryConstants.SERVICE_DISCOVERY_POLICY,
 						ServiceRegistryConstants.DISCOVERY_VERBOSE,

@@ -85,12 +85,14 @@ public class OrchestrationLockManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationLockListResponseDTO create(final OrchestrationLockListRequestDTO dto) {
 		logger.debug("OrchestrationLockManagementMqttHandler.create started");
+
 		return lockMgmtService.create(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_CREATE);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationLockListResponseDTO query(final OrchestrationLockQueryRequestDTO dto) {
 		logger.debug("OrchestrationLockManagementMqttHandler.query started");
+
 		return lockMgmtService.query(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_QUERY);
 	}
 

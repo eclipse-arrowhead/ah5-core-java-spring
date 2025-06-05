@@ -10,5 +10,9 @@ import eu.arrowhead.common.jpa.RefreshableRepository;
 @Repository
 public interface EncryptionKeyRepository extends RefreshableRepository<EncryptionKey, Long> {
 
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
 	public Optional<EncryptionKey> findBySystemName(final String systemName);
 }

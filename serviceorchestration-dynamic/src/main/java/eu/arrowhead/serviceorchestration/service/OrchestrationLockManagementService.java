@@ -55,13 +55,13 @@ public class OrchestrationLockManagementService {
 	public OrchestrationLockListResponseDTO create(final OrchestrationLockListRequestDTO dto, final String origin) {
 		logger.debug("create started..");
 
-		final OrchestrationLockListRequestDTO normalized = validator.validateAndNormalizeCreateService(dto, origin);
 		final ZonedDateTime now = Utilities.utcNow();
+		final OrchestrationLockListRequestDTO normalized = validator.validateAndNormalizeCreateService(dto, origin);
 		List<OrchestrationLock> saved = null;
 
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
 			try {
-				final List<OrchestrationLock> existingLocks = lockDbService.getByServiceInstanceId(normalized.locks().stream().map(l -> l.serviceInstanceId()).toList());
+				final List<OrchestrationLock> existingLocks = lockDbService.getByServiceInstanceId(normalized.locks().stream().map(lock -> lock.serviceInstanceId()).toList());
 				final List<Long> expiredLockIds = new ArrayList<>();
 				final List<String> alreadyLockedServices = new ArrayList<>();
 				for (final OrchestrationLock existingLock : existingLocks) {
@@ -82,9 +82,11 @@ public class OrchestrationLockManagementService {
 					throw new InvalidParameterException("Already locked: " + alreadyLockedServices.stream().collect(Collectors.joining(", ")), origin);
 				}
 
-				final List<OrchestrationLock> candidates = normalized.locks().stream().map(lock -> new OrchestrationLock(lock.serviceInstanceId(), lock.owner(), Utilities.parseUTCStringToZonedDateTime(lock.expiresAt()))).toList();
+				final List<OrchestrationLock> candidates = normalized.locks()
+						.stream()
+						.map(lock -> new OrchestrationLock(lock.serviceInstanceId(), lock.owner(), Utilities.parseUTCStringToZonedDateTime(lock.expiresAt())))
+						.toList();
 				saved = lockDbService.create(candidates);
-
 			} catch (final InternalServerError ex) {
 				throw new InternalServerError(ex.getMessage(), origin);
 			}
@@ -98,14 +100,13 @@ public class OrchestrationLockManagementService {
 		logger.debug("query started...");
 
 		final OrchestrationLockQueryRequestDTO normalized = validator.validateAndNormalizeQueryService(dto, origin);
-
-		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, OrchestrationLock.SORTABLE_FIELDS_BY, OrchestrationLock.DEFAULT_SORT_FIELD, origin);
 		final OrchestrationLockFilter filter = new OrchestrationLockFilter(normalized);
+		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, OrchestrationLock.SORTABLE_FIELDS_BY, OrchestrationLock.DEFAULT_SORT_FIELD, origin);
 
 		try {
 			final Page<OrchestrationLock> results = lockDbService.query(filter, pageRequest);
-			return dtoConverter.convertOrchestrationLockListToDTO(results.getContent(), results.getTotalElements());
 
+			return dtoConverter.convertOrchestrationLockListToDTO(results.getContent(), results.getTotalElements());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -132,10 +133,8 @@ public class OrchestrationLockManagementService {
 					lockDbService.deleteInBatch(removeIds);
 				}
 			}
-
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
-
 	}
 }

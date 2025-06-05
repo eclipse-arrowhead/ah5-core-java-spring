@@ -157,8 +157,9 @@ public class ManagementService {
 		logger.debug("removeDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
+		final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
+
 		try {
-			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -417,7 +418,12 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final ServiceInterfaceTemplateQueryRequestDTO normalized = validator.validateAndNormalizeQueryInterfaceTemplates(dto, origin);
-		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, ServiceInterfaceTemplate.DEFAULT_SORT_FIELD, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(
+				normalized.pagination(),
+				Direction.DESC,
+				ServiceInterfaceTemplate.SORTABLE_FIELDS_BY,
+				ServiceInterfaceTemplate.DEFAULT_SORT_FIELD,
+				origin);
 
 		try {
 			final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = interfaceTemplateDbService.getPageByFilters(

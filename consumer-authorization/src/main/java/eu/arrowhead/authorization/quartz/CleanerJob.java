@@ -106,7 +106,6 @@ public class CleanerJob implements Job {
 			} while (hasMore);
 
 			tokenHeaderDbService.deleteById(toDelete);
-
 		} catch (final Exception ex) {
 			logger.debug(ex);
 			logger.error("Cleaner job error: " + ex.getMessage());

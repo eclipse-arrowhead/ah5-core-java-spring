@@ -57,7 +57,6 @@ public class CleanerJob implements Job {
 			removeExpiredSubscriptions(now);
 			removeExpiredOrchestrationLocks(now);
 			removeOldOrchestrationJobs(now);
-
 		} catch (final Exception ex) {
 			logger.debug(ex);
 			logger.error("Cleaner job error: " + ex.getMessage());

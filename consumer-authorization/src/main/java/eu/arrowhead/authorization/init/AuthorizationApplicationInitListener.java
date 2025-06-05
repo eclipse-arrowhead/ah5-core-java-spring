@@ -12,6 +12,9 @@ import eu.arrowhead.common.init.ApplicationInitListener;
 @Component
 public class AuthorizationApplicationInitListener extends ApplicationInitListener {
 
+	//=================================================================================================
+	// assistant methods
+
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	protected void customInit(final ContextRefreshedEvent event) throws InterruptedException {
@@ -23,7 +26,7 @@ public class AuthorizationApplicationInitListener extends ApplicationInitListene
 
 		final byte[] cryptoKeyBytes = authSysInfo.getSecretCryptographerKey().getBytes();
 		if (cryptoKeyBytes.length < SecretCryptographer.AES_KEY_MIN_SIZE) {
-			throw new InvalidParameterException("secret.cryptographer.key value size must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long");
+			throw new InvalidParameterException("secret.cryptographer.key value must be minimum " + SecretCryptographer.AES_KEY_MIN_SIZE + " bytes long");
 		}
 	}
 }

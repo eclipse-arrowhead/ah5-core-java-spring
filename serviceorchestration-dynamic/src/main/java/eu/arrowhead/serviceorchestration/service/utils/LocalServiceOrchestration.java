@@ -92,7 +92,7 @@ public class LocalServiceOrchestration {
 		try {
 			final Set<String> warnings = new HashSet<>();
 
-			// Service Discovery
+			// discovering the service
 			final boolean translationAllowed = form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
 			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.getFlag(OrchestrationFlag.ONLY_PREFERRED));
 			candidates = filterOutLockedOnes(jobId, candidates);
@@ -146,7 +146,8 @@ public class LocalServiceOrchestration {
 				if (!sysInfo.isQoSEnabled()) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
 					releaseTemporaryLockIfItWasLocked(jobId, candidates);
-					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");
+					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found");
+
 					return convertToOrchestrationResponse(List.of(), warnings);
 				}
 				candidates = doQoSCompliance(candidates);
@@ -189,11 +190,11 @@ public class LocalServiceOrchestration {
 				}
 			}
 
-			// Matchmaking if required
 			if (Utilities.isEmpty(candidates)) {
 				return doInterCloudOrReturn(jobId, form);
 			}
 
+			// Matchmaking if required
 			if (form.getFlag(OrchestrationFlag.MATCHMAKING)) {
 				final OrchestrationCandidate match = matchmaking(form, candidates);
 				if (form.exclusivityIsPreferred()) {
@@ -220,9 +221,9 @@ public class LocalServiceOrchestration {
 			}
 
 			final OrchestrationResponseDTO result = convertToOrchestrationResponse(candidates, warnings);
-			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, candidates.size() + " local result.");
-			return result;
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, candidates.size() + " local result");
 
+			return result;
 		} catch (final Exception ex) {
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, ex.getMessage());
 			throw ex;
@@ -249,14 +250,22 @@ public class LocalServiceOrchestration {
 				.build();
 
 		final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>(Map.of(Constants.VERBOSE, List.of(Boolean.FALSE.toString())));
-		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(Constants.SERVICE_DEF_SERVICE_DISCOVERY, Constants.SERVICE_OP_LOOKUP, Constants.SYS_NAME_SERVICE_REGISTRY, ServiceInstanceListResponseDTO.class, lookupDTO,
+		final ServiceInstanceListResponseDTO response = ahHttpService.consumeService(
+				Constants.SERVICE_DEF_SERVICE_DISCOVERY,
+				Constants.SERVICE_OP_LOOKUP,
+				Constants.SYS_NAME_SERVICE_REGISTRY,
+				ServiceInstanceListResponseDTO.class,
+				lookupDTO,
 				queryParams);
 
 		if (Utilities.isEmpty(response.entries())) {
 			return List.of();
 		}
 
-		return response.entries().stream().map(instance -> new OrchestrationCandidate(instance, true, onlyPreferred)).collect(Collectors.toList());
+		return response.entries()
+				.stream()
+				.map(instance -> new OrchestrationCandidate(instance, true, onlyPreferred))
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -289,7 +298,11 @@ public class LocalServiceOrchestration {
 			if (!Utilities.isEmpty(expiredLocks)) {
 				orchLockDbService.deleteInBatch(expiredLocks);
 			}
-			return candidates.stream().filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId())).collect(Collectors.toList());
+
+			return candidates
+					.stream()
+					.filter(c -> !lockedServiceInstanceIds.contains(c.getServiceInstance().instanceId()))
+					.collect(Collectors.toList());
 		}
 	}
 
@@ -345,7 +358,11 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutWhereExclusivityIsNotPossible(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutWhereExclusivityIsNotPossible started...");
-		return candidates.stream().filter(c -> c.canBeExclusive()).collect(Collectors.toList());
+
+		return candidates
+				.stream()
+				.filter(c -> c.canBeExclusive())
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -357,6 +374,7 @@ public class LocalServiceOrchestration {
 				return true;
 			}
 		}
+
 		return false;
 	}
 
@@ -367,7 +385,7 @@ public class LocalServiceOrchestration {
 		final AuthorizationVerifyListRequestDTO payload = calculateVerifyPayload(form.getTargetSystemName(), form.getOperations(), candidates);
 		final AuthorizationVerifyListResponseDTO response = ahHttpService.consumeService(
 				Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT,
-				Constants.SERVICE_OP_CHECK,
+				Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES,
 				Constants.SYS_NAME_CONSUMER_AUTHORIZATION,
 				AuthorizationVerifyListResponseDTO.class,
 				payload);
@@ -427,10 +445,13 @@ public class LocalServiceOrchestration {
 	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean considerAddressTypes) {
 		logger.debug("assortInterfacesAndMarkIfNonNative started...");
 
-		if (Utilities.isEmpty(form.getInterfaceTemplateNames()) && Utilities.isEmpty(form.getInterfacePropertyRequirements()) && Utilities.isEmpty(form.getInterfaceAddressTypes())) {
+		if (Utilities.isEmpty(form.getInterfaceTemplateNames())
+				&& Utilities.isEmpty(form.getInterfacePropertyRequirements())
+				&& Utilities.isEmpty(form.getInterfaceAddressTypes())) {
 			for (final OrchestrationCandidate candidate : candidates) {
 				candidate.addMatchingInterfaces(candidate.getServiceInstance().interfaces());
 			}
+
 			return;
 		}
 
@@ -445,18 +466,18 @@ public class LocalServiceOrchestration {
 
 					// Checking interface properties
 				} else if (!Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
-					boolean matchingProps = false;
 					for (final MetadataRequirementDTO interfacePropertyRequirement : form.getInterfacePropertyRequirements()) {
-						if (MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
-							matchingProps = true;
+						if (!MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
+							isMatchingInterface = false;
 							break;
 						}
 					}
-					isMatchingInterface = matchingProps;
 				}
 
 				// Checking address types
-				if (considerAddressTypes && isMatchingInterface && !Utilities.isEmpty(form.getInterfaceAddressTypes())) {
+				if (considerAddressTypes
+						&& isMatchingInterface
+						&& !Utilities.isEmpty(form.getInterfaceAddressTypes())) {
 					isMatchingInterface = interfaceAddressPropertyProcessor.filterOnAddressTypes(offeredInterface.properties(), form.getInterfaceAddressTypes());
 				}
 
@@ -499,6 +520,7 @@ public class LocalServiceOrchestration {
 				return true;
 			}
 		}
+
 		return false;
 	}
 
@@ -506,7 +528,10 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutNonNativeOnes(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonNativeOnes started...");
 
-		return candidates.stream().filter(c -> !c.isNonNative()).collect(Collectors.toList());
+		return candidates
+				.stream()
+				.filter(c -> !c.isNonNative())
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -529,6 +554,7 @@ public class LocalServiceOrchestration {
 				candidate.setPreferred(true);
 			}
 		}
+
 		return hasPreferred;
 	}
 
@@ -536,7 +562,10 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutNonPreferredProviders(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonPreferredProviders started...");
 
-		return candidates.stream().filter(c -> c.isPreferred()).collect(Collectors.toList());
+		return candidates
+				.stream()
+				.filter(c -> c.isPreferred())
+				.collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -559,12 +588,16 @@ public class LocalServiceOrchestration {
 		}
 
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
-			Assert.isTrue(candidate.isLocked(), "Unlocked candidate is intended to being reserved.");
+			Assert.isTrue(candidate.isLocked(), "Unlocked candidate is intended to being reserved");
 
 			final String jobIdStr = jobId.toString();
 			final ZonedDateTime expiresAt = Utilities.utcNow().plusSeconds(RESERVATION_BUFFER + Math.min(duration, candidate.getExclusivityDuration()));
 
-			final Optional<OrchestrationLock> optional = orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(jobIdStr, candidate.getServiceInstance().instanceId(), expiresAt, false);
+			final Optional<OrchestrationLock> optional = orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(
+					jobIdStr,
+					candidate.getServiceInstance().instanceId(),
+					expiresAt,
+					false);
 
 			// the temporary lock may expire
 			if (optional.isEmpty()) {
@@ -586,7 +619,8 @@ public class LocalServiceOrchestration {
 		synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_ORCH_LOCK) {
 			final String jobIdStr = jobId.toString();
 
-			final List<String> lockedOnes = candidates.stream()
+			final List<String> lockedOnes = candidates
+					.stream()
 					.filter(c -> c.isLocked())
 					.map(c -> c.getServiceInstance().instanceId())
 					.collect(Collectors.toList());
@@ -597,7 +631,8 @@ public class LocalServiceOrchestration {
 
 			final List<OrchestrationLock> lockRecords = orchLockDbService.getByServiceInstanceId(lockedOnes);
 
-			final List<Long> toRelease = lockRecords.stream()
+			final List<Long> toRelease = lockRecords
+					.stream()
 					.filter(lr -> !Utilities.isEmpty(lr.getOrchestrationJobId()) && lr.getOrchestrationJobId().equals(jobIdStr))
 					.map(lr -> lr.getId())
 					.collect(Collectors.toList());
@@ -632,7 +667,7 @@ public class LocalServiceOrchestration {
 		if (sysInfo.isIntercloudEnabled() && form.getFlag(OrchestrationFlag.ALLOW_INTERCLOUD)) {
 			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
 		} else {
-			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found.");
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found");
 			return new OrchestrationResponseDTO(List.of(), List.of());
 		}
 	}
@@ -656,5 +691,4 @@ public class LocalServiceOrchestration {
 
 		return new OrchestrationResponseDTO(results, new ArrayList<>(warnings));
 	}
-
 }

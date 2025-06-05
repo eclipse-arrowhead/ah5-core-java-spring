@@ -47,7 +47,6 @@ public class OrchestrationJobDbService {
 
 		try {
 			return jobRepo.saveAllAndFlush(jobs);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -62,7 +61,6 @@ public class OrchestrationJobDbService {
 
 		try {
 			return jobRepo.findById(id);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -76,8 +74,7 @@ public class OrchestrationJobDbService {
 		Assert.isTrue(!Utilities.isEmpty(statuses), "status list is empty");
 
 		try {
-			return jobRepo.findAllByStatusIn(statuses.stream().map(s -> s.name()).toList());
-
+			return jobRepo.findAllByStatusIn(statuses);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -94,10 +91,11 @@ public class OrchestrationJobDbService {
 		try {
 			List<OrchestrationJob> toFilter;
 			final BaseFilter baseFilter = filter.getBaseFilter();
+
 			if (baseFilter == BaseFilter.ID) {
 				toFilter = jobRepo.findAllById(filter.getIds());
 			} else if (baseFilter == BaseFilter.STATUS) {
-				toFilter = jobRepo.findAllByStatusIn(filter.getStatuses().stream().map(s -> s.name()).toList());
+				toFilter = jobRepo.findAllByStatusIn(filter.getStatuses());
 			} else if (baseFilter == BaseFilter.OWNER) {
 				toFilter = jobRepo.findAllByRequesterSystemIn(filter.getRequesterSystems());
 			} else if (baseFilter == BaseFilter.TARGET) {
@@ -184,7 +182,6 @@ public class OrchestrationJobDbService {
 			}
 
 			return jobRepo.saveAndFlush(job);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -201,7 +198,6 @@ public class OrchestrationJobDbService {
 		try {
 			jobRepo.deleteAllByIdInBatch(ids);
 			jobRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

@@ -54,6 +54,6 @@ public class CleanerConfig {
 	//-------------------------------------------------------------------------------------------------
 	@PostConstruct
 	public void init() {
-		logger.info("Cleaner job is initialized.");
+		logger.info("Cleaner job is initialized");
 	}
 }

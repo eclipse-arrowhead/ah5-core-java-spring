@@ -20,7 +20,7 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO
 import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
@@ -38,7 +38,7 @@ public class ManagementNormalization {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	@Autowired
 	private PageService pageService;
@@ -62,7 +62,7 @@ public class ManagementNormalization {
 
 		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(dto.identities().size());
 		for (final IdentityMgmtRequestDTO identity : dto.identities()) {
-			final String normalizedSystem = nameNormalizer.normalize(identity.systemName());
+			final String normalizedSystem = systemNameNormalizer.normalize(identity.systemName());
 			final Map<String, String> normalizedCredentials = method.normalizer().normalizeCredentials(identity.credentials());
 			final boolean normalizedSysop = identity.sysop() == null ? false : identity.sysop().booleanValue();
 
@@ -84,7 +84,7 @@ public class ManagementNormalization {
 
 		final List<NormalizedIdentityMgmtRequestDTO> result = new ArrayList<>(dto.identities().size());
 		for (final IdentityMgmtRequestDTO identity : dto.identities()) {
-			final String normalizedSystem = nameNormalizer.normalize(identity.systemName());
+			final String normalizedSystem = systemNameNormalizer.normalize(identity.systemName());
 			final boolean normalizedSysop = identity.sysop() == null ? false : identity.sysop().booleanValue();
 
 			result.add(new NormalizedIdentityMgmtRequestDTO(
@@ -122,7 +122,7 @@ public class ManagementNormalization {
 		Assert.notNull(originalNames, "name list is null");
 
 		return originalNames.stream()
-				.map(n -> nameNormalizer.normalize(n))
+				.map(n -> systemNameNormalizer.normalize(n))
 				.toList();
 	}
 
@@ -143,9 +143,9 @@ public class ManagementNormalization {
 
 		return new NormalizedIdentityQueryRequestDTO(
 				pageService.getPageRequest(dto.pagination(), System.SORTABLE_FIELDS_BY, System.DEFAULT_SORT_FIELD, "does not matter"),
-				Utilities.isEmpty(dto.namePart()) ? null : nameNormalizer.normalize(dto.namePart()),
+				Utilities.isEmpty(dto.namePart()) ? null : dto.namePart().trim(), // not a system name, just a part
 				dto.isSysop(),
-				Utilities.isEmpty(dto.createdBy()) ? null : nameNormalizer.normalize(dto.createdBy()),
+				Utilities.isEmpty(dto.createdBy()) ? null : systemNameNormalizer.normalize(dto.createdBy()),
 				Utilities.isEmpty(dto.creationFrom()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.creationFrom()),
 				Utilities.isEmpty(dto.creationTo()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.creationTo()),
 				dto.hasSession());
@@ -167,12 +167,12 @@ public class ManagementNormalization {
 		final PageDTO normalizedPageDTO = pagination != null
 				&& !Utilities.isEmpty(pagination.sortField())
 				&& ActiveSession.SYSTEM_NAME_ALTERNATIVES.contains(dto.pagination().sortField().trim().toLowerCase())
-				? new PageDTO(pagination.page(), pagination.size(), pagination.direction(), ActiveSession.SORT_NAME_SYSTEM_NAME)
-				: pagination;
+						? new PageDTO(pagination.page(), pagination.size(), pagination.direction(), ActiveSession.SORT_NAME_SYSTEM_NAME)
+						: pagination;
 
 		return new NormalizedIdentitySessionQueryRequestDTO(
 				pageService.getPageRequest(normalizedPageDTO, ActiveSession.SORTABLE_FIELDS_BY, ActiveSession.DEFAULT_SORT_FIELD, "does not matter"),
-				Utilities.isEmpty(dto.namePart()) ? null : nameNormalizer.normalize(dto.namePart()),
+				Utilities.isEmpty(dto.namePart()) ? null : dto.namePart().trim(), // not a system name, just a part
 				Utilities.isEmpty(dto.loginFrom()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.loginFrom()),
 				Utilities.isEmpty(dto.loginTo()) ? null : Utilities.parseUTCStringToZonedDateTime(dto.loginTo()));
 	}

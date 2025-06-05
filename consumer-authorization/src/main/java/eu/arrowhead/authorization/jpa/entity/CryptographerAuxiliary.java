@@ -9,23 +9,23 @@ public class CryptographerAuxiliary extends UnmodifiableArrowheadEntity {
 
 	//=================================================================================================
 	// members
-	
+
 	@Column(nullable = false)
 	private String value;
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public CryptographerAuxiliary() {
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public CryptographerAuxiliary(final String auxiliary) {
-		this.value = auxiliary;
+	public CryptographerAuxiliary(final String value) {
+		this.value = value;
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
@@ -34,14 +34,14 @@ public class CryptographerAuxiliary extends UnmodifiableArrowheadEntity {
 
 	//=================================================================================================
 	// boilerplate methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public String getValue() {
 		return value;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setValue(final String auxiliary) {
-		this.value = auxiliary;
+	public void setValue(final String value) {
+		this.value = value;
 	}
 }

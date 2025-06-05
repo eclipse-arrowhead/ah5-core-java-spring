@@ -18,18 +18,18 @@ import jakarta.annotation.PostConstruct;
 @Configuration
 @EnableAutoConfiguration
 public class CleanerJobConfig {
-	
+
 	//=================================================================================================
 	// members
 
 	@Value(AuthorizationConstants.$CLEANER_JOB_INTERVAL_WD)
-	private long interval = 30000;
-	
+	private long interval;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Bean(AuthorizationConstants.CLEANER_JOB)
 	JobDetailFactoryBean cleanerJobDetail() {

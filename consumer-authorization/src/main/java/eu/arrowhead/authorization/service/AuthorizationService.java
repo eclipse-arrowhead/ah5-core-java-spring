@@ -65,7 +65,7 @@ public class AuthorizationService {
 		final NormalizedGrantRequest normalized = validator.validateAndNormalizeGrantRequest(normalizedProvider, dto, origin);
 
 		try {
-			final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(normalized);
+			final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(normalized); // second is whether we created a new policy or not
 
 			return Pair.of(
 					dtoConverter.convertPolicyToResponse(AuthorizationLevel.PROVIDER, result.getFirst()),
@@ -82,14 +82,14 @@ public class AuthorizationService {
 		logger.debug("revokeOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final Pair<String, String> normalized = validator.validateAndNormalizeRevokeInput(identifiedSystemName, instanceId, origin);
+		final Pair<String, String> normalized = validator.validateAndNormalizeRevokeInput(identifiedSystemName, instanceId, origin); // contains normalized system name and instance id in that order
 
 		if (!InstanceIdUtils.retrieveProviderName(normalized.getSecond()).equals(normalized.getFirst())) {
 			throw new ForbiddenException("Revoking other systems' policy is forbidden", origin);
 		}
 
 		try {
-			return dbService.deleteProviderLevelPolicyByInstanceId(instanceId);
+			return dbService.deleteProviderLevelPolicyByInstanceId(normalized.getSecond());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

@@ -5,8 +5,6 @@ public final class DynamicServiceOrchestrationConstants {
 	//=================================================================================================
 	// members
 
-	public static final String SYSTEM_NAME = "serviceorchestration-dynamic";
-
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
 
@@ -50,7 +48,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String VERSION_ORCHESTRATION_LOCK_MANAGEMENT = "1.0.0";
 	public static final String VERSION_ORCHESTRATION_HISTORY_MANAGEMENT = "1.0.0";
 
-	public static final String METADATA_KEY_ORCHESTRATION_STRATEGY = "orchestration-strategy";
+	public static final String METADATA_KEY_ORCHESTRATION_STRATEGY = "orchestrationStrategy";
 	public static final String METADATA_VALUE_ORCHESTRATION_STRATEGY = "dynamic";
 
 	public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
@@ -75,12 +73,13 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
 	public static final String HTTP_PATH_PARAM_OWNER = "{owner}";
 	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_PATH_PARAM_OWNER;
+	public static final String PARAM_NAME_TRIGGER = "trigger";
 
-	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
-	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";
-	public static final String ORCH_WARN_NOT_EXCLUSIVE = "not_exclusive";
-	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "part_time_exclusivity";
-	public static final String ORCH_WARN_INTER_CLOUD = "inter_cloud";
+	public static final String ORCH_WARN_AUTO_MATCHMAKING = "autoMatchmaking";
+	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qosNotEnabled";
+	public static final String ORCH_WARN_NOT_EXCLUSIVE = "notExclusive";
+	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "partTimeExclusivity";
+	public static final String ORCH_WARN_INTER_CLOUD = "interCloud";
 
 	public static final String NOTIFY_KEY_ADDRESS = "address";
 	public static final String NOTIFY_KEY_PORT = "port";

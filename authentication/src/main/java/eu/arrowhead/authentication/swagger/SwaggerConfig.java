@@ -12,6 +12,6 @@ public class SwaggerConfig extends DefaultSwaggerConfig {
 
 	//-------------------------------------------------------------------------------------------------
 	public SwaggerConfig() {
-		super("Arrowhead System Authentication");
+		super("Arrowhead Authentication");
 	}
 }

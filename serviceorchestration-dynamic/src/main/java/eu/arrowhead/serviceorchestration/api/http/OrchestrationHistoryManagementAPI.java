@@ -58,8 +58,9 @@ public class OrchestrationHistoryManagementAPI {
 	public @ResponseBody OrchestrationHistoryResponseDTO query(final @RequestBody(required = false) OrchestrationHistoryQueryRequestDTO dto) {
 		logger.debug("query started...");
 
-		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH
+				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+
 		return historyMgmtService.query(dto, origin);
 	}
-
 }

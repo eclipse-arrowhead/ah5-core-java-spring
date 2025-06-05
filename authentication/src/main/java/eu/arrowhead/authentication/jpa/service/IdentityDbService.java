@@ -157,7 +157,7 @@ public class IdentityDbService {
 				// check if extras list size is correct
 				if (extras.size() != identityList.size()) {
 					// something is not right => roll back everything
-					logger.error("Extra list's size is incorrect.");
+					logger.error("Extra list's size is incorrect");
 					dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 					throw new InternalServerError("Database operation error");
 				}
@@ -206,7 +206,7 @@ public class IdentityDbService {
 				// check if extras list size is correct
 				if (extras.size() != identityList.size()) {
 					// something is not right => roll back everything
-					logger.error("Extra list's size is incorrect.");
+					logger.error("Extra list's size is incorrect");
 					authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
 					throw new InternalServerError("Database operation error");
 				}
@@ -527,7 +527,7 @@ public class IdentityDbService {
 		synchronized (SYSTEM_LOCK) {
 			final ZonedDateTime now = Utilities.utcNow();
 			final List<Long> matchings = new ArrayList<>();
-			final List<System> toFilter = dto.namePart() == null ? systemRepository.findAll() : systemRepository.findAllByNameContains(dto.namePart());
+			final List<System> toFilter = dto.namePart() == null ? systemRepository.findAll() : systemRepository.findAllByNameContainsIgnoreCase(dto.namePart());
 
 			for (final System system : toFilter) {
 				// sysop
@@ -573,7 +573,7 @@ public class IdentityDbService {
 
 		synchronized (SESSION_LOCK) {
 			final List<Long> matchings = new ArrayList<>();
-			final List<ActiveSession> toFilter = dto.namePart() == null ? asRepository.findAll() : asRepository.findAllBySystem_NameContains(dto.namePart());
+			final List<ActiveSession> toFilter = dto.namePart() == null ? asRepository.findAll() : asRepository.findAllBySystem_NameContainsIgnoreCase(dto.namePart());
 
 			for (final ActiveSession session : toFilter) {
 				// login from

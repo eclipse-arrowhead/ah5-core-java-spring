@@ -26,7 +26,7 @@ public interface ActiveSessionRepository extends RefreshableRepository<ActiveSes
 
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:MethodNameCheck")
-	public List<ActiveSession> findAllBySystem_NameContains(final String namePart);
+	public List<ActiveSession> findAllBySystem_NameContainsIgnoreCase(final String namePart);
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<ActiveSession> findAllByIdIn(final Pageable pageable, final List<Long> ids);

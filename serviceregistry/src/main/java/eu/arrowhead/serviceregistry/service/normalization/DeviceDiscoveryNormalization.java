@@ -12,7 +12,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.DeviceNameNormalizer;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceLookupRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
@@ -31,7 +31,7 @@ public class DeviceDiscoveryNormalization {
 	private AddressValidator addressValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private DeviceNameNormalizer deviceNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -47,23 +47,25 @@ public class DeviceDiscoveryNormalization {
 		return new NormalizedDeviceRequestDTO(
 				normalizeDeviceName(dto.name()),
 				dto.metadata(),
-				Utilities.isEmpty(dto.addresses()) ? new ArrayList<>()
+				Utilities.isEmpty(dto.addresses())
+						? new ArrayList<>()
 						: dto.addresses().stream()
-										 .map(a -> addressNormalizer.normalize(a))
-										 .map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
-										 .collect(Collectors.toList()));
+								.map(a -> addressNormalizer.normalize(a))
+								.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
+								.collect(Collectors.toList()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public DeviceLookupRequestDTO normalizeDeviceLookupRequestDTO(final DeviceLookupRequestDTO dto) {
 		logger.debug("normalizeDeviceLookupRequestDTO started");
-		Assert.notNull(dto, "DeviceLookupRequestDTO is null");
 
-		return new DeviceLookupRequestDTO(
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> normalizeDeviceName(n)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
-				dto.metadataRequirementList());
+		return dto == null
+				? new DeviceLookupRequestDTO(null, null, null, null)
+				: new DeviceLookupRequestDTO(
+						Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> normalizeDeviceName(n)).collect(Collectors.toList()),
+						Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
+						Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
+						dto.metadataRequirementList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -71,6 +73,6 @@ public class DeviceDiscoveryNormalization {
 		logger.debug("normalizeDeviceName started");
 		Assert.notNull(name, "Device name is null");
 
-		return nameNormalizer.normalize(name);
+		return deviceNameNormalizer.normalize(name);
 	}
 }

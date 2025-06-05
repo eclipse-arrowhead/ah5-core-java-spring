@@ -38,6 +38,7 @@ public class UsageLimitedTokenDbService {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:ParameterNumberCheck")
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Pair<UsageLimitedToken, Boolean> save(
 			final AuthorizationTokenType tokenType,
@@ -74,8 +75,8 @@ public class UsageLimitedTokenDbService {
 
 			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
 			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
-			return Pair.of(tokenRecord, !override);
 
+			return Pair.of(tokenRecord, !override);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -90,14 +91,13 @@ public class UsageLimitedTokenDbService {
 
 		try {
 			return tokenRepo.findByHeader(header);
-			
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
 		}
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Optional<Pair<Integer, Integer>> decrease(final TokenHeader header) {
@@ -108,15 +108,15 @@ public class UsageLimitedTokenDbService {
 			if (optional.isEmpty()) {
 				return Optional.empty();
 			}
-			
+
 			UsageLimitedToken usageLimitedToken = optional.get();
 			final int from = usageLimitedToken.getUsageLeft();
 			if (from > 0) {
-				usageLimitedToken.setUsageLeft(usageLimitedToken.getUsageLeft() - 1);			
+				usageLimitedToken.setUsageLeft(usageLimitedToken.getUsageLeft() - 1);
 				usageLimitedToken = tokenRepo.saveAndFlush(usageLimitedToken);
 			}
+
 			return Optional.of(Pair.of(from, usageLimitedToken.getUsageLeft()));
-			
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 
 @Service
 public class OrchestrationServiceNormalization {
@@ -19,7 +19,7 @@ public class OrchestrationServiceNormalization {
 	// members
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -32,6 +32,6 @@ public class OrchestrationServiceNormalization {
 		Assert.isTrue(!Utilities.isEmpty(requesterSystem), "requesterSystem is empty");
 		Assert.isTrue(!Utilities.isEmpty(subscriptionId), "subscriptionId is empty");
 
-		return Pair.of(nameNormalizer.normalize(requesterSystem), UUID.fromString(subscriptionId.trim()));
+		return Pair.of(systemNameNormalizer.normalize(requesterSystem), UUID.fromString(subscriptionId.trim()));
 	}
 }

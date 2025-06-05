@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 @Service
@@ -20,7 +23,16 @@ public class OrchestrationFormNormalization {
 	// members
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
+
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+	@Autowired
+	private ServiceOperationNameNormalizer serviceOpNameNormalizer;
+
+	@Autowired
+	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -32,9 +44,9 @@ public class OrchestrationFormNormalization {
 		logger.debug("normalizeOrchestrationForm started...");
 		Assert.notNull(form, "form is null");
 
-		form.setRequesterSystemName(nameNormalizer.normalize(form.getRequesterSystemName()));
-		form.setTargetSystemName(nameNormalizer.normalize(form.getTargetSystemName()));
-		form.setServiceDefinition(nameNormalizer.normalize(form.getServiceDefinition()));
+		form.setRequesterSystemName(systemNameNormalizer.normalize(form.getRequesterSystemName()));
+		form.setTargetSystemName(systemNameNormalizer.normalize(form.getTargetSystemName()));
+		form.setServiceDefinition(serviceDefNameNormalizer.normalize(form.getServiceDefinition()));
 
 		if (!Utilities.isEmpty(form.getOrchestrationFlags())) {
 			final Map<String, Boolean> normalizedFlags = new HashMap<>();
@@ -43,11 +55,11 @@ public class OrchestrationFormNormalization {
 		}
 
 		if (!Utilities.isEmpty(form.getOperations())) {
-			form.setOperations(form.getOperations().stream().map(o -> nameNormalizer.normalize(o)).toList());
+			form.setOperations(form.getOperations().stream().map(op -> serviceOpNameNormalizer.normalize(op)).toList());
 		}
 
 		if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
-			form.setInterfaceTemplateNames(form.getInterfaceTemplateNames().stream().map(itn -> nameNormalizer.normalize(itn)).toList());
+			form.setInterfaceTemplateNames(form.getInterfaceTemplateNames().stream().map(itn -> interfaceTemplateNameNormalizer.normalize(itn)).toList());
 		}
 
 		if (!Utilities.isEmpty(form.getInterfaceAddressTypes())) {
@@ -59,7 +71,7 @@ public class OrchestrationFormNormalization {
 		}
 
 		if (!Utilities.isEmpty(form.getPreferredProviders())) {
-			form.setPreferredProviders(form.getPreferredProviders().stream().map(pp -> nameNormalizer.normalize(pp)).toList());
+			form.setPreferredProviders(form.getPreferredProviders().stream().map(pp -> systemNameNormalizer.normalize(pp)).toList());
 		}
 
 		if (!Utilities.isEmpty(form.getQosRequirements())) {

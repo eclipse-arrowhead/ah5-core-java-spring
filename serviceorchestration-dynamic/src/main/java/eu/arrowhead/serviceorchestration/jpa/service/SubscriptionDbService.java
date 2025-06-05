@@ -73,8 +73,8 @@ public class SubscriptionDbService {
 
 			subscriptionRepo.deleteAllById(toRemove);
 			subscriptionRepo.flush();
-			return subscriptionRepo.saveAllAndFlush(toSave);
 
+			return subscriptionRepo.saveAllAndFlush(toSave);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -89,7 +89,6 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findById(id);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -104,7 +103,6 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findAllById(ids);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -120,7 +118,6 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(ownerSystem, targetSystem, serviceDefinition);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -134,7 +131,6 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findAll();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -150,6 +146,7 @@ public class SubscriptionDbService {
 		try {
 			BaseFilter baseFilter = BaseFilter.NONE;
 			List<Subscription> toFilter;
+
 			if (!Utilities.isEmpty(ownerSystems)) {
 				toFilter = subscriptionRepo.findByOwnerSystemIn(ownerSystems);
 				baseFilter = BaseFilter.OWNER;
@@ -183,7 +180,6 @@ public class SubscriptionDbService {
 			}
 
 			return subscriptionRepo.findByIdIn(matchingIds, pagination);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -201,10 +197,11 @@ public class SubscriptionDbService {
 			if (subscriptionRepo.existsById(id)) {
 				subscriptionRepo.deleteById(id);
 				subscriptionRepo.flush();
+
 				return true;
 			}
-			return false;
 
+			return false;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -221,7 +218,6 @@ public class SubscriptionDbService {
 		try {
 			subscriptionRepo.deleteAllByIdInBatch(ids);
 			subscriptionRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -238,8 +234,8 @@ public class SubscriptionDbService {
 			final List<Subscription> toDelete = subscriptionRepo.findAllByExpiresAtBefore(time);
 			if (!Utilities.isEmpty(toDelete)) {
 				subscriptionRepo.deleteAllInBatch(toDelete);
+				subscriptionRepo.flush();
 			}
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

@@ -140,7 +140,7 @@ public class PushOrchestrationThread extends Thread {
 			final OrchestrationJob job = orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
 
 			if (Utilities.isEmpty(job.getSubscriptionId())) {
-				final String errorMsg = "Orchestration job " + jobId + " has no subscription id.";
+				final String errorMsg = "Orchestration job " + jobId + " has no subscription id";
 				logger.error(errorMsg);
 				orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, errorMsg);
 				return;
@@ -148,7 +148,7 @@ public class PushOrchestrationThread extends Thread {
 
 			final Optional<Subscription> subscriptionOpt = subscriptionDbService.get(UUID.fromString(job.getSubscriptionId()));
 			if (subscriptionOpt.isEmpty()) {
-				final String errorMsg = "Orchestration job " + jobId + " has no subscription with " + job.getSubscriptionId() + " subscription id.";
+				final String errorMsg = "Orchestration job " + jobId + " has no subscription with " + job.getSubscriptionId() + " subscription id";
 				logger.error(errorMsg);
 				orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, errorMsg);
 				return;
@@ -177,10 +177,9 @@ public class PushOrchestrationThread extends Thread {
 				notifyViaMqtt(subscription.getId(), subscription.getTargetSystem(), subscription.getNotifyProperties(), result);
 				return;
 			}
-
 		} catch (final Exception ex) {
-			logger.debug(ex);
 			logger.error(ex.getMessage());
+			logger.debug(ex);
 			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, ex.getMessage());
 		}
 	}

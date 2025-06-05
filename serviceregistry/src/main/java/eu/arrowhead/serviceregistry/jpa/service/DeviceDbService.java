@@ -341,7 +341,7 @@ public class DeviceDbService {
 
 			final List<DeviceSystemConnector> connections = connectorRepo.findByDeviceIn(entries);
 			if (!connections.isEmpty()) {
-				throw new LockedException("At least one system is assigned to these devices.");
+				throw new LockedException("At least one system is assigned to these devices");
 			}
 
 			deviceRepo.deleteAll(entries);
@@ -367,7 +367,7 @@ public class DeviceDbService {
 
 				final List<DeviceSystemConnector> connections = connectorRepo.findByDevice(optional.get());
 				if (!connections.isEmpty()) {
-					throw new LockedException("At least one system is assigned to this device.");
+					throw new LockedException("At least one system is assigned to this device");
 				}
 
 				deviceRepo.delete(optional.get());
