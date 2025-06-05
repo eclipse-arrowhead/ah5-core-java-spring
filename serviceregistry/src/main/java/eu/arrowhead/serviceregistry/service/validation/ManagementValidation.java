@@ -169,10 +169,7 @@ public class ManagementValidation {
 		logger.debug("validateAndNormalizeQueryDevices started");
 
 		validateQueryDevices(dto, origin);
-
-		final DeviceQueryRequestDTO normalized = dto == null
-				? new DeviceQueryRequestDTO(null, null, null, null, null)
-				: normalizer.normalizeDeviceQueryRequestDTO(dto);
+		final DeviceQueryRequestDTO normalized = normalizer.normalizeDeviceQueryRequestDTO(dto);
 
 		try {
 			if (!Utilities.isEmpty(normalized.deviceNames())) {

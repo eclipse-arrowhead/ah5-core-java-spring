@@ -169,14 +169,15 @@ public class ManagementNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public DeviceQueryRequestDTO normalizeDeviceQueryRequestDTO(final DeviceQueryRequestDTO dto) {
 		logger.debug("normalizeDeviceQueryRequestDTO started");
-		Assert.notNull(dto, "DeviceQueryRequestDTO list is null");
 
-		return new DeviceQueryRequestDTO(
-				dto.pagination(),
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> deviceNameNormalizer.normalize(n)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
-				dto.metadataRequirementList());
+		return dto == null
+				? new DeviceQueryRequestDTO(null, null, null, null, null)
+				: new DeviceQueryRequestDTO(
+						dto.pagination(),
+						Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> deviceNameNormalizer.normalize(n)).collect(Collectors.toList()),
+						Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
+						Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
+						dto.metadataRequirementList());
 	}
 
 	//-------------------------------------------------------------------------------------------------

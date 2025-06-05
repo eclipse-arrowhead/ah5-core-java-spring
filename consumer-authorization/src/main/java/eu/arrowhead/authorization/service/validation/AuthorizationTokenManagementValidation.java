@@ -264,17 +264,15 @@ public class AuthorizationTokenManagementValidation {
 			}
 
 			if (!Utilities.isEmpty(request.expiresAt())) {
-				if (!Utilities.isEmpty(request.expiresAt())) {
-					ZonedDateTime expiresAt = null;
-					try {
-						expiresAt = Utilities.parseUTCStringToZonedDateTime(request.expiresAt().trim());
-					} catch (final DateTimeException ex) {
-						throw new InvalidParameterException("Expiration time has an invalid time format", origin);
-					}
+				ZonedDateTime expiresAt = null;
+				try {
+					expiresAt = Utilities.parseUTCStringToZonedDateTime(request.expiresAt().trim());
+				} catch (final DateTimeException ex) {
+					throw new InvalidParameterException("Expiration time has an invalid time format", origin);
+				}
 
-					if (Utilities.utcNow().isAfter(expiresAt)) {
-						throw new InvalidParameterException("Expiration time is in the past", origin);
-					}
+				if (Utilities.utcNow().isAfter(expiresAt)) {
+					throw new InvalidParameterException("Expiration time is in the past", origin);
 				}
 			}
 

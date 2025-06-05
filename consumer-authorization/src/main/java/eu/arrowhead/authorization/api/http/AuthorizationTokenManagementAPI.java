@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.authorization.AuthorizationConstants;
+import eu.arrowhead.authorization.AuthorizationDefaults;
 import eu.arrowhead.authorization.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.authorization.service.AuthorizationTokenManagementService;
 import eu.arrowhead.common.Constants;
@@ -75,7 +76,7 @@ public class AuthorizationTokenManagementAPI {
 	public @ResponseBody AuthorizationTokenMgmtListResponseDTO generateTokens(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final AuthorizationTokenGenerationMgmtListRequestDTO dto,
-			@Parameter(name = Constants.UNBOUND, description = "Set true if you want to skip the authorization check. (It should be configured in the application.properties as well)", example = "true") @RequestParam(required = false, defaultValue = "false") final boolean unbound) {
+			@Parameter(name = Constants.UNBOUND, description = "Set true if you want to skip the authorization check. (It should be configured in the application.properties as well)", example = "true") @RequestParam(required = false, defaultValue = AuthorizationDefaults.DEFAULT_UNBOUND_VALUE) final boolean unbound) {
 		logger.debug("generateTokens started");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH

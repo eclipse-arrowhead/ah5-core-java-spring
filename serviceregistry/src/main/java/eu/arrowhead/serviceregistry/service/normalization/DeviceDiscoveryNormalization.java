@@ -50,21 +50,22 @@ public class DeviceDiscoveryNormalization {
 				Utilities.isEmpty(dto.addresses())
 						? new ArrayList<>()
 						: dto.addresses().stream()
-										 .map(a -> addressNormalizer.normalize(a))
-										 .map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
-										 .collect(Collectors.toList()));
+								.map(a -> addressNormalizer.normalize(a))
+								.map(na -> new AddressDTO(addressValidator.detectType(na).name(), na))
+								.collect(Collectors.toList()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public DeviceLookupRequestDTO normalizeDeviceLookupRequestDTO(final DeviceLookupRequestDTO dto) {
 		logger.debug("normalizeDeviceLookupRequestDTO started");
-		Assert.notNull(dto, "DeviceLookupRequestDTO is null");
 
-		return new DeviceLookupRequestDTO(
-				Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> normalizeDeviceName(n)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
-				Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
-				dto.metadataRequirementList());
+		return dto == null
+				? new DeviceLookupRequestDTO(null, null, null, null)
+				: new DeviceLookupRequestDTO(
+						Utilities.isEmpty(dto.deviceNames()) ? null : dto.deviceNames().stream().map(n -> normalizeDeviceName(n)).collect(Collectors.toList()),
+						Utilities.isEmpty(dto.addresses()) ? null : dto.addresses().stream().map(a -> addressNormalizer.normalize(a)).collect(Collectors.toList()),
+						Utilities.isEmpty(dto.addressType()) ? null : dto.addressType().trim().toUpperCase(),
+						dto.metadataRequirementList());
 	}
 
 	//-------------------------------------------------------------------------------------------------

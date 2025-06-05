@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.authorization.AuthorizationConstants;
+import eu.arrowhead.authorization.AuthorizationDefaults;
 import eu.arrowhead.authorization.service.AuthorizationTokenManagementService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
@@ -58,7 +59,9 @@ public class AuthorizationTokenManagementMqttHandler extends MqttTopicHandler {
 		switch (request.getOperation()) {
 		case Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS:
 			final AuthorizationTokenGenerationMgmtListRequestDTO generateDTO = readPayload(request.getPayload(), AuthorizationTokenGenerationMgmtListRequestDTO.class);
-			final boolean unbound = request.getParams().containsKey(Constants.UNBOUND) ? Boolean.valueOf(request.getParams().get(Constants.UNBOUND)) : false;
+			final boolean unbound = request.getParams().containsKey(Constants.UNBOUND)
+					? Boolean.valueOf(request.getParams().get(Constants.UNBOUND))
+					: Boolean.valueOf(AuthorizationDefaults.DEFAULT_UNBOUND_VALUE);
 			responsePayload = generateTokens(request.getRequester(), generateDTO, unbound);
 			responseStatus = MqttStatus.CREATED;
 			break;

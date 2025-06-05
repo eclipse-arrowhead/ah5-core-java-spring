@@ -62,9 +62,7 @@ public class DeviceDiscoveryValidation {
 		logger.debug("validateAndNormalizeLookupDevice started");
 
 		validateLookupDevice(dto, origin);
-		final DeviceLookupRequestDTO normalized = dto == null
-				? new DeviceLookupRequestDTO(null, null, null, null)
-				: normalizer.normalizeDeviceLookupRequestDTO(dto);
+		final DeviceLookupRequestDTO normalized = normalizer.normalizeDeviceLookupRequestDTO(dto);
 
 		try {
 			if (!Utilities.isEmpty(normalized.deviceNames())) {

@@ -26,9 +26,11 @@ public class SecretCryptographer {
 
 	//=================================================================================================
 	// members
+	
 
 	public static final String AES_ECB_ALGORITHM = "AES/ECB/PKCS5Padding"; // Without initialization vector
 	public static final String AES_CBC_ALGORITHM_IV_BASED = "AES/CBC/PKCS5Padding"; // With initialization vector
+	public static final String DEFAULT_ENCRYPTION_ALGORITHM = AES_ECB_ALGORITHM;
 	public static final int AES_KEY_MIN_SIZE = 16; // 128 bits
 	public static final int IV_KEY_SIZE = 16; // 128 bits
 

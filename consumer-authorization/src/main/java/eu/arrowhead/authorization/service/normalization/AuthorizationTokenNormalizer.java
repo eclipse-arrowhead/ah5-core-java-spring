@@ -89,7 +89,7 @@ public class AuthorizationTokenNormalizer {
 
 		return new AuthorizationEncryptionKeyRegistrationRequestDTO(
 				dto.key(),
-				Utilities.isEmpty(dto.algorithm()) ? SecretCryptographer.AES_ECB_ALGORITHM : dto.algorithm().trim());
+				Utilities.isEmpty(dto.algorithm()) ? SecretCryptographer.DEFAULT_ENCRYPTION_ALGORITHM : dto.algorithm().trim());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ public class AuthorizationTokenNormalizer {
 						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(
 								systemNameNormalizer.normalize(item.systemName()),
 								item.key(),
-								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.AES_ECB_ALGORITHM : item.algorithm().trim().toUpperCase()))
+								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.DEFAULT_ENCRYPTION_ALGORITHM : item.algorithm().trim().toUpperCase()))
 						.toList());
 	}
 }
