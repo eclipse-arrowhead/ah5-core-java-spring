@@ -178,7 +178,7 @@ public class ManagementAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO querySystems(@RequestBody(required = false) final SystemQueryRequestDTO dto,
-			@Parameter(name = "verbose",
+			@Parameter(name = Constants.VERBOSE,
 					   description = "Set true if you want the response to contain device details.")
 					   @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("querySystems started, verbose = {}", verbose);
@@ -350,7 +350,7 @@ public class ManagementAPI {
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInstanceListResponseDTO queryServiceInstances(
 			@RequestBody final ServiceInstanceQueryRequestDTO dto,
-			@Parameter(name = "verbose",
+			@Parameter(name = Constants.VERBOSE,
 					   description = "Set true if you want the response to contain the system and device details.")
 					   @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("queryServiceInstances started");

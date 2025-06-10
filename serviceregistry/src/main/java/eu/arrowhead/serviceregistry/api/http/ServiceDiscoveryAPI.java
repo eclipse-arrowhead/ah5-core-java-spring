@@ -102,7 +102,7 @@ public class ServiceDiscoveryAPI {
 	public @ResponseBody ServiceInstanceListResponseDTO lookup(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final ServiceInstanceLookupRequestDTO dto,
-			@Parameter(name = "verbose",
+			@Parameter(name = Constants.VERBOSE,
 					   description = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.")
 			           @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("lookup started");

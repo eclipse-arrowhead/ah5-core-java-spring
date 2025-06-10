@@ -101,7 +101,7 @@ public class SystemDiscoveryAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO lookup(@RequestBody(required = false) final SystemLookupRequestDTO dto,
-			@Parameter(name = "verbose",
+			@Parameter(name = Constants.VERBOSE,
 					   description = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)")
 					   @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("lookup started");
