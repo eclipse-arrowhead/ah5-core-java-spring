@@ -103,8 +103,8 @@ public class ServiceDiscoveryAPI {
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final ServiceInstanceLookupRequestDTO dto,
 			@Parameter(name = "verbose",
-					   description = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.)",
-					   example = "true") @RequestParam final boolean verbose) {
+					   description = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.")
+			           @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;

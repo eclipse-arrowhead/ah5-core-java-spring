@@ -68,6 +68,7 @@ public final class ServiceRegistryConstants {
 
 	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "|";
 	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER_REGEXP = "\\|";
+	public static final String VERBOSE_PARAM_DEFAULT = "false"; // this is the query parameter default, not the same as the configuration default
 
 	//=================================================================================================
 	// assistant methods
