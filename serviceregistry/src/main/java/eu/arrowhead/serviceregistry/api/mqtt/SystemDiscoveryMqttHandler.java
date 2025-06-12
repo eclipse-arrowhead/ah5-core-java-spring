@@ -65,7 +65,11 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_LOOKUP:
 			final SystemLookupRequestDTO lookupDTO = readPayload(request.getPayload(), SystemLookupRequestDTO.class);
 			final Boolean verbose = Boolean.valueOf(request.getParams().get("verbose"));
-			responsePayload = lookup(lookupDTO, verbose);
+			responsePayload = lookup(
+					lookupDTO,
+					verbose != null
+						? verbose
+						: Boolean.valueOf(ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT));
 			break;
 
 		case Constants.SERVICE_OP_REVOKE:
