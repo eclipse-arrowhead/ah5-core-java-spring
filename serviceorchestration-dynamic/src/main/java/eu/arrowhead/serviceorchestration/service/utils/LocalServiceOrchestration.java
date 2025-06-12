@@ -21,12 +21,17 @@ import org.springframework.util.MultiValueMap;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.AuthException;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
+import eu.arrowhead.dto.BlacklistEntryDTO;
+import eu.arrowhead.dto.BlacklistEntryListResponseDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationResultDTO;
@@ -92,7 +97,7 @@ public class LocalServiceOrchestration {
 		try {
 			final Set<String> warnings = new HashSet<>();
 
-			// discovering the service
+			// Discovering the service
 			final boolean translationAllowed = form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
 			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.getFlag(OrchestrationFlag.ONLY_PREFERRED));
 			candidates = filterOutLockedOnes(jobId, candidates);
@@ -116,6 +121,15 @@ public class LocalServiceOrchestration {
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING, true)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
+			}
+
+			// Blacklist cross-check
+			if (sysInfo.isBlacklistEnabled()) {
+				candidates = filterOutBlacklistedOnes(candidates);
+			}
+
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
 			}
 
 			// Authorization cross-check
@@ -376,6 +390,47 @@ public class LocalServiceOrchestration {
 		}
 
 		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private List<OrchestrationCandidate> filterOutBlacklistedOnes(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutBlacklistedOnes started...");
+
+		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).toList();
+		try {
+
+			final BlacklistEntryListResponseDTO response = ahHttpService.consumeService(
+					Constants.SERVICE_DEF_BLACKLIST_DISCOVERY,
+					Constants.SERVICE_OP_LOOKUP,
+					Constants.SYS_NAME_BLACKLIST,
+					BlacklistEntryListResponseDTO.class,
+					systemNames);
+
+			final List<OrchestrationCandidate> result = candidates.stream().filter(candidate -> {
+				boolean isBlacklisted = false;
+				for (BlacklistEntryDTO blDTO : response.entries()) {
+					if (candidate.getServiceInstance().provider().name().equals(blDTO.systemName())) {
+						isBlacklisted = blDTO.active();
+						break;
+					}
+				}
+				return !isBlacklisted;
+			}).toList();
+
+			return result;
+
+		} catch (final ForbiddenException | AuthException ex) {
+			throw ex;
+		} catch (final ArrowheadException ex) {
+			logger.error("Blacklist server is not available during the orchestration process.");
+			if (sysInfo.isBlacklistForced()) {
+				logger.error("All the provider candidate has been filtered out, because blacklist filter is forced.");
+				return List.of();
+			} else {
+				logger.error("All the provider candidate has been passed, because blacklist filter is not forced.");
+				return candidates;
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
