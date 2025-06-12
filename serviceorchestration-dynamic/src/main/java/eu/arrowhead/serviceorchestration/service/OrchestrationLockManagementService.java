@@ -123,8 +123,7 @@ public class OrchestrationLockManagementService {
 				final List<Long> removeIds = new ArrayList<>();
 				final List<OrchestrationLock> records = lockDbService.getByServiceInstanceId(normalized.getRight());
 				for (final OrchestrationLock record : records) {
-					if (Utilities.isEmpty(record.getOrchestrationJobId())
-							&& record.getOwner().equals(normalized.getLeft())) {
+					if (!record.isTemporary() && record.getOwner().equals(normalized.getLeft())) {
 						removeIds.add(record.getId());
 					}
 				}
