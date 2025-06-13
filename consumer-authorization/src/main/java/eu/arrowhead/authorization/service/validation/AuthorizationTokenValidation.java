@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.service.normalization.AuthorizationTokenNormalizer;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.EventTypeNameValidator;
@@ -81,7 +81,7 @@ public class AuthorizationTokenValidation {
 		final AuthorizationTokenGenerationRequestDTO normalized = normalizer.normalizeAuthorizationTokenGenerationRequestDTO(dto);
 
 		try {
-			if (!normalized.tokenType().endsWith(AuthorizationConstants.TOKEN_TYPE_AUTH_SUFFIX)) {
+			if (!normalized.tokenType().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
 				throw new InvalidParameterException("Token type is invalid", origin);
 			}
 

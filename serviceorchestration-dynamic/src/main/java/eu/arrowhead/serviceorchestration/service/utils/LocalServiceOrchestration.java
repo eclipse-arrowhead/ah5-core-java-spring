@@ -27,6 +27,10 @@ import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
@@ -176,7 +180,7 @@ public class LocalServiceOrchestration {
 				if (checkIfHasNativeOnes(candidates)) {
 					candidates = filterOutNonNativeOnes(candidates);
 				} else {
-					candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
+					candidates = filterOutNotTranslatableOnesAndChooseTranslatableIntrefaces(candidates); // translation discovery
 					if (Utilities.isEmpty(candidates)) {
 						return doInterCloudOrReturn(jobId, form);
 					}
@@ -226,7 +230,7 @@ public class LocalServiceOrchestration {
 
 			// Obtain Authorization tokens when required
 			if (sysInfo.isAuthorizationEnabled()) {
-				obtainAuthorizationTokensIfRequired(candidates);
+				obtainAuthorizationTokensIfRequired(form, candidates);
 			}
 
 			// Create translation bridge if necessary
@@ -396,6 +400,8 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutBlacklistedOnes(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutBlacklistedOnes started...");
 
+		// TODO blacklist exclude list!!!
+
 		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).toList();
 		try {
 
@@ -408,7 +414,7 @@ public class LocalServiceOrchestration {
 
 			final List<OrchestrationCandidate> result = candidates.stream().filter(candidate -> {
 				boolean isBlacklisted = false;
-				for (BlacklistEntryDTO blDTO : response.entries()) {
+				for (final BlacklistEntryDTO blDTO : response.entries()) {
 					if (candidate.getServiceInstance().provider().name().equals(blDTO.systemName())) {
 						isBlacklisted = blDTO.active();
 						break;
@@ -590,10 +596,11 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
-		logger.debug("filterOutNotTranslatableOnes started...");
+	private List<OrchestrationCandidate> filterOutNotTranslatableOnesAndChooseTranslatableIntrefaces(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNotTranslatableOnesAndChooseTranslatableIntrefaces started...");
 
 		// TODO here comes the translation discovery
+		// Choose exactly one interface and put that into candidate.matchingInterfaces
 		logger.warn("Translation support is not implemented yet");
 		return List.of();
 	}
@@ -699,18 +706,58 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void obtainAuthorizationTokensIfRequired(final List<OrchestrationCandidate> candidates) {
+	private void obtainAuthorizationTokensIfRequired(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("obtainAuthorizationTokensIfRequired started...");
 
-		// TODO where ServiceInterfacePolicy is TOKEN_AUTH
-		logger.warn("Authorization token support is not implemented yet");
+		final List<String> scopeList = Utilities.isEmpty(form.getOperations()) ? List.of("") : form.getOperations();
+		final List<AuthorizationTokenGenerationMgmtRequestDTO> requestPayloadEntries = new ArrayList<>();
+		for (final OrchestrationCandidate candidate : candidates) {
+			if (candidate.isNonNative()) {
+				Assert.isTrue(candidate.getMatchingInterfaces().size() == 1, "Non native candidate has more than 1 matching interface");
+			}
+
+			candidate.getMatchingInterfaces().forEach(interf -> {
+				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
+					scopeList.forEach(scope -> {
+						requestPayloadEntries.add(new AuthorizationTokenGenerationMgmtRequestDTO(
+								interf.policy(),
+								AuthorizationTargetType.SERVICE_DEF.name(),
+								Defaults.DEFAULT_CLOUD,
+								form.getTargetSystemName(),
+								candidate.getServiceInstance().provider().name(),
+								candidate.getServiceInstance().serviceDefinition().name(),
+								scope,
+								null,
+								null));
+					});
+				}
+			});
+		}
+
+		final AuthorizationTokenMgmtListResponseDTO response = ahHttpService.consumeService(
+				Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT,
+				Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS,
+				Constants.SYS_NAME_CONSUMER_AUTHORIZATION,
+				AuthorizationTokenMgmtListResponseDTO.class,
+				new AuthorizationTokenGenerationMgmtListRequestDTO(requestPayloadEntries),
+				new LinkedMultiValueMap<>(Map.of(Constants.UNBOUND, List.of(Boolean.TRUE.toString()))));
+
+		for (final AuthorizationTokenResponseDTO tokenResult : response.entries()) {
+			for (final OrchestrationCandidate candidate : candidates) {
+				if (candidate.getServiceInstance().provider().name().equals(tokenResult.provider())) {
+					candidate.addAuthorizationToken(Utilities.isEmpty(tokenResult.variant()) ? tokenResult.tokenType().name() : tokenResult.variant(), tokenResult.scope(), tokenResult.token());
+					break;
+				}
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void buildTranslationBridge(final OrchestrationCandidate candidate) {
 		logger.debug("buildTranslationBridge started...");
 
-		// TODO add the new connection details into the candidate object's matchingInterface list
+		// TODO use the exactly one connection details from the candidate.matchingInterfaces list to build the bridge
+		// TODO change the old (non-native) connection details to the new connection details in the candidate.matchingInterfaces list
 
 		logger.warn("Translation bridge support is not implemented yet");
 	}
@@ -741,7 +788,8 @@ public class LocalServiceOrchestration {
 						c.getServiceInstance().expiresAt(),
 						Utilities.convertZonedDateTimeToUTCString(c.getExclusiveUntil()),
 						c.getServiceInstance().metadata(),
-						c.getMatchingInterfaces()))
+						c.getMatchingInterfaces(),
+						c.getAuthorizationTokens()))
 				.collect(Collectors.toList());
 
 		return new OrchestrationResponseDTO(results, new ArrayList<>(warnings));
