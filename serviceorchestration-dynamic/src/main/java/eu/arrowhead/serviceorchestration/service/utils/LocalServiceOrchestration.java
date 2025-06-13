@@ -29,6 +29,7 @@ import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
@@ -745,7 +746,10 @@ public class LocalServiceOrchestration {
 		for (final AuthorizationTokenResponseDTO tokenResult : response.entries()) {
 			for (final OrchestrationCandidate candidate : candidates) {
 				if (candidate.getServiceInstance().provider().name().equals(tokenResult.provider())) {
-					candidate.addAuthorizationToken(Utilities.isEmpty(tokenResult.variant()) ? tokenResult.tokenType().name() : tokenResult.variant(), tokenResult.scope(), tokenResult.token());
+					candidate.addAuthorizationToken(
+							Utilities.isEmpty(tokenResult.variant()) ? tokenResult.tokenType().name() : tokenResult.variant(),
+							tokenResult.scope(),
+							new AuthorizationTokenGenerationResponseDTO(tokenResult.tokenType(), tokenResult.targetType(), tokenResult.token(), tokenResult.usageLimit(), tokenResult.expiresAt()));
 					break;
 				}
 			}
