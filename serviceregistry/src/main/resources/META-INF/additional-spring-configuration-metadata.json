@@ -113,5 +113,10 @@
     "name": "normalization.mode",
     "type": "eu.arrowhead.common.service.normalization.NormalizationMode",
     "description": "A description for 'normalization.mode'"
+  },
+  {
+    "name": "blacklist.check.exclude.list",
+    "type": "java.util.List",
+    "description": "A description for 'blacklist.check.exclude.list'"
   }
 ]}
