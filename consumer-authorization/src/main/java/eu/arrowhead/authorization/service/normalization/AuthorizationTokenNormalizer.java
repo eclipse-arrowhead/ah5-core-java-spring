@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.name.EventTypeNameNormalizer;
@@ -79,7 +80,7 @@ public class AuthorizationTokenNormalizer {
 				systemNameNormalizer.normalize(dto.provider()),
 				normalizedTargetType,
 				normalizedTarget,
-				Utilities.isEmpty(dto.scope()) ? null : scopeNormalizer.normalize(dto.scope()));
+				Utilities.isEmpty(dto.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : scopeNormalizer.normalize(dto.scope()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -114,7 +115,7 @@ public class AuthorizationTokenNormalizer {
 									systemNameNormalizer.normalize(item.consumer()),
 									systemNameNormalizer.normalize(item.provider()),
 									normalizedTarget,
-									Utilities.isEmpty(item.scope()) ? null : scopeNormalizer.normalize(item.scope()),
+									Utilities.isEmpty(item.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : scopeNormalizer.normalize(item.scope()),
 									Utilities.isEmpty(item.expiresAt()) ? null : item.expiresAt().trim(),
 									item.usageLimit());
 						})
