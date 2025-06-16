@@ -401,9 +401,7 @@ public class LocalServiceOrchestration {
 	private List<OrchestrationCandidate> filterOutBlacklistedOnes(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutBlacklistedOnes started...");
 
-		// TODO blacklist exclude list!!!
-
-		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).toList();
+		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).filter(sysName -> !sysInfo.getBlacklistCheckExcludeList().contains(sysName)).toList();
 		try {
 
 			final BlacklistEntryListResponseDTO response = ahHttpService.consumeService(
