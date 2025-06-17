@@ -118,5 +118,15 @@
     "name": "max.page.size",
     "type": "java.lang.Integer",
     "description": "A description for 'max.page.size'"
+  },
+  {
+    "name": "force.blacklist.filter",
+    "type": "java.lang.Boolean",
+    "description": "A description for 'force.blacklist.filter'"
+  },
+  {
+    "name": "blacklist.check.exclude.list",
+    "type": "java.util.List",
+    "description": "A description for 'blacklist.check.exclude.list'"
   }
 ]}

@@ -113,5 +113,10 @@
     "name": "cleaner.job.interval",
     "type": "java.lang.Long",
     "description": "A description for 'cleaner.job.interval'"
+  },
+  {
+    "name": "blacklist.check.exclude.list",
+    "type": "java.util.List",
+    "description": "A description for 'blacklist.check.exclude.list'"
   }
 ]}
