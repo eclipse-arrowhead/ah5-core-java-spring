@@ -37,9 +37,11 @@ import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
 import eu.arrowhead.dto.BlacklistEntryDTO;
 import eu.arrowhead.dto.BlacklistEntryListResponseDTO;
+import eu.arrowhead.dto.BlacklistQueryRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationResultDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -94,6 +96,7 @@ public class LocalServiceOrchestration {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MethodLengthCheck")
 	public OrchestrationResponseDTO doLocalServiceOrchestration(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("doLocalServiceOrchestration started...");
 
@@ -181,7 +184,7 @@ public class LocalServiceOrchestration {
 				if (checkIfHasNativeOnes(candidates)) {
 					candidates = filterOutNonNativeOnes(candidates);
 				} else {
-					candidates = filterOutNotTranslatableOnesAndChooseTranslatableIntrefaces(candidates); // translation discovery
+					candidates = filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(candidates); // translation discovery
 					if (Utilities.isEmpty(candidates)) {
 						return doInterCloudOrReturn(jobId, form);
 					}
@@ -404,18 +407,28 @@ public class LocalServiceOrchestration {
 		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).filter(sysName -> !sysInfo.getBlacklistCheckExcludeList().contains(sysName)).toList();
 		try {
 
-			final BlacklistEntryListResponseDTO response = ahHttpService.consumeService(
-					Constants.SERVICE_DEF_BLACKLIST_DISCOVERY,
-					Constants.SERVICE_OP_LOOKUP,
-					Constants.SYS_NAME_BLACKLIST,
-					BlacklistEntryListResponseDTO.class,
-					systemNames);
+			boolean hasMorePage = false;
+			int pageNumber = 0;
+			final List<BlacklistEntryDTO> blacklistEntries = new ArrayList<BlacklistEntryDTO>();
+			do {
+				final BlacklistEntryListResponseDTO response = ahHttpService.consumeService(
+						Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT,
+						Constants.SERVICE_OP_BLACKLIST_QUERY,
+						Constants.SYS_NAME_BLACKLIST,
+						BlacklistEntryListResponseDTO.class,
+						new BlacklistQueryRequestDTO(new PageDTO(pageNumber == 0 ? null : pageNumber, null, null, null), systemNames, null, null, null, null, Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow())));
+
+				blacklistEntries.addAll(response.entries());
+				hasMorePage = blacklistEntries.size() < response.count();
+				pageNumber = hasMorePage ? pageNumber + 1 : pageNumber;
+
+			} while (hasMorePage);
 
 			final List<OrchestrationCandidate> result = candidates.stream().filter(candidate -> {
 				boolean isBlacklisted = false;
-				for (final BlacklistEntryDTO blDTO : response.entries()) {
+				for (final BlacklistEntryDTO blDTO : blacklistEntries) {
 					if (candidate.getServiceInstance().provider().name().equals(blDTO.systemName())) {
-						isBlacklisted = blDTO.active();
+						isBlacklisted = true;
 						break;
 					}
 				}
@@ -427,12 +440,12 @@ public class LocalServiceOrchestration {
 		} catch (final ForbiddenException | AuthException ex) {
 			throw ex;
 		} catch (final ArrowheadException ex) {
-			logger.error("Blacklist server is not available during the orchestration process.");
+			logger.error("Blacklist server is not available during the orchestration process");
 			if (sysInfo.isBlacklistForced()) {
-				logger.error("All the provider candidate has been filtered out, because blacklist filter is forced.");
+				logger.error("All the provider candidate has been filtered out, because blacklist filter is forced");
 				return List.of();
 			} else {
-				logger.error("All the provider candidate has been passed, because blacklist filter is not forced.");
+				logger.error("All the provider candidate has been passed, because blacklist filter is not forced");
 				return candidates;
 			}
 		}
@@ -595,8 +608,8 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotTranslatableOnesAndChooseTranslatableIntrefaces(final List<OrchestrationCandidate> candidates) {
-		logger.debug("filterOutNotTranslatableOnesAndChooseTranslatableIntrefaces started...");
+	private List<OrchestrationCandidate> filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNotTranslatableOnesAndChooseTranslatableInterfaces started...");
 
 		// TODO here comes the translation discovery
 		// Choose exactly one interface and put that into candidate.matchingInterfaces
@@ -745,8 +758,8 @@ public class LocalServiceOrchestration {
 			for (final OrchestrationCandidate candidate : candidates) {
 				if (candidate.getServiceInstance().provider().name().equals(tokenResult.provider())) {
 					candidate.addAuthorizationToken(
-							Utilities.isEmpty(tokenResult.variant()) ? tokenResult.tokenType().name() : tokenResult.variant(),
-							tokenResult.scope(),
+							Utilities.isEmpty(tokenResult.variant()) ? tokenResult.tokenType().name() : tokenResult.variant(), // tokenType or variant contains the exact token related ServiceInterfacePolicy
+							Utilities.isEmpty(tokenResult.scope()) ? tokenResult.target() : tokenResult.scope(),
 							new AuthorizationTokenGenerationResponseDTO(tokenResult.tokenType(), tokenResult.targetType(), tokenResult.token(), tokenResult.usageLimit(), tokenResult.expiresAt()));
 					break;
 				}

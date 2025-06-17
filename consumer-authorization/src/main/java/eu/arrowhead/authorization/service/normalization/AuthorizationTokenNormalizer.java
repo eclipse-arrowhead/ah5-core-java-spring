@@ -80,7 +80,7 @@ public class AuthorizationTokenNormalizer {
 				systemNameNormalizer.normalize(dto.provider()),
 				normalizedTargetType,
 				normalizedTarget,
-				Utilities.isEmpty(dto.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : scopeNormalizer.normalize(dto.scope()));
+				Utilities.isEmpty(dto.scope()) ? null : scopeNormalizer.normalize(dto.scope()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ public class AuthorizationTokenNormalizer {
 									systemNameNormalizer.normalize(item.consumer()),
 									systemNameNormalizer.normalize(item.provider()),
 									normalizedTarget,
-									Utilities.isEmpty(item.scope()) ? Defaults.DEFAULT_AUTHORIZATION_SCOPE : scopeNormalizer.normalize(item.scope()),
+									Utilities.isEmpty(item.scope()) ? null : scopeNormalizer.normalize(item.scope()),
 									Utilities.isEmpty(item.expiresAt()) ? null : item.expiresAt().trim(),
 									item.usageLimit());
 						})
