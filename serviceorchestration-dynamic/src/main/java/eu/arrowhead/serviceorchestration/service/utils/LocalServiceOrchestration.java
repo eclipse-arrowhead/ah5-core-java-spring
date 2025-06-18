@@ -409,6 +409,7 @@ public class LocalServiceOrchestration {
 
 			boolean hasMorePage = false;
 			int pageNumber = 0;
+			Integer pageSize = null;
 			final List<BlacklistEntryDTO> blacklistEntries = new ArrayList<BlacklistEntryDTO>();
 			do {
 				final BlacklistEntryListResponseDTO response = ahHttpService.consumeService(
@@ -416,11 +417,12 @@ public class LocalServiceOrchestration {
 						Constants.SERVICE_OP_BLACKLIST_QUERY,
 						Constants.SYS_NAME_BLACKLIST,
 						BlacklistEntryListResponseDTO.class,
-						new BlacklistQueryRequestDTO(new PageDTO(pageNumber == 0 ? null : pageNumber, null, null, null), systemNames, null, null, null, null, Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow())));
+						new BlacklistQueryRequestDTO(new PageDTO(pageNumber == 0 ? null : pageNumber, pageSize, null, null), systemNames, null, null, null, null, Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow())));
 
 				blacklistEntries.addAll(response.entries());
 				hasMorePage = blacklistEntries.size() < response.count();
 				pageNumber = hasMorePage ? pageNumber + 1 : pageNumber;
+				pageSize = pageSize == null ? response.entries().size() : pageSize;
 
 			} while (hasMorePage);
 
