@@ -760,7 +760,7 @@ public class LocalServiceOrchestration {
 			for (final OrchestrationCandidate candidate : candidates) {
 				if (candidate.getServiceInstance().provider().name().equals(tokenResult.provider())) {
 					candidate.addAuthorizationToken(
-							Utilities.isEmpty(tokenResult.variant()) ? tokenResult.tokenType().name() : tokenResult.variant(), // tokenType or variant contains the exact token related ServiceInterfacePolicy
+							tokenResult.variant(),
 							Utilities.isEmpty(tokenResult.scope()) ? tokenResult.target() : tokenResult.scope(),
 							new AuthorizationTokenGenerationResponseDTO(tokenResult.tokenType(), tokenResult.targetType(), tokenResult.token(), tokenResult.usageLimit(), tokenResult.expiresAt()));
 					break;

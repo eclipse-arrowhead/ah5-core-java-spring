@@ -9,6 +9,7 @@ import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
 public class TokenModel {
 
@@ -43,6 +44,7 @@ public class TokenModel {
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final UsageLimitedToken token) {
 		this.header = token.getHeader();
+		this.variant = ServiceInterfacePolicy.USAGE_LIMITED_TOKEN_AUTH.name();
 		this.usageLimit = token.getUsageLimit();
 		this.usageLeft = token.getUsageLeft();
 		this.rawToken = null;
@@ -51,6 +53,7 @@ public class TokenModel {
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final UsageLimitedToken token, final String rawToken) {
 		this.header = token.getHeader();
+		this.variant = ServiceInterfacePolicy.USAGE_LIMITED_TOKEN_AUTH.name();
 		this.usageLimit = token.getUsageLimit();
 		this.usageLeft = token.getUsageLeft();
 		this.rawToken = rawToken;
@@ -59,6 +62,7 @@ public class TokenModel {
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final TimeLimitedToken token) {
 		this.header = token.getHeader();
+		this.variant = ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH.name();
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = null;
 	}
@@ -66,6 +70,7 @@ public class TokenModel {
 	//-------------------------------------------------------------------------------------------------
 	public TokenModel(final TimeLimitedToken token, final String rawToken) {
 		this.header = token.getHeader();
+		this.variant = ServiceInterfacePolicy.TIME_LIMITED_TOKEN_AUTH.name();
 		this.expiresAt = token.getExpiresAt();
 		this.rawToken = rawToken;
 	}
