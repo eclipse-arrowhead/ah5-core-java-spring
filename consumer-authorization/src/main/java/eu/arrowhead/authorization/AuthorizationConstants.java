@@ -48,7 +48,6 @@ public final class AuthorizationConstants {
 
 	public static final String INSTANCE_ID_PREFIX_MGMT = "MGMT";
 	public static final String INSTANCE_ID_PREFIX_PR = "PR";
-	public static final String TOKEN_TYPE_AUTH_SUFFIX = "TOKEN_AUTH";
 
 	// Configuration related
 

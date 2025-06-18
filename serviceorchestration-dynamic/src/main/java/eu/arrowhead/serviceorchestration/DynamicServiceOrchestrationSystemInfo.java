@@ -23,6 +23,12 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//=================================================================================================
 	// members
 
+	@Value(Constants.$ENABLE_BLACKLIST_FILTER_WD)
+	private boolean enableBlackistFilter;
+
+	@Value(Constants.$FORCE_BLACKLIST_FILTER_WD)
+	private boolean forceBlackistFilter;
+
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_AUTHORIZATION_WD)
 	private boolean enableAuthorization;
 
@@ -120,6 +126,16 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		// starting with management services speeds up management filters
 		return List.of(generalManagement, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement, orchestration);
 		// TODO: add monitor service when it is specified and implemented
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isBlacklistEnabled() {
+		return enableBlackistFilter;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isBlacklistForced() {
+		return forceBlackistFilter;
 	}
 
 	//-------------------------------------------------------------------------------------------------

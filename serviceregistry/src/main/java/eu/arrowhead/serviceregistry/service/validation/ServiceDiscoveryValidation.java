@@ -77,7 +77,7 @@ public class ServiceDiscoveryValidation {
 			versionValidator.validateNormalizedVersion(normalizedInstance.version());
 			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
 
-			if (normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
+			if (!Utilities.isEmpty(normalizedInstance.metadata()) && normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
 				try {
 					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 					Integer.parseInt(str);

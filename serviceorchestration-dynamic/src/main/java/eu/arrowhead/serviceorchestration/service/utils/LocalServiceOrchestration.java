@@ -21,15 +21,27 @@ import org.springframework.util.MultiValueMap;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.AuthException;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
+import eu.arrowhead.dto.BlacklistEntryDTO;
+import eu.arrowhead.dto.BlacklistEntryListResponseDTO;
+import eu.arrowhead.dto.BlacklistQueryRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationResultDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -84,6 +96,7 @@ public class LocalServiceOrchestration {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MethodLengthCheck")
 	public OrchestrationResponseDTO doLocalServiceOrchestration(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("doLocalServiceOrchestration started...");
 
@@ -92,7 +105,7 @@ public class LocalServiceOrchestration {
 		try {
 			final Set<String> warnings = new HashSet<>();
 
-			// discovering the service
+			// Discovering the service
 			final boolean translationAllowed = form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && sysInfo.isTranslationEnabled();
 			List<OrchestrationCandidate> candidates = serviceDiscovery(form, translationAllowed, form.getFlag(OrchestrationFlag.ONLY_PREFERRED));
 			candidates = filterOutLockedOnes(jobId, candidates);
@@ -116,6 +129,15 @@ public class LocalServiceOrchestration {
 				if (form.addFlag(OrchestrationFlag.MATCHMAKING, true)) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING);
 				}
+			}
+
+			// Blacklist cross-check
+			if (sysInfo.isBlacklistEnabled()) {
+				candidates = filterOutBlacklistedOnes(candidates);
+			}
+
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
 			}
 
 			// Authorization cross-check
@@ -162,7 +184,7 @@ public class LocalServiceOrchestration {
 				if (checkIfHasNativeOnes(candidates)) {
 					candidates = filterOutNonNativeOnes(candidates);
 				} else {
-					candidates = filterOutNotTranslatableOnes(candidates); // translation discovery
+					candidates = filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(candidates); // translation discovery
 					if (Utilities.isEmpty(candidates)) {
 						return doInterCloudOrReturn(jobId, form);
 					}
@@ -212,7 +234,7 @@ public class LocalServiceOrchestration {
 
 			// Obtain Authorization tokens when required
 			if (sysInfo.isAuthorizationEnabled()) {
-				obtainAuthorizationTokensIfRequired(candidates);
+				obtainAuthorizationTokensIfRequired(form, candidates);
 			}
 
 			// Create translation bridge if necessary
@@ -379,6 +401,59 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	private List<OrchestrationCandidate> filterOutBlacklistedOnes(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutBlacklistedOnes started...");
+
+		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).filter(sysName -> !sysInfo.getBlacklistCheckExcludeList().contains(sysName)).toList();
+		try {
+
+			boolean hasMorePage = false;
+			int pageNumber = 0;
+			Integer pageSize = null;
+			final List<BlacklistEntryDTO> blacklistEntries = new ArrayList<BlacklistEntryDTO>();
+			do {
+				final BlacklistEntryListResponseDTO response = ahHttpService.consumeService(
+						Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT,
+						Constants.SERVICE_OP_BLACKLIST_QUERY,
+						Constants.SYS_NAME_BLACKLIST,
+						BlacklistEntryListResponseDTO.class,
+						new BlacklistQueryRequestDTO(new PageDTO(pageNumber == 0 ? null : pageNumber, pageSize, null, null), systemNames, null, null, null, null, Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow())));
+
+				blacklistEntries.addAll(response.entries());
+				hasMorePage = blacklistEntries.size() < response.count();
+				pageNumber = hasMorePage ? pageNumber + 1 : pageNumber;
+				pageSize = pageSize == null ? response.entries().size() : pageSize;
+
+			} while (hasMorePage);
+
+			final List<OrchestrationCandidate> result = candidates.stream().filter(candidate -> {
+				boolean isBlacklisted = false;
+				for (final BlacklistEntryDTO blDTO : blacklistEntries) {
+					if (candidate.getServiceInstance().provider().name().equals(blDTO.systemName())) {
+						isBlacklisted = true;
+						break;
+					}
+				}
+				return !isBlacklisted;
+			}).toList();
+
+			return result;
+
+		} catch (final ForbiddenException | AuthException ex) {
+			throw ex;
+		} catch (final ArrowheadException ex) {
+			logger.error("Blacklist server is not available during the orchestration process");
+			if (sysInfo.isBlacklistForced()) {
+				logger.error("All the provider candidate has been filtered out, because blacklist filter is forced");
+				return List.of();
+			} else {
+				logger.error("All the provider candidate has been passed, because blacklist filter is not forced");
+				return candidates;
+			}
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	private List<OrchestrationCandidate> filterOutUnauthorizedOnes(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutUnauthorizedOnes started...");
 
@@ -535,10 +610,11 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotTranslatableOnes(final List<OrchestrationCandidate> candidates) {
-		logger.debug("filterOutNotTranslatableOnes started...");
+	private List<OrchestrationCandidate> filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNotTranslatableOnesAndChooseTranslatableInterfaces started...");
 
 		// TODO here comes the translation discovery
+		// Choose exactly one interface and put that into candidate.matchingInterfaces
 		logger.warn("Translation support is not implemented yet");
 		return List.of();
 	}
@@ -644,18 +720,61 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void obtainAuthorizationTokensIfRequired(final List<OrchestrationCandidate> candidates) {
+	private void obtainAuthorizationTokensIfRequired(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("obtainAuthorizationTokensIfRequired started...");
 
-		// TODO where ServiceInterfacePolicy is TOKEN_AUTH
-		logger.warn("Authorization token support is not implemented yet");
+		final List<String> scopeList = Utilities.isEmpty(form.getOperations()) ? List.of("") : form.getOperations();
+		final List<AuthorizationTokenGenerationMgmtRequestDTO> requestPayloadEntries = new ArrayList<>();
+		for (final OrchestrationCandidate candidate : candidates) {
+			if (candidate.isNonNative()) {
+				Assert.isTrue(candidate.getMatchingInterfaces().size() == 1, "Non native candidate has more than 1 matching interface");
+			}
+
+			candidate.getMatchingInterfaces().forEach(interf -> {
+				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
+					scopeList.forEach(scope -> {
+						requestPayloadEntries.add(new AuthorizationTokenGenerationMgmtRequestDTO(
+								interf.policy(),
+								AuthorizationTargetType.SERVICE_DEF.name(),
+								Defaults.DEFAULT_CLOUD,
+								form.getTargetSystemName(),
+								candidate.getServiceInstance().provider().name(),
+								candidate.getServiceInstance().serviceDefinition().name(),
+								scope,
+								null,
+								null));
+					});
+				}
+			});
+		}
+
+		final AuthorizationTokenMgmtListResponseDTO response = ahHttpService.consumeService(
+				Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT,
+				Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS,
+				Constants.SYS_NAME_CONSUMER_AUTHORIZATION,
+				AuthorizationTokenMgmtListResponseDTO.class,
+				new AuthorizationTokenGenerationMgmtListRequestDTO(requestPayloadEntries),
+				new LinkedMultiValueMap<>(Map.of(Constants.UNBOUND, List.of(Boolean.TRUE.toString()))));
+
+		for (final AuthorizationTokenResponseDTO tokenResult : response.entries()) {
+			for (final OrchestrationCandidate candidate : candidates) {
+				if (candidate.getServiceInstance().provider().name().equals(tokenResult.provider())) {
+					candidate.addAuthorizationToken(
+							tokenResult.variant(),
+							Utilities.isEmpty(tokenResult.scope()) ? tokenResult.target() : tokenResult.scope(),
+							new AuthorizationTokenGenerationResponseDTO(tokenResult.tokenType(), tokenResult.targetType(), tokenResult.token(), tokenResult.usageLimit(), tokenResult.expiresAt()));
+					break;
+				}
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void buildTranslationBridge(final OrchestrationCandidate candidate) {
 		logger.debug("buildTranslationBridge started...");
 
-		// TODO add the new connection details into the candidate object's matchingInterface list
+		// TODO use the exactly one connection details from the candidate.matchingInterfaces list to build the bridge
+		// TODO change the old (non-native) connection details to the new connection details in the candidate.matchingInterfaces list
 
 		logger.warn("Translation bridge support is not implemented yet");
 	}
@@ -686,7 +805,8 @@ public class LocalServiceOrchestration {
 						c.getServiceInstance().expiresAt(),
 						Utilities.convertZonedDateTimeToUTCString(c.getExclusiveUntil()),
 						c.getServiceInstance().metadata(),
-						c.getMatchingInterfaces()))
+						c.getMatchingInterfaces(),
+						c.getAuthorizationTokens()))
 				.collect(Collectors.toList());
 
 		return new OrchestrationResponseDTO(results, new ArrayList<>(warnings));

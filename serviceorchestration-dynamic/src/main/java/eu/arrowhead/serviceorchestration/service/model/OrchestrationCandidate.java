@@ -2,9 +2,11 @@ package eu.arrowhead.serviceorchestration.service.model;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 
@@ -24,7 +26,7 @@ public class OrchestrationCandidate {
 	private boolean nonNative; // Interface translation is necessary if allowed
 	private boolean preferred;
 	private boolean properQoS;
-	private Map<String, String> authorizationTokens;
+	private Map<String, Map<String, AuthorizationTokenGenerationResponseDTO>> authorizationTokens = new HashMap<>();
 	private final List<ServiceInstanceInterfaceResponseDTO> matchingInterfaces = new ArrayList<>();
 
 	//=================================================================================================
@@ -118,13 +120,14 @@ public class OrchestrationCandidate {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Map<String, String> getAuthorizationTokens() {
+	public Map<String, Map<String, AuthorizationTokenGenerationResponseDTO>> getAuthorizationTokens() {
 		return authorizationTokens;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setAuthorizationTokens(final Map<String, String> authorizationTokens) {
-		this.authorizationTokens = authorizationTokens;
+	public void addAuthorizationToken(final String tokenType, final String scope, final AuthorizationTokenGenerationResponseDTO tokenDTO) {
+		authorizationTokens.putIfAbsent(tokenType, new HashMap<>());
+		authorizationTokens.get(tokenType).put(scope, tokenDTO);
 	}
 
 	//-------------------------------------------------------------------------------------------------
