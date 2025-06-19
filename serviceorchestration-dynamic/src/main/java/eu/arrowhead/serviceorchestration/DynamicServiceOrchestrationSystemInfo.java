@@ -94,7 +94,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.build();
 
 		final ServiceModel orchestration = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION)
 				.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY)
 				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
@@ -103,21 +103,21 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.build();
 
 		final ServiceModel orchestrationPushManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_PUSH_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_PUSH_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationPushManagement())
 				.serviceInterface(getMqttServiceInterfaceForOrchestrationPushManagement())
 				.build();
 
 		final ServiceModel orchestrationLockManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_LOCK_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_LOCK_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationLockManagement())
 				.serviceInterface(getMqttServiceInterfaceForOrchestrationLockManagement())
 				.build();
 
 		final ServiceModel orchestrationHistoryManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_HISTORY_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_HISTORY_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_HISTORY_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationHistoryManagement())
 				.serviceInterface(getMqttServiceInterfaceForOrchestrationHistoryManagement())
