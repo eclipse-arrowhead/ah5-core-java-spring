@@ -111,7 +111,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 		final ServiceModel orchestrationLockManagement = new ServiceModel.Builder()
 				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_LOCK_MANAGEMENT)
-				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
+				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_LOCK_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationLockManagement())
 				.serviceInterface(getMqttServiceInterfaceForOrchestrationLockManagement())
 				.build();
