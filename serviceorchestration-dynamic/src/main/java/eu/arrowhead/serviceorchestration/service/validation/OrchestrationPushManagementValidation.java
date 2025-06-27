@@ -62,7 +62,7 @@ public class OrchestrationPushManagementValidation {
 		logger.debug("validateAndNormalizePushSubscribeService started");
 
 		if (Utilities.isEmpty(subscription)) {
-			throw new InvalidParameterException("Subscription request list is empty.", origin);
+			throw new InvalidParameterException("Subscription request list is empty", origin);
 		}
 
 		for (final OrchestrationSubscription subs : subscription) {
