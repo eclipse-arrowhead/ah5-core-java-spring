@@ -75,7 +75,7 @@ public class AuthorizationTokenNormalizer {
 				: eventTypeNameNormalizer.normalize(dto.target());
 
 		return new AuthorizationTokenGenerationRequestDTO(
-				dto.tokenType().toUpperCase().trim(),
+				dto.tokenVariant().toUpperCase().trim(),
 				systemNameNormalizer.normalize(dto.provider()),
 				normalizedTargetType,
 				normalizedTarget,
@@ -108,7 +108,7 @@ public class AuthorizationTokenNormalizer {
 									: eventTypeNameNormalizer.normalize(item.target());
 
 							return new AuthorizationTokenGenerationMgmtRequestDTO(
-									item.tokenType().trim().toUpperCase(),
+									item.tokenVariant().trim().toUpperCase(),
 									normalizedTargetType,
 									Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(item.consumerCloud()),
 									systemNameNormalizer.normalize(item.consumer()),

@@ -731,7 +731,7 @@ public class LocalServiceOrchestration {
 			}
 
 			candidate.getMatchingInterfaces().forEach(interf -> {
-				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
+				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
 					scopeList.forEach(scope -> {
 						requestPayloadEntries.add(new AuthorizationTokenGenerationMgmtRequestDTO(
 								interf.policy(),

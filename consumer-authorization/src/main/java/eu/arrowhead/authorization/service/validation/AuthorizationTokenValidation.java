@@ -81,8 +81,8 @@ public class AuthorizationTokenValidation {
 		final AuthorizationTokenGenerationRequestDTO normalized = normalizer.normalizeAuthorizationTokenGenerationRequestDTO(dto);
 
 		try {
-			if (!normalized.tokenType().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
-				throw new InvalidParameterException("Token type is invalid", origin);
+			if (!normalized.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
+				throw new InvalidParameterException("Token variant is invalid", origin);
 			}
 
 			systemNameValidator.validateSystemName(normalized.provider());
@@ -150,11 +150,11 @@ public class AuthorizationTokenValidation {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
-		if (Utilities.isEmpty(dto.tokenType())) {
-			throw new InvalidParameterException("Token type is missing", origin);
+		if (Utilities.isEmpty(dto.tokenVariant())) {
+			throw new InvalidParameterException("Token variant is missing", origin);
 		}
 
-		final String tokenTypeName = dto.tokenType().trim().toUpperCase();
+		final String tokenTypeName = dto.tokenVariant().trim().toUpperCase();
 		if (!Utilities.isEnumValue(tokenTypeName, ServiceInterfacePolicy.class)) {
 			throw new InvalidParameterException("Token type is invalid: " + tokenTypeName, origin);
 		}
