@@ -997,7 +997,7 @@ public class ManagementValidation {
 
 			final String normalized = interfaceTemplateNameNormalizer.normalize(templateDTO.name());
 			if (templateNames.contains(normalized)) {
-				throw new InvalidParameterException("Duplicate interface template name: " + templateDTO.name(), origin);
+				throw new InvalidParameterException("Duplicated interface template name: " + templateDTO.name(), origin);
 			}
 			templateNames.add(normalized);
 
@@ -1022,7 +1022,7 @@ public class ManagementValidation {
 					}
 
 					if (propertyNames.contains(propertyDTO.name().trim())) {
-						throw new InvalidParameterException("Duplicate interface template property name: " + templateDTO.name() + "::" + propertyDTO.name(), origin);
+						throw new InvalidParameterException("Duplicate interface template property name: " + templateDTO.name() + Constants.COMPOSITE_ID_DELIMITER + propertyDTO.name(), origin);
 					}
 					propertyNames.add(propertyDTO.name().trim());
 
