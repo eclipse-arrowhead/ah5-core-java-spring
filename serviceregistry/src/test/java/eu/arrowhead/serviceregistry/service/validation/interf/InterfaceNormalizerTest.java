@@ -36,7 +36,7 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeInterfaceDTOTest1() {
+	public void normalizeInterfaceDTOTest() {
 
 		ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
 				new ServiceInstanceInterfaceRequestDTO(
@@ -55,7 +55,7 @@ public class InterfaceNormalizerTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	@SuppressWarnings("checkstyle:MethodName")
-	public void normalizeInterfaceDTOTest2_protocolEmpty() {
+	public void normalizeInterfaceDTOTest_emptyProtocol() {
 
 		ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
 				new ServiceInstanceInterfaceRequestDTO(null, null, "NONE", null));
@@ -66,7 +66,7 @@ public class InterfaceNormalizerTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	@SuppressWarnings("checkstyle:MethodName")
-	public void normalizeTemplateDTOTest1_propRequirementsNull() {
+	public void normalizeTemplateDTOTest1_nullPropRequirements() {
 
 		ServiceInterfaceTemplateRequestDTO normalized1 = intfNormalizer.normalizeTemplateDTO(
 				new ServiceInterfaceTemplateRequestDTO(
@@ -83,14 +83,14 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeTemplateDTOTest2() {
+	public void normalizeTemplateDTOTest() {
 
 		// properties to normalize
 		final ServiceInterfaceTemplatePropertyDTO propsToNormalize = new ServiceInterfaceTemplatePropertyDTO(
-				" accessAddresses \n",
+				" operations \n",
 				true,
-				"not_empty_address_list \t",
-				List.of("validatorParam1 ", "\nvalidatorParam2"));
+				"not_empty_string_set \t",
+				List.of("\noperation "));
 
 		final ServiceInterfaceTemplatePropertyDTO propsWithNull_toNormalize = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", false, null, null);
 
@@ -106,10 +106,10 @@ public class InterfaceNormalizerTest {
 
 		// expected properties after the normalization
 		final ServiceInterfaceTemplatePropertyDTO propsExpected = new ServiceInterfaceTemplatePropertyDTO(
-				"accessAddresses",
+				"operations",
 				true,
-				"NOT_EMPTY_ADDRESS_LIST",
-				List.of("validatorParam1", "validatorParam2"));
+				"NOT_EMPTY_STRING_SET",
+				List.of("operation"));
 
 		final ServiceInterfaceTemplatePropertyDTO propsWithNull_expected = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", false, "", new ArrayList<>());
 
@@ -120,7 +120,7 @@ public class InterfaceNormalizerTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	@SuppressWarnings("checkstyle:MethodName")
-	public void normalizeTemplateDTOTest3_propRequirementNameNull() {
+	public void normalizeTemplateDTOTest_nullPropRequirementName() {
 
 		// requirement with null name
 		final List<ServiceInterfaceTemplatePropertyDTO> requirements = List.of(new ServiceInterfaceTemplatePropertyDTO(null, false, null, null));
