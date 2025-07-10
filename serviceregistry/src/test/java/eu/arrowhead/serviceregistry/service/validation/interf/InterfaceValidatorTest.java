@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,6 +66,8 @@ public class InterfaceValidatorTest {
     private static final String UNKNOWN_VALIDATOR_PREFIX = "Unknown property validator: ";
     private static final String EMPTY_INSTANCE_LIST = "Interface instance list is empty";
     private static final String MISSING_PROTOCOL = "Interface protocol is missing";
+    private static final String INVALID_IPV4_PREFIX = "Address verification failure: ";
+    private static final String INVALID_IPV4_SUFFIX = " is not a hostname";
 
 
 	//=================================================================================================
@@ -303,11 +306,13 @@ public class InterfaceValidatorTest {
 
 		when(interfaceAddressPropertyProcessor.findAddresses(anyMap())).thenReturn(new AddressData(addressListToNormalize, addressListKey, true));
 
-		Map<String, Object> properties = Map.of(
-				"operations", Map.of(
-						"query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
-						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")),
-				addressListKey, addressListToNormalize);
+		final Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put(
+				"operations",
+				Map.of("query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
+						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")));
+
+		properties.put(addressListKey, addressListToNormalize);
 
 		final List<ServiceInstanceInterfaceRequestDTO> normalizedInstances = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
 						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties)));
@@ -315,6 +320,33 @@ public class InterfaceValidatorTest {
 		// check if the addresses were normalized
 		assertTrue(normalizedInstances.get(0).properties().containsKey(addressListKey));
 		assertEquals(normalizedInstances.get(0).properties().get(addressListKey), List.of("192.168.0.0.3", "greenhouse.eu"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	@SuppressWarnings("checkstyle:MethodName")
+	public void validateNormalizedInterfaceInstancesTest_invalidAddress() {
+
+		final List<String> invalidAddress = List.of("300.168.0.0\n");
+		final String normalizedAddress = "300.168.0.0";
+		final String addressKey = "address";
+
+		// no existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
+
+		when(interfaceAddressPropertyProcessor.findAddresses(anyMap())).thenReturn(new AddressData(invalidAddress, addressKey, false));
+
+		final Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put(addressKey, invalidAddress);
+
+		// check exception type
+		Exception ex = assertThrows(
+				InvalidParameterException.class,
+				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties))));
+
+		// check error message
+		assertEquals(INVALID_IPV4_PREFIX + normalizedAddress + INVALID_IPV4_SUFFIX, ex.getMessage());
 	}
 
 	// when(interfaceAddressPropertyProcessor.findAddresses(anyMap())).thenReturn("mocked response");
