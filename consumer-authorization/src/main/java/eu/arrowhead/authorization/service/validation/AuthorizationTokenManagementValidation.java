@@ -239,9 +239,9 @@ public class AuthorizationTokenManagementValidation {
 				throw new InvalidParameterException("Token variant is missing", origin);
 			}
 
-			final String tokenTypeName = request.tokenVariant().trim().toUpperCase();
-			if (!Utilities.isEnumValue(tokenTypeName, ServiceInterfacePolicy.class)) {
-				throw new InvalidParameterException("Token type is invalid: " + tokenTypeName, origin);
+			final String tokenVariant = request.tokenVariant().trim().toUpperCase();
+			if (!Utilities.isEnumValue(tokenVariant, ServiceInterfacePolicy.class)) {
+				throw new InvalidParameterException("Token variant is invalid: " + tokenVariant, origin);
 			}
 
 			if (!Utilities.isEmpty(request.targetType())) {
