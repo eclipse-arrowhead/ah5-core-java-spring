@@ -66,9 +66,10 @@ public class OrchestrationLockManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_ORCHESTRATION_REMOVE:
+			final String owner = request.getParams().get(DynamicServiceOrchestrationConstants.PARAM_NAME_OWNER);
 			final List<String> removeReqDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
 			});
-			remove(request.getRequester(), removeReqDTO);
+			remove(owner, removeReqDTO);
 			break;
 
 		default:
