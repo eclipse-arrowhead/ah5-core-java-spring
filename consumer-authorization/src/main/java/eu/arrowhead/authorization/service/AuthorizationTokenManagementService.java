@@ -122,7 +122,7 @@ public class AuthorizationTokenManagementService {
 					requester,
 					request.consumer(),
 					request.consumerCloud(),
-					ServiceInterfacePolicy.valueOf(request.tokenType()),
+					ServiceInterfacePolicy.valueOf(request.tokenVariant()),
 					request.provider(),
 					AuthorizationTargetType.valueOf(request.targetType()),
 					request.target(),

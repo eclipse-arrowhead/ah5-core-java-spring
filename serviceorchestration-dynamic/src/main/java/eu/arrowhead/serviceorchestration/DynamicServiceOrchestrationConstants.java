@@ -74,6 +74,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_PATH_PARAM_OWNER = "{owner}";
 	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_PATH_PARAM_OWNER;
 	public static final String PARAM_NAME_TRIGGER = "trigger";
+	public static final String PARAM_NAME_OWNER = "owner";
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "autoMatchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qosNotEnabled";

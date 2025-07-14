@@ -92,7 +92,7 @@ public class AuthorizationTokenService {
 		}
 
 		// Generate token
-		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
+		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenVariant());
 		final TokenModel tokenResult = tokenEngine.produce(
 				normalizedRequester,
 				normalizedRequester,
@@ -104,7 +104,7 @@ public class AuthorizationTokenService {
 				origin);
 
 		// Encrypt token if required
-		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
+		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenVariant()));
 		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
 			tokenEngine.encryptTokenIfNeeded(tokenResult, origin);
 		}
