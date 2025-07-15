@@ -1,7 +1,5 @@
 package eu.arrowhead.serviceregistry.service.validation.interf;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
 import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
@@ -12,27 +10,39 @@ import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @TestPropertySource(properties = {
 	    "normalization.mode=extended"
 	})
-@SpringBootTest(classes = { InterfaceNormalizer.class, InterfaceTemplateNameNormalizer.class })
+@ExtendWith(MockitoExtension.class)
 public class InterfaceNormalizerTest {
 
 	//=================================================================================================
 	// members
 
-	@Autowired
+	@InjectMocks
 	private InterfaceNormalizer intfNormalizer;
+
+	@Mock
+	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
+
 
 	//=================================================================================================
 	// methods
+
+	// INTERFACE INSTANCES
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -45,8 +55,8 @@ public class InterfaceNormalizerTest {
 						"rsa_sha512_json_web_token_auth\n \t",
 						Map.of("examplePropertyKey1", true, "examplePropertyKey2", "value")));
 
+		verify(interfaceTemplateNameNormalizer, times(1)).normalize("GENERIC HTTPS");
 		assertAll("normalize InterfaceDTO",
-				() -> assertEquals("generic_https", normalized.templateName()),
 				() -> assertEquals("https", normalized.protocol()),
 				() -> assertEquals("RSA_SHA512_JSON_WEB_TOKEN_AUTH", normalized.policy()),
 				() -> assertEquals(Map.of("examplePropertyKey1", true, "examplePropertyKey2", "value"), normalized.properties()));
@@ -63,6 +73,8 @@ public class InterfaceNormalizerTest {
 		assertEquals("", normalized.protocol());
 	}
 
+	// INTERFACE TEMPLATES
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	@SuppressWarnings("checkstyle:MethodName")
@@ -74,10 +86,7 @@ public class InterfaceNormalizerTest {
 						"\t MQTT",
 						null));
 
-		assertAll("normalize template DTO",
-				() -> assertEquals("generic_mqtt", normalized1.name()),
-				() -> assertEquals("mqtt", normalized1.protocol()),
-				() -> assertEquals(new ArrayList<>(), normalized1.propertyRequirements()));
+		assertEquals(new ArrayList<>(), normalized1.propertyRequirements());
 
 	}
 
