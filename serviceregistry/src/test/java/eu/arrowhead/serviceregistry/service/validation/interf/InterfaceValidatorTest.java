@@ -11,6 +11,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.context.TestPropertySource;
 
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.model.HttpOperationModel;
@@ -35,11 +35,10 @@ import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.service.ServiceInterfaceTemplateDbService;
 
-@TestPropertySource(properties = {
-	    "service.address.alias=address,addresses"
-	})
 @ExtendWith(MockitoExtension.class)
 public class InterfaceValidatorTest {
 
@@ -74,6 +73,8 @@ public class InterfaceValidatorTest {
     private static final String UNKNOWN_VALIDATOR_PREFIX = "Unknown property validator: ";
     private static final String EMPTY_INSTANCE_LIST = "Interface instance list is empty";
     private static final String MISSING_PROTOCOL = "Interface protocol is missing";
+    private static final String INVALID_PROTOCOL = " protocol is invalid for ";
+    private static final String MISSING_PROPERTY = " interface property is missing for ";
 
 
 	//=================================================================================================
@@ -83,8 +84,7 @@ public class InterfaceValidatorTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceTemplatesTest() {
+	public void testValidateNormalizedInterfaceTemplatesOk() {
 
 		// properties
 		final ServiceInterfaceTemplatePropertyDTO propAddress = new ServiceInterfaceTemplatePropertyDTO(
@@ -92,7 +92,6 @@ public class InterfaceValidatorTest {
 				true,
 				"NOT_EMPTY_ADDRESS_LIST",
 				List.of());
-
 		final ServiceInterfaceTemplatePropertyDTO propOperations = new ServiceInterfaceTemplatePropertyDTO(
 				"operations",
 				true,
@@ -101,62 +100,51 @@ public class InterfaceValidatorTest {
 
 		// templates
 		final ServiceInterfaceTemplateRequestDTO httpTemplate = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propAddress, propOperations));
-
 		final ServiceInterfaceTemplateRequestDTO mqttTemplate = new ServiceInterfaceTemplateRequestDTO("generic_mqtt", "mqtt", List.of(propAddress));
 
 		assertDoesNotThrow(() -> {
 			intfValidator.validateNormalizedInterfaceTemplates(List.of(httpTemplate, mqttTemplate));
 		});
-
 		verify(interfaceTemplateNameValidator, times(2)).validateInterfaceTemplateName(anyString());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceTemplatesTest_emptyTemplateList() {
+	public void testValidateNormalizedInterfaceTemplatesEmptyTemplateList() {
 
-		// check exception type
 		final Exception ex = assertThrows(IllegalArgumentException.class, () -> intfValidator.validateNormalizedInterfaceTemplates(List.of()));
 
-		// check error message
 		assertEquals(EMPTY_TEMPLATE_LIST, ex.getMessage());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceTemplatesTest_validateTemplateName() {
+	public void testValidateNormalizedInterfaceTemplatesIsTemplateNameValidated() {
 
 		intfValidator.validateNormalizedInterfaceTemplates(List.of(new ServiceInterfaceTemplateRequestDTO("generic_mqtt", "http", List.of())));
-		// check if it validates the interface template name
+
 		verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName(eq("generic_mqtt"));
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceTemplatesTest_tooLongProtocolName() {
+	public void testValidateNormalizedInterfaceTemplatesTooLongProtocolName() {
 
-		// check exception type
 		final Exception ex = assertThrows(InvalidParameterException.class, () -> intfValidator.validateNormalizedInterfaceTemplates(
 				List.of(new ServiceInterfaceTemplateRequestDTO(
 						"generic_mqtt",
 						"very very very very very very very very very very very long mqtt",
 						List.of()))));
 
-
-		// check error message
 		assertEquals(TOO_LONG_PROTOCOL_NAME, ex.getMessage());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceTemplatesTest_tooLongIntfPropName() {
+	public void testValidateNormalizedInterfaceTemplatesTooLongIntfPropName() {
 
 		final ServiceInterfaceTemplatePropertyDTO propWithLongName = new ServiceInterfaceTemplatePropertyDTO(
 				"very very very very very very very very very very long address list",
@@ -164,21 +152,18 @@ public class InterfaceValidatorTest {
 				"NOT_EMPTY_ADDRESS_LIST",
 				List.of());
 
-		// check exception type
 		final Exception ex = assertThrows(InvalidParameterException.class, () -> intfValidator.validateNormalizedInterfaceTemplates(
 				List.of(new ServiceInterfaceTemplateRequestDTO(
 						"generic_mqtt",
 						"mqtt",
 						List.of(propWithLongName)))));
 
-		// check error message
 		assertEquals(TOO_LONG_INTF_PROPERTY_NAME, ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceTemplatesTest_unknownValidator() {
+	public void testValidateNormalizedInterfaceTemplatesUnknownValidator() {
 
 		final String unknownValidator = "NOT_EMPTY_MQTT_ADDRESS_LIST";
 
@@ -188,14 +173,12 @@ public class InterfaceValidatorTest {
 				unknownValidator,
 				List.of());
 
-		// check exception type
 		final Exception ex = assertThrows(InvalidParameterException.class, () -> intfValidator.validateNormalizedInterfaceTemplates(
 				List.of(new ServiceInterfaceTemplateRequestDTO(
 						"generic_mqtt",
 						"mqtt",
 						List.of(propWithUnknownValidator)))));
 
-		// check error message
 		assertEquals(UNKNOWN_VALIDATOR_PREFIX + unknownValidator, ex.getMessage());
 	}
 
@@ -203,83 +186,70 @@ public class InterfaceValidatorTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceInstancesTest_emptyInstanceList() {
+	public void testValidateNormalizedInterfaceInstancesEmptyInstanceList() {
 
-		// check exception type
 		final Exception ex = assertThrows(
 				IllegalArgumentException.class,
 				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of()));
 
-		// check error message
 		assertEquals(EMPTY_INSTANCE_LIST, ex.getMessage());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceInstancesTest_missingIntfProtocol() {
+	public void testValidateNormalizedInterfaceInstancesMissingIntfProtocol() {
 
 		// no existing template in the DB
 		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
 
 
-		// check exception type
 		final Exception ex = assertThrows(
 				InvalidParameterException.class,
 				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
 						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", null, "BASE64_SELF_CONTAINED_TOKEN_AUTH", Map.of()))));
 
-		// check error message
 		assertEquals(MISSING_PROTOCOL, ex.getMessage());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceInstancesTest_tooLongIntfProtocol() {
+	public void testValidateNormalizedInterfaceInstancesTooLongIntfProtocol() {
 
 		// no existing template in the DB
 		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
 
 
-		// check exception type
 		final Exception ex = assertThrows(
 				InvalidParameterException.class,
 				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
 						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "toooooooooooooooooooooooooooooooooooooooooooo long protocol name", "NONE", Map.of()))));
 
-		// check error message
 		assertEquals(TOO_LONG_PROTOCOL_NAME, ex.getMessage());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceInstancesTest_tooLongPropertyName() {
+	public void testValidateNormalizedInterfaceInstancesTooLongPropertyName() {
 
 		// no existing template in the DB
 		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
 
 
-		// check exception type
 		final Exception ex = assertThrows(
 				InvalidParameterException.class,
 				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
 						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("tooooooooooooooooooooooooooooooooooooooooooooo long property key", "value")))));
 
-		// check error message
 		assertEquals(TOO_LONG_INTF_PROPERTY_NAME, ex.getMessage());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceInstancesTest_discoverAddress() {
+	public void testValidateNormalizedInterfaceInstancesDiscoverAddressOk() {
 
 		final String address = "192.168.0.3\n";
 		final String normalizedAddress = "192.168.0.3";
@@ -315,8 +285,7 @@ public class InterfaceValidatorTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void validateNormalizedInterfaceInstancesTest_discoverAddressList() {
+	public void testValidateNormalizedInterfaceInstancesDiscoverAddressListOk() {
 
 		// addresses to normalize
 		final String address1 = "192.168.0.3\n";
@@ -358,10 +327,44 @@ public class InterfaceValidatorTest {
 		assertEquals(List.of("192.168.0.3", "greenhouse.eu"), normalizedInstance.properties().get(addressListKey));
 	}
 
-	// no existing template, address validation and normalization
-	// existing template, invalid protocol for template name
-	// existing template, instance property is missing
-	// existing template, present validator, validate prop
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesInvalidProtocolForTemplate() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+
+		final Exception ex = assertThrows(
+				InvalidParameterException.class,
+				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "https", "NONE", Map.of()))));
+
+		assertEquals("https" + INVALID_PROTOCOL + "generic_http", ex.getMessage());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesMandatoryPropertyMissing() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+		// mock required properties
+		final List<ServiceInterfaceTemplateProperty> dummyPropRequirements = new ArrayList<>(2);
+		dummyPropRequirements.add(new ServiceInterfaceTemplateProperty(null, "accessPort", true, null));
+		dummyPropRequirements.add(new ServiceInterfaceTemplateProperty(new ServiceInterfaceTemplate("generic_http", "http"), "accessAddresses", true, null));
+		when(serviceInterfaceTemplateDbService.getPropertiesByTemplateName(anyString())).thenReturn(dummyPropRequirements);
+
+		final Exception ex = assertThrows(
+				InvalidParameterException.class,
+				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080)))));
+
+		assertEquals("accessAddresses" + MISSING_PROPERTY + "generic_http", ex.getMessage());
+
+	}
+
+	// existing template, present validator, validate prop (ok & not ok)
 	// no problem -> check returned value!
 
 }

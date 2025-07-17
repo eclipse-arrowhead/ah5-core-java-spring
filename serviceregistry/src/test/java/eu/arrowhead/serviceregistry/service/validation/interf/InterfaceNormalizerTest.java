@@ -1,6 +1,5 @@
 package eu.arrowhead.serviceregistry.service.validation.interf;
 
-import org.springframework.test.context.TestPropertySource;
 
 import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
@@ -23,9 +22,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@TestPropertySource(properties = {
-	    "normalization.mode=extended"
-	})
 @ExtendWith(MockitoExtension.class)
 public class InterfaceNormalizerTest {
 
@@ -46,7 +42,7 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeInterfaceDTOTest() {
+	public void testNormalizeInterfaceOk() {
 
 		ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
 				new ServiceInstanceInterfaceRequestDTO(
@@ -64,8 +60,7 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void normalizeInterfaceDTOTest_emptyProtocol() {
+	public void testNormalizeInterfaceEmptyProtocol() {
 
 		ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
 				new ServiceInstanceInterfaceRequestDTO(null, null, "NONE", null));
@@ -77,8 +72,7 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
-	public void normalizeTemplateDTOTest1_nullPropRequirements() {
+	public void testNormalizeTemplateNullPropRequirements() {
 
 		ServiceInterfaceTemplateRequestDTO normalized1 = intfNormalizer.normalizeTemplateDTO(
 				new ServiceInterfaceTemplateRequestDTO(
@@ -92,7 +86,7 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeTemplateDTOTest() {
+	public void testNormalizeTemplateOk() {
 
 		// properties to normalize
 		final ServiceInterfaceTemplatePropertyDTO propsToNormalize = new ServiceInterfaceTemplatePropertyDTO(
@@ -101,10 +95,10 @@ public class InterfaceNormalizerTest {
 				"not_empty_string_set \t",
 				List.of("\noperation "));
 
-		final ServiceInterfaceTemplatePropertyDTO propsWithNull_toNormalize = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", false, null, null);
+		final ServiceInterfaceTemplatePropertyDTO propsWithNullToNormalize = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", false, null, null);
 
 		// list of the properties
-		final List<ServiceInterfaceTemplatePropertyDTO> requirements = List.of(propsToNormalize, propsWithNull_toNormalize);
+		final List<ServiceInterfaceTemplatePropertyDTO> requirements = List.of(propsToNormalize, propsWithNullToNormalize);
 
 		// normalize dto
 		ServiceInterfaceTemplateRequestDTO normalized = intfNormalizer.normalizeTemplateDTO(
@@ -120,16 +114,16 @@ public class InterfaceNormalizerTest {
 				"NOT_EMPTY_STRING_SET",
 				List.of("operation"));
 
-		final ServiceInterfaceTemplatePropertyDTO propsWithNull_expected = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", false, "", new ArrayList<>());
+		final ServiceInterfaceTemplatePropertyDTO propsWithNullExpected = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", false, "", new ArrayList<>());
 
-		assertEquals(List.of(propsExpected, propsWithNull_expected), normalized.propertyRequirements());
+		assertEquals(List.of(propsExpected, propsWithNullExpected), normalized.propertyRequirements());
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	@SuppressWarnings("checkstyle:MethodName")
-	public void normalizeTemplateDTOTest_nullPropRequirementName() {
+	public void testNormalizeTemplateNullPropRequirementName() {
 
 		// requirement with null name
 		final List<ServiceInterfaceTemplatePropertyDTO> requirements = List.of(new ServiceInterfaceTemplatePropertyDTO(null, false, null, null));
