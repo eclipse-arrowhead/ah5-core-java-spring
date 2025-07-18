@@ -15,6 +15,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.intf.properties.IPropertyValidator;
 import eu.arrowhead.common.intf.properties.PropertyValidatorType;
@@ -115,12 +116,13 @@ public class InterfaceValidator {
 								}
 
 								final IPropertyValidator validator = interfacePropertyValidator.getValidator(propertyValidatorType);
-								if (validator != null) {
-									final Object normalizedProp = validator.validateAndNormalize(
-											instanceProp,
-											validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
-									normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
+								if (validator == null) {
+									throw new InternalServerError("The validator belonging to the interface template property is not supported: " + propertyValidatorType.name());
 								}
+								final Object normalizedProp = validator.validateAndNormalize(
+										instanceProp,
+										validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
+								normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
 							}
 						});
 				normalized.add(new ServiceInstanceInterfaceRequestDTO(interfaceInstance.templateName(), interfaceInstance.protocol(), interfaceInstance.policy(), normalizedProperties));

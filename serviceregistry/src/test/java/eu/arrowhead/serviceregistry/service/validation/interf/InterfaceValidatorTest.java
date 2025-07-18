@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,9 +24,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
+import eu.arrowhead.common.intf.properties.validators.MinMaxValidator;
+import eu.arrowhead.common.intf.properties.validators.NotEmptyAddressListValidator;
+import eu.arrowhead.common.intf.properties.validators.PortValidator;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor.AddressData;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
@@ -66,7 +71,14 @@ public class InterfaceValidatorTest {
     @Mock
     private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
 
-    // Expected error messages
+    // property validation related
+    @Mock
+    private MinMaxValidator minMaxValidator;
+
+    @Mock
+    private NotEmptyAddressListValidator notEmptyAddressListValidator;
+
+    // expected error messages
     private static final String EMPTY_TEMPLATE_LIST = "Interface template list is empty";
     private static final String TOO_LONG_PROTOCOL_NAME = "Interface protocol is too long";
     private static final String TOO_LONG_INTF_PROPERTY_NAME = "Interface property name is too long";
@@ -75,6 +87,7 @@ public class InterfaceValidatorTest {
     private static final String MISSING_PROTOCOL = "Interface protocol is missing";
     private static final String INVALID_PROTOCOL = " protocol is invalid for ";
     private static final String MISSING_PROPERTY = " interface property is missing for ";
+    private static final String VALIDATOR_NOT_SUPPORTED = "The validator belonging to the interface template property is not supported: ";
 
 
 	//=================================================================================================
@@ -249,20 +262,19 @@ public class InterfaceValidatorTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateNormalizedInterfaceInstancesDiscoverAddressOk() {
+	public void testValidateNormalizedInterfaceInstancesDiscoverAddress() {
 
 		final String address = "192.168.0.3\n";
-		final String normalizedAddress = "192.168.0.3";
 		final String addressKey = "address";
 
 		// no existing template in the DB
 		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
 		// mock validation and normalization
-		when(addressNormalizer.normalize(address)).thenReturn(normalizedAddress);
-		when(addressValidator.detectType(normalizedAddress)).thenReturn(AddressType.IPV4);
+		when(addressNormalizer.normalize("192.168.0.3\n")).thenReturn("192.168.0.3");
+		when(addressValidator.detectType("192.168.0.3")).thenReturn(AddressType.IPV4);
 
 		// create properties to test
-		final Map<String, Object> properties = new HashMap<String, Object>();
+		final Map<String, Object> properties = new HashMap<String, Object>(2);
 		properties.put(
 				"operations",
 				Map.of("query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
@@ -276,16 +288,16 @@ public class InterfaceValidatorTest {
 						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties))).get(0);
 
 		// check if the address was validated and normalized
+		verify(addressNormalizer, times(1)).normalize(address);
 		verify(addressValidator, times(1)).validateNormalizedAddress(any(AddressType.class), anyString());
-		verify(addressNormalizer, times(1)).normalize(anyString());
+
 		assertTrue(normalizedInstance.properties().containsKey(addressKey));
 		assertEquals(String.class, normalizedInstance.properties().get(addressKey).getClass());
-		assertEquals(normalizedInstance.properties().get(addressKey), normalizedAddress);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateNormalizedInterfaceInstancesDiscoverAddressListOk() {
+	public void testValidateNormalizedInterfaceInstancesDiscoverAddressList() {
 
 		// addresses to normalize
 		final String address1 = "192.168.0.3\n";
@@ -305,8 +317,8 @@ public class InterfaceValidatorTest {
 		when(addressValidator.detectType(normalizedAddress1)).thenReturn(AddressType.IPV4);
 		when(addressValidator.detectType(normalizedAddress2)).thenReturn(AddressType.HOSTNAME);
 
-		// create properties to test
-		final Map<String, Object> properties = new HashMap<String, Object>();
+		// create property set to test
+		final Map<String, Object> properties = new HashMap<String, Object>(2);
 		properties.put(
 				"operations",
 				Map.of("query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
@@ -322,9 +334,60 @@ public class InterfaceValidatorTest {
 		// check if the addresses were validated and normalized
 		verify(addressValidator, times(2)).validateNormalizedAddress(any(AddressType.class), anyString());
 		verify(addressNormalizer, times(2)).normalize(anyString());
+
 		assertTrue(normalizedInstance.properties().containsKey(addressListKey));
-		assertEquals(java.util.ArrayList.class, normalizedInstance.properties().get(addressListKey).getClass());
-		assertEquals(List.of("192.168.0.3", "greenhouse.eu"), normalizedInstance.properties().get(addressListKey));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesDiscoverEmptyAddress() {
+
+		// no existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
+
+		// create property set to test
+		final Map<String, Object> properties = new HashMap<String, Object>(1);
+		properties.put(
+				"operations",
+				Map.of("query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
+						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")));
+
+		// mock address preprocessor
+		when(interfaceAddressPropertyProcessor.findAddresses(properties)).thenReturn((new AddressData(new ArrayList<>(), null, false)));
+
+		final ServiceInstanceInterfaceRequestDTO normalizedInstance = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties))).get(0);
+
+		// check if no addresses were validated and normalized
+		verify(addressValidator, never()).validateNormalizedAddress(any(AddressType.class), anyString());
+		verify(addressNormalizer, never()).normalize(anyString());
+		assertEquals(1, normalizedInstance.properties().size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesAddressesNotDiscovered() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+
+		// create property set to test
+		final Map<String, Object> properties = new HashMap<String, Object>(1);
+		properties.put("accessAddresses", List.of("provider1.temperature.com", "192.168.0.10"));
+		// mock required properties
+		final List<ServiceInterfaceTemplateProperty> dummyPropRequirements = new ArrayList<>(1);
+		dummyPropRequirements.add(new ServiceInterfaceTemplateProperty(new ServiceInterfaceTemplate("generic_http", "http"), "accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST"));
+		when(serviceInterfaceTemplateDbService.getPropertiesByTemplateName(anyString())).thenReturn(dummyPropRequirements);
+		// in case of NotEmptyAddressListValidator, address discovery should not happen
+		when(propertyValidators.getValidator(any())).thenReturn(notEmptyAddressListValidator);
+		when(notEmptyAddressListValidator.validateAndNormalize(any())).thenReturn(List.of());
+
+		intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties))).get(0);
+
+		// address validation should happen in the property validator instead of the preprocessor
+		verify(notEmptyAddressListValidator, times(1)).validateAndNormalize(any());
+		verify(interfaceAddressPropertyProcessor, never()).findAddresses(any());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -364,7 +427,110 @@ public class InterfaceValidatorTest {
 
 	}
 
-	// existing template, present validator, validate prop (ok & not ok)
-	// no problem -> check returned value!
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesNotMandatoryPropertyMissing() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+		// mock required properties
+		final List<ServiceInterfaceTemplateProperty> dummyPropRequirements = new ArrayList<>(2);
+		dummyPropRequirements.add(new ServiceInterfaceTemplateProperty(null, "accessPort", true, null));
+		dummyPropRequirements.add(new ServiceInterfaceTemplateProperty(new ServiceInterfaceTemplate("generic_http", "http"), "accessAddresses", false, null));
+		when(serviceInterfaceTemplateDbService.getPropertiesByTemplateName(anyString())).thenReturn(dummyPropRequirements);
+
+		assertDoesNotThrow(() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080)))));
+
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesValidatorNull() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+		// mock mandatory property
+		final ServiceInterfaceTemplateProperty propRequirement = new ServiceInterfaceTemplateProperty(new ServiceInterfaceTemplate("generic_http", "http"), "port", true, "PORT");
+		when(serviceInterfaceTemplateDbService.getPropertiesByTemplateName(anyString())).thenReturn(List.of(propRequirement));
+		// mock null validator
+		when(propertyValidators.getValidator(any())).thenReturn(null);
+		// mock address preprocessor
+		when(interfaceAddressPropertyProcessor.findAddresses(any())).thenReturn(new AddressData(new ArrayList<>(), null, false));
+
+		// create property set to test
+		final Map<String, Object> properties = Map.of("port", 600);
+
+		final Exception ex = assertThrows(
+				InternalServerError.class,
+				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties))));
+
+		assertEquals(VALIDATOR_NOT_SUPPORTED + "PORT", ex.getMessage());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesNoExistingTemplateOk() {
+
+		// no existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.empty());
+		// mock address preprocessor
+		when(interfaceAddressPropertyProcessor.findAddresses(any())).thenReturn(new AddressData(new ArrayList<>(), null, false));
+
+		// create property set to test
+		final Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put(
+				"operations",
+				Map.of("query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
+						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")));
+		properties.put("accessPort", 1444);
+
+		final List<ServiceInstanceInterfaceRequestDTO> normalized = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties)));
+
+		verify(interfaceAddressPropertyProcessor, times(1)).findAddresses(any());
+		verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName(any());
+
+		assertEquals(1, normalized.size());
+		assertEquals(2, normalized.get(0).properties().size());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesExistingTemplateOk() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+		// mock mandatory property
+		final ServiceInterfaceTemplateProperty propRequirement = new ServiceInterfaceTemplateProperty(new ServiceInterfaceTemplate("generic_http", "http"), "accessPort", true, "MINMAX|1|65535");
+		when(serviceInterfaceTemplateDbService.getPropertiesByTemplateName(anyString())).thenReturn(List.of(propRequirement));
+		// mock port validator
+		final int testPort = 4040;
+		when(propertyValidators.getValidator(any())).thenReturn(minMaxValidator);
+		when(minMaxValidator.validateAndNormalize(any(), any(), any())).thenReturn(testPort);
+		// mock address preprocessor
+		when(interfaceAddressPropertyProcessor.findAddresses(any())).thenReturn(new AddressData(new ArrayList<>(), null, false));
+
+		// create property set to test
+		final Map<String, Object> properties = new HashMap<String, Object>();
+		properties.put(
+				"operations",
+				Map.of("query-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/query", HttpOperationModel.PROP_NAME_METHOD, "GET"),
+						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")));
+		properties.put("accessPort", testPort);
+
+		final List<ServiceInstanceInterfaceRequestDTO> normalized = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties)));
+
+		verify(interfaceAddressPropertyProcessor, times(1)).findAddresses(any());
+		verify(minMaxValidator, times(1)).validateAndNormalize(testPort, "1", "65535");
+		verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName(any());
+
+		assertEquals(1, normalized.size());
+		assertEquals(2, normalized.get(0).properties().size());
+
+	}
 
 }
