@@ -363,7 +363,7 @@ public class LocalServiceOrchestration {
 		logger.debug("markExclusivityIfFeasible started...");
 
 		for (final OrchestrationCandidate candidate : candidates) {
-			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata() == null ? null : candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 			if (allowedExclusivityDurationObj != null) {
 				try {
 					final int allowedExclusivityDuration = Utilities.parseToInt(allowedExclusivityDurationObj);

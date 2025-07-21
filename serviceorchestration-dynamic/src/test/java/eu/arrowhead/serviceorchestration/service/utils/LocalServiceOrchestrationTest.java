@@ -4,19 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -48,6 +51,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationLockDbService;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
+import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.utils.matchmaker.ServiceInstanceMatchmaker;
 
@@ -84,15 +88,21 @@ public class LocalServiceOrchestrationTest {
 
 	@Captor
 	private ArgumentCaptor<String> stringCaptor;
-	
+
 	@Captor
 	private ArgumentCaptor<Set<Long>> longSetCaptor;
+
+	@Captor
+	private ArgumentCaptor<Collection<Long>> longCollectionCaptor;
 
 	@Captor
 	private ArgumentCaptor<List<String>> stringListCaptor;
 
 	@Captor
 	private ArgumentCaptor<ServiceInstanceLookupRequestDTO> serviceInstanceLookupRequestCaptor;
+
+	@Captor
+	private ArgumentCaptor<List<OrchestrationLock>> orchestrationLockListCaptor;
 
 	private static final String testSerfviceDef = "testService";
 
@@ -419,6 +429,471 @@ public class LocalServiceOrchestrationTest {
 		assertEquals(lockExpiredCandidate.instanceId(), result.results().get(0).serviceInstanceId());
 		assertEquals(notLockedCandidate.instanceId(), result.results().get(1).serviceInstanceId());
 		assertTrue(result.warnings().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationExclusivityIsPreferred() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord1.setId(1);
+		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord2.setId(2);
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate2, true, false);
+		candidateMatch.setCanBeExclusive(true);
+		candidateMatch.setLocked(true);
+		candidateMatch.setExclusivityDuration(105);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
+		when(orchLockDbService.create(anyList())).thenReturn(List.of(tempLockRecord1, tempLockRecord2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of()).thenReturn(List.of()).thenReturn(List.of(tempLockRecord1));
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return candidateMatch;
+		});
+		when(orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate2.instanceId()), any(), eq(false))).thenReturn(Optional.of(tempLockRecord2));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(3)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate2.instanceId()), any(), eq(false));
+		verify(orchLockDbService).deleteInBatch(longCollectionCaptor.capture());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<OrchestrationLock> tempLockCreateInput = orchestrationLockListCaptor.getValue();
+		assertTrue(tempLockCreateInput.size() == 2);
+		assertEquals(candidate1.instanceId(), tempLockCreateInput.get(0).getServiceInstanceId());
+		assertEquals(candidate2.instanceId(), tempLockCreateInput.get(1).getServiceInstanceId());
+
+		assertTrue(matchmakingInput.size() == 2);
+		assertEquals(candidate1.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+		assertEquals(candidate2.instanceId(), matchmakingInput.get(1).getServiceInstance().instanceId());
+
+		final Collection<Long> releaseLockInput = longCollectionCaptor.getValue();
+		assertTrue(releaseLockInput.size() == 1);
+		assertTrue(releaseLockInput.contains(tempLockRecord1.getId()));
+
+		assertEquals("1 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButPartlyFulfilled() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 90);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord1.setId(1);
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
+		candidateMatch.setCanBeExclusive(true);
+		candidateMatch.setLocked(true);
+		candidateMatch.setExclusivityDuration(90);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
+		when(orchLockDbService.create(anyList())).thenReturn(List.of(tempLockRecord1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return candidateMatch;
+		});
+		when(orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate1.instanceId()), any(), eq(false))).thenReturn(Optional.of(tempLockRecord1));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate1.instanceId()), any(), eq(false));
+		verify(orchLockDbService, never()).deleteInBatch(anyList());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<OrchestrationLock> tempLockCreateInput = orchestrationLockListCaptor.getValue();
+		assertTrue(tempLockCreateInput.size() == 1);
+		assertEquals(candidate1.instanceId(), tempLockCreateInput.get(0).getServiceInstanceId());
+
+		assertTrue(matchmakingInput.size() == 1);
+		assertEquals(candidate1.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButPartlyFulfilledWithExplicitMatchmaking() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 90);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord1.setId(1);
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
+		candidateMatch.setCanBeExclusive(true);
+		candidateMatch.setLocked(true);
+		candidateMatch.setExclusivityDuration(90);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
+		when(orchLockDbService.create(anyList())).thenReturn(List.of(tempLockRecord1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return candidateMatch;
+		});
+		when(orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate1.instanceId()), any(), eq(false))).thenReturn(Optional.of(tempLockRecord1));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate1.instanceId()), any(), eq(false));
+		verify(orchLockDbService, never()).deleteInBatch(anyList());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<OrchestrationLock> tempLockCreateInput = orchestrationLockListCaptor.getValue();
+		assertTrue(tempLockCreateInput.size() == 1);
+		assertEquals(candidate1.instanceId(), tempLockCreateInput.get(0).getServiceInstanceId());
+
+		assertTrue(matchmakingInput.size() == 1);
+		assertEquals(candidate1.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
+		assertTrue(!result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_PART_TIME_EXCLUSIVITY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButNotFulfilled() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
+		candidateMatch.setCanBeExclusive(true);
+		candidateMatch.setLocked(true);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker, never()).doMatchmaking(any(), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyList());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("2 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 2);
+		assertEquals(candidate1.instanceId(), result.results().get(0).serviceInstanceId());
+		assertEquals(candidate2.instanceId(), result.results().get(1).serviceInstanceId());
+		assertTrue(!result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButNotFulfilledWithMatchmaking() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return candidateMatch;
+		});
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyList());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
+		assertTrue(!result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_NOT_EXCLUSIVE));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationOnlyExclusive() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true), null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord1.setId(1);
+		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord2.setId(2);
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate2, true, false);
+		candidateMatch.setCanBeExclusive(true);
+		candidateMatch.setLocked(true);
+		candidateMatch.setExclusivityDuration(105);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
+		when(orchLockDbService.create(anyList())).thenReturn(List.of(tempLockRecord1, tempLockRecord2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of()).thenReturn(List.of()).thenReturn(List.of(tempLockRecord1));
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return candidateMatch;
+		});
+		when(orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate2.instanceId()), any(), eq(false))).thenReturn(Optional.of(tempLockRecord2));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(3)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate2.instanceId()), any(), eq(false));
+		verify(orchLockDbService).deleteInBatch(longCollectionCaptor.capture());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<OrchestrationLock> tempLockCreateInput = orchestrationLockListCaptor.getValue();
+		assertTrue(tempLockCreateInput.size() == 2);
+		assertEquals(candidate1.instanceId(), tempLockCreateInput.get(0).getServiceInstanceId());
+		assertEquals(candidate2.instanceId(), tempLockCreateInput.get(1).getServiceInstanceId());
+
+		assertTrue(matchmakingInput.size() == 2);
+		assertEquals(candidate1.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+		assertEquals(candidate2.instanceId(), matchmakingInput.get(1).getServiceInstance().instanceId());
+
+		final Collection<Long> releaseLockInput = longCollectionCaptor.getValue();
+		assertTrue(releaseLockInput.size() == 1);
+		assertTrue(releaseLockInput.contains(tempLockRecord1.getId()));
+
+		assertEquals("1 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
+		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationOnlyExclusiveWithExplicitMatchmaking() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true, OrchestrationFlag.MATCHMAKING.name(), true), null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord1.setId(1);
+		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
+		tempLockRecord2.setId(2);
+		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate2, true, false);
+		candidateMatch.setCanBeExclusive(true);
+		candidateMatch.setLocked(true);
+		candidateMatch.setExclusivityDuration(105);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
+		when(orchLockDbService.create(anyList())).thenReturn(List.of(tempLockRecord1, tempLockRecord2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of()).thenReturn(List.of()).thenReturn(List.of(tempLockRecord1));
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return candidateMatch;
+		});
+		when(orchLockDbService.changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate2.instanceId()), any(), eq(false))).thenReturn(Optional.of(tempLockRecord2));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(3)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService).create(orchestrationLockListCaptor.capture());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(eq(jobId.toString()), eq(candidate2.instanceId()), any(), eq(false));
+		verify(orchLockDbService).deleteInBatch(longCollectionCaptor.capture());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<OrchestrationLock> tempLockCreateInput = orchestrationLockListCaptor.getValue();
+		assertTrue(tempLockCreateInput.size() == 2);
+		assertEquals(candidate1.instanceId(), tempLockCreateInput.get(0).getServiceInstanceId());
+		assertEquals(candidate2.instanceId(), tempLockCreateInput.get(1).getServiceInstanceId());
+
+		assertTrue(matchmakingInput.size() == 2);
+		assertEquals(candidate1.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+		assertEquals(candidate2.instanceId(), matchmakingInput.get(1).getServiceInstance().instanceId());
+
+		final Collection<Long> releaseLockInput = longCollectionCaptor.getValue();
+		assertTrue(releaseLockInput.size() == 1);
+		assertTrue(releaseLockInput.contains(tempLockRecord1.getId()));
+
+		assertEquals("1 local result", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
+		assertTrue(!result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationOnlyExclusiveButNotFulfilled() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true), null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationOnlyExclusiveButNotFulfilledBecauseCandidatesBecameLockedMeanwhile() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true), null, 100);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final OrchestrationLock tempLockRecord = new OrchestrationLock(UUID.randomUUID().toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(60), true);
+		tempLockRecord.setId(1);
+		final OrchestrationLock mgmtLockRecord = new OrchestrationLock(UUID.randomUUID().toString(), candidate2.instanceId(), requester, null, true);
+		mgmtLockRecord.setId(2);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of()).thenReturn(List.of(tempLockRecord, mgmtLockRecord));
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(any(), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
 	}
 
 	//=================================================================================================
