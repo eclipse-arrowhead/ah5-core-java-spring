@@ -2,6 +2,7 @@ package eu.arrowhead.serviceorchestration.service.utils;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -10,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,8 +35,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.AuthException;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.dto.BlacklistEntryDTO;
+import eu.arrowhead.dto.BlacklistEntryListResponseDTO;
+import eu.arrowhead.dto.BlacklistQueryRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
@@ -103,6 +111,9 @@ public class LocalServiceOrchestrationTest {
 
 	@Captor
 	private ArgumentCaptor<List<OrchestrationLock>> orchestrationLockListCaptor;
+
+	@Captor
+	private ArgumentCaptor<BlacklistQueryRequestDTO> blacklistQueryRequestCaptor;
 
 	private static final String testSerfviceDef = "testService";
 
@@ -1098,6 +1109,7 @@ public class LocalServiceOrchestrationTest {
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1), 1));
 		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+
 		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
 
 		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
@@ -1114,6 +1126,346 @@ public class LocalServiceOrchestrationTest {
 		assertEquals("No results were found", stringCaptor.getValue());
 
 		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationCandidatesAreBlackListed() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final BlacklistEntryDTO blacklisted1 = new BlacklistEntryDTO(candidate1.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryDTO blacklisted2 = new BlacklistEntryDTO(candidate2.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryDTO blacklisted3 = new BlacklistEntryDTO(candidate3.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryDTO blacklisted4 = new BlacklistEntryDTO(candidate4.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryListResponseDTO blacklisResponsePage1 = new BlacklistEntryListResponseDTO(List.of(blacklisted1, blacklisted2), 4);
+		final BlacklistEntryListResponseDTO blacklisResponsePage2 = new BlacklistEntryListResponseDTO(List.of(blacklisted3, blacklisted4), 4);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isBlacklistEnabled()).thenReturn(true);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				blacklistQueryRequestCaptor.capture())).thenReturn(blacklisResponsePage1).thenReturn(blacklisResponsePage2);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(4)).getBlacklistCheckExcludeList();
+		verify(ahHttpService, times(2)).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				any(BlacklistQueryRequestDTO.class));
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<BlacklistQueryRequestDTO> blacklistQueryRequestDTOs = blacklistQueryRequestCaptor.getAllValues();
+		assertTrue(blacklistQueryRequestDTOs.size() == 2);
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate2.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().page() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().size() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate2.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).pagination().page() == 1);
+		assertTrue(blacklistQueryRequestDTOs.get(1).pagination().size() == 2);
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationCandidatesAreBlackListedButOneIsOnTheExcludeList() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final BlacklistEntryDTO blacklisted1 = new BlacklistEntryDTO(candidate1.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryDTO blacklisted2 = new BlacklistEntryDTO(candidate2.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryDTO blacklisted4 = new BlacklistEntryDTO(candidate4.provider().name(), null, null, null, null, null, null, true);
+		final BlacklistEntryListResponseDTO blacklisResponsePage1 = new BlacklistEntryListResponseDTO(List.of(blacklisted1, blacklisted2), 3);
+		final BlacklistEntryListResponseDTO blacklisResponsePage2 = new BlacklistEntryListResponseDTO(List.of(blacklisted4), 3);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isBlacklistEnabled()).thenReturn(true);
+		when(sysInfo.getBlacklistCheckExcludeList()).thenReturn(List.of("TestProvider3"));
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				blacklistQueryRequestCaptor.capture())).thenReturn(blacklisResponsePage1).thenReturn(blacklisResponsePage2);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(4)).getBlacklistCheckExcludeList();
+		verify(ahHttpService, times(2)).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				any(BlacklistQueryRequestDTO.class));
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<BlacklistQueryRequestDTO> blacklistQueryRequestDTOs = blacklistQueryRequestCaptor.getAllValues();
+		assertTrue(blacklistQueryRequestDTOs.size() == 2);
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate2.provider().name()));
+		assertTrue(!blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().page() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().size() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate2.provider().name()));
+		assertTrue(!blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(1).pagination().page() == 1);
+		assertTrue(blacklistQueryRequestDTOs.get(1).pagination().size() == 2);
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationBlacklistIsUnavailableButForced() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isBlacklistEnabled()).thenReturn(true);
+		doThrow(new ArrowheadException("test")).when(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST),
+				eq(BlacklistEntryListResponseDTO.class), blacklistQueryRequestCaptor.capture());
+		when(sysInfo.isBlacklistForced()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(4)).getBlacklistCheckExcludeList();
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				any(BlacklistQueryRequestDTO.class));
+		verify(sysInfo).isBlacklistForced();
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<BlacklistQueryRequestDTO> blacklistQueryRequestDTOs = blacklistQueryRequestCaptor.getAllValues();
+		assertTrue(blacklistQueryRequestDTOs.size() == 1);
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate2.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().page() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().size() == null);
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationBlacklistIsUnavailableButNotForced() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isBlacklistEnabled()).thenReturn(true);
+		doThrow(new ArrowheadException("test")).when(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST),
+				eq(BlacklistEntryListResponseDTO.class), blacklistQueryRequestCaptor.capture());
+		when(sysInfo.isBlacklistForced()).thenReturn(false);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(4)).getBlacklistCheckExcludeList();
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				any(BlacklistQueryRequestDTO.class));
+		verify(sysInfo).isBlacklistForced();
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<BlacklistQueryRequestDTO> blacklistQueryRequestDTOs = blacklistQueryRequestCaptor.getAllValues();
+		assertTrue(blacklistQueryRequestDTOs.size() == 1);
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate2.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().page() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().size() == null);
+
+		assertEquals("4 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 4);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationBlacklistThrowsForbbidenException() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isBlacklistEnabled()).thenReturn(true);
+		doThrow(new ForbiddenException("test message", "test.origin")).when(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST),
+				eq(BlacklistEntryListResponseDTO.class), blacklistQueryRequestCaptor.capture());
+
+		final Throwable ex = assertThrows(Throwable.class, () -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(4)).getBlacklistCheckExcludeList();
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				any(BlacklistQueryRequestDTO.class));
+		verify(sysInfo, never()).isBlacklistForced();
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), stringCaptor.capture());
+
+		final List<BlacklistQueryRequestDTO> blacklistQueryRequestDTOs = blacklistQueryRequestCaptor.getAllValues();
+		assertTrue(blacklistQueryRequestDTOs.size() == 1);
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate2.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().page() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().size() == null);
+
+		assertEquals("test message", stringCaptor.getValue());
+		assertEquals("test message", ex.getMessage());
+		assertTrue(ex instanceof ForbiddenException);
+		assertEquals("test.origin", ((ForbiddenException) ex).getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationBlacklistThrowsAuthException() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isBlacklistEnabled()).thenReturn(true);
+		doThrow(new AuthException("test message", "test.origin")).when(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST),
+				eq(BlacklistEntryListResponseDTO.class), blacklistQueryRequestCaptor.capture());
+
+		final Throwable ex = assertThrows(Throwable.class, () -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(4)).getBlacklistCheckExcludeList();
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_BLACKLIST_MANAGEMENT), eq(Constants.SERVICE_OP_BLACKLIST_QUERY), eq(Constants.SYS_NAME_BLACKLIST), eq(BlacklistEntryListResponseDTO.class),
+				any(BlacklistQueryRequestDTO.class));
+		verify(sysInfo, never()).isBlacklistForced();
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), stringCaptor.capture());
+
+		final List<BlacklistQueryRequestDTO> blacklistQueryRequestDTOs = blacklistQueryRequestCaptor.getAllValues();
+		assertTrue(blacklistQueryRequestDTOs.size() == 1);
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate1.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate2.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate3.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).systemNames().contains(candidate4.provider().name()));
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().page() == null);
+		assertTrue(blacklistQueryRequestDTOs.get(0).pagination().size() == null);
+
+		assertEquals("test message", stringCaptor.getValue());
+		assertEquals("test message", ex.getMessage());
+		assertTrue(ex instanceof AuthException);
+		assertEquals("test.origin", ((AuthException) ex).getOrigin());
 	}
 
 	//=================================================================================================
