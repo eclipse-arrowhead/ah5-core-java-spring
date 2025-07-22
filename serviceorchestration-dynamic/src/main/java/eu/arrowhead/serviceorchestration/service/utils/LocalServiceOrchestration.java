@@ -748,6 +748,10 @@ public class LocalServiceOrchestration {
 			});
 		}
 
+		if (Utilities.isEmpty(requestPayloadEntries)) {
+			return;
+		}
+
 		final AuthorizationTokenMgmtListResponseDTO response = ahHttpService.consumeService(
 				Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT,
 				Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS,
