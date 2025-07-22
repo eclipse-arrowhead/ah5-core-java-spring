@@ -308,7 +308,7 @@ public class LocalServiceOrchestration {
 
 			for (final OrchestrationLock lockRecord : lockRecords) {
 				if (!Utilities.isEmpty(lockRecord.getOrchestrationJobId()) && lockRecord.getOrchestrationJobId().equals(jobIdStr)) {
-					// lock belongs to this session
+					// lock belongs to this session (in theory it doesn't happen)
 					continue;
 				} else if (lockRecord.getExpiresAt() != null && lockRecord.getExpiresAt().isBefore(now)) {
 					expiredLocks.add(lockRecord.getId());
