@@ -30,7 +30,6 @@ import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.intf.properties.PropertyValidators;
 import eu.arrowhead.common.intf.properties.validators.MinMaxValidator;
 import eu.arrowhead.common.intf.properties.validators.NotEmptyAddressListValidator;
-import eu.arrowhead.common.intf.properties.validators.PortValidator;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor.AddressData;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
@@ -103,12 +102,12 @@ public class InterfaceValidatorTest {
 		final ServiceInterfaceTemplatePropertyDTO propAddress = new ServiceInterfaceTemplatePropertyDTO(
 				"accessAddresses",
 				true,
-				"NOT_EMPTY_ADDRESS_LIST",
+				"NOT_EMPTY_ADDRESS_LIST", // validator not null
 				List.of());
 		final ServiceInterfaceTemplatePropertyDTO propOperations = new ServiceInterfaceTemplatePropertyDTO(
 				"operations",
 				true,
-				"HTTP_OPERATIONS",
+				null, // validator null
 				List.of());
 
 		// templates
@@ -403,6 +402,19 @@ public class InterfaceValidatorTest {
 						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "https", "NONE", Map.of()))));
 
 		assertEquals("https" + INVALID_PROTOCOL + "generic_http", ex.getMessage());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateNormalizedInterfaceInstancesMissingProtocol() {
+
+		// existing template in the DB
+		when(serviceInterfaceTemplateDbService.getByName(anyString())).thenReturn(Optional.of(new ServiceInterfaceTemplate("generic_http", "http")));
+
+		assertDoesNotThrow(
+				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
+						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", null, "NONE", Map.of()))));
 
 	}
 

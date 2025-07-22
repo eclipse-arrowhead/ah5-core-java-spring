@@ -106,7 +106,7 @@ public class InterfaceValidator {
 								throw new InvalidParameterException(templateProp.getPropertyName() + " interface property is missing for " + templateProp.getServiceInterfaceTemplate().getName());
 							}
 
-							if (!Utilities.isEmpty(templateProp.getValidator())) {
+							if (instanceProp != null && !Utilities.isEmpty(templateProp.getValidator())) {
 								final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER_REGEXP);
 								final PropertyValidatorType propertyValidatorType = PropertyValidatorType.valueOf(validatorWithArgs[0]);
 
