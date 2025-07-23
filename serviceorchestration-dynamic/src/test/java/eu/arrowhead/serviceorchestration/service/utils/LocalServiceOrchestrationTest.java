@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -134,6 +135,9 @@ public class LocalServiceOrchestrationTest {
 
 	@Captor
 	private ArgumentCaptor<MultiValueMap<String, String>> queryParamCaptor;
+
+	@Captor
+	private ArgumentCaptor<Map<String, Object>> stringObjectMapCaptor;
 
 	private static final String testSerfviceDef = "testService";
 
@@ -1806,12 +1810,12 @@ public class LocalServiceOrchestrationTest {
 		final MultiValueMap<String, String> tokenRequestqueryParams = queryParamCaptor.getValue();
 		assertTrue(tokenRequestqueryParams.containsKey(Constants.UNBOUND));
 		assertEquals("true", tokenRequestqueryParams.get(Constants.UNBOUND).get(0));
-		
+
 		assertEquals("2 local result", stringCaptor.getValue());
 		assertTrue(result.results().size() == 2);
 		assertEquals("thisistherawtoken", result.results().get(0).authorizationTokens().get("TIME_LIMITED_TOKEN_AUTH").get(testSerfviceDef).token());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoLocalServiceOrchestrationAuthorizationIsEnabledAndAuthTokenIsRequiredWithOperation() {
@@ -1887,6 +1891,226 @@ public class LocalServiceOrchestrationTest {
 		assertEquals("1 local result", stringCaptor.getValue());
 		assertTrue(result.results().size() == 1);
 		assertEquals("thisistherawtoken", result.results().get(0).authorizationTokens().get("TIME_LIMITED_TOKEN_AUTH").get("test-operation").token());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationInterfaceRequirementsTemplateName() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, List.of("generic_https"), null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", List.of(candidateInterface1, candidateInterface2));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidate.provider().name(), result.results().get(0).providerName());
+		assertTrue(result.results().get(0).interfaces().size() == 1);
+		assertEquals("generic_https", result.results().get(0).interfaces().get(0).templateName());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationInterfaceRequirementsTemplateNameWithTranslationAllowed() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, List.of("generic_https"), null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", List.of(candidateInterface1, candidateInterface2));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidate.provider().name(), result.results().get(0).providerName());
+		assertTrue(result.results().get(0).interfaces().size() == 1);
+		assertEquals("generic_https", result.results().get(0).interfaces().get(0).templateName());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationInterfaceRequirementsPropertyRequirements() {
+		final UUID jobId = UUID.randomUUID();
+		final MetadataRequirementDTO interfacePropReq = new MetadataRequirementDTO();
+		interfacePropReq.put("foo", "bar");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, List.of(interfacePropReq), null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("foo", "bar"));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", List.of(candidateInterface1, candidateInterface2));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidate.provider().name(), result.results().get(0).providerName());
+		assertTrue(result.results().get(0).interfaces().size() == 1);
+		assertEquals("generic_https", result.results().get(0).interfaces().get(0).templateName());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationInterfaceRequirementsAddressTypeWhenTranslationAllowed() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, List.of("IPV4"), null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("192.168.56.116")));
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("test.com")));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", List.of(candidateInterface1, candidateInterface2));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+		when(interfaceAddressPropertyProcessor.filterOnAddressTypes(stringObjectMapCaptor.capture(), stringListCaptor.capture())).thenReturn(true).thenReturn(false);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, times(2)).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final List<Map<String, Object>> offeredInterfacesInputList = stringObjectMapCaptor.getAllValues();
+		assertTrue(offeredInterfacesInputList.size() == 2);
+		List<String> accessAddresses1 = (List<String>) offeredInterfacesInputList.get(0).get("accessAddresses");
+		assertEquals("192.168.56.116", accessAddresses1.get(0));
+		List<String> accessAddresses2 = (List<String>) offeredInterfacesInputList.get(1).get("accessAddresses");
+		assertEquals("test.com", accessAddresses2.get(0));
+
+		final List<List<String>> requiredAddressTypesInputList = stringListCaptor.getAllValues();
+		assertTrue(requiredAddressTypesInputList.size() == 2);
+		assertTrue(requiredAddressTypesInputList.get(0).size() == 1);
+		assertEquals("IPV4", requiredAddressTypesInputList.get(0).get(0));
+		assertTrue(requiredAddressTypesInputList.get(1).size() == 1);
+		assertEquals("IPV4", requiredAddressTypesInputList.get(1).get(0));
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidate.provider().name(), result.results().get(0).providerName());
+		assertTrue(result.results().get(0).interfaces().size() == 1);
+		assertEquals("generic_http", result.results().get(0).interfaces().get(0).templateName());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationInterfaceRequirementsNonMatchingTemplateNameAndMatchingAddressTypeWhenTranslationAllowed() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, List.of("something"), List.of("IPV4"), null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("192.168.56.116")));
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("test.com")));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", List.of(candidateInterface1, candidateInterface2));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo, times(1)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
 	}
 
 	//=================================================================================================
