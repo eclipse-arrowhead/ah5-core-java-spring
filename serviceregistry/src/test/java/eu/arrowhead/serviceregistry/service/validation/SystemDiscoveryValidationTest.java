@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -34,6 +35,7 @@ import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.SystemDiscoveryNormalization;
 
@@ -288,6 +290,68 @@ public class SystemDiscoveryValidationTest {
 				resetUtilitiesMock();
 			}
 		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRegisterSystemOk() {
+
+		final SystemRequestDTO dto = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+
+		utilitiesMock.when(() -> Utilities.isEmpty("TEST_DEVICE")).thenReturn(false);
+		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(
+				new NormalizedSystemRequestDTO(
+						"TemperatureProvider",
+						Map.of("indoor", true),
+						"1.0.0",
+						List.of(new AddressDTO("HOSTNAME", "greenhouse.com")),
+						"TEST_DEVICE")
+				);
+
+		assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dto, "test origin"));
+		verify(normalizer, times(1)).normalizeSystemRequestDTO(dto);
+		verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+		verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
+		verify(addressValidator, times(1)).validateNormalizedAddress(AddressType.HOSTNAME, "greenhouse.com");
+		verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+
+		resetUtilitiesMock();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRegisterSystemEmptyDeviceName() {
+
+		final SystemRequestDTO dto = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), EMPTY);
+
+		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(
+				new NormalizedSystemRequestDTO(
+						"TemperatureProvider",
+						Map.of("indoor", true),
+						"1.0.0",
+						List.of(new AddressDTO("HOSTNAME", "greenhouse.com")),
+						EMPTY)
+				);
+
+		assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dto, "test origin"));
+		verify(deviceNameValidator, never()).validateDeviceName("TEST_DEVICE");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRegisterSystemThrowsExeption() {
+
+		final SystemRequestDTO dto = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), EMPTY);
+
+		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(testNormalizedDto);
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName(anyString());
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> {
+			validator.validateAndNormalizeRegisterSystem(dto, "test origin");
+		});
+
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	//=================================================================================================
