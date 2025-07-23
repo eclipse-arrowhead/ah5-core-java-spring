@@ -44,7 +44,7 @@ public class InterfaceNormalizerTest {
 	@Test
 	public void testNormalizeInterfaceOk() {
 
-		ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
+		final ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
 				new ServiceInstanceInterfaceRequestDTO(
 						"GENERIC HTTPS",
 						" HTTPS ",
@@ -62,7 +62,7 @@ public class InterfaceNormalizerTest {
 	@Test
 	public void testNormalizeInterfaceEmptyProtocol() {
 
-		ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
+		final ServiceInstanceInterfaceRequestDTO normalized = intfNormalizer.normalizeInterfaceDTO(
 				new ServiceInstanceInterfaceRequestDTO(null, null, "NONE", null));
 
 		assertEquals("", normalized.protocol());
@@ -74,7 +74,7 @@ public class InterfaceNormalizerTest {
 	@Test
 	public void testNormalizeTemplateNullPropRequirements() {
 
-		ServiceInterfaceTemplateRequestDTO normalized1 = intfNormalizer.normalizeTemplateDTO(
+		final ServiceInterfaceTemplateRequestDTO normalized1 = intfNormalizer.normalizeTemplateDTO(
 				new ServiceInterfaceTemplateRequestDTO(
 						"generic MQTT",
 						"\t MQTT",
@@ -101,7 +101,7 @@ public class InterfaceNormalizerTest {
 		final List<ServiceInterfaceTemplatePropertyDTO> requirements = List.of(propsToNormalize, propsWithNullToNormalize);
 
 		// normalize dto
-		ServiceInterfaceTemplateRequestDTO normalized = intfNormalizer.normalizeTemplateDTO(
+		final ServiceInterfaceTemplateRequestDTO normalized = intfNormalizer.normalizeTemplateDTO(
 				new ServiceInterfaceTemplateRequestDTO(
 						"generic mqtt",
 						"\t MQTT",
@@ -122,7 +122,6 @@ public class InterfaceNormalizerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	@SuppressWarnings("checkstyle:MethodName")
 	public void testNormalizeTemplateNullPropRequirementName() {
 
 		// requirement with null name
