@@ -33,6 +33,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
@@ -41,6 +42,9 @@ import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
+import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
+import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListRequestDTO;
 import eu.arrowhead.dto.AuthorizationVerifyListResponseDTO;
 import eu.arrowhead.dto.AuthorizationVerifyResponseDTO;
@@ -52,11 +56,13 @@ import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
+import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
@@ -122,6 +128,12 @@ public class LocalServiceOrchestrationTest {
 
 	@Captor
 	private ArgumentCaptor<AuthorizationVerifyListRequestDTO> authorizationVerifyRequestCaptor;
+
+	@Captor
+	private ArgumentCaptor<AuthorizationTokenGenerationMgmtListRequestDTO> authorizationTokenGenerationMgmtListRequestCaptor;
+
+	@Captor
+	private ArgumentCaptor<MultiValueMap<String, String>> queryParamCaptor;
 
 	private static final String testSerfviceDef = "testService";
 
@@ -1494,9 +1506,9 @@ public class LocalServiceOrchestrationTest {
 		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
 		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
 
-		AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
-		AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
-		AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1, authRespDTO2), 2);
+		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
+		final AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
+		final AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1, authRespDTO2), 2);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
@@ -1553,9 +1565,9 @@ public class LocalServiceOrchestrationTest {
 		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
 		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
 
-		AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
-		AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
-		AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1, authRespDTO2), 2);
+		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
+		final AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
+		final AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1, authRespDTO2), 2);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
@@ -1667,9 +1679,9 @@ public class LocalServiceOrchestrationTest {
 		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
 		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
 
-		AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
-		AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, false);
-		AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1, authRespDTO2), 2);
+		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
+		final AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, false);
+		final AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1, authRespDTO2), 2);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
@@ -1715,12 +1727,183 @@ public class LocalServiceOrchestrationTest {
 		assertEquals(candidate1.provider().name(), result.results().get(0).providerName());
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationAuthorizationIsEnabledAndAuthTokenIsRequired() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidate1Interface = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", List.of(candidate1Interface));
+		final ServiceInstanceInterfaceResponseDTO candidate2Interface = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "CERTIFICATE", null);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider1", List.of(candidate2Interface));
+
+		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
+		final AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1), 1);
+
+		final AuthorizationTokenResponseDTO tokenResponseDTO1 = new AuthorizationTokenResponseDTO(AuthorizationTokenType.TIME_LIMITED_TOKEN, "TIME_LIMITED_TOKEN_AUTH", "thisistherawtoken", "thisisthetokereference",
+				"DynamicServiceOrchestration", "LOCAL", requester, candidate1.provider().name(), AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, null, null, null, null);
+		final AuthorizationTokenMgmtListResponseDTO tokenListResponseDTO = new AuthorizationTokenMgmtListResponseDTO(List.of(tokenResponseDTO1), 1);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isAuthorizationEnabled()).thenReturn(true);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION), eq(AuthorizationVerifyListResponseDTO.class),
+				authorizationVerifyRequestCaptor.capture())).thenReturn(authRespList);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION),
+				eq(AuthorizationTokenMgmtListResponseDTO.class), authorizationTokenGenerationMgmtListRequestCaptor.capture(), queryParamCaptor.capture())).thenReturn(tokenListResponseDTO);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION),
+				eq(AuthorizationVerifyListResponseDTO.class), any(AuthorizationVerifyListRequestDTO.class));
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION),
+				eq(AuthorizationTokenMgmtListResponseDTO.class), any(AuthorizationTokenGenerationMgmtListRequestDTO.class), any());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final AuthorizationVerifyListRequestDTO authCheckRequest = authorizationVerifyRequestCaptor.getValue();
+		assertTrue(authCheckRequest.list().size() == 2);
+		assertEquals(candidate1.provider().name(), authCheckRequest.list().get(0).provider());
+		assertEquals(requester, authCheckRequest.list().get(0).consumer());
+		assertEquals(testSerfviceDef, authCheckRequest.list().get(0).target());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF.name(), authCheckRequest.list().get(0).targetType());
+		assertNull(authCheckRequest.list().get(0).scope());
+		assertNull(authCheckRequest.list().get(0).cloud());
+		assertEquals(candidate2.provider().name(), authCheckRequest.list().get(1).provider());
+		assertEquals(requester, authCheckRequest.list().get(1).consumer());
+		assertEquals(testSerfviceDef, authCheckRequest.list().get(1).target());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF.name(), authCheckRequest.list().get(1).targetType());
+		assertNull(authCheckRequest.list().get(1).scope());
+		assertNull(authCheckRequest.list().get(1).cloud());
+
+		final AuthorizationTokenGenerationMgmtListRequestDTO tokenRequest = authorizationTokenGenerationMgmtListRequestCaptor.getValue();
+		assertTrue(tokenRequest.list().size() == 1);
+		assertEquals("TIME_LIMITED_TOKEN_AUTH", tokenRequest.list().get(0).tokenVariant());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF.name(), tokenRequest.list().get(0).targetType());
+		assertEquals("LOCAL", tokenRequest.list().get(0).consumerCloud());
+		assertEquals(requester, tokenRequest.list().get(0).consumer());
+		assertEquals(candidate1.provider().name(), tokenRequest.list().get(0).provider());
+		assertEquals(testSerfviceDef, tokenRequest.list().get(0).target());
+		assertEquals("", tokenRequest.list().get(0).scope());
+		assertNull(tokenRequest.list().get(0).expiresAt());
+		assertNull(tokenRequest.list().get(0).usageLimit());
+
+		final MultiValueMap<String, String> tokenRequestqueryParams = queryParamCaptor.getValue();
+		assertTrue(tokenRequestqueryParams.containsKey(Constants.UNBOUND));
+		assertEquals("true", tokenRequestqueryParams.get(Constants.UNBOUND).get(0));
+		
+		assertEquals("2 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 2);
+		assertEquals("thisistherawtoken", result.results().get(0).authorizationTokens().get("TIME_LIMITED_TOKEN_AUTH").get(testSerfviceDef).token());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationAuthorizationIsEnabledAndAuthTokenIsRequiredWithOperation() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("test-operation"), null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, null, null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidate1Interface = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", List.of(candidate1Interface));
+
+		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, "test-operation", true);
+		final AuthorizationVerifyListResponseDTO authRespList = new AuthorizationVerifyListResponseDTO(List.of(authRespDTO1), 1);
+
+		final AuthorizationTokenResponseDTO tokenResponseDTO1 = new AuthorizationTokenResponseDTO(AuthorizationTokenType.TIME_LIMITED_TOKEN, "TIME_LIMITED_TOKEN_AUTH", "thisistherawtoken", "thisisthetokereference",
+				"DynamicServiceOrchestration", "LOCAL", requester, candidate1.provider().name(), AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, "test-operation", null, null, null, null);
+		final AuthorizationTokenMgmtListResponseDTO tokenListResponseDTO = new AuthorizationTokenMgmtListResponseDTO(List.of(tokenResponseDTO1), 1);
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isAuthorizationEnabled()).thenReturn(true);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION), eq(AuthorizationVerifyListResponseDTO.class),
+				authorizationVerifyRequestCaptor.capture())).thenReturn(authRespList);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION),
+				eq(AuthorizationTokenMgmtListResponseDTO.class), authorizationTokenGenerationMgmtListRequestCaptor.capture(), queryParamCaptor.capture())).thenReturn(tokenListResponseDTO);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_CHECK_POLICIES), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION),
+				eq(AuthorizationVerifyListResponseDTO.class), any(AuthorizationVerifyListRequestDTO.class));
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_AUTHORIZATION_TOKEN_MANAGEMENT), eq(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS), eq(Constants.SYS_NAME_CONSUMER_AUTHORIZATION),
+				eq(AuthorizationTokenMgmtListResponseDTO.class), any(AuthorizationTokenGenerationMgmtListRequestDTO.class), any());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		final AuthorizationVerifyListRequestDTO authCheckRequest = authorizationVerifyRequestCaptor.getValue();
+		assertTrue(authCheckRequest.list().size() == 1);
+		assertEquals(candidate1.provider().name(), authCheckRequest.list().get(0).provider());
+		assertEquals(requester, authCheckRequest.list().get(0).consumer());
+		assertEquals(testSerfviceDef, authCheckRequest.list().get(0).target());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF.name(), authCheckRequest.list().get(0).targetType());
+		assertEquals("test-operation", authCheckRequest.list().get(0).scope());
+		assertNull(authCheckRequest.list().get(0).cloud());
+
+		final AuthorizationTokenGenerationMgmtListRequestDTO tokenRequest = authorizationTokenGenerationMgmtListRequestCaptor.getValue();
+		assertTrue(tokenRequest.list().size() == 1);
+		assertEquals("TIME_LIMITED_TOKEN_AUTH", tokenRequest.list().get(0).tokenVariant());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF.name(), tokenRequest.list().get(0).targetType());
+		assertEquals("LOCAL", tokenRequest.list().get(0).consumerCloud());
+		assertEquals(requester, tokenRequest.list().get(0).consumer());
+		assertEquals(candidate1.provider().name(), tokenRequest.list().get(0).provider());
+		assertEquals(testSerfviceDef, tokenRequest.list().get(0).target());
+		assertEquals("test-operation", tokenRequest.list().get(0).scope());
+		assertNull(tokenRequest.list().get(0).expiresAt());
+		assertNull(tokenRequest.list().get(0).usageLimit());
+
+		final MultiValueMap<String, String> tokenRequestqueryParams = queryParamCaptor.getValue();
+		assertTrue(tokenRequestqueryParams.containsKey(Constants.UNBOUND));
+		assertEquals("true", tokenRequestqueryParams.get(Constants.UNBOUND).get(0));
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals("thisistherawtoken", result.results().get(0).authorizationTokens().get("TIME_LIMITED_TOKEN_AUTH").get("test-operation").token());
+	}
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInstanceResponseDTO serviceInstanceResponseDTO(final String sysName) {
-		return serviceInstanceResponseDTO(sysName, null);
+		return new ServiceInstanceResponseDTO(
+				sysName + "|" + testSerfviceDef + "|1.0.0",
+				new SystemResponseDTO(sysName, null, null, null, null, null, null),
+				new ServiceDefinitionResponseDTO(testSerfviceDef, null, null),
+				null,
+				null,
+				null,
+				new ArrayList<>(),
+				null,
+				null);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1733,6 +1916,20 @@ public class LocalServiceOrchestrationTest {
 				null,
 				exclusivity == null ? null : Map.of(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY, exclusivity),
 				new ArrayList<>(),
+				null,
+				null);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private ServiceInstanceResponseDTO serviceInstanceResponseDTO(final String sysName, final List<ServiceInstanceInterfaceResponseDTO> interfaces) {
+		return new ServiceInstanceResponseDTO(
+				sysName + "|" + testSerfviceDef + "|1.0.0",
+				new SystemResponseDTO(sysName, null, null, null, null, null, null),
+				new ServiceDefinitionResponseDTO(testSerfviceDef, null, null),
+				null,
+				null,
+				null,
+				interfaces,
 				null,
 				null);
 	}
