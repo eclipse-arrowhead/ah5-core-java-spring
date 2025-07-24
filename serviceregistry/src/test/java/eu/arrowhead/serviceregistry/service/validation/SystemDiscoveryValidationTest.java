@@ -35,6 +35,7 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.DeviceNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
@@ -252,8 +253,6 @@ public class SystemDiscoveryValidationTest {
 
 			// without metadata
 			() -> {
-
-				// mock emptiness check
 				utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
 
 				// mock metadata validation
@@ -275,8 +274,6 @@ public class SystemDiscoveryValidationTest {
 
 			// with metadata
 			() -> {
-
-				// mock emptiness check
 				resetUtilitiesMock();
 
 				// mock metadata validation
@@ -788,15 +785,47 @@ public class SystemDiscoveryValidationTest {
 				List.of("TEST_DEVICE")
 				);
 
-				when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
-				doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName(anyString());
+		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName(anyString());
 
-				final InvalidParameterException ex = assertThrows(
-						InvalidParameterException.class,
-						() -> validator.validateAndNormalizeLookupSystem(dto, "test origin"));
+		final InvalidParameterException ex = assertThrows(
+				InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupSystem(dto, "test origin"));
 
-				assertEquals("Validation error", ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// REVOKE SYSTEM
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeSystemEmptySystemName() {
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRevokeSystem(EMPTY, "test origin"));
+		assertEquals(MISSING_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRevokeSystemOk() {
+		final String systemName = "TemperatureProvider";
+		when(normalizer.normalizeRevokeSystemName(systemName)).thenReturn(systemName);
+		validator.validateAndNormalizeRevokeSystem(systemName, "test origin");
+		verify(normalizer, times(1)).normalizeRevokeSystemName(systemName);
+		verify(systemNameValidator, times(1)).validateSystemName(systemName);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRevokeSystemThrowsException() {
+		final String systemName = "invalid provider name";
+		when(normalizer.normalizeRevokeSystemName(systemName)).thenReturn(systemName);
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName(anyString());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRevokeSystem(systemName, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	//=================================================================================================
