@@ -125,7 +125,11 @@ public class DeviceDiscoveryValidation {
 		}
 
 		if (!Utilities.isEmpty(dto.metadata())) {
-			MetadataValidation.validateMetadataKey(dto.metadata());
+			try {
+				MetadataValidation.validateMetadataKey(dto.metadata());
+			} catch (final InvalidParameterException ex) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
 		}
 	}
 

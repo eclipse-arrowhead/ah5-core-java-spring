@@ -35,7 +35,6 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
 import eu.arrowhead.common.service.validation.name.DeviceNameValidator;
-import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
@@ -909,7 +908,6 @@ public class SystemDiscoveryValidationTest {
     	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.containsNullOrEmpty(List.of())).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
     	final List<String> listWithNull = new ArrayList<String>(1);
     	listWithNull.add(null);
