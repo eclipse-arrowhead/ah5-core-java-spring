@@ -134,9 +134,8 @@ public class SystemDiscoveryValidationTest {
 				},
 				() -> {
 					when(normalizer.normalizeSystemRequestDTO(dtoOk)).thenReturn(testNormalizedRequestDto);
-					assertDoesNotThrow(() -> {
-						validator.validateAndNormalizeRegisterSystem(dtoOk, "test origin");
-					});
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoOk, "test origin"));
+					assertEquals(testNormalizedRequestDto, normalized);
 					utilitiesMock.verify(() -> Utilities.isEmpty("TemperatureProvider"));
 				}
 		);
@@ -156,9 +155,8 @@ public class SystemDiscoveryValidationTest {
 
 				when(normalizer.normalizeSystemRequestDTO(dtoWithEmptyList)).thenReturn(testNormalizedRequestDto);
 
-				assertDoesNotThrow(() -> {
-					validator.validateAndNormalizeRegisterSystem(dtoWithEmptyList, "test origin");
-				});
+				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithEmptyList, "test origin"));
+				assertEquals(testNormalizedRequestDto, normalized);
 				utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
 			},
 
@@ -192,10 +190,9 @@ public class SystemDiscoveryValidationTest {
 
 					final SystemRequestDTO testDto = new SystemRequestDTO("TemperatureProvider", Map.of(), "1.0.0", List.of("192.168.0.1"), "TEST_DEVICE");
 					when(normalizer.normalizeSystemRequestDTO(testDto)).thenReturn(testNormalizedRequestDto);
-					assertDoesNotThrow(() -> {
-						validator.validateAndNormalizeRegisterSystem(testDto, "test origin");
-					});
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(testDto, "test origin"));
 
+					assertEquals(testNormalizedRequestDto, normalized);
 					assertTrue(isEmptyCalledAtLeastOnce("TEST_DEVICE", List.of("192.168.0.1")));
 
 				},
@@ -206,10 +203,9 @@ public class SystemDiscoveryValidationTest {
 
 					final SystemRequestDTO testDto = new SystemRequestDTO("TemperatureProvider", Map.of(), "1.0.0", List.of("192.168.0.1"), EMPTY);
 					when(normalizer.normalizeSystemRequestDTO(testDto)).thenReturn(testNormalizedRequestDto);
-					assertDoesNotThrow(() -> {
-						validator.validateAndNormalizeRegisterSystem(testDto, "test origin");
-					});
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(testDto, "test origin"));
 
+					assertEquals(testNormalizedRequestDto, normalized);
 					assertTrue(isEmptyCalledAtLeastOnce(EMPTY, List.of("192.168.0.1")));
 				},
 
@@ -219,10 +215,9 @@ public class SystemDiscoveryValidationTest {
 
 					final SystemRequestDTO testDto = new SystemRequestDTO("TemperatureProvider", Map.of(), "1.0.0", List.of(), "TEST_DEVICE");
 					when(normalizer.normalizeSystemRequestDTO(testDto)).thenReturn(testNormalizedRequestDto);
-					assertDoesNotThrow(() -> {
-						validator.validateAndNormalizeRegisterSystem(testDto, "test origin");
-					});
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(testDto, "test origin"));
 
+					assertEquals(testNormalizedRequestDto, normalized);
 					assertTrue(isEmptyCalledAtLeastOnce("TEST_DEVICE", List.of()));
 
 				},
@@ -257,12 +252,11 @@ public class SystemDiscoveryValidationTest {
 				final SystemRequestDTO dtoWithoutMetadata = new SystemRequestDTO("TemperatureProvider", Map.of(), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
 				when(normalizer.normalizeSystemRequestDTO(dtoWithoutMetadata)).thenReturn(testNormalizedRequestDto);
 
-				assertDoesNotThrow(() -> {
-					validator.validateAndNormalizeRegisterSystem(dtoWithoutMetadata, "test origin");
-				});
+				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithoutMetadata, "test origin"));
 
 				utilitiesMock.verify(() -> Utilities.isEmpty(Map.of()), atLeastOnce());
 				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of()), never());
+				assertEquals(testNormalizedRequestDto, normalized);
 
 				// reset mocks
 				metadataValidationMock.close();
@@ -278,10 +272,11 @@ public class SystemDiscoveryValidationTest {
 				final SystemRequestDTO dtoWithMetadata = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
 				when(normalizer.normalizeSystemRequestDTO(dtoWithMetadata)).thenReturn(testNormalizedRequestDto);
 
-				validator.validateAndNormalizeRegisterSystem(dtoWithMetadata, "test origin");
+				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithMetadata, "test origin"));
 
 				utilitiesMock.verify(() -> Utilities.isEmpty(Map.of("indoor", true)), atLeastOnce());
 				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("indoor", true)), times(1));
+				assertEquals(testNormalizedRequestDto, normalized);
 
 				// reset mocks
 				metadataValidationMock.close();
@@ -294,22 +289,18 @@ public class SystemDiscoveryValidationTest {
 	public void testValidateAndNormalizeRegisterSystemOk() {
 
 		final SystemRequestDTO dto = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final NormalizedSystemRequestDTO expected = new NormalizedSystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of(new AddressDTO("HOSTNAME", "greenhouse.com")), "TEST_DEVICE");
 
-		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(
-				new NormalizedSystemRequestDTO(
-						"TemperatureProvider",
-						Map.of("indoor", true),
-						"1.0.0",
-						List.of(new AddressDTO("HOSTNAME", "greenhouse.com")),
-						"TEST_DEVICE")
-				);
+		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(expected);
 
-		assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dto, "test origin"));
+		final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dto, "test origin"));
 		verify(normalizer, times(1)).normalizeSystemRequestDTO(dto);
 		verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
 		verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
 		verify(addressValidator, times(1)).validateNormalizedAddress(AddressType.HOSTNAME, "greenhouse.com");
 		verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+		assertEquals(expected, normalized);
+
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -317,18 +308,13 @@ public class SystemDiscoveryValidationTest {
 	public void testValidateAndNormalizeRegisterSystemEmptyDeviceName() {
 
 		final SystemRequestDTO dto = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), EMPTY);
+		final NormalizedSystemRequestDTO expected = new NormalizedSystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of(new AddressDTO("HOSTNAME", "greenhouse.com")), EMPTY);
 
-		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(
-				new NormalizedSystemRequestDTO(
-						"TemperatureProvider",
-						Map.of("indoor", true),
-						"1.0.0",
-						List.of(new AddressDTO("HOSTNAME", "greenhouse.com")),
-						EMPTY)
-				);
+		when(normalizer.normalizeSystemRequestDTO(dto)).thenReturn(expected);
 
-		assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dto, "test origin"));
+		final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dto, "test origin"));
 		verify(deviceNameValidator, never()).validateDeviceName("TEST_DEVICE");
+		assertEquals(expected, normalized);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -388,8 +374,9 @@ public class SystemDiscoveryValidationTest {
 
 			// list is empty
 			() -> {
-				assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
+				final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
 				utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
+				assertEquals(testNormalizedLookupDto, normalized);
 			},
 
 			// list contains null or empty
@@ -408,8 +395,9 @@ public class SystemDiscoveryValidationTest {
 			// list does not contain null or empty
 			() -> {
 				resetUtilitiesMock();
-				assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
+				final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
 				utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", "TemperatureConsumer")));
+				assertEquals(testNormalizedLookupDto, normalized);
 			}
 		);
 	}
@@ -452,8 +440,9 @@ public class SystemDiscoveryValidationTest {
 
 				// list is empty
 				() -> {
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
+					assertEquals(testNormalizedLookupDto, normalized);
 				},
 
 				// list contains null or empty
@@ -473,8 +462,9 @@ public class SystemDiscoveryValidationTest {
 				() -> {
 					resetUtilitiesMock();
 
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("192.168.6.6", "192.168.6.7")));
+					assertEquals(testNormalizedLookupDto, normalized);
 				}
 			);
 
@@ -518,9 +508,10 @@ public class SystemDiscoveryValidationTest {
 
 				// empty address type
 				() -> {
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY), atLeastOnce());
 					utilitiesMock.verify(() -> Utilities.isEnumValue(EMPTY, AddressType.class), never());
+					assertEquals(testNormalizedLookupDto, normalized);
 				},
 
 				// invalid address type
@@ -538,8 +529,9 @@ public class SystemDiscoveryValidationTest {
 				// valid address type
 				() -> {
 					resetUtilitiesMock();
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEnumValue("IPV4", AddressType.class));
+					assertEquals(testNormalizedLookupDto, normalized);
 				}
 			);
 	}
@@ -589,9 +581,10 @@ public class SystemDiscoveryValidationTest {
 
 				// empty metadata
 				() -> {
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of()), never());
+					assertEquals(testNormalizedLookupDto, normalized);
 				},
 
 				// metadata contains null
@@ -612,8 +605,9 @@ public class SystemDiscoveryValidationTest {
 				() -> {
 					resetUtilitiesMock();
 
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of(req1, req2)));
+					assertEquals(testNormalizedLookupDto, normalized);
 				}
 			);
 	}
@@ -659,9 +653,10 @@ public class SystemDiscoveryValidationTest {
 
 				// empty version list
 				() -> {
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of()), never());
+					assertEquals(testNormalizedLookupDto, normalized);
 				},
 
 				// version list contains null
@@ -682,8 +677,9 @@ public class SystemDiscoveryValidationTest {
 				() -> {
 					resetUtilitiesMock();
 
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of("1.0.0", "1.1.0")));
+					assertEquals(testNormalizedLookupDto, normalized);
 				}
 			);
 	}
@@ -729,9 +725,10 @@ public class SystemDiscoveryValidationTest {
 
 				// empty list
 				() -> {
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmpty, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of()), never());
+					assertEquals(testNormalizedLookupDto, normalized);
 				},
 
 				// list contains null or empty
@@ -752,8 +749,9 @@ public class SystemDiscoveryValidationTest {
 				() -> {
 					resetUtilitiesMock();
 
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TEST_DEVICE1", "TEST_DEVICE2")));
+					assertEquals(testNormalizedLookupDto, normalized);
 				}
 			);
 	}
@@ -792,8 +790,10 @@ public class SystemDiscoveryValidationTest {
 
 				// null dto
 				() -> {
-					when(normalizer.normalizeSystemLookupRequestDTO(null)).thenReturn(new SystemLookupRequestDTO(null, null, null, null, null, null));
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(null, "test origin"));
+					final SystemLookupRequestDTO expected = new SystemLookupRequestDTO(null, null, null, null, null, null);
+					when(normalizer.normalizeSystemLookupRequestDTO(null)).thenReturn(expected);
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(null, "test origin"));
+					assertEquals(expected, normalized);
 				},
 
 				// address type is empty, should not validate addresses

@@ -121,7 +121,9 @@ public class DeviceDiscoveryValidationTest {
 		final List<String> addresses = new ArrayList<String>();
 		addresses.add("02:00:5e:00:53:af");
 		addresses.add(EMPTY);
+
 		final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of(), addresses);
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
 		assertEquals(MISSING_ADDRESS, ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -133,8 +135,10 @@ public class DeviceDiscoveryValidationTest {
 	public void testRegisterDeviceInvalidMetadata() {
 
 		final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of("in door", true), List.of("02:00:5e:00:53:af"));
+
 		final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
 		metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in door", true))).thenThrow(new InvalidParameterException("Validation error"));
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
 		assertEquals("Validation error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -146,23 +150,24 @@ public class DeviceDiscoveryValidationTest {
 	@Test
 	public void testValidateAndNormalizeRegisterDeviceOk() {
 
-		final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:5e:00:53:af"));
-
 		when(normalizer.normalizeDeviceRequestDTO(any())).thenReturn(testNormalizedDto);
 
 		Assertions.assertAll(
 
 				// not empty metadata
 				() -> {
-					assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
+					final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:5e:00:53:af"));
+					final NormalizedDeviceRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
 					verify(deviceNameValidator, times(1)).validateDeviceName(anyString());
 					verify(addressValidator, times(1)).validateNormalizedAddress(any(), anyString());
+					assertEquals(testNormalizedDto, normalized);
 				},
 
 				// empty metadata
 				() -> {
-					utilitiesMock.when(() -> Utilities.isEmpty(Map.of("indoor", true))).thenReturn(true); // cheating
-					assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
+					final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:5e:00:53:af"));
+					final NormalizedDeviceRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
+					assertEquals(testNormalizedDto, normalized);
 				}
 		);
 	}
@@ -174,6 +179,7 @@ public class DeviceDiscoveryValidationTest {
 		final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:5e:00:53:af"));
 		when(normalizer.normalizeDeviceRequestDTO(dto)).thenReturn(testNormalizedDto);
 		doThrow(new InvalidParameterException("Validation error")).when(deviceNameValidator).validateDeviceName(anyString());
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
 		assertEquals(ex.getMessage(), "Validation error");
 		assertEquals("test origin", ex.getOrigin());
@@ -199,6 +205,7 @@ public class DeviceDiscoveryValidationTest {
 
 		final DeviceLookupRequestDTO dto = new DeviceLookupRequestDTO(List.of("TEST_DEVICE"), List.of(EMPTY), "MAC", List.of());
 		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(dto.addresses())).thenReturn(true);
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupDevice(dto, "test origin"));
 		assertEquals(ADDRESS_LIST_CONTAINS_NULL_OR_EMPTY, ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -224,6 +231,7 @@ public class DeviceDiscoveryValidationTest {
 		final DeviceLookupRequestDTO dto = new DeviceLookupRequestDTO(List.of("TEST_DEVICE"), List.of("02:00:5e:00:53:af"), "MAC", requirements);
 		utilitiesMock.when(() -> Utilities.containsNull(requirements)).thenReturn(true);
 		utilitiesMock.when(() -> Utilities.isEnumValue(dto.addressType(), AddressType.class)).thenReturn(true);
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupDevice(dto, "test origin"));
 		assertEquals(METADATA_CONTAINS_NULL, ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -243,33 +251,44 @@ public class DeviceDiscoveryValidationTest {
 					final DeviceLookupRequestDTO dto = new DeviceLookupRequestDTO(List.of("TEST_DEVICE"), List.of("02:00:5e:00:53:af"), "MAC", List.of(requirement));
 					utilitiesMock.when(() -> Utilities.isEnumValue(dto.addressType(), AddressType.class)).thenReturn(true);
 					when(normalizer.normalizeDeviceLookupRequestDTO(dto)).thenReturn(dto);
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dto, "test origin"));
+
+					final DeviceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dto, "test origin"));
 					verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
 					verify(addressValidator, times(1)).validateNormalizedAddress(AddressType.MAC, "02:00:5e:00:53:af");
+					assertEquals(dto, normalized);
 				},
 
 				// dto is null
 				() -> {
-					when(normalizer.normalizeDeviceLookupRequestDTO(null)).thenReturn(new DeviceLookupRequestDTO(null, null, null, null));
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(null, "test origin"));
+					final DeviceLookupRequestDTO expected = new DeviceLookupRequestDTO(null, null, null, null);
+					when(normalizer.normalizeDeviceLookupRequestDTO(null)).thenReturn(expected);
+
+					final DeviceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(null, "test origin"));
+					assertEquals(expected, normalized);
 				},
 
 				// everything is empty
 				() -> {
+					final DeviceLookupRequestDTO expected = new DeviceLookupRequestDTO(null, null, null, List.of());
 					final DeviceLookupRequestDTO dtoWithEmptyLists = new DeviceLookupRequestDTO(List.of(), List.of(), EMPTY, List.of());
-					when(normalizer.normalizeDeviceLookupRequestDTO(dtoWithEmptyLists)).thenReturn(new DeviceLookupRequestDTO(null, null, null, List.of()));
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dtoWithEmptyLists, "test origin"));
+					when(normalizer.normalizeDeviceLookupRequestDTO(dtoWithEmptyLists)).thenReturn(expected);
+
+					final DeviceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dtoWithEmptyLists, "test origin"));
+					assertEquals(expected, normalized);
 				},
 
 				// address list is empty, address type is not
 				() -> {
+					final DeviceLookupRequestDTO expected = new DeviceLookupRequestDTO(List.of("TEST_DEVICE"), null, "MAC", List.of(requirement));
 					Mockito.reset(addressValidator);
 					resetUtilitiesMock();
 					utilitiesMock.when(() -> Utilities.isEnumValue("MAC", AddressType.class)).thenReturn(true);
 					final DeviceLookupRequestDTO dtoWithEmptyAddressList = new DeviceLookupRequestDTO(List.of("TEST_DEVICE"), List.of(), "MAC", List.of(requirement));
-					when(normalizer.normalizeDeviceLookupRequestDTO(dtoWithEmptyAddressList)).thenReturn(new DeviceLookupRequestDTO(List.of("TEST_DEVICE"), null, "MAC", List.of(requirement)));
-					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dtoWithEmptyAddressList, "test origin"));
+					when(normalizer.normalizeDeviceLookupRequestDTO(dtoWithEmptyAddressList)).thenReturn(expected);
+
+					final DeviceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dtoWithEmptyAddressList, "test origin"));
 					verify(addressValidator, never()).validateNormalizedAddress(any(), anyString());
+					assertEquals(normalized, expected);
 				}
 		);
 	}
@@ -277,10 +296,12 @@ public class DeviceDiscoveryValidationTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateLookupDeviceThrowsException() {
+
 		final DeviceLookupRequestDTO dto = new DeviceLookupRequestDTO(List.of("DEVICE$$$"), List.of("02:00:5e:00:53:af"), "MAC", List.of());
 		utilitiesMock.when(() -> Utilities.isEnumValue(dto.addressType(), AddressType.class)).thenReturn(true);
 		when(normalizer.normalizeDeviceLookupRequestDTO(dto)).thenReturn(dto);
 		doThrow(new InvalidParameterException("Validation error")).when(deviceNameValidator).validateDeviceName("DEVICE$$$");
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupDevice(dto, "test origin"));
 		assertEquals("Validation error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -300,6 +321,7 @@ public class DeviceDiscoveryValidationTest {
 	@Test
 	public void validateAndNormalizeRevokeDeviceOk() {
 		when(normalizer.normalizeDeviceName("TEST_DEVICE")).thenReturn("TEST_DEVICE");
+
 		final String normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRevokeDevice("TEST_DEVICE", "test origin"));
 		verify(normalizer, times(1)).normalizeDeviceName("TEST_DEVICE");
 		verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
@@ -311,6 +333,7 @@ public class DeviceDiscoveryValidationTest {
 	public void validateAndNormalizeRevokeDeviceThrowsException() {
 		when(normalizer.normalizeDeviceName("DEVICE$$$")).thenReturn("DEVICE$$$");
 		doThrow(new InvalidParameterException("Validation error")).when(deviceNameValidator).validateDeviceName("DEVICE$$$");
+
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRevokeDevice("DEVICE$$$", "test origin"));
 		assertEquals("Validation error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -346,6 +369,7 @@ public class DeviceDiscoveryValidationTest {
     	// mock common cases
     	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
     }
