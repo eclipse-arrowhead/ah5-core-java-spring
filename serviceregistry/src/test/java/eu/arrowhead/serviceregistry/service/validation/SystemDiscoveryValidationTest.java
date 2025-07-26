@@ -449,13 +449,13 @@ public class SystemDiscoveryValidationTest {
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
 		Assertions.assertAll(
-				
+
 				// list is empty
 				() -> {
 					assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
 				},
-				
+
 				// list contains null or empty
 				() -> {
 					resetUtilitiesMock();
@@ -468,7 +468,7 @@ public class SystemDiscoveryValidationTest {
 					assertEquals("test origin", ex.getOrigin());
 					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("192.168.6.6", EMPTY)));
 				},
-				
+
 				// list does not contain null or empty
 				() -> {
 					resetUtilitiesMock();
