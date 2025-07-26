@@ -764,21 +764,12 @@ public class SystemDiscoveryValidationTest {
 		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
 		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-		final SystemLookupRequestDTO dto = new SystemLookupRequestDTO(
-				List.of("TemperatureProvider"),
-				List.of("192.168.0.1"),
-				"IPV4",
-				List.of(requirement),
-				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
-
-		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
-
 		Assertions.assertAll(
 
 				// valid dto
 				() -> {
+					final SystemLookupRequestDTO dto = new SystemLookupRequestDTO(List.of("TemperatureProvider"), List.of("192.168.0.1"), "IPV4", List.of(requirement), List.of("1.0.0"), List.of("TEST_DEVICE"));
+					when(normalizer.normalizeSystemLookupRequestDTO(dto)).thenReturn(testNormalizedLookupDto);
 					validator.validateAndNormalizeLookupSystem(dto, "test origin");
 
 					verify(normalizer, times(1)).normalizeSystemLookupRequestDTO(dto);
@@ -800,7 +791,10 @@ public class SystemDiscoveryValidationTest {
 				() -> {
 					resetUtilitiesMock();
 					Mockito.reset(addressValidator);
-					utilitiesMock.when(() -> Utilities.isEmpty(testNormalizedLookupDto.addressType())).thenReturn(true); // cheating
+					final SystemLookupRequestDTO dto = new SystemLookupRequestDTO(List.of("TemperatureProvider"), List.of("192.168.0.1"), EMPTY, List.of(requirement), List.of("1.0.0"), List.of("TEST_DEVICE"));
+					final SystemLookupRequestDTO expected = new SystemLookupRequestDTO(List.of("TemperatureProvider"), List.of("192.168.0.1"), null, List.of(requirement), List.of("1.0.0"), List.of("TEST_DEVICE"));
+					when(normalizer.normalizeSystemLookupRequestDTO(dto)).thenReturn(expected);
+
 					validator.validateAndNormalizeLookupSystem(dto, "test origin");
 					verify(addressValidator, never()).validateNormalizedAddress(any(), anyString());
 				},
@@ -809,7 +803,9 @@ public class SystemDiscoveryValidationTest {
 				() -> {
 					resetUtilitiesMock();
 					Mockito.reset(addressValidator);
-					utilitiesMock.when(() -> Utilities.isEmpty(testNormalizedLookupDto.addresses())).thenReturn(true); // cheating
+					final SystemLookupRequestDTO dto = new SystemLookupRequestDTO(List.of("TemperatureProvider"), List.of(), "IPV4", List.of(requirement), List.of("1.0.0"), List.of("TEST_DEVICE"));
+					final SystemLookupRequestDTO expected = new SystemLookupRequestDTO(List.of("TemperatureProvider"), null, "IPV4", List.of(requirement), List.of("1.0.0"), List.of("TEST_DEVICE"));
+					when(normalizer.normalizeSystemLookupRequestDTO(dto)).thenReturn(expected);
 					validator.validateAndNormalizeLookupSystem(dto, "test origin");
 					verify(addressValidator, never()).validateNormalizedAddress(any(), anyString());
 				}
