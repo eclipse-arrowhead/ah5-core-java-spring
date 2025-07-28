@@ -35,7 +35,7 @@ public class OrchestrationServiceNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizePushUnsubscribeTestOk() {
+	public void testNormalizePushUnsubscribeTestOk() {
 		final String subscriptionId = " " + UUID.randomUUID() + " ";
 		final String requesterSystem = " RequesterSystem ";
 
@@ -51,7 +51,7 @@ public class OrchestrationServiceNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizePushUnsubscribeTestEmptyId() {
+	public void testNormalizePushUnsubscribeTestEmptyId() {
 		final String subscriptionId = "";
 		final String requesterSystem = " RequesterSystem ";
 
@@ -65,7 +65,7 @@ public class OrchestrationServiceNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizePushUnsubscribeTestEmptyRequester() {
+	public void testNormalizePushUnsubscribeTestEmptyRequester() {
 		final String subscriptionId = UUID.randomUUID().toString();
 		final String requesterSystem = "  ";
 

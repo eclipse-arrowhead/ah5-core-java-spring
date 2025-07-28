@@ -56,7 +56,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeOrchestrationLockListRequestDTO() {
+	public void testNormalizeOrchestrationLockListRequestDTO() {
 		final OrchestrationLockRequestDTO lockRequestDTO1 = new OrchestrationLockRequestDTO("TestProviderA|testService|1.0.0", "TestManagerC", Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow()));
 		final OrchestrationLockRequestDTO lockRequestDTO2 = new OrchestrationLockRequestDTO("TestProviderB|testService|1.0.0", "TestManagerD", Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow()));
 		final OrchestrationLockListRequestDTO requestDTOList = new OrchestrationLockListRequestDTO(List.of(lockRequestDTO1, lockRequestDTO2));
@@ -86,7 +86,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeOrchestrationLockListRequestDTONullInput() {
+	public void testNormalizeOrchestrationLockListRequestDTONullInput() {
 		final Throwable ex = assertThrows(Throwable.class, () -> normalization.normalizeOrchestrationLockListRequestDTO(null));
 
 		verify(systemNameNormalizer, never()).normalize(anyString());
@@ -98,7 +98,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeOrchestrationLockQueryRequestDTO() {
+	public void testNormalizeOrchestrationLockQueryRequestDTO() {
 		final OrchestrationLockQueryRequestDTO requestDTO = new OrchestrationLockQueryRequestDTO(new PageDTO(6, 50, "ASC", "id"), List.of(105L), List.of(" jobId1 ", " jobId2 "), List.of(" instanceId1 ", " instanceId2 "),
 				List.of(" TestManagerA ", " TestManagerB "), " " + Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow()) + " ", " " + Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow()) + " ");
 
@@ -134,7 +134,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeOrchestrationLockQueryRequestDTONullInput() {
+	public void testNormalizeOrchestrationLockQueryRequestDTONullInput() {
 		final OrchestrationLockQueryRequestDTO result = assertDoesNotThrow(() -> normalization.normalizeOrchestrationLockQueryRequestDTO(null));
 
 		verify(systemNameNormalizer, never()).normalize(anyString());
@@ -151,7 +151,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeOrchestrationLockQueryRequestDTOEmptyInput() {
+	public void testNormalizeOrchestrationLockQueryRequestDTOEmptyInput() {
 		final OrchestrationLockQueryRequestDTO requestDTO = new OrchestrationLockQueryRequestDTO(null, null, null, null, null, null, null);
 
 		final OrchestrationLockQueryRequestDTO result = assertDoesNotThrow(() -> normalization.normalizeOrchestrationLockQueryRequestDTO(requestDTO));
@@ -160,16 +160,16 @@ public class OrchestrationLockManagementNormalizationTest {
 		verify(serviceInstanceIdNormalizer, never()).normalize(anyString());
 
 		assertNull(result.pagination());
-		assertTrue(Utilities.isEmpty(result.ids()));
-		assertTrue(Utilities.isEmpty(result.orchestrationJobIds()));
-		assertTrue(Utilities.isEmpty(result.serviceInstanceIds()));
+		assertTrue(result.ids().size() == 0);
+		assertTrue(result.orchestrationJobIds().size() == 0);
+		assertTrue(result.serviceInstanceIds().size() == 0);
 		assertNull(result.expiresBefore());
 		assertNull(result.expiresAfter());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeServiceInstanceIds() {
+	public void testNormalizeServiceInstanceIds() {
 		final List<String> instanceIds = List.of(" jobId1 ", " jobId2 ");
 
 		when(serviceInstanceIdNormalizer.normalize(eq(instanceIds.get(0)))).thenReturn(instanceIds.get(0).trim());
@@ -188,7 +188,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeServiceInstanceIdsEmptyInput() {
+	public void testNormalizeServiceInstanceIdsEmptyInput() {
 		final List<String> instanceIds = List.of();
 
 		final Throwable ex = assertThrows(Throwable.class, () -> normalization.normalizeServiceInstanceIds(instanceIds));
@@ -201,7 +201,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeSystemName() {
+	public void testNormalizeSystemName() {
 		final String sysName = " TestProvider ";
 
 		when(systemNameNormalizer.normalize(eq(sysName))).thenReturn(sysName.trim());
@@ -216,7 +216,7 @@ public class OrchestrationLockManagementNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void normalizeSystemNameEmpty() {
+	public void testNormalizeSystemNameEmpty() {
 		final String sysName = " ";
 
 		final Throwable ex = assertThrows(Throwable.class, () -> normalization.normalizeSystemName(sysName));
