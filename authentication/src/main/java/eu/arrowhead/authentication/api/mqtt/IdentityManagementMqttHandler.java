@@ -1,6 +1,5 @@
 package eu.arrowhead.authentication.api.mqtt;
 
-import java.security.InvalidParameterException;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,6 +15,7 @@ import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.authentication.service.ManagementService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;

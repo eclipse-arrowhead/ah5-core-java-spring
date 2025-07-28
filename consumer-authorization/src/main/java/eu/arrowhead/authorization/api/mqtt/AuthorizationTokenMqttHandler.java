@@ -1,7 +1,5 @@
 package eu.arrowhead.authorization.api.mqtt;
 
-import java.security.InvalidParameterException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +11,7 @@ import eu.arrowhead.authorization.AuthorizationConstants;
 import eu.arrowhead.authorization.service.AuthorizationTokenService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
