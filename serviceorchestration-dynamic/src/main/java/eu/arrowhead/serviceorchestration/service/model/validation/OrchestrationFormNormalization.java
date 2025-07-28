@@ -58,6 +58,10 @@ public class OrchestrationFormNormalization {
 			form.setOperations(form.getOperations().stream().map(op -> serviceOpNameNormalizer.normalize(op)).toList());
 		}
 
+		if (!Utilities.isEmpty(form.getVersions())) {
+			form.setVersions(form.getVersions().stream().map(v -> v.trim()).toList());
+		}
+
 		if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {
 			form.setInterfaceTemplateNames(form.getInterfaceTemplateNames().stream().map(itn -> interfaceTemplateNameNormalizer.normalize(itn)).toList());
 		}
