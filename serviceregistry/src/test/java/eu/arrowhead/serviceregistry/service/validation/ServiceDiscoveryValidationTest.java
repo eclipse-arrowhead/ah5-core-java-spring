@@ -35,8 +35,11 @@ import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidato
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.normalization.ServiceDiscoveryNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
@@ -75,7 +78,7 @@ public class ServiceDiscoveryValidationTest {
 
 	private static final String EMPTY = "\n ";
 	private static final String testExpirationDate = "2025-11-04T01:53:02Z";
-	final ServiceInstanceInterfaceRequestDTO testIntf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+	private static final ServiceInstanceInterfaceRequestDTO testIntf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 
     // expected error messages
     private static final String MISSING_PAYLOAD = "Request payload is missing";
@@ -89,7 +92,20 @@ public class ServiceDiscoveryValidationTest {
     private static final String INVALID_POLICY = "Invalid interface policy";
     private static final String MISSING_PROPERTIES = "Interface properties are missing";
     private static final String EXCLUSIVITY_VALUE_ERROR = "allowExclusivity metadata must have the string representation of an integer value.";
-
+    private static final String MISSING_MANDATORI_FIELD = "One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'";
+    private static final String INVALID_INSTANCE_ID_LIST = "Instance id list contains null or empty element";
+    private static final String INVALID_PROVIDER_NAME_LIST = "Provider name list contains null or empty element";
+    private static final String INVALID_SERVICE_DEFINITION_LIST = "Service definition name list contains null or empty element";
+    private static final String INVALID_VERSION_LIST = "Version list contains null or empty element";
+    private static final String INVALID_ALIVES_AT = "Alive time has an invalid time format";
+    private static final String INVALID_METADATA_REQUIREMENT_LIST = "Metadata requirements list contains null element";
+    private static final String INVALID_ADDRESS_TYPE_LIST = "Address type list contains null or empty element";
+    private static final String INVALID_ADDRESS_TYPE_PREFIX = "Address type list contains invalid element: ";
+    private static final String INVALID_INTERFACE_TEMPLATE_LIST = "Interface template list contains null or empty element";
+    private static final String INVALID_INTF_PROPERTY_REQUIREMENT_LIST = "Interface property requirements list contains null element";
+    private static final String INVALID_POLICY_LIST = "Policy list contains null or empty element";
+    private static final String INVALID_POLICY_PREFIX = "Policy list contains invalid element: ";
+    
 	//=================================================================================================
 	// methods
 
@@ -327,6 +343,434 @@ public class ServiceDiscoveryValidationTest {
 		assertEquals(normalized, dto);
 	}
 
+	// LOOKUP SERVICE
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceMissingPayload() {
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceMissingField() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of(),
+				List.of(),
+				List.of(),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(MISSING_MANDATORI_FIELD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidInstanceIdList() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<String> invalidInstanceIds = new ArrayList<String>(2);
+		invalidInstanceIds.add("TemperatureProvider|temperatureInfo|1.0.0");
+		invalidInstanceIds.add(EMPTY);
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(invalidInstanceIds)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				invalidInstanceIds,
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_INSTANCE_ID_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(invalidInstanceIds));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidProviderNameList() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<String> invalidProviderNames = new ArrayList<String>(2);
+		invalidProviderNames.add("TemperatureProvider");
+		invalidProviderNames.add(EMPTY);
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(invalidProviderNames)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				invalidProviderNames,
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_PROVIDER_NAME_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(invalidProviderNames));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidServiceDefinitionList() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<String> invalidServiceDefinitions = new ArrayList<String>(2);
+		invalidServiceDefinitions.add("temperatureInfo");
+		invalidServiceDefinitions.add(EMPTY);
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(invalidServiceDefinitions)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				invalidServiceDefinitions,
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_SERVICE_DEFINITION_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(invalidServiceDefinitions));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidVersionList() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<String> invalidVersions = new ArrayList<String>(2);
+		invalidVersions.add("2.0.0");
+		invalidVersions.add(EMPTY);
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(invalidVersions)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				invalidVersions,
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_VERSION_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(invalidVersions));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidAliveTime() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2025-11-04")).thenThrow(DateTimeException.class);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_ALIVES_AT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.parseUTCStringToZonedDateTime("2025-11-04"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidMetadataRequirements() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final List<MetadataRequirementDTO> invalidMetadataRequirements = new ArrayList<MetadataRequirementDTO>(2);
+		invalidMetadataRequirements.add(requirement);
+		invalidMetadataRequirements.add(null);
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		utilitiesMock.when(() -> Utilities.containsNull(invalidMetadataRequirements)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				invalidMetadataRequirements,
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_METADATA_REQUIREMENT_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNull(invalidMetadataRequirements));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidAddressTypeList() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		assertAll(
+			// empty element
+			() -> {
+				final List<String> invalidAddressTypes = new ArrayList<String>(2);
+				invalidAddressTypes.add("IPV4");
+				invalidAddressTypes.add(EMPTY);
+
+				final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2025-11-04T01:53:02Z",
+						List.of(metadataReq),
+						invalidAddressTypes,
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE")
+					);
+
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+				assertEquals(INVALID_ADDRESS_TYPE_LIST, ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY), atLeastOnce());
+			},
+
+			// invalid element
+			() -> {
+
+				final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2025-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV5"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE")
+					);
+
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+				assertEquals(INVALID_ADDRESS_TYPE_PREFIX + "IPV5", ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				utilitiesMock.verify(() -> Utilities.isEnumValue("IPV5", AddressType.class));
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidInterfaceTemplateList() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<String> invalidIntfTemplateList = new ArrayList<String>(2);
+		invalidIntfTemplateList.add("generic_http");
+		invalidIntfTemplateList.add(EMPTY);
+
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(invalidIntfTemplateList)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				invalidIntfTemplateList,
+				List.of(intfReq),
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_INTERFACE_TEMPLATE_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(invalidIntfTemplateList));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidInterfacePropRequirementList() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<MetadataRequirementDTO> invalidIntfRequirements = new ArrayList<MetadataRequirementDTO>(2);
+		invalidIntfRequirements.add(intfReq);
+		invalidIntfRequirements.add(null);
+
+		utilitiesMock.when(() -> Utilities.containsNull(invalidIntfRequirements)).thenReturn(true);
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(requirement),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				invalidIntfRequirements,
+				List.of("NONE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals(INVALID_INTF_PROPERTY_REQUIREMENT_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNull(invalidIntfRequirements));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServiceInvalidPolicyList() {
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		assertAll(
+
+			// empty element
+			() -> {
+				final List<String> invalidPolicies = new ArrayList<String>(2);
+				invalidPolicies.add("NONE");
+				invalidPolicies.add(EMPTY);
+
+				final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2025-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						invalidPolicies
+					);
+
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+				assertEquals(INVALID_POLICY_LIST, ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY), atLeastOnce());
+			},
+
+			// invalid element
+			() -> {
+
+				final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2025-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("MAGIC_TOKEN_AUTH")
+					);
+
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+				assertEquals(INVALID_POLICY_PREFIX + "MAGIC_TOKEN_AUTH", ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				utilitiesMock.verify(() -> Utilities.isEnumValue("MAGIC_TOKEN_AUTH", ServiceInterfacePolicy.class));
+			}
+		);
+	}
+
 	//=================================================================================================
 	// assistant methods
 
@@ -361,5 +805,6 @@ public class ServiceDiscoveryValidationTest {
 		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime(testExpirationDate)).thenReturn(ZonedDateTime.of(2025, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
     	utilitiesMock.when(() -> Utilities.utcNow()).thenReturn(ZonedDateTime.of(2025, 8, 4, 1, 53, 2, 0, ZoneId.of("UTC"))); // fictive date of testing
     	utilitiesMock.when(() -> Utilities.isEnumValue("NONE", ServiceInterfacePolicy.class)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
     }
 }
