@@ -6,11 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -18,6 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
@@ -105,7 +110,8 @@ public class ServiceDiscoveryValidationTest {
     private static final String INVALID_INTF_PROPERTY_REQUIREMENT_LIST = "Interface property requirements list contains null element";
     private static final String INVALID_POLICY_LIST = "Policy list contains null or empty element";
     private static final String INVALID_POLICY_PREFIX = "Policy list contains invalid element: ";
-    
+    private static final String MISSING_SERVICE_INSTANCE_ID = "Service instance ID is missing";
+
 	//=================================================================================================
 	// methods
 
@@ -373,8 +379,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(MISSING_MANDATORI_FIELD, ex.getMessage());
@@ -405,8 +410,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_INSTANCE_ID_LIST, ex.getMessage());
@@ -438,8 +442,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_PROVIDER_NAME_LIST, ex.getMessage());
@@ -471,8 +474,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_SERVICE_DEFINITION_LIST, ex.getMessage());
@@ -505,8 +507,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_VERSION_LIST, ex.getMessage());
@@ -533,8 +534,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2025-11-04")).thenThrow(DateTimeException.class);
 
@@ -570,8 +570,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_METADATA_REQUIREMENT_LIST, ex.getMessage());
@@ -605,8 +604,7 @@ public class ServiceDiscoveryValidationTest {
 						invalidAddressTypes,
 						List.of("generic_http"),
 						List.of(intfReq),
-						List.of("NONE")
-					);
+						List.of("NONE"));
 
 
 				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
@@ -628,8 +626,7 @@ public class ServiceDiscoveryValidationTest {
 						List.of("IPV5"),
 						List.of("generic_http"),
 						List.of(intfReq),
-						List.of("NONE")
-					);
+						List.of("NONE"));
 
 
 				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
@@ -665,8 +662,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				invalidIntfTemplateList,
 				List.of(intfReq),
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_INTERFACE_TEMPLATE_LIST, ex.getMessage());
@@ -700,8 +696,7 @@ public class ServiceDiscoveryValidationTest {
 				List.of("IPV4"),
 				List.of("generic_http"),
 				invalidIntfRequirements,
-				List.of("NONE")
-			);
+				List.of("NONE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals(INVALID_INTF_PROPERTY_REQUIREMENT_LIST, ex.getMessage());
@@ -759,8 +754,7 @@ public class ServiceDiscoveryValidationTest {
 						List.of("IPV4"),
 						List.of("generic_http"),
 						List.of(intfReq),
-						List.of("MAGIC_TOKEN_AUTH")
-					);
+						List.of("MAGIC_TOKEN_AUTH"));
 
 
 				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
@@ -769,6 +763,160 @@ public class ServiceDiscoveryValidationTest {
 				utilitiesMock.verify(() -> Utilities.isEnumValue("MAGIC_TOKEN_AUTH", ServiceInterfacePolicy.class));
 			}
 		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupServiceOk() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		assertAll(
+
+			// nothing is null
+			() -> {
+				final ServiceInstanceLookupRequestDTO dtoNothingEmpty = new ServiceInstanceLookupRequestDTO(
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2025-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				when(normalizer.normalizeServiceInstanceLookupRequestDTO(dtoNothingEmpty)).thenReturn(dtoNothingEmpty);
+
+				final ServiceInstanceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupService(dtoNothingEmpty, "test origin"));
+				assertEquals(dtoNothingEmpty, normalized);
+				verify(normalizer, times(1)).normalizeServiceInstanceLookupRequestDTO(dtoNothingEmpty);
+				verify(serviceInstanceIdentifierValidator, times(1)).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+				verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+				verify(serviceDefNameValidator, times(1)).validateServiceDefinitionName("temperatureInfo");
+				verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
+				verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_http");
+			},
+
+			// empty cases 1
+			() -> {
+				final ServiceInstanceLookupRequestDTO dtoAlmostEmpty = new ServiceInstanceLookupRequestDTO(List.of(), List.of(), List.of("temperatureInfo"), List.of(), EMPTY, List.of(), List.of(), List.of(), List.of(), List.of());
+
+				Mockito.reset(normalizer);
+				when(normalizer.normalizeServiceInstanceLookupRequestDTO(dtoAlmostEmpty)).thenReturn(dtoAlmostEmpty);
+
+				final ServiceInstanceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupService(dtoAlmostEmpty, "test origin"));
+				assertEquals(dtoAlmostEmpty, normalized);
+			},
+
+			// empty cases 2
+			() -> {
+
+				final ServiceInstanceLookupRequestDTO dtoEmptyInstanceId = new ServiceInstanceLookupRequestDTO(
+						List.of(),
+						List.of("TemperatureProvider"),
+						List.of(),
+						List.of("1.0.0"),
+						"2025-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				Mockito.reset(normalizer, serviceInstanceIdentifierValidator);
+				when(normalizer.normalizeServiceInstanceLookupRequestDTO(dtoEmptyInstanceId)).thenReturn(dtoEmptyInstanceId);
+
+				final ServiceInstanceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupService(dtoEmptyInstanceId, "test origin"));
+				assertEquals(dtoEmptyInstanceId, normalized);
+				verify(serviceInstanceIdentifierValidator, never()).validateServiceInstanceIdentifier(anyString());
+			}
+
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupServiceThrowsException() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("-TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		when(normalizer.normalizeServiceInstanceLookupRequestDTO(dto)).thenReturn(dto);
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("-TemperatureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// REVOKE SERVICE
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRevokeServiceSystemNameMissing() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRevokeService(EMPTY, "TemperatureProvider|temperatureInfo|1.0.0", "test origin"));
+		assertEquals(MISSING_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRevokeServiceInstanceIdMissing() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRevokeService("TemperatureProvider", EMPTY, "test origin"));
+		assertEquals(MISSING_SERVICE_INSTANCE_ID, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRevokeServiceOk() {
+
+		when(normalizer.normalizeSystemName("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(normalizer.normalizeServiceInstanceId("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+
+		final Entry<String, String> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRevokeService("TemperatureProvider", "TemperatureProvider|temperatureInfo|1.0.0", "test origin"));
+		assertEquals("TemperatureProvider", normalized.getKey());
+		assertEquals("TemperatureProvider|temperatureInfo|1.0.0", normalized.getValue());
+		verify(normalizer, times(1)).normalizeSystemName("TemperatureProvider");
+		verify(normalizer, times(1)).normalizeServiceInstanceId("TemperatureProvider|temperatureInfo|1.0.0");
+		verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+		verify(serviceInstanceIdentifierValidator, times(1)).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRevokeServiceThrowsException() {
+
+		when(normalizer.normalizeSystemName("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(normalizer.normalizeServiceInstanceId("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperatureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRevokeService("TemperatureProvider", "TemperatureProvider|temperatureInfo|1.0.0", "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	//=================================================================================================
