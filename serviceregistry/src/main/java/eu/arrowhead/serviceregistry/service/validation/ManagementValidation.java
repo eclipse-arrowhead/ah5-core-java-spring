@@ -508,7 +508,7 @@ public class ManagementValidation {
 
 			final String normalized = deviceNameNormalizer.normalize(device.name());
 			if (names.contains(normalized)) {
-				throw new InvalidParameterException("Duplicate device name: " + device.name(), origin);
+				throw new InvalidParameterException("Duplicate device name: " + normalized, origin);
 			}
 
 			names.add(normalized);
@@ -524,7 +524,11 @@ public class ManagementValidation {
 			}
 
 			if (!Utilities.isEmpty(device.metadata())) {
-				MetadataValidation.validateMetadataKey(device.metadata());
+				try {
+					MetadataValidation.validateMetadataKey(device.metadata());
+				} catch (InvalidParameterException ex) {
+					throw new InvalidParameterException(ex.getMessage(), origin);
+				}
 			}
 		}
 	}

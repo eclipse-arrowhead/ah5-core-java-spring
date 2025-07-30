@@ -258,7 +258,7 @@ public class SystemDiscoveryValidationTest {
 				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of()), never());
 				assertEquals(testNormalizedRequestDto, normalized);
 
-				// reset mocks
+				// reset mock
 				metadataValidationMock.close();
 			},
 
@@ -278,7 +278,7 @@ public class SystemDiscoveryValidationTest {
 				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("indoor", true)), times(1));
 				assertEquals(testNormalizedRequestDto, normalized);
 
-				// reset mocks
+				// reset mock
 				metadataValidationMock.close();
 			}
 		);
