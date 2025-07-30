@@ -157,7 +157,7 @@ public class PushOrchestrationWorker implements Runnable {
 		final String path = propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PATH);
 
 		try {
-			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method), Void.class, result);
+			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method.toUpperCase()), Void.class, result);
 		} catch (final Exception ex) {
 			logger.debug(ex);
 			throw new ArrowheadException("Error occured while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
