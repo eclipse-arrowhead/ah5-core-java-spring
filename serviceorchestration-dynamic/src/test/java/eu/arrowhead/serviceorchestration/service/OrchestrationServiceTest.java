@@ -1,4 +1,4 @@
-package eu.arrowhead.serviceorchestration.service.model.validation;
+package eu.arrowhead.serviceorchestration.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
