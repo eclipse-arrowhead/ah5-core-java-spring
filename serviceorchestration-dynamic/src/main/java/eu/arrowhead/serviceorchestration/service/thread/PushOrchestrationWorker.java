@@ -139,6 +139,8 @@ public class PushOrchestrationWorker implements Runnable {
 				notifyViaMqtt(subscription.getId(), subscription.getTargetSystem(), subscription.getNotifyProperties(), result);
 				return;
 			}
+
+			throw new ArrowheadException("Unsupported protocol: " + subscription.getNotifyProtocol());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -169,8 +171,7 @@ public class PushOrchestrationWorker implements Runnable {
 		logger.debug("notifyViaMqtt started...");
 
 		if (!sysInfo.isMqttApiEnabled()) {
-			logger.error("Orchestration push notification via MQTT is required for subscripiton: " + subscriptionId.toString() + ", but MQTT is not enabled");
-			return;
+			throw new ArrowheadException("Orchestration push notification via MQTT is required for subscripiton: " + subscriptionId.toString() + ", but MQTT is not enabled");
 		}
 
 		// Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results.
@@ -199,7 +200,7 @@ public class PushOrchestrationWorker implements Runnable {
 			return mapper.readValue(properties, typeReference);
 		} catch (final JsonProcessingException ex) {
 			logger.debug(ex);
-			throw new IllegalArgumentException(ex.getMessage());
+			throw new IllegalArgumentException("Unreadable notify properties: " + ex.getMessage());
 		}
 	}
 }
