@@ -233,7 +233,6 @@ public class AuthorizationValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateSystemName(final String systemName, final String origin) {
 		logger.debug("validateSystemName started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(systemName)) {
 			throw new InvalidParameterException("System name is empty", origin);
@@ -243,7 +242,6 @@ public class AuthorizationValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateGrantRequest(final AuthorizationGrantRequestDTO dto, final String origin) {
 		logger.debug("validateGrantRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -257,7 +255,7 @@ public class AuthorizationValidation {
 		final String targetTypeName = dto.targetType().trim().toUpperCase();
 
 		if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-			throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+			throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 		}
 
 		// target
@@ -279,7 +277,6 @@ public class AuthorizationValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateRevokeInput(final String systemName, final String instanceId, final String origin) {
 		logger.debug("validateRevokeInput started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateSystemName(systemName, origin);
 
@@ -291,7 +288,6 @@ public class AuthorizationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public void validateLookupRequest(final AuthorizationLookupRequestDTO dto, final String origin) {
 		logger.debug("validateLookupRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
