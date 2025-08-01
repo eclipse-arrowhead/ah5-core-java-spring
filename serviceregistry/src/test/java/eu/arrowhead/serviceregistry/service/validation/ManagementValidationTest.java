@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 
@@ -21,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,8 +46,12 @@ import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListRequestDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
@@ -119,11 +125,19 @@ public class ManagementValidationTest {
 	private static final String DUPLICATE_DEVICE_NAME_PREFIX = "Duplicate device name: ";
 	private static final String MISSING_ADDRESS_LIST = "At least one device address is needed for every device";
 	private static final String MISSING_ADDRESS = "Address is missing";
+	private static final String NULL_OR_EMPTY_DEVICE_NAME = "Device name list contains null or empty element";
+	private static final String NULL_OR_EMPTY_ADDRESS = "Address list contains null element or empty element";
+	private static final String INVALID_ADDRESS_TYPE_PREFIX = "Invalid address type: ";
+	private static final String NULL_METADATA_REQUIREMENT = "Metadata requirement list contains null element";
+	private static final String MISSING_DEVICE_NAME_LIST = "Device name list is missing or empty";
+
 
 	//=================================================================================================
 	// methods
 
 	// DEVICE
+
+	// create
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -278,6 +292,396 @@ public class ManagementValidationTest {
 		assertEquals("test origin", ex.getOrigin());
 	}
 
+	// update
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceEmptyPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(List.of()), "test origin"));
+		assertEquals(EMPTY_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(List.of()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceNullElement() {
+
+		final List<DeviceRequestDTO> devices = new ArrayList<DeviceRequestDTO>(2);
+		devices.add(new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:00:00:00:01")));
+		devices.add(null);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals(NULL_DEVICE, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceEmptyName() {
+
+		final List<DeviceRequestDTO> devices = List.of(new DeviceRequestDTO(EMPTY, Map.of("indoor", true), List.of("02:00:00:00:00:01")));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals(EMPTY_DEVICE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceDuplicateName() {
+
+		final List<DeviceRequestDTO> devices = new ArrayList<DeviceRequestDTO>(2);
+		devices.add(new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:00:00:00:01")));
+		devices.add(new DeviceRequestDTO(" test_device ", Map.of("indoor", false), List.of("02:00:00:00:00:02")));
+
+		when(deviceNameNormalizer.normalize("TEST_DEVICE")).thenReturn("TEST_DEVICE");
+		when(deviceNameNormalizer.normalize(" test_device ")).thenReturn("TEST_DEVICE");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals(DUPLICATE_DEVICE_NAME_PREFIX + "TEST_DEVICE", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceMissingAddresses() {
+
+		final List<DeviceRequestDTO> devices = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of()));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals(MISSING_ADDRESS_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(List.of()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceMissingAddress() {
+
+		final List<DeviceRequestDTO> devices = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:00:00:00:01", EMPTY)));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals(MISSING_ADDRESS, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDeviceValidateMetadata() {
+
+		final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+
+		assertAll(
+
+			// invalid metadata
+			() -> {
+				final List<DeviceRequestDTO> devicesInvalidMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("in.door", true), List.of("02:00:00:00:00:01")));
+
+				metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true))).thenThrow(new InvalidParameterException("Validation error"));
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devicesInvalidMetadata), "test origin"));
+				assertEquals("Validation error", ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)));
+			},
+
+			// empty metadata
+			() -> {
+				final List<DeviceRequestDTO> devicesEmptyMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:00:00:00:01")));
+				final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of(), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
+				when(normalizer.normalizeDeviceRequestDTOList(devicesEmptyMetadata)).thenReturn(expected);
+
+				metadataValidationMock.reset();
+
+				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devicesEmptyMetadata), "test origin"));
+				assertEquals(normalized, expected);
+				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)), never());
+				metadataValidationMock.close();
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeUpdateDevicesOk() {
+
+		final List<DeviceRequestDTO> devices = new ArrayList<DeviceRequestDTO>(1);
+		devices.add(new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:00:00:00:01")));
+
+		final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
+		when(normalizer.normalizeDeviceRequestDTOList(devices)).thenReturn(expected);
+
+		final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals(expected, normalized);
+		verify(normalizer, times(1)).normalizeDeviceRequestDTOList(devices);
+		verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+		verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.MAC, "02:00:00:00:00:01");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeUpdateDevicesThrowsException() {
+
+		final List<DeviceRequestDTO> devices = new ArrayList<DeviceRequestDTO>(1);
+		devices.add(new DeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of("02:00:00:00:00:01")));
+
+		final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of("indoor", true), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
+		when(normalizer.normalizeDeviceRequestDTOList(devices)).thenReturn(expected);
+		doThrow(new InvalidParameterException("Validation error")).when(deviceNameValidator).validateDeviceName("TEST_DEVICE");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devices), "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// query
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryDevicesMissingName() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of(EMPTY),
+				List.of("02:00:00:00:00:01"),
+				"MAC",
+				List.of(metadataReq));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_DEVICE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryDevicesMissingAddress() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TEST_DEVICE"),
+				List.of(EMPTY),
+				"MAC",
+				List.of(metadataReq));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_ADDRESS, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryDevicesInvalidAddressType() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TEST_DEVICE"),
+				List.of("02:00:00:00:00:01"),
+				"MäC",
+				List.of(metadataReq));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+		assertEquals(INVALID_ADDRESS_TYPE_PREFIX + "MäC", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryDevicesNullMetadataRequirement() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final List<MetadataRequirementDTO> requirements = new ArrayList<MetadataRequirementDTO>(2);
+		requirements.add(metadataReq);
+		requirements.add(null);
+
+		utilitiesMock.when(() -> Utilities.containsNull(requirements)).thenReturn(true);
+
+		final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TEST_DEVICE"),
+				List.of("02:00:00:00:00:01"),
+				"MAC",
+				requirements);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+		assertEquals(NULL_METADATA_REQUIREMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQueryDevicesOk() {
+
+		assertAll(
+
+			// dto is null
+			() -> {
+
+				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, null);
+				when(normalizer.normalizeDeviceQueryRequestDTO(null)).thenReturn(expected);
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(null, "test origin"));
+				assertEquals(expected, normalized);
+			},
+
+			// everything is empty
+			() -> {
+
+				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(null, null, null, null, null);
+				when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+				assertEquals(dto, normalized);
+
+			},
+
+			// nothing is empty
+			() -> {
+
+				final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+				metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TEST_DEVICE"),
+						List.of("02:00:00:00:00:01"),
+						"MAC",
+						List.of(metadataReq));
+				when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+				assertEquals(dto, normalized);
+				verify(pageValidator, times(1)).validatePageParameter(new PageDTO(10, 20, "ASC", "id"), Device.SORTABLE_FIELDS_BY, "test origin");
+				verify(normalizer, times(1)).normalizeDeviceQueryRequestDTO(dto);
+				verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+				verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.MAC, "02:00:00:00:00:01");
+			},
+
+			// address type is present, but addresses are empty
+			() -> {
+
+				final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+				metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TEST_DEVICE"),
+						List.of(),
+						"MAC",
+						List.of(metadataReq));
+				when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+				assertEquals(dto, normalized);
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQueryDevicesThrowsException() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TEST|DEVICE"),
+				List.of("02:00:00:00:00:01"),
+				"MAC",
+				List.of(metadataReq));
+
+		when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+		doThrow(new InvalidParameterException("Validation error")).when(deviceNameValidator).validateDeviceName("TEST|DEVICE");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// remove
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveDevicesMissingNameList() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveDevices(List.of(), "test origin"));
+		assertEquals(MISSING_DEVICE_NAME_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(List.of()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveDevicesMissingName() {
+
+		final List<String> deviceNames = new ArrayList<String>(2);
+		deviceNames.add("TEST_DEVICE");
+		deviceNames.add(EMPTY);
+
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty(deviceNames)).thenReturn(true);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveDevices(deviceNames, "test origin"));
+		assertEquals(NULL_OR_EMPTY_DEVICE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(deviceNames));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveDevicesOk() {
+
+		final List<String> deviceNames = List.of("TEST_DEVICE1\n", "TEST_DEVICE2\n");
+		final List<String> expected = List.of("TEST_DEVICE1", "TEST_DEVICE2");
+
+		when(normalizer.normalizeDeviceNames(deviceNames)).thenReturn(expected);
+
+		final List<String> normalized = validator.validateAndNormalizeRemoveDevices(deviceNames, "test origin");
+		assertEquals(expected, normalized);
+		verify(normalizer, times(1)).normalizeDeviceNames(deviceNames);
+		verify(deviceNameValidator, times(2)).validateDeviceName(anyString());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveDevicesThrowsExcetion() {
+
+		final List<String> deviceNames = List.of("TEST_DEVICE1\n", "TEST_DEVICE2\n");
+		final List<String> expected = List.of("TEST_DEVICE1", "TEST_DEVICE2");
+
+		when(normalizer.normalizeDeviceNames(deviceNames)).thenReturn(expected);
+		lenient().doThrow(new InvalidParameterException("Validation error")).when(deviceNameValidator).validateDeviceName("TEST_DEVICE2");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveDevices(deviceNames, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
 	// SERVICE DEFINITION
 
 	// SYSTEM
@@ -315,7 +719,11 @@ public class ManagementValidationTest {
 
     	// mock common cases
     	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEmpty((String)null)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>)null)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEnumValue("MAC", AddressType.class)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.containsNullOrEmpty((List<String>)List.of(EMPTY))).thenReturn(true);
     }
 }

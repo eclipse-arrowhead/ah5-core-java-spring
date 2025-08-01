@@ -116,13 +116,14 @@ public class InterfaceValidator {
 								}
 
 								final IPropertyValidator validator = interfacePropertyValidator.getValidator(propertyValidatorType);
-								if (validator == null) {
-									throw new InternalServerError("The validator belonging to the interface template property is not supported: " + propertyValidatorType.name());
+								if (validator != null) {
+									final Object normalizedProp = validator.validateAndNormalize(
+											instanceProp,
+											validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
+									normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
+								} else {
+									logger.info("The validator belonging to the interface template property is not implemented: " + propertyValidatorType.name());
 								}
-								final Object normalizedProp = validator.validateAndNormalize(
-										instanceProp,
-										validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
-								normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
 							}
 						});
 				normalized.add(new ServiceInstanceInterfaceRequestDTO(interfaceInstance.templateName(), interfaceInstance.protocol(), interfaceInstance.policy(), normalizedProperties));

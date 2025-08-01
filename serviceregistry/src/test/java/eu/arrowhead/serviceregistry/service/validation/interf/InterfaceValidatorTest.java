@@ -86,7 +86,6 @@ public class InterfaceValidatorTest {
     private static final String MISSING_PROTOCOL = "Interface protocol is missing";
     private static final String INVALID_PROTOCOL = " protocol is invalid for ";
     private static final String MISSING_PROPERTY = " interface property is missing for ";
-    private static final String VALIDATOR_NOT_SUPPORTED = "The validator belonging to the interface template property is not supported: ";
 
 
 	//=================================================================================================
@@ -474,13 +473,10 @@ public class InterfaceValidatorTest {
 		// create property set to test
 		final Map<String, Object> properties = Map.of("port", 600);
 
-		final Exception ex = assertThrows(
-				InternalServerError.class,
-				() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(
-						List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties))));
+		final ServiceInstanceInterfaceRequestDTO dto = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties);
 
-		assertEquals(VALIDATOR_NOT_SUPPORTED + "PORT", ex.getMessage());
-
+		final List<ServiceInstanceInterfaceRequestDTO> normalized = assertDoesNotThrow(() -> intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(dto)));
+		assertEquals(List.of(dto), normalized);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -500,13 +496,16 @@ public class InterfaceValidatorTest {
 						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")));
 		properties.put("accessPort", 1444);
 
-		final List<ServiceInstanceInterfaceRequestDTO> normalized = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties)));
+		final ServiceInstanceInterfaceRequestDTO dto = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties);
+
+		final List<ServiceInstanceInterfaceRequestDTO> normalized = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(dto));
 
 		verify(interfaceAddressPropertyProcessor, times(1)).findAddresses(any());
 		verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName(any());
 
 		assertEquals(1, normalized.size());
 		assertEquals(2, normalized.get(0).properties().size());
+		assertEquals(List.of(dto), normalized);
 
 	}
 
@@ -534,7 +533,9 @@ public class InterfaceValidatorTest {
 						"set-temperature", Map.of(HttpOperationModel.PROP_NAME_PATH, "/set", HttpOperationModel.PROP_NAME_METHOD, "PUT")));
 		properties.put("accessPort", testPort);
 
-		final List<ServiceInstanceInterfaceRequestDTO> normalized = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties)));
+		final ServiceInstanceInterfaceRequestDTO dto = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", properties);
+
+		final List<ServiceInstanceInterfaceRequestDTO> normalized = intfValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(dto));
 
 		verify(interfaceAddressPropertyProcessor, times(1)).findAddresses(any());
 		verify(minMaxValidator, times(1)).validateAndNormalize(testPort, "1", "65535");
@@ -542,6 +543,7 @@ public class InterfaceValidatorTest {
 
 		assertEquals(1, normalized.size());
 		assertEquals(2, normalized.get(0).properties().size());
+		assertEquals(List.of(dto), normalized);
 
 	}
 
