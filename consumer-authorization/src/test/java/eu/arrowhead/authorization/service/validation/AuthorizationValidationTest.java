@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -413,5 +414,107 @@ public class AuthorizationValidationTest {
 				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, null));
 
 		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestNullRequest() {
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", null, "testOrigin"));
+
+		assertEquals("Request payload is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestMissingMandatoryFilter() {
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(null, null, null, null);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("One of the following filters must be used: 'instanceIds', 'targetNames', 'cloudIdentifiers'", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestInstanceIdFilterContainsNull() {
+		final List<String> instanceIds = new ArrayList<>(1);
+		instanceIds.add(null);
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				instanceIds,
+				null,
+				null,
+				null);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Instance id list contains null or empty element", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestTargetNameFilterContainsEmpty() {
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				null,
+				null,
+				List.of(""),
+				null);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Target names list contains null or empty element", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestTargetTypeIsMandatoryCase() {
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				List.of("PR|LOCAL|ProviderName|SERVICE_DEF|testService"),
+				null,
+				List.of("testService"),
+				null);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("If target names list is specified then a valid target type is mandatory", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestCloudIdentifiersFilterContainsNull() {
+		final List<String> cloudIds = new ArrayList<>(1);
+		cloudIds.add(null);
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				null,
+				cloudIds,
+				List.of("testService"),
+				"SERVICE_DEF");
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Cloud identifiers list contains null or empty element", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestInvalidTargetType() {
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				null,
+				List.of("LOCAL"),
+				null,
+				"invalid");
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Target type is invalid: invalid", ex.getMessage());
 	}
 }

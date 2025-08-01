@@ -323,7 +323,7 @@ public class AuthorizationValidation {
 			final String targetTypeName = dto.targetType().trim().toUpperCase();
 
 			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+				throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 			}
 		}
 	}
