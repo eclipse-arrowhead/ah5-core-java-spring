@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
@@ -50,6 +52,7 @@ import eu.arrowhead.dto.DeviceQueryRequestDTO;
 import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
@@ -130,8 +133,11 @@ public class ManagementValidationTest {
 	private static final String INVALID_ADDRESS_TYPE_PREFIX = "Invalid address type: ";
 	private static final String NULL_METADATA_REQUIREMENT = "Metadata requirement list contains null element";
 	private static final String MISSING_DEVICE_NAME_LIST = "Device name list is missing or empty";
-
-
+	private static final String EMPTY_SERVICE_DEF_LIST = "Service definition name list is empty";
+	private static final String SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT = "Service definition name list contains null or empty element";
+	private static final String DUPLICATED_SERVICE_DEF_NAME_PREFIX = "Duplicated service defitition name: ";
+	private static final String MISSING_SERVICE_DEF_NAME_LIST = "Service definition name list is missing or empty";
+	
 	//=================================================================================================
 	// methods
 
@@ -683,6 +689,149 @@ public class ManagementValidationTest {
 	}
 
 	// SERVICE DEFINITION
+
+	// create
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceDefinitionsNullDto() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceDefinitions(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceDefinitionsEmptyList() {
+
+		final ServiceDefinitionListRequestDTO dto = new ServiceDefinitionListRequestDTO(List.of());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceDefinitions(dto, "test origin"));
+		assertEquals(EMPTY_SERVICE_DEF_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceDefinitionsNullOrEmptyName() {
+
+		final ServiceDefinitionListRequestDTO dto = new ServiceDefinitionListRequestDTO(List.of(EMPTY));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceDefinitions(dto, "test origin"));
+		assertEquals(SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceDefinitionsDuplicatedName() {
+
+		final ServiceDefinitionListRequestDTO dto = new ServiceDefinitionListRequestDTO(List.of("temperature info", "temperatureInfo"));
+		when(serviceDefNameNormalizer.normalize(any())).thenReturn("temperatureInfo");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceDefinitions(dto, "test origin"));
+		assertEquals(DUPLICATED_SERVICE_DEF_NAME_PREFIX + "temperatureInfo", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateServiceDefinitionsOk() {
+
+		final ServiceDefinitionListRequestDTO dto = new ServiceDefinitionListRequestDTO(List.of("temperatureInfo", "alertService"));
+		final List<String> expected = List.of("temperatureInfo", "alertService");
+
+		when(serviceDefNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(normalizer.normalizeCreateServiceDefinitions(any())).thenReturn(List.of("temperatureInfo", "alertService"));
+
+		final List<String> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateServiceDefinitions(dto, "test origin"));
+		assertEquals(expected, normalized);
+		verify(normalizer, times(1)).normalizeCreateServiceDefinitions(any());
+		verify(serviceDefNameValidator, times(2)).validateServiceDefinitionName(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateServiceDefinitionsThrowsException() {
+
+		final ServiceDefinitionListRequestDTO dto = new ServiceDefinitionListRequestDTO(List.of("temperatureInfo", "alertService"));
+
+		when(serviceDefNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(normalizer.normalizeCreateServiceDefinitions(any())).thenReturn(List.of("temperatureInfo", "alertService"));
+		lenient().doThrow(new InvalidParameterException("Validation error")).when(serviceDefNameValidator).validateServiceDefinitionName("alertService");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceDefinitions(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// query
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceDefinitions() {
+
+		assertAll(
+
+			// dto is null
+			() -> {
+				assertDoesNotThrow(() -> validator.validateQueryServiceDefinitions(null, "test origin"));
+				verify(pageValidator, never()).validatePageParameter(any(), any(), any());
+			},
+
+			// dto is not null
+			() -> {
+				final PageDTO dto = new PageDTO(10, 20, "ASC", "id");
+				assertDoesNotThrow(() -> validator.validateQueryServiceDefinitions(dto, "test origin"));
+				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+			}
+		);
+	}
+
+	// remove
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveServiceDefinitionsMissingNameList() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveServiceDefinitions(List.of(), "test origin"));
+		assertEquals(MISSING_SERVICE_DEF_NAME_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveServiceDefinitionsMissingName() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveServiceDefinitions(List.of(EMPTY), "test origin"));
+		assertEquals(SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveServiceDefinitionsOk() {
+
+		final List<String> names = List.of("temperatureInfo", "alertService");
+		when(normalizer.normalizeRemoveServiceDefinitions(any())).thenReturn(names);
+
+		final List<String> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRemoveServiceDefinitions(names, "test origin"));
+		assertEquals(names, normalized);
+		verify(normalizer, times(1)).normalizeRemoveServiceDefinitions(any());
+		verify(serviceDefNameValidator, times(2)).validateServiceDefinitionName(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveServiceDefinitionsThrowsException() {
+
+		final List<String> names = List.of("temperatureInfo", "alertService");
+		when(normalizer.normalizeRemoveServiceDefinitions(any())).thenReturn(names);
+		lenient().doThrow(new InvalidParameterException("Validation error")).when(serviceDefNameValidator).validateServiceDefinitionName("alertService");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveServiceDefinitions(names, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
 
 	// SYSTEM
 

@@ -208,14 +208,6 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
 
-	//-------------------------------------------------------------------------------------------------
-	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
-		logger.debug("validateQueryServiceDefinitions started");
-
-		if (dto != null) {
-			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
-		}
-	}
 
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
@@ -232,6 +224,15 @@ public class ManagementValidation {
 		}
 
 		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void validateQueryServiceDefinitions(final PageDTO dto, final String origin) {
+		logger.debug("validateQueryServiceDefinitions started");
+
+		if (dto != null) {
+			pageValidator.validatePageParameter(dto, ServiceDefinition.SORTABLE_FIELDS_BY, origin);
+		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -603,10 +604,6 @@ public class ManagementValidation {
 			final String normalized = serviceDefNameNormalizer.normalize(name);
 			if (names.contains(normalized)) {
 				throw new InvalidParameterException("Duplicated service defitition name: " + name, origin);
-			}
-
-			if (name.length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Service definition name is too long: " + name, origin);
 			}
 
 			names.add(normalized);
