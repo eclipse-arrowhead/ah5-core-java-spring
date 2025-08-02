@@ -53,9 +53,12 @@ import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.SystemListRequestDTO;
+import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalization;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 
@@ -137,7 +140,12 @@ public class ManagementValidationTest {
 	private static final String SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT = "Service definition name list contains null or empty element";
 	private static final String DUPLICATED_SERVICE_DEF_NAME_PREFIX = "Duplicated service defitition name: ";
 	private static final String MISSING_SERVICE_DEF_NAME_LIST = "Service definition name list is missing or empty";
-	
+	private static final String SYSTEM_LIST_NULL_ELEMENT = "System list contains null element";
+	private static final String EMPTY_SYSTEM_NAME = "System name is empty";
+	private static final String DUPLICATED_SYSTEM_NAME_PREFIX = "Duplicated system name: ";
+	private static final String MISSING_ADDRESS_VALUE = "Address value is missing";
+	private static final String NO_ADDRESS_PROVIDED = "At least one system address is needed for every system";
+
 	//=================================================================================================
 	// methods
 
@@ -834,6 +842,373 @@ public class ManagementValidationTest {
 	}
 
 	// SYSTEM
+
+	// create
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsEmptyPayload() {
+
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals(EMPTY_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsNullElement() {
+
+		final SystemRequestDTO element = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final List<SystemRequestDTO> listWithNull = new ArrayList<SystemRequestDTO>(2);
+		listWithNull.add(element);
+		listWithNull.add(null);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(listWithNull);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals(SYSTEM_LIST_NULL_ELEMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsEmptyName() {
+
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(new SystemRequestDTO(EMPTY, Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE")));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals(EMPTY_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsDuplicatedName() {
+
+		final SystemRequestDTO element1 = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final SystemRequestDTO element2 = new SystemRequestDTO("Temperature Provider", Map.of("indoor", true), "1.1.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final List<SystemRequestDTO> systemList = new ArrayList<SystemRequestDTO>(2);
+		systemList.add(element1);
+		systemList.add(element2);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(systemList);
+
+		when(systemNameNormalizer.normalize(any())).thenReturn("TemperatureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals(DUPLICATED_SYSTEM_NAME_PREFIX + "TemperatureProvider", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsMissingAddress() {
+
+		final SystemRequestDTO element1 = new SystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final SystemRequestDTO element2 = new SystemRequestDTO("TemperatureProvider2", Map.of("indoor", true), "1.1.0", List.of("greenhouse.com", EMPTY), "TEST_DEVICE");
+		final List<SystemRequestDTO> systemList = new ArrayList<SystemRequestDTO>(2);
+		systemList.add(element1);
+		systemList.add(element2);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(systemList);
+
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals(MISSING_ADDRESS_VALUE, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsNoAddressProvided() {
+		final SystemRequestDTO system = new SystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of(), null);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(system));
+
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals(NO_ADDRESS_PROVIDED, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateSystemsInvalidMetadata() {
+
+		final SystemRequestDTO system = new SystemRequestDTO("TemperatureProvider1", Map.of("in.door", false), "1.0.0", List.of("192.168.10.20"), "TEST_DEVICE");
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(system));
+
+		final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+		metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", false))).thenThrow(new InvalidParameterException("Validation error"));
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", false)));
+		metadataValidationMock.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateSystemsOk() {
+
+		// not empty metadata, not empty addresses
+		final SystemRequestDTO element1 = new SystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of("192.168.20.21"), EMPTY);
+		// empty metadata, empty addresses
+		final SystemRequestDTO element2 = new SystemRequestDTO("TemperatureProvider2", Map.of(), "1.1.0", List.of(), "TEST_DEVICE1");
+
+		final NormalizedSystemRequestDTO expected1 = new NormalizedSystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.20.21")), null);
+		final NormalizedSystemRequestDTO expected2 = new NormalizedSystemRequestDTO("TemperatureProvider2", Map.of(), "1.1.0", List.of(), "TEST_DEVICE1");
+
+		final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(normalizer.normalizeSystemRequestDTOs(any())).thenReturn(List.of(expected1, expected2));
+
+		final List<NormalizedSystemRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateSystems(new SystemListRequestDTO(List.of(element1, element2)), "test origin"));
+		assertEquals(List.of(expected1, expected2), normalized);
+		verify(systemNameValidator, times(2)).validateSystemName(anyString());
+		verify(versionValidator, times(2)).validateNormalizedVersion(anyString());
+		verify(addressTypeValidator, times(1)).validateNormalizedAddress(any(), anyString());
+		verify(deviceNameValidator, times(1)).validateDeviceName(anyString());
+		metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(any()), times(1));
+		metadataValidationMock.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateSystemsThrowsException() {
+
+		final SystemRequestDTO system = new SystemRequestDTO("TemperätureProvider", Map.of("indoor", false), "1.0.0", List.of("192.168.10.20"), "TEST_DEVICE");
+		final NormalizedSystemRequestDTO normalizedSystem = new NormalizedSystemRequestDTO("TemperätureProvider", Map.of("indoor", false), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.10.20")), "TEST_DEVICE");
+
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(system));
+
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(normalizer.normalizeSystemRequestDTOs(any())).thenReturn(List.of(normalizedSystem));
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperätureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateSystems(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+	
+	// update
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsEmptyPayload() {
+
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals(EMPTY_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsNullElement() {
+
+		final SystemRequestDTO element = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final List<SystemRequestDTO> listWithNull = new ArrayList<SystemRequestDTO>(2);
+		listWithNull.add(element);
+		listWithNull.add(null);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(listWithNull);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals(SYSTEM_LIST_NULL_ELEMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsEmptyName() {
+
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(new SystemRequestDTO(EMPTY, Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE")));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals(EMPTY_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsDuplicatedName() {
+
+		final SystemRequestDTO element1 = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final SystemRequestDTO element2 = new SystemRequestDTO("Temperature Provider", Map.of("indoor", true), "1.1.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final List<SystemRequestDTO> systemList = new ArrayList<SystemRequestDTO>(2);
+		systemList.add(element1);
+		systemList.add(element2);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(systemList);
+
+		when(systemNameNormalizer.normalize(any())).thenReturn("TemperatureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals(DUPLICATED_SYSTEM_NAME_PREFIX + "TemperatureProvider", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsMissingAddress() {
+
+		final SystemRequestDTO element1 = new SystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+		final SystemRequestDTO element2 = new SystemRequestDTO("TemperatureProvider2", Map.of("indoor", true), "1.1.0", List.of("greenhouse.com", EMPTY), "TEST_DEVICE");
+		final List<SystemRequestDTO> systemList = new ArrayList<SystemRequestDTO>(2);
+		systemList.add(element1);
+		systemList.add(element2);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(systemList);
+
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals(MISSING_ADDRESS_VALUE, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsNoAddressProvided() {
+		final SystemRequestDTO system = new SystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of(), null);
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(system));
+
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals(NO_ADDRESS_PROVIDED, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateSystemsInvalidMetadata() {
+
+		final SystemRequestDTO system = new SystemRequestDTO("TemperatureProvider1", Map.of("in.door", false), "1.0.0", List.of("192.168.10.20"), "TEST_DEVICE");
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(system));
+
+		final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+		metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", false))).thenThrow(new InvalidParameterException("Validation error"));
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", false)));
+		metadataValidationMock.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeUpdateSystemsOk() {
+
+		// not empty metadata, not empty addresses
+		final SystemRequestDTO element1 = new SystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of("192.168.20.21"), EMPTY);
+		// empty metadata, empty addresses
+		final SystemRequestDTO element2 = new SystemRequestDTO("TemperatureProvider2", Map.of(), "1.1.0", List.of(), "TEST_DEVICE1");
+
+		final NormalizedSystemRequestDTO expected1 = new NormalizedSystemRequestDTO("TemperatureProvider1", Map.of("indoor", false), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.20.21")), null);
+		final NormalizedSystemRequestDTO expected2 = new NormalizedSystemRequestDTO("TemperatureProvider2", Map.of(), "1.1.0", List.of(), "TEST_DEVICE1");
+
+		final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(normalizer.normalizeSystemRequestDTOs(any())).thenReturn(List.of(expected1, expected2));
+
+		final List<NormalizedSystemRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateSystems(new SystemListRequestDTO(List.of(element1, element2)), "test origin"));
+		assertEquals(List.of(expected1, expected2), normalized);
+		verify(systemNameValidator, times(2)).validateSystemName(anyString());
+		verify(versionValidator, times(2)).validateNormalizedVersion(anyString());
+		verify(addressTypeValidator, times(1)).validateNormalizedAddress(any(), anyString());
+		verify(deviceNameValidator, times(1)).validateDeviceName(anyString());
+		metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(any()), times(1));
+		metadataValidationMock.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeUpdateSystemsThrowsException() {
+
+		final SystemRequestDTO system = new SystemRequestDTO("TemperätureProvider", Map.of("indoor", false), "1.0.0", List.of("192.168.10.20"), "TEST_DEVICE");
+		final NormalizedSystemRequestDTO normalizedSystem = new NormalizedSystemRequestDTO("TemperätureProvider", Map.of("indoor", false), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.10.20")), "TEST_DEVICE");
+
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(system));
+
+		when(systemNameNormalizer.normalize(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(normalizer.normalizeSystemRequestDTOs(any())).thenReturn(List.of(normalizedSystem));
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperätureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateSystems(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// query
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQuerySystemsNullOrEmptySystemName() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQuerySystemsNullOrEmptyAddress() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQuerySystemsInvalidAddressType() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQuerySystemsNullMetadataRequirement() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQuerySystemsNullOrEmptyVersion() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQuerySystemsNullOrEmptyDeviceName() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQuerySystemsOk() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQuerySystemsThrowsException() {
+		
+	}
+	// remove
 
 	// SERVICE INTSTANCE
 

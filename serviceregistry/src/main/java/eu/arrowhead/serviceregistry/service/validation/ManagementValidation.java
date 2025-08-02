@@ -651,7 +651,7 @@ public class ManagementValidation {
 
 			final String normalized = systemNameNormalizer.normalize(system.name());
 			if (names.contains(normalized)) {
-				throw new InvalidParameterException("Duplicated system name: " + system.name(), origin);
+				throw new InvalidParameterException("Duplicated system name: " + normalized, origin);
 			}
 
 			names.add(normalized);
@@ -665,11 +665,15 @@ public class ManagementValidation {
 			}
 
 			if (Utilities.isEmpty(system.addresses()) && Utilities.isEmpty(system.deviceName())) {
-				throw new InvalidParameterException("At least one system address is needed for every system");
+				throw new InvalidParameterException("At least one system address is needed for every system", origin);
 			}
 
 			if (!Utilities.isEmpty(system.metadata())) {
-				MetadataValidation.validateMetadataKey(system.metadata());
+				try {
+					MetadataValidation.validateMetadataKey(system.metadata());
+				} catch (final InvalidParameterException ex) {
+					throw new InvalidParameterException(ex.getMessage(), origin);
+				}
 			}
 		}
 	}
