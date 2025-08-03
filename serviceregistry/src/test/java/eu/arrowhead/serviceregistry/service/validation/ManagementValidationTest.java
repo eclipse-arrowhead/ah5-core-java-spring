@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,7 @@ import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
+import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
@@ -132,7 +134,7 @@ public class ManagementValidationTest {
 	private static final String MISSING_ADDRESS_LIST = "At least one device address is needed for every device";
 	private static final String MISSING_ADDRESS = "Address is missing";
 	private static final String NULL_OR_EMPTY_DEVICE_NAME = "Device name list contains null or empty element";
-	private static final String NULL_OR_EMPTY_ADDRESS = "Address list contains null element or empty element";
+	private static final String NULL_OR_EMPTY_ADDRESS = "Address list contains null or empty element";
 	private static final String INVALID_ADDRESS_TYPE_PREFIX = "Invalid address type: ";
 	private static final String NULL_METADATA_REQUIREMENT = "Metadata requirement list contains null element";
 	private static final String MISSING_DEVICE_NAME_LIST = "Device name list is missing or empty";
@@ -145,6 +147,9 @@ public class ManagementValidationTest {
 	private static final String DUPLICATED_SYSTEM_NAME_PREFIX = "Duplicated system name: ";
 	private static final String MISSING_ADDRESS_VALUE = "Address value is missing";
 	private static final String NO_ADDRESS_PROVIDED = "At least one system address is needed for every system";
+	private static final String NULL_OR_EMPTY_SYSTEM_NAME = "System name list contains null or empty element";
+	private static final String NULL_OR_EMPTY_VERSION = "Version list contains null or empty element";
+	private static final String MISSING_SYSTEM_NAME_LIST = "System name list is missing or empty";
 
 	//=================================================================================================
 	// methods
@@ -1000,9 +1005,9 @@ public class ManagementValidationTest {
 		assertEquals("Validation error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
 	// update
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateUpdateSystemsMissingPayload() {
@@ -1160,55 +1165,275 @@ public class ManagementValidationTest {
 	}
 
 	// query
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQuerySystemsNullOrEmptySystemName() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of(EMPTY),
+				List.of("192.168.4.1"),
+				"IPV4",
+				List.of(requirement),
+				List.of("5.0.0"),
+				List.of("TEST_DEVICE")
+			);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQuerySystemsNullOrEmptyAddress() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider1"),
+				List.of(EMPTY),
+				"IPV4",
+				List.of(requirement),
+				List.of("5.0.0"),
+				List.of("TEST_DEVICE")
+		);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_ADDRESS, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQuerySystemsInvalidAddressType() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider1"),
+				List.of("192.168.4.1"),
+				"IPV5",
+				List.of(requirement),
+				List.of("5.0.0"),
+				List.of("TEST_DEVICE")
+		);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals(INVALID_ADDRESS_TYPE_PREFIX + "IPV5", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEnumValue("IPV5", AddressType.class));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQuerySystemsNullMetadataRequirement() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final List<MetadataRequirementDTO> requirements = new ArrayList<MetadataRequirementDTO>(2);
+		requirements.add(requirement);
+		requirements.add(null);
+		utilitiesMock.when(() -> Utilities.containsNull(requirements)).thenReturn(true);
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider1"),
+				List.of("192.168.4.1"),
+				"IPV4",
+				requirements,
+				List.of("5.0.0"),
+				List.of("TEST_DEVICE")
+		);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals(NULL_METADATA_REQUIREMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQuerySystemsNullOrEmptyVersion() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider1"),
+				List.of("192.168.4.1"),
+				"IPV4",
+				List.of(requirement),
+				List.of(EMPTY),
+				List.of("TEST_DEVICE")
+		);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_VERSION, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQuerySystemsNullOrEmptyDeviceName() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider1"),
+				List.of("192.168.4.1"),
+				"IPV4",
+				List.of(requirement),
+				List.of("5.0.0"),
+				List.of(EMPTY)
+		);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_DEVICE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeQuerySystemsOk() {
-		
+
+		Assertions.assertAll(
+
+			// nothing is null
+			() -> {
+				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+				requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider1"),
+						List.of("192.168.4.1"),
+						"IPV4",
+						List.of(requirement),
+						List.of("5.0.0"),
+						List.of("TEST_DEVICE")
+				);
+
+				when(normalizer.normalizeSystemQueryRequestDTO(dto)).then(invocation -> invocation.getArgument(0));
+
+				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+				verify(normalizer, times(1)).normalizeSystemQueryRequestDTO(dto);
+				verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider1");
+				verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.IPV4, "192.168.4.1");
+				verify(versionValidator, times(1)).validateNormalizedVersion("5.0.0");
+				verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+				assertEquals(dto, normalized);
+			},
+
+			// dto is null
+			() -> {
+				final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
+				when(normalizer.normalizeSystemQueryRequestDTO(null)).thenReturn(expected);
+
+				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(null, "test origin"));
+				assertEquals(expected, normalized);
+			},
+
+			// everything is null
+			() -> {
+				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
+				when(normalizer.normalizeSystemQueryRequestDTO(dto)).thenReturn(dto);
+
+				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+				assertEquals(dto, normalized);
+			},
+
+			// address type is present, but addresses are empty
+			() -> {
+				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, null, null, "IPV4", null, null, null);
+				when(normalizer.normalizeSystemQueryRequestDTO(dto)).thenReturn(dto);
+
+				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+				assertEquals(dto, normalized);
+			}
+		);
+
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeQuerySystemsThrowsException() {
-		
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperätureProvider1"),
+				List.of("192.168.4.1"),
+				"IPV4",
+				List.of(requirement),
+				List.of("5.0.0"),
+				List.of("TEST_DEVICE")
+		);
+
+		when(normalizer.normalizeSystemQueryRequestDTO(dto)).then(invocation -> invocation.getArgument(0));
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperätureProvider1");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
+
 	// remove
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveSystemsEmptyNameList() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveSystems(List.of(), "test origin"));
+		assertEquals(MISSING_SYSTEM_NAME_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveSystemsNullOrEmptySystemName() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveSystems(List.of(EMPTY), "test origin"));
+		assertEquals(NULL_OR_EMPTY_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveSystemsOk() {
+
+		when(normalizer.normalizeRemoveSystemNames(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		final List<String> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRemoveSystems(List.of("TemperatureProvider1", "TemperatureProvider2"), "test origin"));
+
+		assertEquals(List.of("TemperatureProvider1", "TemperatureProvider2"), normalized);
+		verify(normalizer, times(1)).normalizeRemoveSystemNames(any());
+		verify(systemNameValidator, times(2)).validateSystemName(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveSystemsThrowsException() {
+
+		when(normalizer.normalizeRemoveSystemNames(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		lenient().doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperätureProvider2");
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveSystems(List.of("TemperatureProvider1", "TemperätureProvider2"), "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
 
 	// SERVICE INTSTANCE
 
@@ -1248,6 +1473,7 @@ public class ManagementValidationTest {
     	utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEnumValue("MAC", AddressType.class)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.containsNullOrEmpty((List<String>)List.of(EMPTY))).thenReturn(true);
     }
 }
