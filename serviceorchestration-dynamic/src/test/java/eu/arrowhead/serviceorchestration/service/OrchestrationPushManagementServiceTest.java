@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -34,11 +35,13 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
@@ -49,6 +52,7 @@ import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
@@ -122,6 +126,8 @@ public class OrchestrationPushManagementServiceTest {
 	public void setUp() {
 		ReflectionTestUtils.setField(dtoConverter, "mapper", new ObjectMapper());
 	}
+
+	// pushSubscribe
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -276,6 +282,8 @@ public class OrchestrationPushManagementServiceTest {
 		assertEquals("Duplicate subscription request for: TestManager#TargetSystem#testService", ex.getMessage());
 		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
 	}
+
+	// pushTrigger
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -593,6 +601,142 @@ public class OrchestrationPushManagementServiceTest {
 		assertEquals(targetSystem, jobCreateInput.get(0).getTargetSystem());
 		assertEquals(serviceDef, jobCreateInput.get(0).getServiceDefinition());
 		assertEquals(OrchestrationType.PUSH, jobCreateInput.get(0).getType());
+
+		assertEquals("test message", ex.getMessage());
+		assertEquals(origin, ((InternalServerError) ex).getOrigin());
+	}
+
+	// pushUnsubscribe
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushUnsubscribe() {
+		final String origin = "test.origin";
+		final String requesterSystem = "TestManager";
+		final String targetSystem = "TargetSystem";
+		final String serviceDef = "serviceDef";
+		final List<String> ids = List.of(UUID.randomUUID().toString());
+		final Subscription subscriptionRecord = new Subscription(UUID.fromString(ids.get(0)), requesterSystem, targetSystem, serviceDef, null, null, null, null);
+		final List<Subscription> subscriptionRecordList = List.of(subscriptionRecord);
+
+		when(validator.validateAndNormalizeRequesterSystem(eq(requesterSystem), eq(origin))).thenReturn(requesterSystem);
+		when(validator.validateAndNormalizePublishUnsubscribeService(eq(ids), eq(origin))).thenReturn(ids);
+		when(subscriptionDbService.get(anyList())).thenReturn(subscriptionRecordList);
+
+		assertDoesNotThrow(() -> pushService.pushUnsubscribe(requesterSystem, ids, origin));
+
+		verify(validator).validateAndNormalizeRequesterSystem(eq(requesterSystem), eq(origin));
+		verify(validator).validateAndNormalizePublishUnsubscribeService(eq(ids), eq(origin));
+		verify(subscriptionDbService).get(uuidListCaptor.capture());
+		verify(subscriptionDbService).deleteInBatch(uuidCollectionCaptor.capture());
+
+		assertTrue(uuidListCaptor.getValue().size() == 1);
+		assertEquals(UUID.fromString(ids.get(0)), uuidListCaptor.getValue().get(0));
+		assertTrue(uuidCollectionCaptor.getValue().size() == 1);
+		assertTrue(uuidCollectionCaptor.getValue().contains(UUID.fromString(ids.get(0))));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushUnsubscribeDifferentOwner() {
+		final String origin = "test.origin";
+		final String requesterSystem = "TestManager";
+		final String targetSystem = "TargetSystem";
+		final String serviceDef = "serviceDef";
+		final List<String> ids = List.of(UUID.randomUUID().toString());
+		final Subscription subscriptionRecord = new Subscription(UUID.fromString(ids.get(0)), "OtherSystem", targetSystem, serviceDef, null, null, null, null);
+		final List<Subscription> subscriptionRecordList = List.of(subscriptionRecord);
+
+		when(validator.validateAndNormalizeRequesterSystem(eq(requesterSystem), eq(origin))).thenReturn(requesterSystem);
+		when(validator.validateAndNormalizePublishUnsubscribeService(eq(ids), eq(origin))).thenReturn(ids);
+		when(subscriptionDbService.get(anyList())).thenReturn(subscriptionRecordList);
+
+		final Throwable ex = assertThrows(Throwable.class, () -> pushService.pushUnsubscribe(requesterSystem, ids, origin));
+
+		verify(validator).validateAndNormalizeRequesterSystem(eq(requesterSystem), eq(origin));
+		verify(validator).validateAndNormalizePublishUnsubscribeService(eq(ids), eq(origin));
+		verify(subscriptionDbService).get(uuidListCaptor.capture());
+		verify(subscriptionDbService, never()).deleteInBatch(anyCollection());
+
+		assertTrue(uuidListCaptor.getValue().size() == 1);
+		assertEquals(UUID.fromString(ids.get(0)), uuidListCaptor.getValue().get(0));
+
+		assertEquals(ids.get(0) + " is not owned by the requester", ex.getMessage());
+		assertEquals(origin, ((ForbiddenException) ex).getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushUnsubscribeDBError() {
+		final String origin = "test.origin";
+		final String requesterSystem = "TestManager";
+		final List<String> ids = List.of(UUID.randomUUID().toString());
+
+		when(validator.validateAndNormalizeRequesterSystem(eq(requesterSystem), eq(origin))).thenReturn(requesterSystem);
+		when(validator.validateAndNormalizePublishUnsubscribeService(eq(ids), eq(origin))).thenReturn(ids);
+		doThrow(new InternalServerError("test message")).when(subscriptionDbService).get(anyList());
+		final Throwable ex = assertThrows(Throwable.class, () -> pushService.pushUnsubscribe(requesterSystem, ids, origin));
+
+		verify(validator).validateAndNormalizeRequesterSystem(eq(requesterSystem), eq(origin));
+		verify(validator).validateAndNormalizePublishUnsubscribeService(eq(ids), eq(origin));
+		verify(subscriptionDbService).get(uuidListCaptor.capture());
+		verify(subscriptionDbService, never()).deleteInBatch(anyCollection());
+
+		assertTrue(uuidListCaptor.getValue().size() == 1);
+		assertEquals(UUID.fromString(ids.get(0)), uuidListCaptor.getValue().get(0));
+
+		assertEquals("test message", ex.getMessage());
+		assertEquals(origin, ((InternalServerError) ex).getOrigin());
+	}
+
+	// queryPushSubscriptions
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryPushSubscriptions() {
+		final String origin = "test.origin";
+		final String ownerSystem = "TestManager";
+		final String targetSystem = "TargetSystem";
+		final String serviceDef = "serviceDef";
+		final OrchestrationSubscriptionQueryRequestDTO requestDTO = new OrchestrationSubscriptionQueryRequestDTO(null, List.of(ownerSystem), List.of(targetSystem), List.of(serviceDef));
+		final Subscription subscriptionRecord = new Subscription(UUID.randomUUID(), ownerSystem, targetSystem, serviceDef, null, "MQTT",
+				Utilities.toJson(Map.of("foo", "bar")), Utilities.toJson(new OrchestrationRequestDTO(new OrchestrationServiceRequirementDTO(serviceDef, null, null, null, null, null, null, null, null, null), null, null, null)));
+		final PageImpl<Subscription> subscriptionRecordPage = new PageImpl<Subscription>(List.of(subscriptionRecord));
+
+		when(validator.validateAndNormalizeQueryPushSubscriptionsService(eq(requestDTO), eq(origin))).thenReturn(requestDTO);
+		when(pageService.getPageRequest(isNull(), eq(Direction.DESC), eq(Subscription.SORTABLE_FIELDS_BY), eq(Subscription.DEFAULT_SORT_FIELD), eq(origin))).thenReturn(PageRequest.of(0, 1));
+		when(subscriptionDbService.query(eq(requestDTO.ownerSystems()), eq(requestDTO.targetSystems()), eq(requestDTO.serviceDefinitions()), any())).thenReturn(subscriptionRecordPage);
+
+		final OrchestrationSubscriptionListResponseDTO result = assertDoesNotThrow(() -> pushService.queryPushSubscriptions(requestDTO, origin));
+
+		verify(validator).validateAndNormalizeQueryPushSubscriptionsService(eq(requestDTO), eq(origin));
+		verify(pageService).getPageRequest(isNull(), eq(Direction.DESC), eq(Subscription.SORTABLE_FIELDS_BY), eq(Subscription.DEFAULT_SORT_FIELD), eq(origin));
+		verify(subscriptionDbService).query(eq(requestDTO.ownerSystems()), eq(requestDTO.targetSystems()), eq(requestDTO.serviceDefinitions()), any());
+		verify(dtoConverter).convertSubscriptionListToDTO(eq(subscriptionRecordPage.getContent()), eq(1L));
+
+		assertTrue(result.entries().size() == 1);
+		assertEquals(subscriptionRecord.getId().toString(), result.entries().get(0).id());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryPushSubscriptionsDBError() {
+		final String origin = "test.origin";
+		final String ownerSystem = "TestManager";
+		final String targetSystem = "TargetSystem";
+		final String serviceDef = "serviceDef";
+		final OrchestrationSubscriptionQueryRequestDTO requestDTO = new OrchestrationSubscriptionQueryRequestDTO(null, List.of(ownerSystem), List.of(targetSystem), List.of(serviceDef));
+
+		when(validator.validateAndNormalizeQueryPushSubscriptionsService(eq(requestDTO), eq(origin))).thenReturn(requestDTO);
+		when(pageService.getPageRequest(isNull(), eq(Direction.DESC), eq(Subscription.SORTABLE_FIELDS_BY), eq(Subscription.DEFAULT_SORT_FIELD), eq(origin))).thenReturn(PageRequest.of(0, 1));
+		doThrow(new InternalServerError("test message")).when(subscriptionDbService).query(eq(requestDTO.ownerSystems()), eq(requestDTO.targetSystems()), eq(requestDTO.serviceDefinitions()), any());
+
+		final Throwable ex = assertThrows(Throwable.class, () -> pushService.queryPushSubscriptions(requestDTO, origin));
+
+		verify(validator).validateAndNormalizeQueryPushSubscriptionsService(eq(requestDTO), eq(origin));
+		verify(pageService).getPageRequest(isNull(), eq(Direction.DESC), eq(Subscription.SORTABLE_FIELDS_BY), eq(Subscription.DEFAULT_SORT_FIELD), eq(origin));
+		verify(subscriptionDbService).query(eq(requestDTO.ownerSystems()), eq(requestDTO.targetSystems()), eq(requestDTO.serviceDefinitions()), any());
+		verify(dtoConverter, never()).convertSubscriptionListToDTO(anyList(), anyLong());
 
 		assertEquals("test message", ex.getMessage());
 		assertEquals(origin, ((InternalServerError) ex).getOrigin());
