@@ -12,6 +12,9 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +57,17 @@ import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
@@ -139,7 +149,7 @@ public class ManagementValidationTest {
 	private static final String NULL_METADATA_REQUIREMENT = "Metadata requirement list contains null element";
 	private static final String MISSING_DEVICE_NAME_LIST = "Device name list is missing or empty";
 	private static final String EMPTY_SERVICE_DEF_LIST = "Service definition name list is empty";
-	private static final String SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT = "Service definition name list contains null or empty element";
+	private static final String NULL_OR_EMPTY_SERVICE_DEF = "Service definition name list contains null or empty element";
 	private static final String DUPLICATED_SERVICE_DEF_NAME_PREFIX = "Duplicated service defitition name: ";
 	private static final String MISSING_SERVICE_DEF_NAME_LIST = "Service definition name list is missing or empty";
 	private static final String SYSTEM_LIST_NULL_ELEMENT = "System list contains null element";
@@ -150,6 +160,29 @@ public class ManagementValidationTest {
 	private static final String NULL_OR_EMPTY_SYSTEM_NAME = "System name list contains null or empty element";
 	private static final String NULL_OR_EMPTY_VERSION = "Version list contains null or empty element";
 	private static final String MISSING_SYSTEM_NAME_LIST = "System name list is missing or empty";
+	private static final String EMPTY_SERVICE_DEFINITION = "Service definition name is empty";
+	private static final String DUPLICATE_INSTANCE_PREFIX = "Duplicated instance: ";
+	private static final String INVALID_EXPIRATION_FORMAT = "Expiration time has an invalid time format, UTC string expected (example: 2024-10-11T14:30:00Z)";
+	private static final String INVALID_EXPIRATION_DATE = "Expiration time is in the past";
+	private static final String EMPTY_INTF_LIST = "Service interface list is empty";
+	private static final String MISSING_TEMPLATE_NAME = "Interface template name is missing";
+	private static final String MISSING_POLICY = "Interface policy is missing";
+	private static final String INVALID_POLICY = "Invalid interface policy";
+	private static final String MISSING_PROPERTIES = "Interface properties are missing";
+	private static final String EMPTY_INSTANCE_ID = "Instance id is empty";
+	private static final String DUPLICATED_INSTANCE_ID_PREFIX = "Duplicated instance id: ";
+	private static final String EMPTY_INSTANCE_ID_LIST = "Instance id list is empty";
+	private static final String MANDATORY_FILTER_MISSING = "One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'";
+	private static final String NULL_OR_EMPTY_INSTANCE_ID = "Instance id list contains null or empty element";
+	private static final String NULL_OR_EMPTY_PROVIDER_NAME = "Provider name list contains null or empty element";
+	private static final String INVALID_ALIVES_AT = "Alive time has an invalid time format";
+	private static final String NULL_METADATA_REQ = "Metadata requirements list contains null element";
+	private static final String NULL_OR_EMPTY_ADDRESS_TYPE = "Address type list contains null or empty element";
+	private static final String INVALID_ADDRESS_TYPE__ELEMENT_PREFIX = "Address type list contains invalid element: ";
+	private static final String NULL_OR_EMPTY_TEMPTLATE = "Interface template list contains null or empty element";
+	private static final String NULL_PROPERTY_REQUIREMENT = "Interface property requirements list contains null element";
+	private static final String NULL_OR_EMPTY_POLICY = "Policy list contains null or empty element";
+	private static final String INVALID_POLICY_PREFIX = "Policy list contains invalid element: ";
 
 	//=================================================================================================
 	// methods
@@ -730,7 +763,7 @@ public class ManagementValidationTest {
 
 		final ServiceDefinitionListRequestDTO dto = new ServiceDefinitionListRequestDTO(List.of(EMPTY));
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceDefinitions(dto, "test origin"));
-		assertEquals(SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT, ex.getMessage());
+		assertEquals(NULL_OR_EMPTY_SERVICE_DEF, ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 
@@ -816,7 +849,7 @@ public class ManagementValidationTest {
 	public void testValidateRemoveServiceDefinitionsMissingName() {
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveServiceDefinitions(List.of(EMPTY), "test origin"));
-		assertEquals(SERVICE_DEF_NAME_LIST_NULL_OR_EMPTY_ELEMENT, ex.getMessage());
+		assertEquals(NULL_OR_EMPTY_SERVICE_DEF, ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 
@@ -1437,6 +1470,989 @@ public class ManagementValidationTest {
 
 	// SERVICE INTSTANCE
 
+	// create
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesEmptyPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(new ServiceInstanceCreateListRequestDTO(List.of()), "test origin"));
+		assertEquals(EMPTY_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesEmptySystemName() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+			EMPTY,
+			"temperatureInfo",
+			"1.0.0",
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(intf)
+		);
+
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+		assertEquals(EMPTY_SYSTEM_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesEmptyServiceDefinition() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+			"TemperatureProvider",
+			EMPTY,
+			"1.0.0",
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(intf)
+		);
+
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+		assertEquals(EMPTY_SERVICE_DEFINITION, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesDuplicatedInstance() {
+
+		final ServiceInstanceInterfaceRequestDTO intf1 = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceInterfaceRequestDTO intf2 = new ServiceInstanceInterfaceRequestDTO("generic_https", "https", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceRequestDTO instance1 = new ServiceInstanceRequestDTO(
+			"TemperatureProvider",
+			"temperatureInfo",
+			"1.0.0",
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(intf1)
+		);
+
+		final ServiceInstanceRequestDTO instance2 = new ServiceInstanceRequestDTO(
+				"TemperatureProvider",
+				"temperatureInfo",
+				"1.0.0",
+				"2031-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf2)
+			);
+
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance1, instance2));
+
+		when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime(instance1.expiresAt())).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime(instance2.expiresAt())).thenReturn(ZonedDateTime.of(2031, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+		assertEquals(DUPLICATE_INSTANCE_PREFIX + "TemperatureProvider|temperatureInfo|1.0.0", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesInvalidExpiration() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		assertAll(
+
+			// invalid format
+			() -> {
+
+				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+					"TemperatureProvider",
+					"temperatureInfo",
+					"1.0.0",
+					"2030.11.04.",
+					Map.of("indoor", true),
+					List.of(intf)
+				);
+
+				final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+				when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+				when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+				when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+				utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030.11.04.")).thenThrow(DateTimeException.class);
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+				assertEquals(INVALID_EXPIRATION_FORMAT, ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+			},
+
+			// invalid time
+			() -> {
+
+				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+						"TemperatureProvider",
+						"temperatureInfo",
+						"1.0.0",
+						"1990-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intf)
+					);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+					when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+					when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+					when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+					utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("1990-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(1990, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_EXPIRATION_DATE, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesEmptyServiceInterfaceList() {
+
+		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+				"TemperatureProvider",
+				"temperatureInfo",
+				"1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of()
+			);
+
+			final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+			when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+			when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+			when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+			assertEquals(EMPTY_INTF_LIST, ex.getMessage());
+			assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateServiceInstancesInvalidInterface() {
+
+		when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+		assertAll(
+
+			// missing template name
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO intfMissingName = new ServiceInstanceInterfaceRequestDTO(EMPTY, "http", "NONE", Map.of("accessPort", 8080));
+
+				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+						"TemperatureProvider",
+						"temperatureInfo",
+						"1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intfMissingName)
+					);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(MISSING_TEMPLATE_NAME, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			},
+
+			// missing policy
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO intfMissingPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", EMPTY, Map.of("accessPort", 8080));
+
+				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+						"TemperatureProvider",
+						"temperatureInfo",
+						"1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intfMissingPolicy)
+					);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(MISSING_POLICY, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			},
+
+			// invalid policy
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO invalidPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "MAGIC_TOKEN_AUTH", Map.of("accessPort", 8080));
+
+				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+						"TemperatureProvider",
+						"temperatureInfo",
+						"1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(invalidPolicy)
+					);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_POLICY, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			},
+
+			// missing properties
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO intfMissingProperties = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of());
+
+				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+						"TemperatureProvider",
+						"temperatureInfo",
+						"1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intfMissingProperties)
+					);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(MISSING_PROPERTIES, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateServiceInstancesOk() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+
+			assertAll(
+
+				// nothing is empty
+				() -> {
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intf)
+						);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+					final List<ServiceInstanceRequestDTO> expected = List.of(instance);
+					when(normalizer.normalizeCreateServiceInstances(dto)).thenReturn(expected);
+					utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+					final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+
+					final List<ServiceInstanceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(expected, normalized);
+					verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+					verify(serviceDefNameValidator, times(1)).validateServiceDefinitionName("temperatureInfo");
+					verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
+					verify(interfaceValidator, times(1)).validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(intf));
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("indoor", true)));
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("accessPort", 8080)));
+					metadataValidationMock.close();
+				},
+
+				// empty expires at and metadata
+				() -> {
+					resetUtilitiesMock();
+
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							EMPTY,
+							Map.of(),
+							List.of(intf)
+						);
+
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+					final List<ServiceInstanceRequestDTO> expected = List.of(instance);
+					when(normalizer.normalizeCreateServiceInstances(dto)).thenReturn(expected);
+					final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+
+					final List<ServiceInstanceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(expected, normalized);
+					utilitiesMock.verify(() -> Utilities.parseUTCStringToZonedDateTime(anyString()), never());
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(any()), times(1)); // only interface properties
+					metadataValidationMock.close();
+				}
+			);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateServiceInstancesThrowsException() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+				"TemperatureProvider",
+				"temperatureInfo",
+				"1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf)
+			);
+
+			final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+			final List<ServiceInstanceRequestDTO> expected = List.of(instance);
+			when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+			when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+			when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+			when(normalizer.normalizeCreateServiceInstances(dto)).thenReturn(expected);
+			doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperatureProvider");
+
+			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+			assertEquals("Validation error", ex.getMessage());
+			assertEquals("test origin", ex.getOrigin());
+	}
+
+	// update
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesEmptyPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(new ServiceInstanceUpdateListRequestDTO(List.of()), "test origin"));
+		assertEquals(EMPTY_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesEmptyInstanceId() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+			EMPTY,
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(intf)
+		);
+
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+		assertEquals(EMPTY_INSTANCE_ID, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesDuplicatedInstanceId() {
+
+		final ServiceInstanceInterfaceRequestDTO intf1 = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceInterfaceRequestDTO intf2 = new ServiceInstanceInterfaceRequestDTO("generic_https", "https", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceUpdateRequestDTO instance1 = new ServiceInstanceUpdateRequestDTO(
+			"TemperatureProvider|temperatureInfo|1.0.0",
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(intf1)
+		);
+
+		final ServiceInstanceUpdateRequestDTO instance2 = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureProvider|temperatureInfo|1.0.0",
+				"2031-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf2)
+			);
+
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance1, instance2));
+
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime(instance1.expiresAt())).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime(instance2.expiresAt())).thenReturn(ZonedDateTime.of(2031, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+		assertEquals(DUPLICATED_INSTANCE_ID_PREFIX + "TemperatureProvider|temperatureInfo|1.0.0", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesInvalidExpiration() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+
+		assertAll(
+
+			// invalid format
+			() -> {
+
+				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+					"TemperatureProvider|temperatureInfo|1.0.0",
+					"2030.11.04.",
+					Map.of("indoor", true),
+					List.of(intf)
+				);
+
+				final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+				utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030.11.04.")).thenThrow(DateTimeException.class);
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+				assertEquals(INVALID_EXPIRATION_FORMAT, ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+			},
+
+			// invalid time
+			() -> {
+
+				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+						"TemperatureProvider|temperatureInfo|1.0.0",
+						"1990-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intf)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+					utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("1990-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(1990, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_EXPIRATION_DATE, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesEmptyServiceInterfaceList() {
+
+		final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureProvider|temperatureInfo|1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of()
+			);
+
+			final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+			when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+
+			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+			assertEquals(EMPTY_INTF_LIST, ex.getMessage());
+			assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateUpdateServiceInstancesInvalidInterface() {
+
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+
+		assertAll(
+
+			// missing template name
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO intfMissingName = new ServiceInstanceInterfaceRequestDTO(EMPTY, "http", "NONE", Map.of("accessPort", 8080));
+
+				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+						"TemperatureProvider|temperatureInfo|1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intfMissingName)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(MISSING_TEMPLATE_NAME, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			},
+
+			// missing policy
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO intfMissingPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", EMPTY, Map.of("accessPort", 8080));
+
+				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+						"TemperatureProvider|temperatureInfo|1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intfMissingPolicy)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(MISSING_POLICY, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			},
+
+			// invalid policy
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO invalidPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "MAGIC_TOKEN_AUTH", Map.of("accessPort", 8080));
+
+				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+						"TemperatureProvider|temperatureInfo|1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(invalidPolicy)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_POLICY, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			},
+
+			// missing properties
+			() -> {
+				final ServiceInstanceInterfaceRequestDTO intfMissingProperties = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of());
+
+				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+						"TemperatureProvider|temperatureInfo|1.0.0",
+						"2030-11-04T01:53:02Z",
+						Map.of("indoor", true),
+						List.of(intfMissingProperties)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(MISSING_PROPERTIES, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeUpdateServiceInstancesOk() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+
+			assertAll(
+
+				// nothing is empty
+				() -> {
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intf)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+					final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
+					when(normalizer.normalizeUpdateServiceInstances(dto)).thenReturn(expected);
+					utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+					final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+
+					final List<ServiceInstanceUpdateRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(expected, normalized);
+					verify(serviceInstanceIdentifierValidator, times(1)).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+					verify(interfaceValidator, times(1)).validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(intf));
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("indoor", true)));
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("accessPort", 8080)));
+					metadataValidationMock.close();
+				},
+
+				// empty expires at and metadata
+				() -> {
+					resetUtilitiesMock();
+
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							EMPTY,
+							Map.of(),
+							List.of(intf)
+					);
+
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+					final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
+					when(normalizer.normalizeUpdateServiceInstances(dto)).thenReturn(expected);
+					final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+
+					final List<ServiceInstanceUpdateRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(expected, normalized);
+					utilitiesMock.verify(() -> Utilities.parseUTCStringToZonedDateTime(anyString()), never());
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(any()), times(1)); // only interface properties
+					metadataValidationMock.close();
+				}
+			);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeUpdateServiceInstancesThrowsException() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
+		final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureProvider|temperatureInfo|1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf)
+			);
+
+			final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+			final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
+			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+			when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+			when(normalizer.normalizeUpdateServiceInstances(dto)).thenReturn(expected);
+			doThrow(new InvalidParameterException("Validation error")).when(serviceInstanceIdentifierValidator).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+
+			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+			assertEquals("Validation error", ex.getMessage());
+			assertEquals("test origin", ex.getOrigin());
+	}
+
+	// remove
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveServiceInstancesEmptyInstanceIds() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveServiceInstances(List.of(), "test origin"));
+		assertEquals(EMPTY_INSTANCE_ID_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveServiceInstancesOk() {
+
+		final List<String> instanceIds = List.of("TemperatureProvider|temperatureInfo|1.0.0", "TemperatureProvider|temperatureInfo|1.0.1");
+		when(normalizer.normalizeRemoveServiceInstances(instanceIds)).thenReturn(instanceIds);
+
+		final List<String> normalized = validator.validateAndNormalizeRemoveServiceInstances(instanceIds, "test origin");
+		assertEquals(instanceIds, normalized);
+		verify(normalizer, times(1)).normalizeRemoveServiceInstances(instanceIds);
+		verify(serviceInstanceIdentifierValidator, times(2)).validateServiceInstanceIdentifier(anyString());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveServiceInstancesThrowsException() {
+
+		final List<String> instanceIds = List.of("TemperatureProvider|temperatureInfo|1.0.0", "TemperätureProvider|temperatureInfo|1.0.1");
+		when(normalizer.normalizeRemoveServiceInstances(instanceIds)).thenReturn(instanceIds);
+		lenient().doThrow(new InvalidParameterException("Validation error")).when(serviceInstanceIdentifierValidator).validateServiceInstanceIdentifier("TemperätureProvider|temperatureInfo|1.0.1");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveServiceInstances(instanceIds, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// query
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesMandatoryFilterMissing() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of(),
+				List.of(),
+				List.of(),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(MANDATORY_FILTER_MISSING, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullOrEmptyInstanceId() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of(EMPTY),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_INSTANCE_ID, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullOrEmptyProviderName() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of(EMPTY),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_PROVIDER_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullOrEmptyServiceDefinition() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of(EMPTY),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_SERVICE_DEF, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullOrEmptyVersion() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of(EMPTY),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_VERSION, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesInvalidAliveTime() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2029-11-04")).thenThrow(DateTimeException.class);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(INVALID_ALIVES_AT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullMetadataRequirement() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final List<MetadataRequirementDTO> requirements = new ArrayList<MetadataRequirementDTO>(2);
+		requirements.add(metadataReq);
+		requirements.add(null);
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				requirements,
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		utilitiesMock.when(() -> Utilities.containsNull(requirements)).thenReturn(true);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_METADATA_REQ, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesInvalidAddress() {
+		// null or empty element
+		// invalid element
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullOrEmptyTemplate() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesNullPropertyRequirement() {
+		
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryServiceInstancesInvalidPolicy() {
+		// null or empty element
+		// invalid element
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void ValidateAndNormalizeQueryServiceInstancesOk() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void ValidateAndNormalizeQueryServiceInstancesThrowsException() {
+		
+	}
+
 	// INTERFACE
 
 	//=================================================================================================
@@ -1475,5 +2491,7 @@ public class ManagementValidationTest {
     	utilitiesMock.when(() -> Utilities.isEnumValue("MAC", AddressType.class)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.containsNullOrEmpty((List<String>)List.of(EMPTY))).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.utcNow()).thenReturn(ZonedDateTime.of(2025, 8, 4, 1, 53, 2, 0, ZoneId.of("UTC"))); // fictive date of testing
+    	utilitiesMock.when(() -> Utilities.isEnumValue("NONE", ServiceInterfacePolicy.class)).thenReturn(true);
     }
 }

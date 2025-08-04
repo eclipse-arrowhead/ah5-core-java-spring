@@ -798,7 +798,7 @@ public class ManagementValidation {
 				}
 
 				if (!Utilities.isEnumValue(interfaceDTO.policy().toUpperCase(), ServiceInterfacePolicy.class)) {
-					throw new InvalidParameterException("Invalid inteface policy", origin);
+					throw new InvalidParameterException("Invalid interface policy", origin);
 				}
 
 				if (Utilities.isEmpty(interfaceDTO.properties())) {
@@ -826,12 +826,12 @@ public class ManagementValidation {
 		for (final ServiceInstanceUpdateRequestDTO instance : dto.instances()) {
 			// instance id
 			if (Utilities.isEmpty(instance.instanceId())) {
-				throw new InvalidParameterException("Instance id is empty");
+				throw new InvalidParameterException("Instance id is empty", origin);
 			}
 
 			final String normalized = serviceInstanceIdentifierNormalizer.normalize(instance.instanceId());
 			if (instanceIds.contains(normalized)) {
-				throw new InvalidParameterException("Duplicated instance id: " + instance.instanceId());
+				throw new InvalidParameterException("Duplicated instance id: " + instance.instanceId(), origin);
 			}
 
 			instanceIds.add(normalized);
