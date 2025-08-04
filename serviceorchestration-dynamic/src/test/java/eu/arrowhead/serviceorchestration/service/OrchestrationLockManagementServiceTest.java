@@ -281,7 +281,6 @@ public class OrchestrationLockManagementServiceTest {
 		final OrchestrationLockQueryRequestDTO requestDTO = new OrchestrationLockQueryRequestDTO(null, null, null, List.of("TestProvider|testService|1.0.0"), null, null, null);
 		final OrchestrationLock lockRecord = new OrchestrationLock("TestProvider|testService|1.0.0", "TestManager", null);
 		lockRecord.setId(1);
-		final PageImpl<OrchestrationLock> lockPage = new PageImpl<OrchestrationLock>(List.of(lockRecord));
 
 		when(validator.validateAndNormalizeQueryService(eq(requestDTO), eq(origin))).thenReturn(requestDTO);
 		when(pageService.getPageRequest(any(), any(), anyList(), anyString(), eq(origin))).thenReturn(PageRequest.of(0, 1));
