@@ -2,7 +2,9 @@ package eu.arrowhead.authorization.service.validation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -24,10 +26,13 @@ import org.springframework.data.util.Pair;
 
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyInstanceIdentifierNormalizer;
 import eu.arrowhead.authorization.service.normalization.AuthorizationPolicyRequestNormalizer;
 import eu.arrowhead.authorization.service.normalization.AuthorizationScopeNormalizer;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.cloud.CloudIdentifierValidator;
@@ -40,6 +45,7 @@ import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.AuthorizationGrantRequestDTO;
 import eu.arrowhead.dto.AuthorizationLookupRequestDTO;
 import eu.arrowhead.dto.AuthorizationPolicyRequestDTO;
+import eu.arrowhead.dto.AuthorizationVerifyRequestDTO;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationPolicyType;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
@@ -505,7 +511,6 @@ public class AuthorizationValidationTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeLookupRequestInvalidTargetType() {
-
 		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
 				null,
 				List.of("LOCAL"),
@@ -516,5 +521,357 @@ public class AuthorizationValidationTest {
 				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
 
 		assertEquals("Target type is invalid: invalid", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestExceptionInAValidator() {
+		when(instanceIdNormalizer.normalize("PR|LOCAL|ProviderName|SERVICE_DEF|testService")).thenReturn("PR|LOCAL|ProviderName|SERVICE_DEF|testService");
+		when(serviceDefNameNormalizer.normalize("testService")).thenReturn("testService");
+		doThrow(new InvalidParameterException("test")).when(systemNameValidator).validateSystemName("ProviderName");
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				List.of("PR|LOCAL|ProviderName|SERVICE_DEF|testService"),
+				null,
+				List.of("testService"),
+				"service_def");
+
+		final ArrowheadException ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin"));
+
+		verify(instanceIdNormalizer).normalize("PR|LOCAL|ProviderName|SERVICE_DEF|testService");
+		verify(cloudIdentifierNormalizer, never()).normalize(anyString());
+		verify(serviceDefNameNormalizer).normalize("testService");
+		verify(eventTypeNameNormalizer, never()).normalize(anyString());
+		verify(systemNameValidator).validateSystemName("ProviderName");
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("testOrigin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestOk1() {
+		when(cloudIdentifierNormalizer.normalize("LOCAL")).thenReturn("LOCAL");
+		doNothing().when(systemNameValidator).validateSystemName("ProviderName");
+		doNothing().when(cloudIdentifierValidator).validateCloudIdentifier("LOCAL");
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				null,
+				List.of("LOCAL"),
+				null,
+				null);
+
+		final NormalizedLookupRequest result = validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin");
+
+		final InOrder cloudOrderValidator = Mockito.inOrder(cloudIdentifierNormalizer, cloudIdentifierValidator);
+
+		verify(instanceIdNormalizer, never()).normalize(anyString());
+		cloudOrderValidator.verify(cloudIdentifierNormalizer).normalize("LOCAL");
+		verify(serviceDefNameNormalizer, never()).normalize(anyString());
+		verify(eventTypeNameNormalizer, never()).normalize(anyString());
+		verify(systemNameValidator).validateSystemName("ProviderName");
+		cloudOrderValidator.verify(cloudIdentifierValidator).validateCloudIdentifier("LOCAL");
+
+		assertEquals(1, result.providers().size());
+		assertEquals("ProviderName", result.providers().get(0));
+		assertNull(result.instanceIds());
+		assertEquals(1, result.cloudIdentifiers().size());
+		assertEquals("LOCAL", result.cloudIdentifiers().get(0));
+		assertNull(result.targetNames());
+		assertNull(result.targetType());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestOk2() {
+		when(instanceIdNormalizer.normalize("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent")).thenReturn("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent");
+		when(eventTypeNameNormalizer.normalize("testEvent")).thenReturn("testEvent");
+		doNothing().when(systemNameValidator).validateSystemName("ProviderName");
+		doNothing().when(instanceIdValidator).validateInstanceIdentifier("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent");
+		doNothing().when(eventTypeNameValidator).validateEventTypeName("testEvent");
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				List.of("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent"),
+				null,
+				List.of("testEvent"),
+				"EVENT_TYPE");
+
+		final NormalizedLookupRequest result = validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin");
+
+		final InOrder instanceOrderValidator = Mockito.inOrder(instanceIdNormalizer, instanceIdValidator);
+		final InOrder eventTypeOrderValidator = Mockito.inOrder(eventTypeNameNormalizer, eventTypeNameValidator);
+
+		instanceOrderValidator.verify(instanceIdNormalizer).normalize("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent");
+		verify(cloudIdentifierNormalizer, never()).normalize(anyString());
+		verify(serviceDefNameNormalizer, never()).normalize(anyString());
+		eventTypeOrderValidator.verify(eventTypeNameNormalizer).normalize("testEvent");
+		verify(systemNameValidator).validateSystemName("ProviderName");
+		instanceOrderValidator.verify(instanceIdValidator).validateInstanceIdentifier("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent");
+		eventTypeOrderValidator.verify(eventTypeNameValidator).validateEventTypeName("testEvent");
+
+		assertEquals(1, result.providers().size());
+		assertEquals("ProviderName", result.providers().get(0));
+		assertEquals(1, result.instanceIds().size());
+		assertEquals("PR|LOCAL|ProviderName|EVENT_TYPE|testEvent", result.instanceIds().get(0));
+		assertNull(result.cloudIdentifiers());
+		assertEquals(1, result.targetNames().size());
+		assertEquals("testEvent", result.targetNames().get(0));
+		assertEquals(AuthorizationTargetType.EVENT_TYPE, result.targetType());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupRequestOk3() {
+		when(serviceDefNameNormalizer.normalize("testService")).thenReturn("testService");
+		doNothing().when(systemNameValidator).validateSystemName("ProviderName");
+		doNothing().when(serviceDefNameValidator).validateServiceDefinitionName("testService");
+
+		final AuthorizationLookupRequestDTO request = new AuthorizationLookupRequestDTO(
+				null,
+				null,
+				List.of("testService"),
+				"SERVICE_DEF");
+
+		final NormalizedLookupRequest result = validator.validateAndNormalizeLookupRequest("ProviderName", request, "testOrigin");
+
+		final InOrder serviceDefOrderValidator = Mockito.inOrder(serviceDefNameNormalizer, serviceDefNameValidator);
+
+		verify(instanceIdNormalizer, never()).normalize(anyString());
+		verify(cloudIdentifierNormalizer, never()).normalize(anyString());
+		serviceDefOrderValidator.verify(serviceDefNameNormalizer).normalize("testService");
+		verify(eventTypeNameNormalizer, never()).normalize(anyString());
+		verify(systemNameValidator).validateSystemName("ProviderName");
+		serviceDefOrderValidator.verify(serviceDefNameValidator).validateServiceDefinitionName("testService");
+
+		assertEquals(1, result.providers().size());
+		assertEquals("ProviderName", result.providers().get(0));
+		assertNull(result.instanceIds());
+		assertNull(result.cloudIdentifiers());
+		assertEquals(1, result.targetNames().size());
+		assertEquals("testService", result.targetNames().get(0));
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, result.targetType());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestOriginEmpty() {
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(null, null, null, null, null, null);
+
+		final Throwable ex = assertThrows(IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("ProviderName", request, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestNullRequest() {
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("ProviderName", null, "testOrigin"));
+
+		assertEquals("Request payload is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestProviderOrConsumerIsMandatory() {
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(null, null, null, null, null, null);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Either provider or consumer must be specified", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestMissingTargetType() {
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				"ProviderName",
+				"ConsumerName",
+				null,
+				null,
+				"testService",
+				"op");
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Target type is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestInvalidTargetType() {
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				null,
+				"ConsumerName",
+				null,
+				"invalid",
+				"testService",
+				"op");
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Target type is invalid: invalid", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestMissingTarget() {
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				"ProviderName",
+				null,
+				null,
+				"service_def",
+				"",
+				"op");
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("ProviderName", request, "testOrigin"));
+
+		assertEquals("Target is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestNotRelatedRequester() {
+		when(systemNameNormalizer.normalize("ProviderName")).thenReturn("ProviderName");
+		when(systemNameNormalizer.normalize("ConsumerName")).thenReturn("ConsumerName");
+
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				"ProviderName",
+				"ConsumerName",
+				null,
+				"service_def",
+				"testService",
+				"op");
+
+		final Throwable ex = assertThrows(ForbiddenException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("Requester", request, "testOrigin"));
+
+		verify(systemNameNormalizer).normalize("ProviderName");
+		verify(systemNameNormalizer).normalize("ConsumerName");
+
+		assertEquals("Only the related provider or consumer can use this operation", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestExceptionInAValidator() {
+		when(systemNameNormalizer.normalize("ProviderName")).thenReturn("ProviderName");
+		when(serviceDefNameNormalizer.normalize("testService")).thenReturn("testService");
+		when(scopeNormalizer.normalize("op")).thenReturn("op");
+		doThrow(new InvalidParameterException("test")).when(systemNameValidator).validateSystemName("ProviderName");
+
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				"ProviderName",
+				null,
+				null,
+				"service_def",
+				"testService",
+				"op");
+
+		final ArrowheadException ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeVerifyRequest("Requester", request, "testOrigin"));
+
+		verify(systemNameNormalizer).normalize("ProviderName");
+		verify(serviceDefNameNormalizer).normalize("testService");
+		verify(eventTypeNameNormalizer, never()).normalize(anyString());
+		verify(cloudIdentifierNormalizer, never()).normalize(anyString());
+		verify(scopeNormalizer).normalize("op");
+		verify(systemNameValidator).validateSystemName("ProviderName");
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("testOrigin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestOk1() {
+		when(systemNameNormalizer.normalize("ConsumerName")).thenReturn("ConsumerName");
+		when(serviceDefNameNormalizer.normalize("testService")).thenReturn("testService");
+		when(cloudIdentifierNormalizer.normalize("LOCAL")).thenReturn("LOCAL");
+		when(scopeNormalizer.normalize("op")).thenReturn("op");
+		doNothing().when(systemNameValidator).validateSystemName("Requester");
+		doNothing().when(systemNameValidator).validateSystemName("ConsumerName");
+		doNothing().when(cloudIdentifierValidator).validateCloudIdentifier("LOCAL");
+		doNothing().when(serviceDefNameValidator).validateServiceDefinitionName("testService");
+		doNothing().when(scopeValidator).validateScope("op");
+
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				null,
+				"ConsumerName",
+				"LOCAL",
+				"service_def",
+				"testService",
+				"op");
+
+		final NormalizedVerifyRequest result = validator.validateAndNormalizeVerifyRequest("Requester", request, "testOrigin");
+
+		final InOrder systemOrderValidator = Mockito.inOrder(systemNameNormalizer, systemNameValidator);
+		final InOrder serviceDefOrderValidator = Mockito.inOrder(serviceDefNameNormalizer, serviceDefNameValidator);
+		final InOrder cloudOrderValidator = Mockito.inOrder(cloudIdentifierNormalizer, cloudIdentifierValidator);
+		final InOrder scopeOrderValidator = Mockito.inOrder(scopeNormalizer, scopeValidator);
+
+		systemOrderValidator.verify(systemNameNormalizer).normalize("ConsumerName");
+		serviceDefOrderValidator.verify(serviceDefNameNormalizer).normalize("testService");
+		verify(eventTypeNameNormalizer, never()).normalize(anyString());
+		cloudOrderValidator.verify(cloudIdentifierNormalizer).normalize("LOCAL");
+		scopeOrderValidator.verify(scopeNormalizer).normalize("op");
+		systemOrderValidator.verify(systemNameValidator).validateSystemName("Requester");
+		systemOrderValidator.verify(systemNameValidator).validateSystemName("ConsumerName");
+		cloudOrderValidator.verify(cloudIdentifierValidator).validateCloudIdentifier("LOCAL");
+		serviceDefOrderValidator.verify(serviceDefNameValidator).validateServiceDefinitionName("testService");
+		scopeOrderValidator.verify(scopeValidator).validateScope("op");
+
+		assertEquals("Requester", result.provider());
+		assertEquals("ConsumerName", result.consumer());
+		assertEquals("LOCAL", result.cloud());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, result.targetType());
+		assertEquals("testService", result.target());
+		assertEquals("op", result.scope());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeVerifyRequestOk2() {
+		when(systemNameNormalizer.normalize("ProviderName")).thenReturn("ProviderName");
+		when(systemNameNormalizer.normalize("ConsumerName")).thenReturn("ConsumerName");
+		when(eventTypeNameNormalizer.normalize("testEvent")).thenReturn("testEvent");
+		doNothing().when(systemNameValidator).validateSystemName("ProviderName");
+		doNothing().when(systemNameValidator).validateSystemName("ConsumerName");
+		doNothing().when(cloudIdentifierValidator).validateCloudIdentifier("LOCAL");
+		doNothing().when(eventTypeNameValidator).validateEventTypeName("testEvent");
+
+		final AuthorizationVerifyRequestDTO request = new AuthorizationVerifyRequestDTO(
+				"ProviderName",
+				"ConsumerName",
+				null,
+				"event_type",
+				"testEvent",
+				null);
+
+		final NormalizedVerifyRequest result = validator.validateAndNormalizeVerifyRequest("ProviderName", request, "testOrigin");
+
+		final InOrder systemOrderValidator = Mockito.inOrder(systemNameNormalizer, systemNameValidator);
+		final InOrder eventOrderValidator = Mockito.inOrder(eventTypeNameNormalizer, eventTypeNameValidator);
+
+		systemOrderValidator.verify(systemNameNormalizer).normalize("ProviderName");
+		systemOrderValidator.verify(systemNameNormalizer).normalize("ConsumerName");
+		verify(serviceDefNameNormalizer, never()).normalize(anyString());
+		eventOrderValidator.verify(eventTypeNameNormalizer).normalize("testEvent");
+		systemOrderValidator.verify(systemNameValidator).validateSystemName("ProviderName");
+		systemOrderValidator.verify(systemNameValidator).validateSystemName("ConsumerName");
+		eventOrderValidator.verify(eventTypeNameValidator).validateEventTypeName("testEvent");
+
+		assertEquals("ProviderName", result.provider());
+		assertEquals("ConsumerName", result.consumer());
+		assertEquals("LOCAL", result.cloud());
+		assertEquals(AuthorizationTargetType.EVENT_TYPE, result.targetType());
+		assertEquals("testEvent", result.target());
+		assertNull(result.scope());
 	}
 }

@@ -286,7 +286,7 @@ public class AuthorizationValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateLookupRequest(final AuthorizationLookupRequestDTO dto, final String origin) {
+	private void validateLookupRequest(final AuthorizationLookupRequestDTO dto, final String origin) {
 		logger.debug("validateLookupRequest started...");
 
 		if (dto == null) {
@@ -331,7 +331,6 @@ public class AuthorizationValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateVerifyRequest(final AuthorizationVerifyRequestDTO dto, final String origin) {
 		logger.debug("validateVerifyRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -350,7 +349,7 @@ public class AuthorizationValidation {
 		final String targetTypeName = dto.targetType().trim().toUpperCase();
 
 		if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-			throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+			throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 		}
 
 		// target

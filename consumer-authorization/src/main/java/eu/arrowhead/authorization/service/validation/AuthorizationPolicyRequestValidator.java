@@ -45,7 +45,7 @@ public class AuthorizationPolicyRequestValidator {
 		final String policyTypeName = dto.policyType().trim().toUpperCase();
 
 		if (!Utilities.isEnumValue(policyTypeName, AuthorizationPolicyType.class)) {
-			throw new InvalidParameterException("Policy type is invalid: " + policyTypeName, origin);
+			throw new InvalidParameterException("Policy type is invalid: " + dto.policyType(), origin);
 		}
 
 		final AuthorizationPolicyType policyType = AuthorizationPolicyType.valueOf(policyTypeName);
