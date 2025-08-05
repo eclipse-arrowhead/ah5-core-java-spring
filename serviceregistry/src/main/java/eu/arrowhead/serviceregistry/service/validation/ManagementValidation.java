@@ -1041,7 +1041,7 @@ public class ManagementValidation {
 						}
 
 						if (Utilities.containsNullOrEmpty(propertyDTO.validatorParams())) {
-							throw new InvalidParameterException("Interface template property validator parameter list contains empty element", origin);
+							throw new InvalidParameterException("Interface template property validator parameter list contains null or empty element", origin);
 						}
 					}
 				}

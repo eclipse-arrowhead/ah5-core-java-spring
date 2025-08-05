@@ -63,6 +63,9 @@ import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
@@ -183,6 +186,16 @@ public class ManagementValidationTest {
 	private static final String NULL_PROPERTY_REQUIREMENT = "Interface property requirements list contains null element";
 	private static final String NULL_OR_EMPTY_POLICY = "Policy list contains null or empty element";
 	private static final String INVALID_POLICY_PREFIX = "Policy list contains invalid element: ";
+	private static final String NULL_TEMPLATE = "Interface template list contains null element";
+	private static final String EMPTY_TEMPLATE_NAME = "Interface template name is empty";
+	private static final String DUPLICATED_TEMPLATE_NAME_PREFIX = "Duplicated interface template name: ";
+	private static final String EMPTY_TEMPLATE_PROTOCOL = "Interface template protocol is empty";
+	private static final String NULL_TEMPLATE_PROPERTY = "Interface template contains null property";
+	private static final String EMPTY_TEMPLATE_PROPERTY_NAME = "Interface template property name is empty";
+	private static final String INVALID_TEMPLATE_PROPERTY_NAME = "Invalid interface template property name: {}, it should not contain . character";
+	private static final String DUPLICATED_TEMPLATE_PROPERTY_NAME_PREFIX = "Duplicate interface template property name: ";
+	private static final String EMPTY_VALIDATOR = "Interface template property validator is empty while validator params are defined";
+	private static final String NULL_OR_EMPTY_VALIDATOR_PARAMETER = "Interface template property validator parameter list contains null or empty element";
 
 	//=================================================================================================
 	// methods
@@ -2710,6 +2723,315 @@ public class ManagementValidationTest {
 	}
 
 	// INTERFACE
+
+	// create
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesEmptyPayload() {
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of());
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesNullTemplate() {
+
+		final List<ServiceInterfaceTemplateRequestDTO> templates = new ArrayList<ServiceInterfaceTemplateRequestDTO>(1);
+		templates.add(null);
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(templates);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(NULL_TEMPLATE, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesEmptyTemplateName() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO(EMPTY, "http", List.of(propRequirement));
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_TEMPLATE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesDuplicatedTemplate() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template1 = new ServiceInterfaceTemplateRequestDTO("generic_http", "http1.1", List.of(propRequirement));
+		final ServiceInterfaceTemplateRequestDTO template2 = new ServiceInterfaceTemplateRequestDTO("generic_http", "http2.0", List.of());
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template1, template2));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(DUPLICATED_TEMPLATE_NAME_PREFIX + "generic_http", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesEmptyProtocol() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", EMPTY, List.of(propRequirement));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_TEMPLATE_PROTOCOL, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesNullProperty() {
+
+		final List<ServiceInterfaceTemplatePropertyDTO> requirements = new ArrayList<ServiceInterfaceTemplatePropertyDTO>(1);
+		requirements.add(null);
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", requirements);
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(NULL_TEMPLATE_PROPERTY, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesEmptyPropertyName() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				EMPTY,
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_TEMPLATE_PROPERTY_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesInvalidPropertyName() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"http.operations",
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(INVALID_TEMPLATE_PROPERTY_NAME.replace("{}", "http.operations"), ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesDuplicatePropertyName() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement1 = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement2 = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				false,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement1, propRequirement2));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(DUPLICATED_TEMPLATE_PROPERTY_NAME_PREFIX + "generic_http|operations", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesEmptyValidator() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				EMPTY,
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_VALIDATOR, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateCreateInterfaceTemplatesNullOrEmptyValidatorParam() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				"not_empty_string_set",
+				List.of(EMPTY));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_VALIDATOR_PARAMETER, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify((() -> Utilities.containsNullOrEmpty(List.of(EMPTY))));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateInterfaceTemplatesOk() {
+
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		assertAll(
+
+			// nothing is empty
+			() -> {
+				final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+						"operations",
+						true,
+						"not_empty_string_set",
+						List.of("operation"));
+
+				final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+
+				final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+				when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+
+				final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+				assertEquals(dto, normalized);
+				verify(normalizer, times(1)).normalizeServiceInterfaceTemplateListRequestDTO(dto);
+				verify(interfaceValidator, times(1)).validateNormalizedInterfaceTemplates(List.of(template));
+			},
+
+			// requirements is empty
+			() -> {
+
+				final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of());
+
+				final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+				when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+
+				final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+				assertEquals(dto, normalized);
+			},
+
+			// validator params is empty
+			() -> {
+
+				final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+						"operations",
+						true,
+						"not_empty_string_set",
+						List.of());
+
+				final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+
+				final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+				when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+
+				final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+				assertEquals(dto, normalized);
+			}
+		);
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeCreateInterfaceTemplatesThrowsException() {
+
+		final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+				"operations",
+				true,
+				"not_empty_string_set",
+				List.of("operation"));
+
+		final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+		when(interfaceTemplateNameNormalizer.normalize("generic_http")).thenReturn("generic_http");
+
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+		when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+
+		doThrow(new InvalidParameterException("Validation error")).when(interfaceValidator).validateNormalizedInterfaceTemplates(List.of(template));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	// query
+
+	// remove
 
 	//=================================================================================================
 	// assistant methods
