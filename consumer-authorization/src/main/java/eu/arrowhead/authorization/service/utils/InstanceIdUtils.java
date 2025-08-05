@@ -36,7 +36,10 @@ public final class InstanceIdUtils {
 
 		final String[] split = instanceId.split(Constants.COMPOSITE_ID_DELIMITER_REGEXP);
 		Assert.isTrue(split.length >= INSTANCE_ID_MIN_PARTS, "Invalid instance id");
+
 		final boolean isLocal = split.length == INSTANCE_ID_MIN_PARTS && Defaults.DEFAULT_CLOUD.equalsIgnoreCase(split[1].trim());
+		final int expectedLength = isLocal ? INSTANCE_ID_MIN_PARTS : INSTANCE_ID_MIN_PARTS + 1;
+		Assert.isTrue(split.length == expectedLength, "Invalid instance id");
 
 		return isLocal ? split[2] : split[3];
 	}

@@ -301,7 +301,6 @@ public class AuthorizationManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateRevokePoliciesInput(final List<String> instanceIds, final String origin) {
 		logger.debug("validateRevokePoliciesInput started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(instanceIds)) {
 			throw new InvalidParameterException("Instance id list is missing", origin);
@@ -315,7 +314,6 @@ public class AuthorizationManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateQueryRequest(final AuthorizationQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -328,7 +326,7 @@ public class AuthorizationManagementValidation {
 
 		final String levelName = dto.level().trim().toUpperCase();
 		if (!Utilities.isEnumValue(levelName, AuthorizationLevel.class)) {
-			throw new InvalidParameterException("Level is invalid: " + levelName, origin);
+			throw new InvalidParameterException("Level is invalid: " + dto.level(), origin);
 		}
 
 		// page
@@ -360,7 +358,7 @@ public class AuthorizationManagementValidation {
 			final String targetTypeName = dto.targetType().trim().toUpperCase();
 
 			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+				throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 			}
 		}
 
@@ -370,8 +368,7 @@ public class AuthorizationManagementValidation {
 				throw new InvalidParameterException("Target names list contains null or empty element", origin);
 			}
 
-			if (Utilities.isEmpty(dto.targetType())
-					|| !Utilities.isEnumValue(dto.targetType().trim().toUpperCase(), AuthorizationTargetType.class)) {
+			if (Utilities.isEmpty(dto.targetType())) { // if not empty then it is valid because we have already checked that before
 				throw new InvalidParameterException("If target names list is specified then a valid target type is mandatory", origin);
 			}
 		}
@@ -386,10 +383,13 @@ public class AuthorizationManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateVerifyListRequest(final AuthorizationVerifyListRequestDTO dto, final String origin) {
 		logger.debug("validateVerifyListRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null || Utilities.isEmpty(dto.list())) {
 			throw new InvalidParameterException("Request payload is missing", origin);
+		}
+
+		if (Utilities.containsNull(dto.list())) {
+			throw new InvalidParameterException("Request payload list contains null element", origin);
 		}
 
 		for (final AuthorizationVerifyRequestDTO request : dto.list()) {
@@ -400,11 +400,6 @@ public class AuthorizationManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateVerifyRequest(final AuthorizationVerifyRequestDTO dto, final String origin) {
 		logger.debug("validateVerifyRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
-
-		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
-		}
 
 		// provider
 		if (Utilities.isEmpty(dto.provider())) {
@@ -423,7 +418,7 @@ public class AuthorizationManagementValidation {
 
 		final String targetTypeName = dto.targetType().trim().toUpperCase();
 		if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-			throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+			throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 		}
 
 		// target
