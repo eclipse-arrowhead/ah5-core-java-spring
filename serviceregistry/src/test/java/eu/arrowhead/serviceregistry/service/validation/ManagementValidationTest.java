@@ -65,6 +65,7 @@ import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
@@ -196,6 +197,8 @@ public class ManagementValidationTest {
 	private static final String DUPLICATED_TEMPLATE_PROPERTY_NAME_PREFIX = "Duplicate interface template property name: ";
 	private static final String EMPTY_VALIDATOR = "Interface template property validator is empty while validator params are defined";
 	private static final String NULL_OR_EMPTY_VALIDATOR_PARAMETER = "Interface template property validator parameter list contains null or empty element";
+	private static final String EMPTY_INTERFACE_TEMPLATE_NAME = "Interface template name list contains empty element";
+	private static final String EMPTY_PROTOCOL = "Interface template protocol list contains empty element";
 
 	//=================================================================================================
 	// methods
@@ -3030,6 +3033,83 @@ public class ManagementValidationTest {
 	}
 
 	// query
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryInterfaceTemplatesEmptyTemplateName() {
+
+		final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of(EMPTY), List.of("tcp"));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_INTERFACE_TEMPLATE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(List.of(EMPTY)));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateQueryInterfaceTemplatesNullOrEmptyProtocol() {
+
+		final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_mqtt"), List.of(EMPTY));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+		assertEquals(EMPTY_PROTOCOL, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(List.of(EMPTY)));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQueryInterfaceTemplatesOk() {
+
+		assertAll(
+
+			// nothing is null
+			() -> {
+				final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_mqtt"), List.of("tcp"));
+				when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
+
+				final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+				assertEquals(dto, normalized);
+				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+				verify(normalizer, times(1)).normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
+				verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_mqtt");
+			},
+
+			// everything is null
+			() -> {
+				final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(null, List.of(), List.of());
+				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+				when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
+
+				final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+				assertEquals(expected, normalized);
+			},
+
+			// dto is null
+			() -> {
+				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+				when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(null)).thenReturn(expected);
+
+				final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(null, "test origin"));
+				assertEquals(expected, normalized);
+			}
+		);
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQueryInterfaceTemplatesThrowsException() {
+
+		final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_mqtt"), List.of("tcp"));
+		when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
+		doThrow(new InvalidParameterException("Validation error")).when(interfaceTemplateNameValidator).validateInterfaceTemplateName("generic_mqtt");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
 
 	// remove
 
