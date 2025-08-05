@@ -895,81 +895,85 @@ public class ManagementValidation {
 	private void validateQueryServiceInstances(final ServiceInstanceQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryServiceInstances started");
 
-		if (dto != null) {
-			// pagination
-			pageValidator.validatePageParameter(dto.pagination(), ServiceInstance.SORTABLE_FIELDS_BY, origin);
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
 
-			// check if instanceIds, providerNames and serviceDefinitionNames are all empty
-			if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
-				throw new InvalidParameterException("One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'", origin);
+		// pagination
+		pageValidator.validatePageParameter(dto.pagination(), ServiceInstance.SORTABLE_FIELDS_BY, origin);
+
+		// check if instanceIds, providerNames and serviceDefinitionNames are all empty
+		if (Utilities.isEmpty(dto.instanceIds()) && Utilities.isEmpty(dto.providerNames()) && Utilities.isEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("One of the following filters must be used: 'instanceIds', 'providerNames', 'serviceDefinitionNames'", origin);
+		}
+
+		// instanceIds
+		if (!Utilities.isEmpty(dto.instanceIds()) && Utilities.containsNullOrEmpty(dto.instanceIds())) {
+			throw new InvalidParameterException("Instance id list contains null or empty element", origin);
+		}
+
+		// providerNames
+		if (!Utilities.isEmpty(dto.providerNames()) && Utilities.containsNullOrEmpty(dto.providerNames())) {
+			throw new InvalidParameterException("Provider name list contains null or empty element", origin);
+		}
+
+		// serviceDefinitionNames
+		if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
+		}
+
+		// versions
+		if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
+			throw new InvalidParameterException("Version list contains null or empty element", origin);
+		}
+
+		// alivesAt
+		if (!Utilities.isEmpty(dto.alivesAt())) {
+			try {
+				Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
+			} catch (final DateTimeException ex) {
+				throw new InvalidParameterException("Alive time has an invalid time format", origin);
 			}
+		}
 
-			// instanceIds
-			if (!Utilities.isEmpty(dto.instanceIds()) && Utilities.containsNullOrEmpty(dto.instanceIds())) {
-				throw new InvalidParameterException("Instance id list contains null or empty element", origin);
-			}
+		// metadataRequirementsList
+		if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
+			throw new InvalidParameterException("Metadata requirements list contains null element", origin);
+		}
 
-			// providerNames
-			if (!Utilities.isEmpty(dto.providerNames()) && Utilities.containsNullOrEmpty(dto.providerNames())) {
-				throw new InvalidParameterException("Provider name list contains null or empty element", origin);
-			}
+		if (!Utilities.isEmpty(dto.addressTypes())) {
+			for (final String type : dto.addressTypes()) {
+				if (Utilities.isEmpty(type)) {
+					throw new InvalidParameterException("Address type list contains null or empty element", origin);
+				}
 
-			// serviceDefinitionNames
-			if (!Utilities.isEmpty(dto.serviceDefinitionNames()) && Utilities.containsNullOrEmpty(dto.serviceDefinitionNames())) {
-				throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
-			}
-
-			// versions
-			if (!Utilities.isEmpty(dto.versions()) && Utilities.containsNullOrEmpty(dto.versions())) {
-				throw new InvalidParameterException("Version list contains null or empty element", origin);
-			}
-
-			// alivesAt
-			if (!Utilities.isEmpty(dto.alivesAt())) {
-				try {
-					Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
-				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Alive time has an invalid time format", origin);
+				if (!Utilities.isEnumValue(type.toUpperCase(), AddressType.class)) {
+					throw new InvalidParameterException("Address type list contains invalid element: " + type, origin);
 				}
 			}
+		}
 
-			// metadataRequirementsList
-			if (!Utilities.isEmpty(dto.metadataRequirementsList()) && Utilities.containsNull(dto.metadataRequirementsList())) {
-				throw new InvalidParameterException("Metadata requirements list contains null element", origin);
-			}
+		// interfaceTemplateNames
+		if (!Utilities.isEmpty(dto.interfaceTemplateNames())
+				&& Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
+			throw new InvalidParameterException("Interface template list contains null or empty element", origin);
+		}
 
-			if (!Utilities.isEmpty(dto.addressTypes())) {
-				for (final String type : dto.addressTypes()) {
-					if (Utilities.isEmpty(type)) {
-						throw new InvalidParameterException("Address type list contains null or empty element", origin);
-					}
+		// interfacePropertyRequirementsList
+		if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList())
+				&& Utilities.containsNull(dto.interfacePropertyRequirementsList())) {
+			throw new InvalidParameterException("Interface property requirements list contains null element", origin);
+		}
 
-					if (!Utilities.isEnumValue(type.toUpperCase(), AddressType.class)) {
-						throw new InvalidParameterException("Address type list contains invalid element: " + type, origin);
-					}
+		// policies
+		if (!Utilities.isEmpty(dto.policies())) {
+			for (final String policy : dto.policies()) {
+				if (Utilities.isEmpty(policy)) {
+					throw new InvalidParameterException("Policy list contains null or empty element", origin);
 				}
-			}
 
-			// interfaceTemplateNames
-			if (!Utilities.isEmpty(dto.interfaceTemplateNames()) && Utilities.containsNullOrEmpty(dto.interfaceTemplateNames())) {
-				throw new InvalidParameterException("Interface template list contains null or empty element", origin);
-			}
-
-			// interfacePropertyRequirementsList
-			if (!Utilities.isEmpty(dto.interfacePropertyRequirementsList()) && Utilities.containsNull(dto.interfacePropertyRequirementsList())) {
-				throw new InvalidParameterException("Interface property requirements list contains null element", origin);
-			}
-
-			// policies
-			if (!Utilities.isEmpty(dto.policies())) {
-				for (final String policy : dto.policies()) {
-					if (Utilities.isEmpty(policy)) {
-						throw new InvalidParameterException("Policy list contains null or empty element", origin);
-					}
-
-					if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
-						throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
-					}
+				if (!Utilities.isEnumValue(policy.toUpperCase(), ServiceInterfacePolicy.class)) {
+					throw new InvalidParameterException("Policy list contains invalid element: " + policy, origin);
 				}
 			}
 		}

@@ -178,7 +178,7 @@ public class ManagementValidationTest {
 	private static final String INVALID_ALIVES_AT = "Alive time has an invalid time format";
 	private static final String NULL_METADATA_REQ = "Metadata requirements list contains null element";
 	private static final String NULL_OR_EMPTY_ADDRESS_TYPE = "Address type list contains null or empty element";
-	private static final String INVALID_ADDRESS_TYPE__ELEMENT_PREFIX = "Address type list contains invalid element: ";
+	private static final String INVALID_ADDRESS_TYPE_ELEMENT_PREFIX = "Address type list contains invalid element: ";
 	private static final String NULL_OR_EMPTY_TEMPTLATE = "Interface template list contains null or empty element";
 	private static final String NULL_PROPERTY_REQUIREMENT = "Interface property requirements list contains null element";
 	private static final String NULL_OR_EMPTY_POLICY = "Policy list contains null or empty element";
@@ -2194,6 +2194,15 @@ public class ManagementValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testValidateQueryServiceInstancesMissingPayload() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(null, "test origin"));
+		assertEquals(MISSING_PAYLOAD, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testValidateQueryServiceInstancesMandatoryFilterMissing() {
 
 		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
@@ -2399,33 +2408,279 @@ public class ManagementValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateQueryServiceInstancesInvalidAddress() {
-		// null or empty element
-		// invalid element
+	public void testValidateQueryServiceInstancesInvalidAddressType() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		assertAll(
+
+			// null or empty element
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of(EMPTY),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(NULL_OR_EMPTY_ADDRESS_TYPE, ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+			},
+
+			// invalid element
+			() -> {
+				resetUtilitiesMock();
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPv5"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(INVALID_ADDRESS_TYPE_ELEMENT_PREFIX + "IPv5", ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+				utilitiesMock.verify(() -> Utilities.isEnumValue("IPV5", AddressType.class));
+			}
+		);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQueryServiceInstancesNullOrEmptyTemplate() {
-		
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of(EMPTY),
+				List.of(intfReq),
+				List.of("NONE"));
+
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_OR_EMPTY_TEMPTLATE, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of(EMPTY)));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQueryServiceInstancesNullPropertyRequirement() {
-		
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final List<MetadataRequirementDTO> intfRequirements = new ArrayList<MetadataRequirementDTO>(2);
+		intfRequirements.add(intfReq);
+		intfRequirements.add(null);
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				intfRequirements,
+				List.of("NONE"));
+
+		utilitiesMock.when(() -> Utilities.containsNull(intfRequirements)).thenReturn(true);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals(NULL_PROPERTY_REQUIREMENT, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNull(intfRequirements));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateQueryServiceInstancesInvalidPolicy() {
-		// null or empty element
-		// invalid element
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		assertAll(
+
+			// null or empty element
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of(EMPTY));
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(NULL_OR_EMPTY_POLICY, ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+			},
+
+			// invalid element
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("MAGIC_TOKEN_AUTH"));
+
+				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(INVALID_POLICY_PREFIX + "MAGIC_TOKEN_AUTH", ex.getMessage());
+				assertEquals("test origin", ex.getOrigin());
+			}
+		);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void ValidateAndNormalizeQueryServiceInstancesOk() {
+	public void testValidateAndNormalizeQueryServiceInstancesOk() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		assertAll(
+
+			// nothing is empty
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+
+				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(normalized, dto);
+				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+				verify(serviceInstanceIdentifierValidator, times(1)).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+				verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+				verify(serviceDefNameNormalizer, times(1)).normalize("temperatureInfo");
+				verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
+				verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_http");
+			},
+
+			// almost everything is empty
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						null, List.of(), List.of(), List.of("temperatureInfo"), List.of(), null, List.of(), List.of(), List.of(), List.of(), List.of());
+				final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
+						null, List.of(), List.of(), List.of("temperatureInfo"), List.of(), "", List.of(), List.of(), List.of(), List.of(), List.of());
+
+				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(expected);
+
+				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(normalized, expected);
+			},
+
+			// only serivce definition is empty
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+						List.of("TemperatureProvider"),
+						List.of(),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+
+				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(normalized, dto);
+			},
+
+			// only service instance id is empty
+			() -> {
+				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+						new PageDTO(10, 20, "ASC", "id"),
+						List.of(),
+						List.of("TemperatureProvider"),
+						List.of("temperatureInfo"),
+						List.of("1.0.0"),
+						"2029-11-04T01:53:02Z",
+						List.of(metadataReq),
+						List.of("IPV4"),
+						List.of("generic_http"),
+						List.of(intfReq),
+						List.of("NONE"));
+
+				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+
+				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+				assertEquals(normalized, dto);
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void ValidateAndNormalizeQueryServiceInstancesThrowsException() {
 
 		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
 		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
@@ -2445,12 +2700,13 @@ public class ManagementValidationTest {
 				List.of("generic_http"),
 				List.of(intfReq),
 				List.of("NONE"));
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void ValidateAndNormalizeQueryServiceInstancesThrowsException() {
-		
+
+		when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperatureProvider");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	// INTERFACE
