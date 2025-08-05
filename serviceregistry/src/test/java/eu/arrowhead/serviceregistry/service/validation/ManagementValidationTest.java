@@ -199,6 +199,8 @@ public class ManagementValidationTest {
 	private static final String NULL_OR_EMPTY_VALIDATOR_PARAMETER = "Interface template property validator parameter list contains null or empty element";
 	private static final String EMPTY_INTERFACE_TEMPLATE_NAME = "Interface template name list contains empty element";
 	private static final String EMPTY_PROTOCOL = "Interface template protocol list contains empty element";
+	private static final String MISSING_TEMPLATE_NAME_LIST = "Interface template name list is missing or empty";
+	private static final String NULL_OR_EMPTY_TEMPLATE_NAME = "Interface template name list contains null or empty element";
 
 	//=================================================================================================
 	// methods
@@ -3112,6 +3114,52 @@ public class ManagementValidationTest {
 	}
 
 	// remove
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveInterfaceTemplatesMissingTemplateNameList() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveInterfaceTemplates(List.of(), "test origin"));
+		assertEquals(MISSING_TEMPLATE_NAME_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.isEmpty(List.of()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateRemoveInterfaceTemplatesNullOrEmptyTemplateName() {
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveInterfaceTemplates(List.of(EMPTY), "test origin"));
+		assertEquals(NULL_OR_EMPTY_TEMPLATE_NAME, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+		utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of(EMPTY)));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveInterfaceTemplatesOk() {
+
+		final List<String> templateNames = List.of("generic_mqtt", "generic_http");
+		when(normalizer.normalizeRemoveInterfaceTemplates(templateNames)).thenReturn(templateNames);
+
+		final List<String> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRemoveInterfaceTemplates(templateNames, "test origin"));
+		assertEquals(templateNames, normalized);
+		verify(normalizer, times(1)).normalizeRemoveInterfaceTemplates(templateNames);
+		verify(interfaceTemplateNameValidator, times(2)).validateInterfaceTemplateName(anyString());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeRemoveInterfaceTemplatesThrowsException() {
+
+		final List<String> templateNames = List.of("generic_mqtt", "generic_http");
+		when(normalizer.normalizeRemoveInterfaceTemplates(templateNames)).thenReturn(templateNames);
+		lenient().doThrow(new InvalidParameterException("Validation error")).when(interfaceTemplateNameValidator).validateInterfaceTemplateName("generic_http");
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRemoveInterfaceTemplates(templateNames, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
 
 	//=================================================================================================
 	// assistant methods

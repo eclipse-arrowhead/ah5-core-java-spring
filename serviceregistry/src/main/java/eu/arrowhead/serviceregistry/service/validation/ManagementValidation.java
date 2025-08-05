@@ -1075,7 +1075,7 @@ public class ManagementValidation {
 		}
 
 		if (Utilities.containsNullOrEmpty(originalNames)) {
-			throw new InvalidParameterException("Interface templpate name list contains null or empty element", origin);
+			throw new InvalidParameterException("Interface template name list contains null or empty element", origin);
 		}
 	}
 }
