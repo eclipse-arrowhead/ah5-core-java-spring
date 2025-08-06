@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -372,5 +373,11 @@ public class DeviceDiscoveryValidationTest {
     	utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+    @AfterAll
+    private static void closeUtilitiesMock() {
+    	utilitiesMock.close();
     }
 }

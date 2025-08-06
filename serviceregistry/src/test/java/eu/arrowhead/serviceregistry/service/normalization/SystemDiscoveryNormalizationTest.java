@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,15 +83,26 @@ public class SystemDiscoveryNormalizationTest {
 				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemRequestDTO(dto));
 				assertEquals(expected, normalized);
 			},
-			
+
 			// addresses are empty
-			() -> {},
+			() -> {
+				
+				final SystemRequestDTO dto = new SystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", List.of(), "TEST_DEVICE");
+				final NormalizedSystemRequestDTO expected = new NormalizedSystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", new ArrayList<>(), "TEST_DEVICE");
+
+				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemRequestDTO(dto));
+				assertEquals(expected, normalized);
+			},
 			
 			// device name is empty
-			() -> {},
+			() -> {
+				
+			},
 			
 			// dto is null
-			() -> {}
+			() -> {
+				
+			}
 		);
 	}
 	
@@ -123,5 +135,11 @@ public class SystemDiscoveryNormalizationTest {
 
     	// mock common cases
     	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
+    }
+    
+    //-------------------------------------------------------------------------------------------------
+    @AfterAll
+    private static void closeUtilitiesMock() {
+    	utilitiesMock.close();
     }
 }
