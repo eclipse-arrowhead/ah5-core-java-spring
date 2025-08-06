@@ -195,7 +195,7 @@ public class ManagementValidationTest {
 	private static final String NULL_TEMPLATE_PROPERTY = "Interface template contains null property";
 	private static final String EMPTY_TEMPLATE_PROPERTY_NAME = "Interface template property name is empty";
 	private static final String INVALID_TEMPLATE_PROPERTY_NAME = "Invalid interface template property name: {}, it should not contain . character";
-	private static final String DUPLICATED_TEMPLATE_PROPERTY_NAME_PREFIX = "Duplicate interface template property name: ";
+	private static final String DUPLICATED_TEMPLATE_PROPERTY_NAME_PREFIX = "Duplicated interface template property name: ";
 	private static final String EMPTY_VALIDATOR = "Interface template property validator is empty while validator params are defined";
 	private static final String NULL_OR_EMPTY_VALIDATOR_PARAMETER = "Interface template property validator parameter list contains null or empty element";
 	private static final String EMPTY_INTERFACE_TEMPLATE_NAME = "Interface template name list contains empty element";

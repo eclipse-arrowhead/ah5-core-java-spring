@@ -1031,7 +1031,7 @@ public class ManagementValidation {
 					}
 
 					if (propertyNames.contains(propertyDTO.name().trim())) {
-						throw new InvalidParameterException("Duplicate interface template property name: " + templateDTO.name() + Constants.COMPOSITE_ID_DELIMITER + propertyDTO.name(), origin);
+						throw new InvalidParameterException("Duplicated interface template property name: " + templateDTO.name() + Constants.COMPOSITE_ID_DELIMITER + propertyDTO.name(), origin);
 					}
 					propertyNames.add(propertyDTO.name().trim());
 
