@@ -207,7 +207,7 @@ public class OrchestrationLockDbServiceTest {
 		verify(lockRepo, never()).findAllByServiceInstanceIdIn(anyList());
 
 		assertTrue(ex instanceof IllegalArgumentException);
-		assertEquals("Service instance id list contains null element", ex.getMessage());
+		assertEquals("Service instance id list contains null or empty element", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ public class OrchestrationLockDbServiceTest {
 		verify(lockRepo, never()).findAllByServiceInstanceIdIn(anyList());
 
 		assertTrue(ex instanceof IllegalArgumentException);
-		assertEquals("Service instance id list contains null element", ex.getMessage());
+		assertEquals("Service instance id list contains null or empty element", ex.getMessage());
 	}
 
 	// getAll()

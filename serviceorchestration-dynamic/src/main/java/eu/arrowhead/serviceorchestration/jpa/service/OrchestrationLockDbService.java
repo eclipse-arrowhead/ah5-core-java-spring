@@ -57,7 +57,7 @@ public class OrchestrationLockDbService {
 	public List<OrchestrationLock> getByServiceInstanceId(final List<String> ids) {
 		logger.debug("getByServiceInstanceId started...");
 		Assert.isTrue(!Utilities.isEmpty(ids), "Service instance id list is empty");
-		Assert.isTrue(!Utilities.containsNullOrEmpty(ids), "Service instance id list contains null element");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(ids), "Service instance id list contains null or empty element");
 
 		try {
 			return lockRepo.findAllByServiceInstanceIdIn(ids);
