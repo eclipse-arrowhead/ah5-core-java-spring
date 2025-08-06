@@ -157,7 +157,7 @@ public class AuthorizationTokenNormalizer {
 						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(
 								systemNameNormalizer.normalize(item.systemName()),
 								item.key(),
-								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.DEFAULT_ENCRYPTION_ALGORITHM : item.algorithm().trim().toUpperCase()))
+								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.DEFAULT_ENCRYPTION_ALGORITHM : item.algorithm().trim()))
 						.toList());
 	}
 }
