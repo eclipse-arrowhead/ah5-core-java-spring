@@ -75,8 +75,8 @@ public class PushOrchestrationWorker implements Runnable {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public PushOrchestrationWorker(final UUID jobid) {
-		jobId = jobid;
+	public PushOrchestrationWorker(final UUID jobId) {
+		this.jobId = jobId;
 	}
 
 	//-------------------------------------------------------------------------------------------------

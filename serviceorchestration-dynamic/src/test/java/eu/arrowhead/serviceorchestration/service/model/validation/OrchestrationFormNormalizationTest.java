@@ -19,6 +19,7 @@ import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormaliz
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
 import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
@@ -45,6 +46,9 @@ public class OrchestrationFormNormalizationTest {
 
 	@Mock
 	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
+
+	@Mock
+	private VersionNormalizer versionNormalizer;
 
 	//=================================================================================================
 	// methods
@@ -95,6 +99,7 @@ public class OrchestrationFormNormalizationTest {
 		when(serviceOpNameNormalizer.normalize(eq(serviceOp))).thenReturn(serviceOp.trim());
 		when(interfaceTemplateNameNormalizer.normalize(eq(interfaceName))).thenReturn(interfaceName.trim());
 		when(systemNameNormalizer.normalize(eq(preferredProvider))).thenReturn(preferredProvider.trim());
+		when(versionNormalizer.normalize(eq(version))).thenReturn(version.trim());
 
 		assertDoesNotThrow(() -> normalizator.normalizeOrchestrationForm(orchestrationForm));
 

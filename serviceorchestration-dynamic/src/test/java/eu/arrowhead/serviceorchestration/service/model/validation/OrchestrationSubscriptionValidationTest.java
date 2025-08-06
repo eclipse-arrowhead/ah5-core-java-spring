@@ -28,8 +28,6 @@ import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
-import eu.arrowhead.serviceorchestration.service.model.validation.OrchestrationFormValidation;
-import eu.arrowhead.serviceorchestration.service.model.validation.OrchestrationSubscriptionValidation;
 
 @ExtendWith(MockitoExtension.class)
 public class OrchestrationSubscriptionValidationTest {
@@ -567,7 +565,7 @@ public class OrchestrationSubscriptionValidationTest {
 		assertEquals("Notify properties has no path property", ex.getMessage());
 		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeOrchestrationSubscriptionWithHTTPNotifyButUnsupportedProtocol() {

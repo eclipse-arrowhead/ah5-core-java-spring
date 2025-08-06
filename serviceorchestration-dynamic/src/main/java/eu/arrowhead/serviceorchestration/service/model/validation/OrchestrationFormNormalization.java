@@ -14,6 +14,7 @@ import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormaliz
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
 import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 @Service
@@ -33,6 +34,9 @@ public class OrchestrationFormNormalization {
 
 	@Autowired
 	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
+
+	@Autowired
+	private VersionNormalizer versionNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -59,7 +63,7 @@ public class OrchestrationFormNormalization {
 		}
 
 		if (!Utilities.isEmpty(form.getVersions())) {
-			form.setVersions(form.getVersions().stream().map(v -> v.trim()).toList());
+			form.setVersions(form.getVersions().stream().map(v -> versionNormalizer.normalize(v)).toList());
 		}
 
 		if (!Utilities.isEmpty(form.getInterfaceTemplateNames())) {

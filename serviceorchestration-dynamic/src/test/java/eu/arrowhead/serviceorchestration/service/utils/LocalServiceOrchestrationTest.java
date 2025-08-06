@@ -1258,7 +1258,7 @@ public class LocalServiceOrchestrationTest {
 		assertTrue(tempLockCreateInput2.size() == 1);
 		assertEquals(candidate2.instanceId(), tempLockCreateInput2.get(0).getServiceInstanceId());
 		assertTrue(!tempLockCreateInput2.get(0).isTemporary());
-		
+
 		assertTrue(matchmakingInput.size() == 2);
 		assertEquals(candidate1.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
 		assertEquals(candidate2.instanceId(), matchmakingInput.get(1).getServiceInstance().instanceId());
@@ -1273,7 +1273,7 @@ public class LocalServiceOrchestrationTest {
 		assertEquals(candidateMatch.getServiceInstance().instanceId(), result.results().get(0).serviceInstanceId());
 		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_AUTO_MATCHMAKING));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoLocalServiceOrchestrationCandidatesAreBlackListed() {
