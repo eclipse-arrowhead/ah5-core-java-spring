@@ -114,7 +114,7 @@ public class OrchestrationSubscriptionValidation {
 		try {
 			final int port = Integer.parseInt(props.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_PORT));
 			if (port < Constants.MIN_PORT || port > Constants.MAX_PORT) {
-				throw new InvalidParameterException("Notify port is out of the valid range");
+				throw new InvalidParameterException("Notify port is out of the valid range", origin);
 			}
 		} catch (final NumberFormatException ex) {
 			throw new InvalidParameterException("Notify port is not a number", origin);

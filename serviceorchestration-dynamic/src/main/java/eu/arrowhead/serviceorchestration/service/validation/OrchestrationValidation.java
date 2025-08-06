@@ -81,7 +81,7 @@ public class OrchestrationValidation {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void validatePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
+	private void validatePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
 		logger.debug("validatePushUnsubscribeService started...");
 
 		if (Utilities.isEmpty(requesterSystem)) {

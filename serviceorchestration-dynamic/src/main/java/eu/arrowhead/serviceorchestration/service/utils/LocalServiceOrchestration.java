@@ -308,7 +308,7 @@ public class LocalServiceOrchestration {
 
 			for (final OrchestrationLock lockRecord : lockRecords) {
 				if (!Utilities.isEmpty(lockRecord.getOrchestrationJobId()) && lockRecord.getOrchestrationJobId().equals(jobIdStr)) {
-					// lock belongs to this session
+					// lock belongs to this session (in theory it doesn't happen)
 					continue;
 				} else if (lockRecord.getExpiresAt() != null && lockRecord.getExpiresAt().isBefore(now)) {
 					expiredLocks.add(lockRecord.getId());
@@ -329,7 +329,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(final UUID jobId, final String consumerSystem, final List<OrchestrationCandidate> candidates) {
+	private List<OrchestrationCandidate> filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(final UUID jobId, final String consumerSystem, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutLockedOnesAndTemporaryLockIfCanBeExclusive started...");
 
 		if (Utilities.isEmpty(candidates)) {
@@ -363,7 +363,7 @@ public class LocalServiceOrchestration {
 		logger.debug("markExclusivityIfFeasible started...");
 
 		for (final OrchestrationCandidate candidate : candidates) {
-			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata() == null ? null : candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 			if (allowedExclusivityDurationObj != null) {
 				try {
 					final int allowedExclusivityDuration = Utilities.parseToInt(allowedExclusivityDurationObj);
@@ -746,6 +746,10 @@ public class LocalServiceOrchestration {
 					});
 				}
 			});
+		}
+
+		if (Utilities.isEmpty(requestPayloadEntries)) {
+			return;
 		}
 
 		final AuthorizationTokenMgmtListResponseDTO response = ahHttpService.consumeService(

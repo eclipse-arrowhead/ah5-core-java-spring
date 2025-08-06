@@ -117,10 +117,10 @@ public class OrchestrationPushManagementValidation {
 		validateQueryPushSubscriptionsService(dto, origin);
 
 		final OrchestrationSubscriptionQueryRequestDTO normalized = new OrchestrationSubscriptionQueryRequestDTO(
-				dto.pagination(),
-				Utilities.isEmpty(dto.ownerSystems()) ? List.of() : dto.ownerSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
-				Utilities.isEmpty(dto.targetSystems()) ? List.of() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
-				Utilities.isEmpty(dto.serviceDefinitions()) ? List.of() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList());
+				dto == null ? null : dto.pagination(),
+				dto == null || Utilities.isEmpty(dto.ownerSystems()) ? List.of() : dto.ownerSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				dto == null || Utilities.isEmpty(dto.targetSystems()) ? List.of() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				dto == null || Utilities.isEmpty(dto.serviceDefinitions()) ? List.of() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList());
 
 		try {
 			if (!Utilities.isEmpty(normalized.ownerSystems())) {

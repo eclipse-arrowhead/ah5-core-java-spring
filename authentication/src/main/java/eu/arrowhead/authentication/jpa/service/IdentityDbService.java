@@ -1,6 +1,5 @@
 package eu.arrowhead.authentication.jpa.service;
 
-import java.security.InvalidParameterException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,7 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryReq
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 
 @Service
 public class IdentityDbService {
