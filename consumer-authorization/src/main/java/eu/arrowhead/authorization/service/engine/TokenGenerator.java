@@ -60,10 +60,8 @@ public class TokenGenerator {
 
 	//-------------------------------------------------------------------------------------------------
 	public String generateBas64SelfContainedToken(final ZonedDateTime expiry, final SelfContainedTokenPayload payload) {
-		Assert.notNull(payload, "Payload is null");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "consumer is empty");
-		Assert.isTrue(!Utilities.isEmpty(payload.cloud()), "cloud is empty");
 		Assert.notNull(payload.targetType(), "targetType is null");
 		Assert.isTrue(!Utilities.isEmpty(payload.target()), "target is empty");
 
