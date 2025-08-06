@@ -48,15 +48,5 @@
 		    <groupId>org.apache.commons</groupId>
     		<artifactId>commons-lang3</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>arrowhead-common-utils</artifactId>
-			<version>5.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>arrowhead-authentication</artifactId>
-			<version>5.0.0</version>
-		</dependency>
 	</dependencies>
 </project>
