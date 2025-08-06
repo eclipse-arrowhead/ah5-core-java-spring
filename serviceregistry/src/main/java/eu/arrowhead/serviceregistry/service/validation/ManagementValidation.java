@@ -509,7 +509,7 @@ public class ManagementValidation {
 
 			final String normalized = deviceNameNormalizer.normalize(device.name());
 			if (names.contains(normalized)) {
-				throw new InvalidParameterException("Duplicate device name: " + normalized, origin);
+				throw new InvalidParameterException("Duplicated device name: " + normalized, origin);
 			}
 
 			names.add(normalized);

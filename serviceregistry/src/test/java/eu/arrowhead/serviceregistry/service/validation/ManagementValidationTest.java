@@ -145,7 +145,7 @@ public class ManagementValidationTest {
 	private static final String EMPTY_PAYLOAD = "Request payload is empty";
 	private static final String NULL_DEVICE = "Device list contains null element";
 	private static final String EMPTY_DEVICE_NAME = "Device name is empty";
-	private static final String DUPLICATE_DEVICE_NAME_PREFIX = "Duplicate device name: ";
+	private static final String DUPLICATE_DEVICE_NAME_PREFIX = "Duplicated device name: ";
 	private static final String MISSING_ADDRESS_LIST = "At least one device address is needed for every device";
 	private static final String MISSING_ADDRESS = "Address is missing";
 	private static final String NULL_OR_EMPTY_DEVICE_NAME = "Device name list contains null or empty element";
