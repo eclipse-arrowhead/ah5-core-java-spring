@@ -71,7 +71,9 @@ public class SubscriptionDbService {
 						Utilities.toJson(candidate.getOrchestrationForm().extractOrchestrationRequestDTO())));
 			}
 
-			subscriptionRepo.deleteAllById(toRemove);
+			if (!Utilities.isEmpty(toRemove)) {
+				subscriptionRepo.deleteAllById(toRemove);
+			}
 			subscriptionRepo.flush();
 
 			return subscriptionRepo.saveAllAndFlush(toSave);
@@ -100,6 +102,7 @@ public class SubscriptionDbService {
 	public List<Subscription> get(final List<UUID> ids) {
 		logger.debug("get started..");
 		Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "subscription id list contains null element");
 
 		try {
 			return subscriptionRepo.findAllById(ids);
@@ -115,6 +118,7 @@ public class SubscriptionDbService {
 		logger.debug("get started..");
 		Assert.isTrue(!Utilities.isEmpty(ownerSystem), "ownerSystem is empty");
 		Assert.isTrue(!Utilities.isEmpty(targetSystem), "targetSystem is empty");
+		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
 
 		try {
 			return subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(ownerSystem, targetSystem, serviceDefinition);
@@ -165,7 +169,7 @@ public class SubscriptionDbService {
 				boolean matching = true;
 
 				if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(ownerSystems) && !ownerSystems.contains(subscription.getOwnerSystem())) {
-					matching = false;
+					matching = false; // cannot happen theoretically
 
 				} else if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(subscription.getTargetSystem())) {
 					matching = false;
@@ -214,6 +218,7 @@ public class SubscriptionDbService {
 	public void deleteInBatch(final Collection<UUID> ids) {
 		logger.debug("deleteInBatch started..");
 		Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "subscription id list contains null element");
 
 		try {
 			subscriptionRepo.deleteAllByIdInBatch(ids);
@@ -229,6 +234,7 @@ public class SubscriptionDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteInBatchByExpiredBefore(final ZonedDateTime time) {
 		logger.debug("deleteInBatchByExpiredBefore started...");
+		Assert.notNull(time, "time is null");
 
 		try {
 			final List<Subscription> toDelete = subscriptionRepo.findAllByExpiresAtBefore(time);

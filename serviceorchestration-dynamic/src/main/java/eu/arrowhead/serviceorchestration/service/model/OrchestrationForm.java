@@ -79,7 +79,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean addFlag(final OrchestrationFlag flag, final boolean value) {
-		boolean changed = false;
+		Boolean changed = null;
 		for (final String rawFlag : orchestrationFlags.keySet()) {
 			if (rawFlag.equalsIgnoreCase(flag.name())) {
 				changed = orchestrationFlags.get(rawFlag) != value;
@@ -88,6 +88,7 @@ public class OrchestrationForm {
 		}
 		orchestrationFlags.put(flag.name(), value);
 
+		changed = changed == null ? true : changed;
 		return changed;
 	}
 
