@@ -186,6 +186,7 @@ public class OrchestrationServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushSubscribe() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -242,6 +243,7 @@ public class OrchestrationServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushSubscribeWithoutTrigger() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -290,6 +292,7 @@ public class OrchestrationServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushSubscribeWithOverride() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);

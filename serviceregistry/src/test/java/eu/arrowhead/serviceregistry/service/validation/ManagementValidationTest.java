@@ -140,7 +140,7 @@ public class ManagementValidationTest {
 
 	private static final String EMPTY = "\n ";
 
-    // expected error messages
+	// expected error messages
 	private static final String MISSING_PAYLOAD = "Request payload is missing";
 	private static final String EMPTY_PAYLOAD = "Request payload is empty";
 	private static final String NULL_DEVICE = "Device list contains null element";
@@ -302,32 +302,31 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// invalid metadata
-			() -> {
-				final List<DeviceRequestDTO> devicesInvalidMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("in.door", true), List.of("02:00:00:00:00:01")));
+				// invalid metadata
+				() -> {
+					final List<DeviceRequestDTO> devicesInvalidMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("in.door", true), List.of("02:00:00:00:00:01")));
 
-				metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true))).thenThrow(new InvalidParameterException("Validation error"));
+					metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true))).thenThrow(new InvalidParameterException("Validation error"));
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateDevices(new DeviceListRequestDTO(devicesInvalidMetadata), "test origin"));
-				assertEquals("Validation error", ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)));
-			},
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateDevices(new DeviceListRequestDTO(devicesInvalidMetadata), "test origin"));
+					assertEquals("Validation error", ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)));
+				},
 
-			// empty metadata
-			() -> {
-				final List<DeviceRequestDTO> devicesEmptyMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:00:00:00:01")));
-				final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of(), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
-				when(normalizer.normalizeDeviceRequestDTOList(devicesEmptyMetadata)).thenReturn(expected);
+				// empty metadata
+				() -> {
+					final List<DeviceRequestDTO> devicesEmptyMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:00:00:00:01")));
+					final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of(), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
+					when(normalizer.normalizeDeviceRequestDTOList(devicesEmptyMetadata)).thenReturn(expected);
 
-				metadataValidationMock.reset();
+					metadataValidationMock.reset();
 
-				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateDevices(new DeviceListRequestDTO(devicesEmptyMetadata), "test origin"));
-				assertEquals(normalized, expected);
-				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)), never());
-				metadataValidationMock.close();
-			}
-		);
+					final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateDevices(new DeviceListRequestDTO(devicesEmptyMetadata), "test origin"));
+					assertEquals(normalized, expected);
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)), never());
+					metadataValidationMock.close();
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -457,32 +456,31 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// invalid metadata
-			() -> {
-				final List<DeviceRequestDTO> devicesInvalidMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("in.door", true), List.of("02:00:00:00:00:01")));
+				// invalid metadata
+				() -> {
+					final List<DeviceRequestDTO> devicesInvalidMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of("in.door", true), List.of("02:00:00:00:00:01")));
 
-				metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true))).thenThrow(new InvalidParameterException("Validation error"));
+					metadataValidationMock.when(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true))).thenThrow(new InvalidParameterException("Validation error"));
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devicesInvalidMetadata), "test origin"));
-				assertEquals("Validation error", ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)));
-			},
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devicesInvalidMetadata), "test origin"));
+					assertEquals("Validation error", ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)));
+				},
 
-			// empty metadata
-			() -> {
-				final List<DeviceRequestDTO> devicesEmptyMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:00:00:00:01")));
-				final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of(), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
-				when(normalizer.normalizeDeviceRequestDTOList(devicesEmptyMetadata)).thenReturn(expected);
+				// empty metadata
+				() -> {
+					final List<DeviceRequestDTO> devicesEmptyMetadata = List.of(new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:00:00:00:01")));
+					final List<NormalizedDeviceRequestDTO> expected = List.of(new NormalizedDeviceRequestDTO("TEST_DEVICE", Map.of(), List.of(new AddressDTO("MAC", "02:00:00:00:00:01"))));
+					when(normalizer.normalizeDeviceRequestDTOList(devicesEmptyMetadata)).thenReturn(expected);
 
-				metadataValidationMock.reset();
+					metadataValidationMock.reset();
 
-				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devicesEmptyMetadata), "test origin"));
-				assertEquals(normalized, expected);
-				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)), never());
-				metadataValidationMock.close();
-			}
-		);
+					final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeUpdateDevices(new DeviceListRequestDTO(devicesEmptyMetadata), "test origin"));
+					assertEquals(normalized, expected);
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("in.door", true)), never());
+					metadataValidationMock.close();
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -521,6 +519,7 @@ public class ManagementValidationTest {
 	// query
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryDevicesMissingName() {
 
@@ -540,6 +539,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryDevicesMissingAddress() {
 
@@ -559,6 +559,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryDevicesInvalidAddressType() {
 
@@ -578,6 +579,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryDevicesNullMetadataRequirement() {
 
@@ -603,75 +605,76 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeQueryDevicesOk() {
 
 		assertAll(
 
-			// dto is null
-			() -> {
+				// dto is null
+				() -> {
 
-				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, null);
-				when(normalizer.normalizeDeviceQueryRequestDTO(null)).thenReturn(expected);
+					final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, null);
+					when(normalizer.normalizeDeviceQueryRequestDTO(null)).thenReturn(expected);
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(null, "test origin"));
-				assertEquals(expected, normalized);
-			},
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(null, "test origin"));
+					assertEquals(expected, normalized);
+				},
 
-			// everything is empty
-			() -> {
+				// everything is empty
+				() -> {
 
-				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(null, null, null, null, null);
-				when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+					final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(null, null, null, null, null);
+					when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
-				assertEquals(dto, normalized);
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+					assertEquals(dto, normalized);
 
-			},
+				},
 
-			// nothing is empty
-			() -> {
+				// nothing is empty
+				() -> {
 
-				final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
-				metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+					final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+					metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TEST_DEVICE"),
-						List.of("02:00:00:00:00:01"),
-						"MAC",
-						List.of(metadataReq));
-				when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+					final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TEST_DEVICE"),
+							List.of("02:00:00:00:00:01"),
+							"MAC",
+							List.of(metadataReq));
+					when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
-				assertEquals(dto, normalized);
-				verify(pageValidator, times(1)).validatePageParameter(new PageDTO(10, 20, "ASC", "id"), Device.SORTABLE_FIELDS_BY, "test origin");
-				verify(normalizer, times(1)).normalizeDeviceQueryRequestDTO(dto);
-				verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
-				verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.MAC, "02:00:00:00:00:01");
-			},
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+					assertEquals(dto, normalized);
+					verify(pageValidator, times(1)).validatePageParameter(new PageDTO(10, 20, "ASC", "id"), Device.SORTABLE_FIELDS_BY, "test origin");
+					verify(normalizer, times(1)).normalizeDeviceQueryRequestDTO(dto);
+					verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+					verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.MAC, "02:00:00:00:00:01");
+				},
 
-			// address type is present, but addresses are empty
-			() -> {
+				// address type is present, but addresses are empty
+				() -> {
 
-				final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
-				metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+					final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+					metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TEST_DEVICE"),
-						List.of(),
-						"MAC",
-						List.of(metadataReq));
-				when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
+					final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TEST_DEVICE"),
+							List.of(),
+							"MAC",
+							List.of(metadataReq));
+					when(normalizer.normalizeDeviceQueryRequestDTO(dto)).thenReturn(dto);
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
-				assertEquals(dto, normalized);
-			}
-		);
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryDevices(dto, "test origin"));
+					assertEquals(dto, normalized);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeQueryDevicesThrowsException() {
 
@@ -837,19 +840,18 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// dto is null
-			() -> {
-				assertDoesNotThrow(() -> validator.validateQueryServiceDefinitions(null, "test origin"));
-				verify(pageValidator, never()).validatePageParameter(any(), any(), any());
-			},
+				// dto is null
+				() -> {
+					assertDoesNotThrow(() -> validator.validateQueryServiceDefinitions(null, "test origin"));
+					verify(pageValidator, never()).validatePageParameter(any(), any(), any());
+				},
 
-			// dto is not null
-			() -> {
-				final PageDTO dto = new PageDTO(10, 20, "ASC", "id");
-				assertDoesNotThrow(() -> validator.validateQueryServiceDefinitions(dto, "test origin"));
-				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
-			}
-		);
+				// dto is not null
+				() -> {
+					final PageDTO dto = new PageDTO(10, 20, "ASC", "id");
+					assertDoesNotThrow(() -> validator.validateQueryServiceDefinitions(dto, "test origin"));
+					verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+				});
 	}
 
 	// remove
@@ -1219,6 +1221,7 @@ public class ManagementValidationTest {
 	// query
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQuerySystemsNullOrEmptySystemName() {
 
@@ -1232,8 +1235,7 @@ public class ManagementValidationTest {
 				"IPV4",
 				List.of(requirement),
 				List.of("5.0.0"),
-				List.of("TEST_DEVICE")
-			);
+				List.of("TEST_DEVICE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
 		assertEquals(NULL_OR_EMPTY_SYSTEM_NAME, ex.getMessage());
@@ -1241,6 +1243,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQuerySystemsNullOrEmptyAddress() {
 
@@ -1254,8 +1257,7 @@ public class ManagementValidationTest {
 				"IPV4",
 				List.of(requirement),
 				List.of("5.0.0"),
-				List.of("TEST_DEVICE")
-		);
+				List.of("TEST_DEVICE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
 		assertEquals(NULL_OR_EMPTY_ADDRESS, ex.getMessage());
@@ -1263,6 +1265,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQuerySystemsInvalidAddressType() {
 
@@ -1276,8 +1279,7 @@ public class ManagementValidationTest {
 				"IPV5",
 				List.of(requirement),
 				List.of("5.0.0"),
-				List.of("TEST_DEVICE")
-		);
+				List.of("TEST_DEVICE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
 		assertEquals(INVALID_ADDRESS_TYPE_PREFIX + "IPV5", ex.getMessage());
@@ -1286,6 +1288,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQuerySystemsNullMetadataRequirement() {
 
@@ -1304,8 +1307,7 @@ public class ManagementValidationTest {
 				"IPV4",
 				requirements,
 				List.of("5.0.0"),
-				List.of("TEST_DEVICE")
-		);
+				List.of("TEST_DEVICE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
 		assertEquals(NULL_METADATA_REQUIREMENT, ex.getMessage());
@@ -1313,6 +1315,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQuerySystemsNullOrEmptyVersion() {
 
@@ -1326,8 +1329,7 @@ public class ManagementValidationTest {
 				"IPV4",
 				List.of(requirement),
 				List.of(EMPTY),
-				List.of("TEST_DEVICE")
-		);
+				List.of("TEST_DEVICE"));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
 		assertEquals(NULL_OR_EMPTY_VERSION, ex.getMessage());
@@ -1335,6 +1337,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQuerySystemsNullOrEmptyDeviceName() {
 
@@ -1348,8 +1351,7 @@ public class ManagementValidationTest {
 				"IPV4",
 				List.of(requirement),
 				List.of("5.0.0"),
-				List.of(EMPTY)
-		);
+				List.of(EMPTY));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
 		assertEquals(NULL_OR_EMPTY_DEVICE_NAME, ex.getMessage());
@@ -1357,69 +1359,69 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeQuerySystemsOk() {
 
 		Assertions.assertAll(
 
-			// nothing is null
-			() -> {
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+				// nothing is null
+				() -> {
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider1"),
-						List.of("192.168.4.1"),
-						"IPV4",
-						List.of(requirement),
-						List.of("5.0.0"),
-						List.of("TEST_DEVICE")
-				);
+					final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider1"),
+							List.of("192.168.4.1"),
+							"IPV4",
+							List.of(requirement),
+							List.of("5.0.0"),
+							List.of("TEST_DEVICE"));
 
-				when(normalizer.normalizeSystemQueryRequestDTO(dto)).then(invocation -> invocation.getArgument(0));
+					when(normalizer.normalizeSystemQueryRequestDTO(dto)).then(invocation -> invocation.getArgument(0));
 
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
-				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
-				verify(normalizer, times(1)).normalizeSystemQueryRequestDTO(dto);
-				verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider1");
-				verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.IPV4, "192.168.4.1");
-				verify(versionValidator, times(1)).validateNormalizedVersion("5.0.0");
-				verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
-				assertEquals(dto, normalized);
-			},
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+					verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+					verify(normalizer, times(1)).normalizeSystemQueryRequestDTO(dto);
+					verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider1");
+					verify(addressTypeValidator, times(1)).validateNormalizedAddress(AddressType.IPV4, "192.168.4.1");
+					verify(versionValidator, times(1)).validateNormalizedVersion("5.0.0");
+					verify(deviceNameValidator, times(1)).validateDeviceName("TEST_DEVICE");
+					assertEquals(dto, normalized);
+				},
 
-			// dto is null
-			() -> {
-				final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
-				when(normalizer.normalizeSystemQueryRequestDTO(null)).thenReturn(expected);
+				// dto is null
+				() -> {
+					final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
+					when(normalizer.normalizeSystemQueryRequestDTO(null)).thenReturn(expected);
 
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(null, "test origin"));
-				assertEquals(expected, normalized);
-			},
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(null, "test origin"));
+					assertEquals(expected, normalized);
+				},
 
-			// everything is null
-			() -> {
-				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
-				when(normalizer.normalizeSystemQueryRequestDTO(dto)).thenReturn(dto);
+				// everything is null
+				() -> {
+					final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
+					when(normalizer.normalizeSystemQueryRequestDTO(dto)).thenReturn(dto);
 
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
-				assertEquals(dto, normalized);
-			},
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+					assertEquals(dto, normalized);
+				},
 
-			// address type is present, but addresses are empty
-			() -> {
-				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, null, null, "IPV4", null, null, null);
-				when(normalizer.normalizeSystemQueryRequestDTO(dto)).thenReturn(dto);
+				// address type is present, but addresses are empty
+				() -> {
+					final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, null, null, "IPV4", null, null, null);
+					when(normalizer.normalizeSystemQueryRequestDTO(dto)).thenReturn(dto);
 
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
-				assertEquals(dto, normalized);
-			}
-		);
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQuerySystems(dto, "test origin"));
+					assertEquals(dto, normalized);
+				});
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeQuerySystemsThrowsException() {
 
@@ -1433,8 +1435,7 @@ public class ManagementValidationTest {
 				"IPV4",
 				List.of(requirement),
 				List.of("5.0.0"),
-				List.of("TEST_DEVICE")
-		);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemQueryRequestDTO(dto)).then(invocation -> invocation.getArgument(0));
 		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperätureProvider1");
@@ -1516,13 +1517,12 @@ public class ManagementValidationTest {
 		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 
 		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-			EMPTY,
-			"temperatureInfo",
-			"1.0.0",
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(intf)
-		);
+				EMPTY,
+				"temperatureInfo",
+				"1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf));
 
 		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
@@ -1538,13 +1538,12 @@ public class ManagementValidationTest {
 		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 
 		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-			"TemperatureProvider",
-			EMPTY,
-			"1.0.0",
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(intf)
-		);
+				"TemperatureProvider",
+				EMPTY,
+				"1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf));
 
 		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
@@ -1554,6 +1553,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateCreateServiceInstancesDuplicatedInstance() {
 
@@ -1561,13 +1561,12 @@ public class ManagementValidationTest {
 		final ServiceInstanceInterfaceRequestDTO intf2 = new ServiceInstanceInterfaceRequestDTO("generic_https", "https", "NONE", Map.of("accessPort", 8080));
 
 		final ServiceInstanceRequestDTO instance1 = new ServiceInstanceRequestDTO(
-			"TemperatureProvider",
-			"temperatureInfo",
-			"1.0.0",
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(intf1)
-		);
+				"TemperatureProvider",
+				"temperatureInfo",
+				"1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf1));
 
 		final ServiceInstanceRequestDTO instance2 = new ServiceInstanceRequestDTO(
 				"TemperatureProvider",
@@ -1575,8 +1574,7 @@ public class ManagementValidationTest {
 				"1.0.0",
 				"2031-11-04T01:53:02Z",
 				Map.of("indoor", true),
-				List.of(intf2)
-			);
+				List.of(intf2));
 
 		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance1, instance2));
 
@@ -1592,6 +1590,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateCreateServiceInstancesInvalidExpiration() {
 
@@ -1599,41 +1598,39 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// invalid format
-			() -> {
+				// invalid format
+				() -> {
 
-				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-					"TemperatureProvider",
-					"temperatureInfo",
-					"1.0.0",
-					"2030.11.04.",
-					Map.of("indoor", true),
-					List.of(intf)
-				);
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"2030.11.04.",
+							Map.of("indoor", true),
+							List.of(intf));
 
-				final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
-				when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
-				when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
-				when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
-				utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030.11.04.")).thenThrow(DateTimeException.class);
+					when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+					when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+					when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+					utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030.11.04.")).thenThrow(DateTimeException.class);
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
-				assertEquals(INVALID_EXPIRATION_FORMAT, ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-			},
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_EXPIRATION_FORMAT, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+				},
 
-			// invalid time
-			() -> {
+				// invalid time
+				() -> {
 
-				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-						"TemperatureProvider",
-						"temperatureInfo",
-						"1.0.0",
-						"1990-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intf)
-					);
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"1990-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intf));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
@@ -1645,11 +1642,11 @@ public class ManagementValidationTest {
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
 					assertEquals(INVALID_EXPIRATION_DATE, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateCreateServiceInstancesEmptyServiceInterfaceList() {
 
@@ -1659,22 +1656,22 @@ public class ManagementValidationTest {
 				"1.0.0",
 				"2030-11-04T01:53:02Z",
 				Map.of("indoor", true),
-				List.of()
-			);
+				List.of());
 
-			final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
-			when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
-			when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
-			when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
-			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
 
-			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
-			assertEquals(EMPTY_INTF_LIST, ex.getMessage());
-			assertEquals("test origin", ex.getOrigin());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+		assertEquals(EMPTY_INTF_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateCreateServiceInstancesInvalidInterface() {
 
@@ -1685,89 +1682,85 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// missing template name
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO intfMissingName = new ServiceInstanceInterfaceRequestDTO(EMPTY, "http", "NONE", Map.of("accessPort", 8080));
+				// missing template name
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO intfMissingName = new ServiceInstanceInterfaceRequestDTO(EMPTY, "http", "NONE", Map.of("accessPort", 8080));
 
-				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-						"TemperatureProvider",
-						"temperatureInfo",
-						"1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intfMissingName)
-					);
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intfMissingName));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
 					assertEquals(MISSING_TEMPLATE_NAME, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			},
+				},
 
-			// missing policy
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO intfMissingPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", EMPTY, Map.of("accessPort", 8080));
+				// missing policy
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO intfMissingPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", EMPTY, Map.of("accessPort", 8080));
 
-				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-						"TemperatureProvider",
-						"temperatureInfo",
-						"1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intfMissingPolicy)
-					);
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intfMissingPolicy));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
 					assertEquals(MISSING_POLICY, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			},
+				},
 
-			// invalid policy
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO invalidPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "MAGIC_TOKEN_AUTH", Map.of("accessPort", 8080));
+				// invalid policy
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO invalidPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "MAGIC_TOKEN_AUTH", Map.of("accessPort", 8080));
 
-				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-						"TemperatureProvider",
-						"temperatureInfo",
-						"1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(invalidPolicy)
-					);
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(invalidPolicy));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
 					assertEquals(INVALID_POLICY, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			},
+				},
 
-			// missing properties
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO intfMissingProperties = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of());
+				// missing properties
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO intfMissingProperties = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of());
 
-				final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
-						"TemperatureProvider",
-						"temperatureInfo",
-						"1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intfMissingProperties)
-					);
+					final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+							"TemperatureProvider",
+							"temperatureInfo",
+							"1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intfMissingProperties));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
 					assertEquals(MISSING_PROPERTIES, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeCreateServiceInstancesOk() {
 
@@ -1777,7 +1770,7 @@ public class ManagementValidationTest {
 		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
 		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
 
-			assertAll(
+		assertAll(
 
 				// nothing is empty
 				() -> {
@@ -1787,8 +1780,7 @@ public class ManagementValidationTest {
 							"1.0.0",
 							"2030-11-04T01:53:02Z",
 							Map.of("indoor", true),
-							List.of(intf)
-						);
+							List.of(intf));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 					final List<ServiceInstanceRequestDTO> expected = List.of(instance);
@@ -1817,8 +1809,7 @@ public class ManagementValidationTest {
 							"1.0.0",
 							EMPTY,
 							Map.of(),
-							List.of(intf)
-						);
+							List.of(intf));
 
 					final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
 					final List<ServiceInstanceRequestDTO> expected = List.of(instance);
@@ -1830,11 +1821,11 @@ public class ManagementValidationTest {
 					utilitiesMock.verify(() -> Utilities.parseUTCStringToZonedDateTime(anyString()), never());
 					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(any()), times(1)); // only interface properties
 					metadataValidationMock.close();
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeCreateServiceInstancesThrowsException() {
 
@@ -1846,21 +1837,20 @@ public class ManagementValidationTest {
 				"1.0.0",
 				"2030-11-04T01:53:02Z",
 				Map.of("indoor", true),
-				List.of(intf)
-			);
+				List.of(intf));
 
-			final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
-			final List<ServiceInstanceRequestDTO> expected = List.of(instance);
-			when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
-			when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
-			when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
-			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
-			when(normalizer.normalizeCreateServiceInstances(dto)).thenReturn(expected);
-			doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperatureProvider");
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+		final List<ServiceInstanceRequestDTO> expected = List.of(instance);
+		when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		when(normalizer.normalizeCreateServiceInstances(dto)).thenReturn(expected);
+		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName("TemperatureProvider");
 
-			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
-			assertEquals("Validation error", ex.getMessage());
-			assertEquals("test origin", ex.getOrigin());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	// update
@@ -1890,11 +1880,10 @@ public class ManagementValidationTest {
 		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 
 		final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-			EMPTY,
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(intf)
-		);
+				EMPTY,
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf));
 
 		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
@@ -1904,6 +1893,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateUpdateServiceInstancesDuplicatedInstanceId() {
 
@@ -1911,18 +1901,16 @@ public class ManagementValidationTest {
 		final ServiceInstanceInterfaceRequestDTO intf2 = new ServiceInstanceInterfaceRequestDTO("generic_https", "https", "NONE", Map.of("accessPort", 8080));
 
 		final ServiceInstanceUpdateRequestDTO instance1 = new ServiceInstanceUpdateRequestDTO(
-			"TemperatureProvider|temperatureInfo|1.0.0",
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(intf1)
-		);
+				"TemperatureProvider|temperatureInfo|1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf1));
 
 		final ServiceInstanceUpdateRequestDTO instance2 = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureProvider|temperatureInfo|1.0.0",
 				"2031-11-04T01:53:02Z",
 				Map.of("indoor", true),
-				List.of(intf2)
-			);
+				List.of(intf2));
 
 		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance1, instance2));
 
@@ -1936,6 +1924,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateUpdateServiceInstancesInvalidExpiration() {
 
@@ -1944,34 +1933,32 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// invalid format
-			() -> {
+				// invalid format
+				() -> {
 
-				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-					"TemperatureProvider|temperatureInfo|1.0.0",
-					"2030.11.04.",
-					Map.of("indoor", true),
-					List.of(intf)
-				);
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"2030.11.04.",
+							Map.of("indoor", true),
+							List.of(intf));
 
-				final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
-				utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030.11.04.")).thenThrow(DateTimeException.class);
+					utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030.11.04.")).thenThrow(DateTimeException.class);
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
-				assertEquals(INVALID_EXPIRATION_FORMAT, ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-			},
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_EXPIRATION_FORMAT, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+				},
 
-			// invalid time
-			() -> {
+				// invalid time
+				() -> {
 
-				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-						"TemperatureProvider|temperatureInfo|1.0.0",
-						"1990-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intf)
-					);
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"1990-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intf));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
@@ -1980,11 +1967,11 @@ public class ManagementValidationTest {
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
 					assertEquals(INVALID_EXPIRATION_DATE, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateUpdateServiceInstancesEmptyServiceInterfaceList() {
 
@@ -1992,20 +1979,20 @@ public class ManagementValidationTest {
 				"TemperatureProvider|temperatureInfo|1.0.0",
 				"2030-11-04T01:53:02Z",
 				Map.of("indoor", true),
-				List.of()
-			);
+				List.of());
 
-			final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
-			when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
 
-			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
 
-			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
-			assertEquals(EMPTY_INTF_LIST, ex.getMessage());
-			assertEquals("test origin", ex.getOrigin());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+		assertEquals(EMPTY_INTF_LIST, ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateUpdateServiceInstancesInvalidInterface() {
 
@@ -2014,81 +2001,77 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// missing template name
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO intfMissingName = new ServiceInstanceInterfaceRequestDTO(EMPTY, "http", "NONE", Map.of("accessPort", 8080));
+				// missing template name
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO intfMissingName = new ServiceInstanceInterfaceRequestDTO(EMPTY, "http", "NONE", Map.of("accessPort", 8080));
 
-				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-						"TemperatureProvider|temperatureInfo|1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intfMissingName)
-					);
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intfMissingName));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
 					assertEquals(MISSING_TEMPLATE_NAME, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			},
+				},
 
-			// missing policy
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO intfMissingPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", EMPTY, Map.of("accessPort", 8080));
+				// missing policy
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO intfMissingPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", EMPTY, Map.of("accessPort", 8080));
 
-				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-						"TemperatureProvider|temperatureInfo|1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intfMissingPolicy)
-					);
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intfMissingPolicy));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
 					assertEquals(MISSING_POLICY, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			},
+				},
 
-			// invalid policy
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO invalidPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "MAGIC_TOKEN_AUTH", Map.of("accessPort", 8080));
+				// invalid policy
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO invalidPolicy = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "MAGIC_TOKEN_AUTH", Map.of("accessPort", 8080));
 
-				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-						"TemperatureProvider|temperatureInfo|1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(invalidPolicy)
-					);
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(invalidPolicy));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
 					assertEquals(INVALID_POLICY, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			},
+				},
 
-			// missing properties
-			() -> {
-				final ServiceInstanceInterfaceRequestDTO intfMissingProperties = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of());
+				// missing properties
+				() -> {
+					final ServiceInstanceInterfaceRequestDTO intfMissingProperties = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of());
 
-				final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
-						"TemperatureProvider|temperatureInfo|1.0.0",
-						"2030-11-04T01:53:02Z",
-						Map.of("indoor", true),
-						List.of(intfMissingProperties)
-					);
+					final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+							"TemperatureProvider|temperatureInfo|1.0.0",
+							"2030-11-04T01:53:02Z",
+							Map.of("indoor", true),
+							List.of(intfMissingProperties));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 
 					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
 					assertEquals(MISSING_PROPERTIES, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-			}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeUpdateServiceInstancesOk() {
 
@@ -2096,7 +2079,7 @@ public class ManagementValidationTest {
 
 		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
 
-			assertAll(
+		assertAll(
 
 				// nothing is empty
 				() -> {
@@ -2104,8 +2087,7 @@ public class ManagementValidationTest {
 							"TemperatureProvider|temperatureInfo|1.0.0",
 							"2030-11-04T01:53:02Z",
 							Map.of("indoor", true),
-							List.of(intf)
-					);
+							List.of(intf));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 					final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
@@ -2130,8 +2112,7 @@ public class ManagementValidationTest {
 							"TemperatureProvider|temperatureInfo|1.0.0",
 							EMPTY,
 							Map.of(),
-							List.of(intf)
-					);
+							List.of(intf));
 
 					final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
 					final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
@@ -2143,11 +2124,11 @@ public class ManagementValidationTest {
 					utilitiesMock.verify(() -> Utilities.parseUTCStringToZonedDateTime(anyString()), never());
 					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(any()), times(1)); // only interface properties
 					metadataValidationMock.close();
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeUpdateServiceInstancesThrowsException() {
 
@@ -2157,19 +2138,18 @@ public class ManagementValidationTest {
 				"TemperatureProvider|temperatureInfo|1.0.0",
 				"2030-11-04T01:53:02Z",
 				Map.of("indoor", true),
-				List.of(intf)
-			);
+				List.of(intf));
 
-			final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
-			final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
-			utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
-			when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
-			when(normalizer.normalizeUpdateServiceInstances(dto)).thenReturn(expected);
-			doThrow(new InvalidParameterException("Validation error")).when(serviceInstanceIdentifierValidator).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+		final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+		when(normalizer.normalizeUpdateServiceInstances(dto)).thenReturn(expected);
+		doThrow(new InvalidParameterException("Validation error")).when(serviceInstanceIdentifierValidator).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
 
-			final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
-			assertEquals("Validation error", ex.getMessage());
-			assertEquals("test origin", ex.getOrigin());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
 	}
 
 	// remove
@@ -2221,6 +2201,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesMandatoryFilterMissing() {
 
@@ -2249,6 +2230,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullOrEmptyInstanceId() {
 
@@ -2277,6 +2259,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullOrEmptyProviderName() {
 
@@ -2305,6 +2288,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullOrEmptyServiceDefinition() {
 
@@ -2333,6 +2317,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullOrEmptyVersion() {
 
@@ -2362,6 +2347,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesInvalidAliveTime() {
 
@@ -2392,6 +2378,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullMetadataRequirement() {
 
@@ -2426,6 +2413,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesInvalidAddressType() {
 
@@ -2437,52 +2425,52 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// null or empty element
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
-						List.of("TemperatureProvider"),
-						List.of("temperatureInfo"),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of(EMPTY),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("NONE"));
+				// null or empty element
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+							List.of("TemperatureProvider"),
+							List.of("temperatureInfo"),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of(EMPTY),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("NONE"));
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(NULL_OR_EMPTY_ADDRESS_TYPE, ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-				utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
-			},
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(NULL_OR_EMPTY_ADDRESS_TYPE, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+					utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+				},
 
-			// invalid element
-			() -> {
-				resetUtilitiesMock();
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
-						List.of("TemperatureProvider"),
-						List.of("temperatureInfo"),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPv5"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("NONE"));
+				// invalid element
+				() -> {
+					resetUtilitiesMock();
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+							List.of("TemperatureProvider"),
+							List.of("temperatureInfo"),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPv5"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("NONE"));
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(INVALID_ADDRESS_TYPE_ELEMENT_PREFIX + "IPv5", ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-				utilitiesMock.verify(() -> Utilities.isEnumValue("IPV5", AddressType.class));
-			}
-		);
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_ADDRESS_TYPE_ELEMENT_PREFIX + "IPv5", ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+					utilitiesMock.verify(() -> Utilities.isEnumValue("IPV5", AddressType.class));
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullOrEmptyTemplate() {
 
@@ -2505,7 +2493,6 @@ public class ManagementValidationTest {
 				List.of(intfReq),
 				List.of("NONE"));
 
-
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
 		assertEquals(NULL_OR_EMPTY_TEMPTLATE, ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
@@ -2513,6 +2500,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesNullPropertyRequirement() {
 
@@ -2548,6 +2536,7 @@ public class ManagementValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateQueryServiceInstancesInvalidPolicy() {
 
@@ -2559,49 +2548,49 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// null or empty element
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
-						List.of("TemperatureProvider"),
-						List.of("temperatureInfo"),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPV4"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of(EMPTY));
+				// null or empty element
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+							List.of("TemperatureProvider"),
+							List.of("temperatureInfo"),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPV4"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of(EMPTY));
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(NULL_OR_EMPTY_POLICY, ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-			},
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(NULL_OR_EMPTY_POLICY, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+				},
 
-			// invalid element
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
-						List.of("TemperatureProvider"),
-						List.of("temperatureInfo"),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPV4"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("MAGIC_TOKEN_AUTH"));
+				// invalid element
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+							List.of("TemperatureProvider"),
+							List.of("temperatureInfo"),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPV4"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("MAGIC_TOKEN_AUTH"));
 
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(INVALID_POLICY_PREFIX + "MAGIC_TOKEN_AUTH", ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-			}
-		);
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(INVALID_POLICY_PREFIX + "MAGIC_TOKEN_AUTH", ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeQueryServiceInstancesOk() {
 
@@ -2613,93 +2602,93 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// nothing is empty
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
-						List.of("TemperatureProvider"),
-						List.of("temperatureInfo"),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPV4"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("NONE"));
+				// nothing is empty
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+							List.of("TemperatureProvider"),
+							List.of("temperatureInfo"),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPV4"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("NONE"));
 
-				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+					when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
 
-				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(normalized, dto);
-				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
-				verify(serviceInstanceIdentifierValidator, times(1)).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
-				verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
-				verify(serviceDefNameNormalizer, times(1)).normalize("temperatureInfo");
-				verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
-				verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_http");
-			},
+					final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(normalized, dto);
+					verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+					verify(serviceInstanceIdentifierValidator, times(1)).validateServiceInstanceIdentifier("TemperatureProvider|temperatureInfo|1.0.0");
+					verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+					verify(serviceDefNameNormalizer, times(1)).normalize("temperatureInfo");
+					verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
+					verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_http");
+				},
 
-			// almost everything is empty
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						null, List.of(), List.of(), List.of("temperatureInfo"), List.of(), null, List.of(), List.of(), List.of(), List.of(), List.of());
-				final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
-						null, List.of(), List.of(), List.of("temperatureInfo"), List.of(), "", List.of(), List.of(), List.of(), List.of(), List.of());
+				// almost everything is empty
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							null, List.of(), List.of(), List.of("temperatureInfo"), List.of(), null, List.of(), List.of(), List.of(), List.of(), List.of());
+					final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
+							null, List.of(), List.of(), List.of("temperatureInfo"), List.of(), "", List.of(), List.of(), List.of(), List.of(), List.of());
 
-				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(expected);
+					when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(expected);
 
-				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(normalized, expected);
-			},
+					final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(normalized, expected);
+				},
 
-			// only serivce definition is empty
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("TemperatureProvider|temperatureInfo|1.0.0"),
-						List.of("TemperatureProvider"),
-						List.of(),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPV4"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("NONE"));
+				// only serivce definition is empty
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+							List.of("TemperatureProvider"),
+							List.of(),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPV4"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("NONE"));
 
-				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+					when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
 
-				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(normalized, dto);
-			},
+					final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(normalized, dto);
+				},
 
-			// only service instance id is empty
-			() -> {
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of(),
-						List.of("TemperatureProvider"),
-						List.of("temperatureInfo"),
-						List.of("1.0.0"),
-						"2029-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPV4"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("NONE"));
+				// only service instance id is empty
+				() -> {
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of(),
+							List.of("TemperatureProvider"),
+							List.of("temperatureInfo"),
+							List.of("1.0.0"),
+							"2029-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPV4"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("NONE"));
 
-				when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+					when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
 
-				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
-				assertEquals(normalized, dto);
-			}
-		);
+					final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+					assertEquals(normalized, dto);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
-	public void ValidateAndNormalizeQueryServiceInstancesThrowsException() {
+	public void validateAndNormalizeQueryServiceInstancesThrowsException() {
 
 		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
 		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
@@ -2960,55 +2949,54 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// nothing is empty
-			() -> {
-				final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
-						"operations",
-						true,
-						"not_empty_string_set",
-						List.of("operation"));
+				// nothing is empty
+				() -> {
+					final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+							"operations",
+							true,
+							"not_empty_string_set",
+							List.of("operation"));
 
-				final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+					final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
 
-				final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
-				when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+					final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+					when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
 
-				final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
-				assertEquals(dto, normalized);
-				verify(normalizer, times(1)).normalizeServiceInterfaceTemplateListRequestDTO(dto);
-				verify(interfaceValidator, times(1)).validateNormalizedInterfaceTemplates(List.of(template));
-			},
+					final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+					assertEquals(dto, normalized);
+					verify(normalizer, times(1)).normalizeServiceInterfaceTemplateListRequestDTO(dto);
+					verify(interfaceValidator, times(1)).validateNormalizedInterfaceTemplates(List.of(template));
+				},
 
-			// requirements is empty
-			() -> {
+				// requirements is empty
+				() -> {
 
-				final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of());
+					final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of());
 
-				final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
-				when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+					final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+					when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
 
-				final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
-				assertEquals(dto, normalized);
-			},
+					final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+					assertEquals(dto, normalized);
+				},
 
-			// validator params is empty
-			() -> {
+				// validator params is empty
+				() -> {
 
-				final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
-						"operations",
-						true,
-						"not_empty_string_set",
-						List.of());
+					final ServiceInterfaceTemplatePropertyDTO propRequirement = new ServiceInterfaceTemplatePropertyDTO(
+							"operations",
+							true,
+							"not_empty_string_set",
+							List.of());
 
-				final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
+					final ServiceInterfaceTemplateRequestDTO template = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(propRequirement));
 
-				final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
-				when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
+					final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(template));
+					when(normalizer.normalizeServiceInterfaceTemplateListRequestDTO(dto)).thenReturn(dto);
 
-				final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
-				assertEquals(dto, normalized);
-			}
-		);
+					final ServiceInterfaceTemplateListRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin"));
+					assertEquals(dto, normalized);
+				});
 
 	}
 
@@ -3067,37 +3055,36 @@ public class ManagementValidationTest {
 
 		assertAll(
 
-			// nothing is null
-			() -> {
-				final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_mqtt"), List.of("tcp"));
-				when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
+				// nothing is null
+				() -> {
+					final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_mqtt"), List.of("tcp"));
+					when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
 
-				final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
-				assertEquals(dto, normalized);
-				verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
-				verify(normalizer, times(1)).normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
-				verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_mqtt");
-			},
+					final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+					assertEquals(dto, normalized);
+					verify(pageValidator, times(1)).validatePageParameter(any(), any(), eq("test origin"));
+					verify(normalizer, times(1)).normalizeServiceInterfaceTemplateQueryRequestDTO(dto);
+					verify(interfaceTemplateNameValidator, times(1)).validateInterfaceTemplateName("generic_mqtt");
+				},
 
-			// everything is null
-			() -> {
-				final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(null, List.of(), List.of());
-				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
-				when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
+				// everything is null
+				() -> {
+					final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(null, List.of(), List.of());
+					final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+					when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto)).thenReturn(dto);
 
-				final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
-				assertEquals(expected, normalized);
-			},
+					final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin"));
+					assertEquals(expected, normalized);
+				},
 
-			// dto is null
-			() -> {
-				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
-				when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(null)).thenReturn(expected);
+				// dto is null
+				() -> {
+					final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+					when(normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(null)).thenReturn(expected);
 
-				final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(null, "test origin"));
-				assertEquals(expected, normalized);
-			}
-		);
+					final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeQueryInterfaceTemplates(null, "test origin"));
+					assertEquals(expected, normalized);
+				});
 
 	}
 
@@ -3166,45 +3153,46 @@ public class ManagementValidationTest {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeAll
-    private static void initializeUtilitiesMock() {
-    	createUtilitiesMock();
-    }
+	@BeforeAll
+	private static void initializeUtilitiesMock() {
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeEach
-    private void resetUtilitiesMockBeforeEach() {
-    	resetUtilitiesMock();
-    }
+	@BeforeEach
+	private void resetUtilitiesMockBeforeEach() {
+		resetUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private void resetUtilitiesMock() {
-    	if (utilitiesMock != null) {
-    		utilitiesMock.close();
-    	}
-    	createUtilitiesMock();
-    }
+	private void resetUtilitiesMock() {
+		if (utilitiesMock != null) {
+			utilitiesMock.close();
+		}
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private static void createUtilitiesMock() {
-    	utilitiesMock = mockStatic(Utilities.class);
+	@SuppressWarnings("checkstyle:magicnumber")
+	private static void createUtilitiesMock() {
+		utilitiesMock = mockStatic(Utilities.class);
 
-    	// mock common cases
-    	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((String)null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>)null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEnumValue("MAC", AddressType.class)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.containsNullOrEmpty((List<String>)List.of(EMPTY))).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.utcNow()).thenReturn(ZonedDateTime.of(2025, 8, 4, 1, 53, 2, 0, ZoneId.of("UTC"))); // fictive date of testing
-    	utilitiesMock.when(() -> Utilities.isEnumValue("NONE", ServiceInterfacePolicy.class)).thenReturn(true);
-    }
-    
-    //-------------------------------------------------------------------------------------------------
-    @AfterAll
-    private static void closeUtilitiesMock() {
-    	utilitiesMock.close();
-    }
+		// mock common cases
+		utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEnumValue("MAC", AddressType.class)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.containsNullOrEmpty((List<String>) List.of(EMPTY))).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.utcNow()).thenReturn(ZonedDateTime.of(2025, 8, 4, 1, 53, 2, 0, ZoneId.of("UTC"))); // fictive date of testing
+		utilitiesMock.when(() -> Utilities.isEnumValue("NONE", ServiceInterfacePolicy.class)).thenReturn(true);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@AfterAll
+	private static void closeUtilitiesMock() {
+		utilitiesMock.close();
+	}
 }

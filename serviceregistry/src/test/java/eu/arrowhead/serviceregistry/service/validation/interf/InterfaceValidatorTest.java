@@ -417,6 +417,7 @@ public class InterfaceValidatorTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateNormalizedInterfaceInstancesMandatoryPropertyMissing() {
 
@@ -438,6 +439,7 @@ public class InterfaceValidatorTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateNormalizedInterfaceInstancesNotMandatoryPropertyMissing() {
 
@@ -479,6 +481,7 @@ public class InterfaceValidatorTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateNormalizedInterfaceInstancesNoExistingTemplateOk() {
 

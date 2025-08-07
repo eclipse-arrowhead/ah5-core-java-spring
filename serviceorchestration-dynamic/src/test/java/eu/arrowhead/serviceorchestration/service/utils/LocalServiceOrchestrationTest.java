@@ -340,6 +340,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationServiceDiscoveryWithOnlyPreferredProvidersAndMatchmaking() {
 		final UUID jobId = UUID.randomUUID();
@@ -419,6 +420,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationServiceDiscoveryWithPreferredProvidersButNotOnlyWithMatchmaking() {
 		final UUID jobId = UUID.randomUUID();
@@ -612,6 +614,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationExclusivityIsPreferred() {
 		final UUID jobId = UUID.randomUUID();
@@ -677,6 +680,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButPartlyFulfilled() {
 		final UUID jobId = UUID.randomUUID();
@@ -734,6 +738,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButPartlyFulfilledWithExplicitMatchmaking() {
 		final UUID jobId = UUID.randomUUID();
@@ -832,6 +837,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationExclusivityIsPreferredButNotFulfilledWithMatchmaking() {
 		final UUID jobId = UUID.randomUUID();
@@ -875,6 +881,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationOnlyExclusive() {
 		final UUID jobId = UUID.randomUUID();
@@ -940,6 +947,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationOnlyExclusiveWithExplicitMatchmaking() {
 		final UUID jobId = UUID.randomUUID();
@@ -1202,6 +1210,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationOnlyExclusiveTheTemporaryLockHasExpireBeforeFinalReservation() {
 		final UUID jobId = UUID.randomUUID();
@@ -2140,6 +2149,7 @@ public class LocalServiceOrchestrationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testDoLocalServiceOrchestrationInterfaceRequirementsAddressTypeWhenTranslationAllowed() {
 		final UUID jobId = UUID.randomUUID();

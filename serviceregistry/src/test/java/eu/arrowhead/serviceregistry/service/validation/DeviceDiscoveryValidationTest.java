@@ -169,8 +169,7 @@ public class DeviceDiscoveryValidationTest {
 					final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE", Map.of(), List.of("02:00:5e:00:53:af"));
 					final NormalizedDeviceRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterDevice(dto, "test origin"));
 					assertEquals(testNormalizedDto, normalized);
-				}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -239,6 +238,7 @@ public class DeviceDiscoveryValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateLookupDeviceOk() {
 
@@ -290,8 +290,7 @@ public class DeviceDiscoveryValidationTest {
 					final DeviceLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupDevice(dtoWithEmptyAddressList, "test origin"));
 					verify(addressValidator, never()).validateNormalizedAddress(any(), anyString());
 					assertEquals(normalized, expected);
-				}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -344,40 +343,40 @@ public class DeviceDiscoveryValidationTest {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeAll
-    private static void initializeUtilitiesMock() {
-    	createUtilitiesMock();
-    }
+	@BeforeAll
+	private static void initializeUtilitiesMock() {
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeEach
-    private void resetUtilitiesMockBeforeEach() {
-    	resetUtilitiesMock();
-    }
+	@BeforeEach
+	private void resetUtilitiesMockBeforeEach() {
+		resetUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private void resetUtilitiesMock() {
-    	if (utilitiesMock != null) {
-    		utilitiesMock.close();
-    	}
-    	createUtilitiesMock();
-    }
+	private void resetUtilitiesMock() {
+		if (utilitiesMock != null) {
+			utilitiesMock.close();
+		}
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private static void createUtilitiesMock() {
-    	utilitiesMock = mockStatic(Utilities.class);
+	private static void createUtilitiesMock() {
+		utilitiesMock = mockStatic(Utilities.class);
 
-    	// mock common cases
-    	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
-    }
-    
-    //-------------------------------------------------------------------------------------------------
-    @AfterAll
-    private static void closeUtilitiesMock() {
-    	utilitiesMock.close();
-    }
+		// mock common cases
+		utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@AfterAll
+	private static void closeUtilitiesMock() {
+		utilitiesMock.close();
+	}
 }

@@ -286,6 +286,7 @@ public class OrchestrationPushManagementServiceTest {
 	// pushTrigger
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushTriggerWithSystemName() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -353,6 +354,7 @@ public class OrchestrationPushManagementServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushTriggerWithSubscriptionId() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -414,6 +416,7 @@ public class OrchestrationPushManagementServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushTriggerWithEmpty() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -481,6 +484,7 @@ public class OrchestrationPushManagementServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushTriggerExistingJob() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -542,6 +546,7 @@ public class OrchestrationPushManagementServiceTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testPushTriggerDBError() {
 		final BlockingQueue<UUID> jobQueue = Mockito.mock(BlockingQueue.class);
@@ -556,7 +561,6 @@ public class OrchestrationPushManagementServiceTest {
 		final PageImpl<Subscription> subscriptionRecordPage = new PageImpl<Subscription>(List.of(subscriptionRecord));
 		final OrchestrationJob jobRecord = new OrchestrationJob(OrchestrationType.PUSH, requesterSystem, targetSystem, serviceDef, subscriptionRecord.getId().toString());
 		jobRecord.setId(UUID.randomUUID());
-		final List<OrchestrationJob> jobRecordList = List.of(jobRecord);
 
 		when(subscriptionDbService.query(anyList(), anyList(), anyList(), any())).thenReturn(subscriptionRecordPage);
 		when(orchJobDbService.query(any(), any())).thenReturn(new PageImpl<OrchestrationJob>(List.of()));

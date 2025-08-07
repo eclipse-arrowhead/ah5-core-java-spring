@@ -59,6 +59,7 @@ public class DynamicServiceOrchestrationApplicationInitListenerTest {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testCustomInit() {
 		final KeyValuesDTO configDTO = new KeyValuesDTO(Map.of(Constants.SERVICE_ADDRESS_ALIAS, "foo,bar"));
@@ -80,6 +81,7 @@ public class DynamicServiceOrchestrationApplicationInitListenerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testCustomInitNoAddressAliases() {
 		final KeyValuesDTO configDTO = new KeyValuesDTO(Map.of());
@@ -98,6 +100,7 @@ public class DynamicServiceOrchestrationApplicationInitListenerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testCustomInitStandalone() {
 		ReflectionTestUtils.setField(listener, "standaloneMode", true);

@@ -200,6 +200,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunLocalCloudWithoutIssueMqttNotify() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -249,6 +250,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunIntercloudWithoutIssueMqttsNotify() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -299,6 +301,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunJobNotExists() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		when(orchJobDbService.getById(eq(jobId))).thenReturn(Optional.empty());
@@ -316,6 +319,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunNoSubscription() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -340,6 +344,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunSubscriptionNotFound() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -408,6 +413,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunMQTTClientError() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -453,6 +459,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunMQTTPublishError() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -503,6 +510,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunMQTTNotEnabled() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -546,6 +554,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunUnsupportedProtocol() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();
@@ -588,6 +597,7 @@ public class PushOrchestrationWorkerTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testRunNotifyPropsException() throws MqttPersistenceException, MqttException, StreamReadException, DatabindException, IOException {
 		final OrchestrationJob job = new OrchestrationJob();

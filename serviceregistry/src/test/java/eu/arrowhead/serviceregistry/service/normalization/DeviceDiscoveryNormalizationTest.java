@@ -99,6 +99,7 @@ public class DeviceDiscoveryNormalizationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testNormalizeDeviceLookupRequestDTO() {
 

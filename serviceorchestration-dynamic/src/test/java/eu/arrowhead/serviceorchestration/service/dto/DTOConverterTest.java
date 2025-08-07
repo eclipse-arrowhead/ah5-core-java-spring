@@ -91,6 +91,7 @@ public class DTOConverterTest {
 	// convertSubscriptionToDTO()
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testConvertSubscriptionToDTO() throws JsonMappingException, JsonProcessingException {
 		final Subscription record = subscription();
@@ -111,6 +112,7 @@ public class DTOConverterTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testConvertSubscriptionToDTONullInput() throws JsonMappingException, JsonProcessingException {
 		final Throwable ex = assertThrows(Throwable.class, () -> converter.convertSubscriptionToDTO(null));
@@ -122,6 +124,7 @@ public class DTOConverterTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
 	@Test
 	public void testConvertSubscriptionToDTOInvalidOrchestrationRequestString() throws JsonMappingException, JsonProcessingException {
 		final Subscription record = subscription();

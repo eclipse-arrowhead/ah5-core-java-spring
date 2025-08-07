@@ -119,6 +119,7 @@ public class SystemDiscoveryNormalizationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testNormalizeSystemLookupRequestDTO() {
 
