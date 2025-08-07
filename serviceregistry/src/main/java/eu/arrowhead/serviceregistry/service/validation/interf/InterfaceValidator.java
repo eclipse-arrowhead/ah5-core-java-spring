@@ -95,6 +95,8 @@ public class InterfaceValidator {
 				}
 
 				final Map<String, Object> normalizedProperties = new HashMap<>(interfaceInstance.properties());
+				boolean addressesDiscovered = false;
+
 				interfaceTemplateDbService.getPropertiesByTemplateName(interfaceInstance.templateName())
 						.forEach(templateProp -> {
 							final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
@@ -106,15 +108,20 @@ public class InterfaceValidator {
 							if (instanceProp != null && !Utilities.isEmpty(templateProp.getValidator())) {
 								final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER_REGEXP);
 								final PropertyValidatorType propertyValidatorType = PropertyValidatorType.valueOf(validatorWithArgs[0]);
-								if (propertyValidatorType != PropertyValidatorType.NOT_EMPTY_ADDRESS_LIST) {
+
+								// discover addresses, if it is not done already and the current validator won't do that
+								if (!addressesDiscovered && propertyValidatorType != PropertyValidatorType.NOT_EMPTY_ADDRESS_LIST) {
 									discoverAndNormalizeAndValidateAddressProperty(interfaceInstance.properties());
 								}
+
 								final IPropertyValidator validator = interfacePropertyValidator.getValidator(propertyValidatorType);
 								if (validator != null) {
 									final Object normalizedProp = validator.validateAndNormalize(
 											instanceProp,
 											validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
 									normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
+								} else {
+									logger.info("The validator belonging to the interface template property is not implemented: " + propertyValidatorType.name());
 								}
 							}
 						});

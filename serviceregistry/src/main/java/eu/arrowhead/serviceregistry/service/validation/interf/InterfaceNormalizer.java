@@ -44,6 +44,8 @@ public class InterfaceNormalizer {
 	public ServiceInterfaceTemplateRequestDTO normalizeTemplateDTO(final ServiceInterfaceTemplateRequestDTO dto) {
 		logger.debug("normalizeTemplateDTO started...");
 		Assert.notNull(dto, "Interface template dto is null");
+		Assert.notNull(dto.protocol(), "protocol is null");
+		Assert.isTrue(dto.propertyRequirements() == null || !Utilities.containsNull(dto.propertyRequirements().stream().map(prop -> prop.name()).toList()), "propertyRequirements contains null name element");
 
 		return new ServiceInterfaceTemplateRequestDTO(
 				interfaceTemplateNameNormalizer.normalize(dto.name()),

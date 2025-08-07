@@ -82,7 +82,7 @@ public class ServiceDiscoveryValidation {
 					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 					Integer.parseInt(str);
 				} catch (final ClassCastException | NumberFormatException ex) {
-					throw new InvalidParameterException(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata must have integer value.");
+					throw new InvalidParameterException(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata must have the string representation of an integer value.");
 				}
 			}
 
@@ -186,7 +186,11 @@ public class ServiceDiscoveryValidation {
 		}
 
 		if (!Utilities.isEmpty(dto.metadata())) {
-			MetadataValidation.validateMetadataKey(dto.metadata());
+			try {
+				MetadataValidation.validateMetadataKey(dto.metadata());
+			} catch (InvalidParameterException ex) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
 		}
 
 		if (Utilities.isEmpty(dto.interfaces())) {
@@ -209,7 +213,11 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
 				throw new InvalidParameterException("Interface properties are missing", origin);
 			} else {
-				MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				try {
+					MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				} catch (InvalidParameterException ex) {
+					throw new InvalidParameterException(ex.getMessage(), origin);
+				}
 			}
 		}
 	}
