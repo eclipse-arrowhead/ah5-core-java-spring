@@ -191,7 +191,7 @@ public class TokenEngine {
 
 			Assert.isTrue(!Utilities.isEmpty(rawToken), "Unhandled token type: " + tokenType);
 
-			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encrypt_HMAC_SHA256(rawToken, sysInfo.getSecretCryptographerKey());
 			final Pair<SelfContainedToken, Boolean> selfContainedTokenResult = selfContainedTokenDbService.save(
 					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 					hashedToken,
@@ -223,7 +223,7 @@ public class TokenEngine {
 
 		String hashedToken = null;
 		try {
-			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encrypt_HMAC_SHA256(rawToken, sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -368,7 +368,7 @@ public class TokenEngine {
 		boolean isUnique = false;
 		do {
 			rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encrypt_HMAC_SHA256(rawToken, sysInfo.getSecretCryptographerKey());
 			isUnique = tokenHeaderDbService.find(hashedToken).isEmpty();
 		} while (!isUnique);
 

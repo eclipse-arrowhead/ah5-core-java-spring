@@ -156,7 +156,7 @@ public class AuthorizationTokenValidation {
 
 		final String tokenVariant = dto.tokenVariant().trim().toUpperCase();
 		if (!Utilities.isEnumValue(tokenVariant, ServiceInterfacePolicy.class)) {
-			throw new InvalidParameterException("Token variant is invalid: " + tokenVariant, origin);
+			throw new InvalidParameterException("Token variant is invalid: " + dto.tokenVariant(), origin);
 		}
 
 		if (Utilities.isEmpty(dto.provider())) {
@@ -166,7 +166,7 @@ public class AuthorizationTokenValidation {
 		if (!Utilities.isEmpty(dto.targetType())) {
 			final String targetTypeName = dto.targetType().trim().toUpperCase();
 			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+				throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 			}
 		}
 

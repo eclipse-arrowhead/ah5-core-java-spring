@@ -151,7 +151,7 @@ public class AuthorizationTokenManagementService {
 		logger.debug("queryTokensOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final AuthorizationTokenQueryRequestDTO normalized = validator.validateAndNormalizedQueryTokensRequest(dto, origin);
+		final AuthorizationTokenQueryRequestDTO normalized = validator.validateAndNormalizeQueryTokensRequest(dto, origin);
 		final PageRequest pageRequest = pageService.getPageRequest(
 				normalized.pagination(),
 				Direction.ASC,
