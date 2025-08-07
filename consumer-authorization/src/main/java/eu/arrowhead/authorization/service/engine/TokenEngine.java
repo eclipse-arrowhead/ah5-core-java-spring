@@ -190,7 +190,8 @@ public class TokenEngine {
 			// BASE64 SELF-CONTAINED TOKEN
 			if (tokenType == ServiceInterfacePolicy.BASE64_SELF_CONTAINED_TOKEN_AUTH) {
 				rawToken = tokenGenerator.generateBas64SelfContainedToken(expiresAt, tokenPayload);
-			} else {
+			} else if (tokenType == ServiceInterfacePolicy.RSA_SHA256_JSON_WEB_TOKEN_AUTH
+					|| tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
 				//  JSON WEB TOKEN
 				if (!arrowheadContext.containsKey(Constants.SERVER_PRIVATE_KEY)) {
 					throw new InvalidParameterException("JWT is supported only when SSL is enabled", origin);
@@ -200,7 +201,7 @@ public class TokenEngine {
 
 				if (tokenType == ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH) {
 					rawToken = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA512, privateKey, expiresAt, tokenPayload);
-				} else if (tokenType == ServiceInterfacePolicy.RSA_SHA256_JSON_WEB_TOKEN_AUTH) {
+				} else {
 					rawToken = tokenGenerator.generateJsonWebToken(AlgorithmIdentifiers.RSA_USING_SHA256, privateKey, expiresAt, tokenPayload);
 				}
 			}
