@@ -246,7 +246,7 @@ public class OrchestrationLockDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetAllDBError() {
-		final List<OrchestrationLock> records = candidateListToEntityList(candidateList(2));
+		candidateListToEntityList(candidateList(2));
 
 		doThrow(new HibernateException("test message")).when(lockRepo).findAll();
 
@@ -987,7 +987,7 @@ public class OrchestrationLockDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryDBError() {
-		final List<OrchestrationLock> records = candidateListToEntityList(candidateList(2));
+		candidateListToEntityList(candidateList(2));
 
 		final List<Long> ids = null;
 		final List<String> orchestrationJobIds = null;
