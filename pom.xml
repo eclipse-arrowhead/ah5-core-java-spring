@@ -14,7 +14,12 @@
 	<description>Arrowhead 5Gen Core using Spring Boot</description>
 
 	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
-	<!-- TODO: License -->
+	<licenses>
+    	<license>
+	     	<name>Eclipse Public License - v 2.0</name>
+	     	<url>https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt</url>
+	   </license>
+  	</licenses>
 	
 	<properties>
 		<revision>5.0.0</revision>
