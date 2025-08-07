@@ -36,6 +36,37 @@
 		<module>consumer-authorization</module>
 	</modules>
 	
+	<profiles>
+		<profile>
+			<id>license-check</id>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>dash-licenses-snapshots</id>
+					<url>https://repo.eclipse.org/content/repositories/dash-licenses-snapshots/</url>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</pluginRepository>
+			</pluginRepositories>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.dash</groupId>
+						<artifactId>license-tool-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>license-check</id>
+								<goals>
+									<goal>license-check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+	
 	<dependencies>
 		<dependency>
 			<groupId>eu.arrowhead</groupId>
