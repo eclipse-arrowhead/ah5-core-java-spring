@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import eu.arrowhead.common.Utilities;
@@ -34,24 +37,27 @@ import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.DeviceQueryRequestDTO;
+import eu.arrowhead.dto.DeviceRequestDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 
 @ExtendWith(MockitoExtension.class)
 public class ManagementNormalizationTest {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	@InjectMocks
 	private ManagementNormalization normalizer;
-	
+
 	@Mock
 	private AddressValidator addressValidator;
 
@@ -191,11 +197,117 @@ public class ManagementNormalizationTest {
 	}
 
 	// DEVICES
-	
+
+	@SuppressWarnings("unchecked")
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void tesNormalizeDeviceRequestDTOList() {
+
+		assertAll(
+
+			// nothing is empty
+			() -> {
+				final DeviceRequestDTO dto1 = new DeviceRequestDTO("TEST_DEVICE1", Map.of("indoor", false), List.of("3a:7c:91:ef:2d:b6", "56:3e:c9:7a:11:84"));
+				final List<AddressDTO> expectedAddresses = new ArrayList<AddressDTO>(2);
+				expectedAddresses.add(new AddressDTO("MAC", "3a:7c:91:ef:2d:b6"));
+				expectedAddresses.add(new AddressDTO("MAC", "56:3e:c9:7a:11:84"));
+				final NormalizedDeviceRequestDTO expected1 = new NormalizedDeviceRequestDTO("TEST_DEVICE1", Map.of("indoor", false), expectedAddresses);
+
+				final DeviceRequestDTO dto2 = new DeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of("3a:7c:91:ef:2d:b7"));
+				final NormalizedDeviceRequestDTO expected2 = new NormalizedDeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of(new AddressDTO("MAC", "3a:7c:91:ef:2d:b7")));
+
+				when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+				when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+				when(addressValidator.detectType(anyString())).thenReturn(AddressType.MAC);
+
+				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceRequestDTOList(List.of(dto1, dto2)));
+				assertEquals(List.of(expected1, expected2), normalized);
+				verify(addressNormalizer, times(3)).normalize(anyString());
+				verify(deviceNameNormalizer, times(2)).normalize(anyString());
+				utilitiesMock.verify(() -> Utilities.isEmpty("TEST_DEVICE1"));
+				utilitiesMock.verify(() -> Utilities.isEmpty("TEST_DEVICE2"));
+				utilitiesMock.verify(() -> Utilities.isEmpty(List.of("3a:7c:91:ef:2d:b6", "56:3e:c9:7a:11:84")));
+				utilitiesMock.verify(() -> Utilities.isEmpty(List.of("3a:7c:91:ef:2d:b7")));
+			},
+
+			// address is empty
+			() -> {
+
+				Mockito.reset(addressNormalizer);
+				final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of());
+				final NormalizedDeviceRequestDTO expected = new NormalizedDeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), new ArrayList<>());
+
+				when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+
+				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceRequestDTOList(List.of(dto)));
+				assertEquals(List.of(expected), normalized);
+				verify(addressNormalizer, never()).normalize(anyString());
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void tesNormalizeDeviceQueryRequestDTO() {
+
+		assertAll(
+
+			// nothing is null
+			() -> {
+				when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+				when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+
+				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+				requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TEST_DEVICE"), List.of("56:3e:c9:7a:11:84"), "mac ", List.of(requirement));
+				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TEST_DEVICE"), List.of("56:3e:c9:7a:11:84"), "MAC", List.of(requirement));
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(dto));
+				assertEquals(expected, normalized);
+				verify(deviceNameNormalizer, times(1)).normalize("TEST_DEVICE");
+				verify(addressNormalizer, times(1)).normalize("56:3e:c9:7a:11:84");
+			},
+
+			// everything is null
+			() -> {
+				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(null, List.of(), List.of(), EMPTY, List.of());
+				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, List.of());
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(dto));
+				assertEquals(expected, normalized);
+			},
+
+			// dto is null
+			() -> {
+				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, null);
+
+				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(null));
+				assertEquals(expected, normalized);
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void tesNormalizeDeviceNames() {
+
+		when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		final List<String> deviceNames = new ArrayList<String>(2);
+		deviceNames.add("TEST_DEVICE");
+		deviceNames.add(EMPTY);
+
+		final List<String> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceNames(deviceNames));
+		assertEquals(List.of("TEST_DEVICE"), normalized);
+		verify(deviceNameNormalizer, times(1)).normalize("TEST_DEVICE");
+		utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
+	}
+
 	// SERVICE DEFINITIONS
-	
+
 	// INTERFACE TEMPLATES
-	
+
 	//=================================================================================================
 	// assistant methods
 
