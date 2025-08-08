@@ -16,12 +16,15 @@
  *******************************************************************************/
 package eu.arrowhead.authorization.engine;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,6 +39,7 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -904,5 +908,230 @@ public class TokenEngineTest {
 		verify(tokenHeaderDbService).find("ConsumerName", "hashedToken");
 
 		assertEquals("Self contained tokens can't be verified this way", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testVerifyUsageLimitedTokenNoDetails() throws InvalidKeyException, NoSuchAlgorithmException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("aKey");
+		when(secretCryptographer.encrypt_HMAC_SHA256("rawToken", "aKey")).thenReturn("hashedToken");
+		when(tokenHeaderDbService.find("ConsumerName", "hashedToken")).thenReturn(Optional.of(tokenHeader));
+		when(usageLimitedTokenDbService.decrease(tokenHeader)).thenReturn(Optional.empty());
+
+		final Pair<Boolean, Optional<TokenModel>> result = engine.verify("ConsumerName", "rawToken", "testOrigin");
+
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).encrypt_HMAC_SHA256("rawToken", "aKey");
+		verify(tokenHeaderDbService).find("ConsumerName", "hashedToken");
+		verify(usageLimitedTokenDbService).decrease(tokenHeader);
+
+		assertFalse(result.getFirst());
+		assertTrue(result.getSecond().isEmpty());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testVerifyUsageLimitedTokenNoUsageLeft() throws InvalidKeyException, NoSuchAlgorithmException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("aKey");
+		when(secretCryptographer.encrypt_HMAC_SHA256("rawToken", "aKey")).thenReturn("hashedToken");
+		when(tokenHeaderDbService.find("ConsumerName", "hashedToken")).thenReturn(Optional.of(tokenHeader));
+		when(usageLimitedTokenDbService.decrease(tokenHeader)).thenReturn(Optional.of(Pair.of(0, -1)));
+
+		final Pair<Boolean, Optional<TokenModel>> result = engine.verify("ConsumerName", "rawToken", "testOrigin");
+
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).encrypt_HMAC_SHA256("rawToken", "aKey");
+		verify(tokenHeaderDbService).find("ConsumerName", "hashedToken");
+		verify(usageLimitedTokenDbService).decrease(tokenHeader);
+
+		assertFalse(result.getFirst());
+		assertTrue(result.getSecond().isEmpty());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testVerifyUsageLimitedTokenVerified() throws InvalidKeyException, NoSuchAlgorithmException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("aKey");
+		when(secretCryptographer.encrypt_HMAC_SHA256("rawToken", "aKey")).thenReturn("hashedToken");
+		when(tokenHeaderDbService.find("ConsumerName", "hashedToken")).thenReturn(Optional.of(tokenHeader));
+		when(usageLimitedTokenDbService.decrease(tokenHeader)).thenReturn(Optional.of(Pair.of(2, 1)));
+
+		final Pair<Boolean, Optional<TokenModel>> result = engine.verify("ConsumerName", "rawToken", "testOrigin");
+
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).encrypt_HMAC_SHA256("rawToken", "aKey");
+		verify(tokenHeaderDbService).find("ConsumerName", "hashedToken");
+		verify(usageLimitedTokenDbService).decrease(tokenHeader);
+
+		assertTrue(result.getFirst());
+		final TokenModel resultModel = result.getSecond().get();
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.USAGE_LIMITED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testVerifyTimeLimitedTokenFalse() throws InvalidKeyException, NoSuchAlgorithmException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+
+		final ZonedDateTime expiresAt = ZonedDateTime.of(2025, 05, 10, 12, 0, 0, 0, ZoneId.of("UTC"));
+		final TimeLimitedToken token = new TimeLimitedToken(tokenHeader, expiresAt);
+
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("aKey");
+		when(secretCryptographer.encrypt_HMAC_SHA256("rawToken", "aKey")).thenReturn("hashedToken");
+		when(tokenHeaderDbService.find("ConsumerName", "hashedToken")).thenReturn(Optional.of(tokenHeader));
+		when(timeLimitedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.of(token));
+
+		final Pair<Boolean, Optional<TokenModel>> result = engine.verify("ConsumerName", "rawToken", "testOrigin");
+
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).encrypt_HMAC_SHA256("rawToken", "aKey");
+		verify(tokenHeaderDbService).find("ConsumerName", "hashedToken");
+		verify(timeLimitedTokenDbService).getByHeader(tokenHeader);
+
+		assertFalse(result.getFirst());
+		assertTrue(result.getSecond().isEmpty());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testVerifyTimeLimitedTokenTrue() throws InvalidKeyException, NoSuchAlgorithmException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+
+		final ZonedDateTime expiresAt = ZonedDateTime.of(2125, 05, 10, 12, 0, 0, 0, ZoneId.of("UTC"));
+		final TimeLimitedToken token = new TimeLimitedToken(tokenHeader, expiresAt);
+
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("aKey");
+		when(secretCryptographer.encrypt_HMAC_SHA256("rawToken", "aKey")).thenReturn("hashedToken");
+		when(tokenHeaderDbService.find("ConsumerName", "hashedToken")).thenReturn(Optional.of(tokenHeader));
+		when(timeLimitedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.of(token));
+
+		final Pair<Boolean, Optional<TokenModel>> result = engine.verify("ConsumerName", "rawToken", "testOrigin");
+
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).encrypt_HMAC_SHA256("rawToken", "aKey");
+		verify(tokenHeaderDbService).find("ConsumerName", "hashedToken");
+		verify(timeLimitedTokenDbService).getByHeader(tokenHeader);
+
+		assertTrue(result.getFirst());
+		final TokenModel resultModel = result.getSecond().get();
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.TIME_LIMITED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeEmptyList() {
+		assertDoesNotThrow(() -> engine.revoke(List.of(), "testOrigin"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeExceptionInDb() {
+		final List<String> list = List.of("hashedToken");
+
+		when(tokenHeaderDbService.findByTokenHashList(list)).thenThrow(new InternalServerError("test"));
+
+		final ArrowheadException ex = assertThrows(InternalServerError.class,
+				() -> engine.revoke(list, "testOrigin"));
+
+		verify(tokenHeaderDbService).findByTokenHashList(list);
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("testOrigin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeOk() {
+		final List<String> list = List.of("hashedToken");
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		tokenHeader.setId(1L);
+
+		when(tokenHeaderDbService.findByTokenHashList(list)).thenReturn(List.of(tokenHeader));
+		doNothing().when(tokenHeaderDbService).deleteById(List.of(1L));
+
+		assertDoesNotThrow(() -> engine.revoke(list, "testOrigin"));
+
+		verify(tokenHeaderDbService).findByTokenHashList(list);
+		verify(tokenHeaderDbService).deleteById(List.of(1L));
 	}
 }
