@@ -31,6 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -43,6 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,10 +58,16 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
+import eu.arrowhead.authorization.jpa.entity.CryptographerAuxiliary;
+import eu.arrowhead.authorization.jpa.entity.EncryptionKey;
 import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
 import eu.arrowhead.authorization.jpa.entity.TimeLimitedToken;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
@@ -1133,5 +1144,597 @@ public class TokenEngineTest {
 
 		verify(tokenHeaderDbService).findByTokenHashList(list);
 		verify(tokenHeaderDbService).deleteById(List.of(1L));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryDbException() {
+		final Pageable page = PageRequest.of(0, 10);
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenThrow(new InternalServerError("test"));
+
+		final ArrowheadException ex = assertThrows(InternalServerError.class,
+				() -> engine.query(page, null, AuthorizationTokenType.USAGE_LIMITED_TOKEN, null, null, "ProviderName", AuthorizationTargetType.SERVICE_DEF, "testService", "testOrigin"));
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("testOrigin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryUsageLimitedNoDetails() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final Pageable page = PageRequest.of(0, 10);
+
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenReturn(new PageImpl<>(List.of(tokenHeader), page, 1));
+		when(usageLimitedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.empty());
+
+		final Page<TokenModel> resultPage = engine.query(
+				page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"testOrigin");
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+		verify(usageLimitedTokenDbService).getByHeader(tokenHeader);
+
+		assertEquals(1, resultPage.getContent().size());
+		final TokenModel resultModel = resultPage.getContent().get(0);
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.USAGE_LIMITED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+		assertNull(resultModel.getVariant());
+		assertNull(resultModel.getUsageLimit());
+		assertNull(resultModel.getUsageLeft());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryUsageLimitedWithDetails() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final Pageable page = PageRequest.of(0, 10);
+		final UsageLimitedToken details = new UsageLimitedToken(tokenHeader, 10);
+		details.setUsageLeft(6);
+
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenReturn(new PageImpl<>(List.of(tokenHeader), page, 1));
+		when(usageLimitedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.of(details));
+
+		final Page<TokenModel> resultPage = engine.query(
+				page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"testOrigin");
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+		verify(usageLimitedTokenDbService).getByHeader(tokenHeader);
+
+		assertEquals(1, resultPage.getContent().size());
+		final TokenModel resultModel = resultPage.getContent().get(0);
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.USAGE_LIMITED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+		assertEquals("USAGE_LIMITED_TOKEN_AUTH", resultModel.getVariant());
+		assertEquals(10, resultModel.getUsageLimit());
+		assertEquals(6, resultModel.getUsageLeft());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryTimeLimitedNoDetails() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final Pageable page = PageRequest.of(0, 10);
+
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenReturn(new PageImpl<>(List.of(tokenHeader), page, 1));
+		when(timeLimitedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.empty());
+
+		final Page<TokenModel> resultPage = engine.query(
+				page,
+				null,
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"testOrigin");
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+		verify(timeLimitedTokenDbService).getByHeader(tokenHeader);
+
+		assertEquals(1, resultPage.getContent().size());
+		final TokenModel resultModel = resultPage.getContent().get(0);
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.TIME_LIMITED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+		assertNull(resultModel.getVariant());
+		assertNull(resultModel.getExpiresAt());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryTimeLimitedWithDetails() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final Pageable page = PageRequest.of(0, 10);
+		final ZonedDateTime expiresAt = ZonedDateTime.of(2125, 05, 10, 12, 0, 0, 0, ZoneId.of("UTC"));
+		final TimeLimitedToken details = new TimeLimitedToken(tokenHeader, expiresAt);
+
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenReturn(new PageImpl<>(List.of(tokenHeader), page, 1));
+		when(timeLimitedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.of(details));
+
+		final Page<TokenModel> resultPage = engine.query(
+				page,
+				null,
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"testOrigin");
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+		verify(timeLimitedTokenDbService).getByHeader(tokenHeader);
+
+		assertEquals(1, resultPage.getContent().size());
+		final TokenModel resultModel = resultPage.getContent().get(0);
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.TIME_LIMITED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+		assertEquals("TIME_LIMITED_TOKEN_AUTH", resultModel.getVariant());
+		assertEquals(expiresAt, resultModel.getExpiresAt());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySelfContainedNoDetails() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final Pageable page = PageRequest.of(0, 10);
+
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenReturn(new PageImpl<>(List.of(tokenHeader), page, 1));
+		when(selfContainedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.empty());
+
+		final Page<TokenModel> resultPage = engine.query(
+				page,
+				null,
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"testOrigin");
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+		verify(selfContainedTokenDbService).getByHeader(tokenHeader);
+
+		assertEquals(1, resultPage.getContent().size());
+		final TokenModel resultModel = resultPage.getContent().get(0);
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.SELF_CONTAINED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+		assertNull(resultModel.getVariant());
+		assertNull(resultModel.getExpiresAt());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySelfContainedWithDetails() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final Pageable page = PageRequest.of(0, 10);
+		final ZonedDateTime expiresAt = ZonedDateTime.of(2125, 05, 10, 12, 0, 0, 0, ZoneId.of("UTC"));
+		final SelfContainedToken details = new SelfContainedToken(tokenHeader, "RSA_SHA512_JSON_WEB_TOKEN_AUTH", expiresAt);
+
+		when(tokenHeaderDbService.query(
+				page,
+				null,
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF)).thenReturn(new PageImpl<>(List.of(tokenHeader), page, 1));
+		when(selfContainedTokenDbService.getByHeader(tokenHeader)).thenReturn(Optional.of(details));
+
+		final Page<TokenModel> resultPage = engine.query(
+				page,
+				null,
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"testOrigin");
+
+		verify(tokenHeaderDbService).query(page,
+				null,
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				null,
+				null,
+				"ProviderName",
+				"testService",
+				AuthorizationTargetType.SERVICE_DEF);
+		verify(selfContainedTokenDbService).getByHeader(tokenHeader);
+
+		assertEquals(1, resultPage.getContent().size());
+		final TokenModel resultModel = resultPage.getContent().get(0);
+		assertFalse(resultModel.isEncrypted());
+		assertEquals(AuthorizationTokenType.SELF_CONTAINED_TOKEN, resultModel.getTokenType());
+		assertNull(resultModel.getRawToken());
+		assertEquals("hashedToken", resultModel.getHashedToken());
+		assertEquals("ConsumerName", resultModel.getRequester());
+		assertEquals("LOCAL", resultModel.getConsumerCloud());
+		assertEquals("ConsumerName", resultModel.getConsumer());
+		assertEquals("ProviderName", resultModel.getProvider());
+		assertEquals(AuthorizationTargetType.SERVICE_DEF, resultModel.getTargetType());
+		assertEquals("testService", resultModel.getTarget());
+		assertEquals("op", resultModel.getScope());
+		assertEquals("RSA_SHA512_JSON_WEB_TOKEN_AUTH", resultModel.getVariant());
+		assertEquals(expiresAt, resultModel.getExpiresAt());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testEncryptTokenIfNeededNotNeeded() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final TokenModel model = new TokenModel(tokenHeader, "rawToken");
+
+		when(encryptionKeyDbService.get("ProviderName")).thenReturn(Optional.empty());
+
+		assertFalse(model.isEncrypted());
+		assertDoesNotThrow(() -> engine.encryptTokenIfNeeded(model, "testOrigin"));
+
+		verify(encryptionKeyDbService).get("ProviderName");
+
+		assertFalse(model.isEncrypted());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testEncryptTokenIfNeededDbException() {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final TokenModel model = new TokenModel(tokenHeader, "rawToken");
+
+		when(encryptionKeyDbService.get("ProviderName")).thenThrow(new InternalServerError("test"));
+
+		final ArrowheadException ex = assertThrows(InternalServerError.class,
+				() -> engine.encryptTokenIfNeeded(model, "testOrigin"));
+
+		verify(encryptionKeyDbService).get("ProviderName");
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("testOrigin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testEncryptTokenIfNeededOtherException() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IllegalBlockSizeException,
+			BadPaddingException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final TokenModel model = new TokenModel(tokenHeader, "rawToken");
+		final EncryptionKey keyRecord = new EncryptionKey(
+				"ProviderName",
+				"encryptedKey",
+				"unsupported",
+				new CryptographerAuxiliary("internalAux"),
+				new CryptographerAuxiliary("externalAux"));
+
+		when(encryptionKeyDbService.get("ProviderName")).thenReturn(Optional.of(keyRecord));
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("secretKey");
+		when(secretCryptographer.decrypt_AES_CBC_PKCS5P_IV("encryptedKey", "internalAux", "secretKey")).thenReturn("plainProviderKey");
+
+		final ArrowheadException ex = assertThrows(InternalServerError.class,
+				() -> engine.encryptTokenIfNeeded(model, "testOrigin"));
+
+		verify(encryptionKeyDbService).get("ProviderName");
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).decrypt_AES_CBC_PKCS5P_IV("encryptedKey", "internalAux", "secretKey");
+
+		assertEquals("Token encryption failed", ex.getMessage());
+		assertEquals("testOrigin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:methodname")
+	@Test
+	public void testEncryptTokenIfNeeded_AES_ECB_PKCS5Padding_Ok() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException,
+			IllegalBlockSizeException, BadPaddingException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final TokenModel model = new TokenModel(tokenHeader, "rawToken");
+		final EncryptionKey keyRecord = new EncryptionKey(
+				"ProviderName",
+				"encryptedKey",
+				"AES/ECB/PKCS5Padding",
+				new CryptographerAuxiliary("internalAux"),
+				new CryptographerAuxiliary("externalAux"));
+
+		when(encryptionKeyDbService.get("ProviderName")).thenReturn(Optional.of(keyRecord));
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("secretKey");
+		when(secretCryptographer.decrypt_AES_CBC_PKCS5P_IV("encryptedKey", "internalAux", "secretKey")).thenReturn("plainProviderKey");
+		when(secretCryptographer.encrypt_AES_ECB_PKCS5P("rawToken", "plainProviderKey")).thenReturn("encryptedToken");
+
+		assertFalse(model.isEncrypted());
+
+		assertDoesNotThrow(() -> engine.encryptTokenIfNeeded(model, "testOrigin"));
+
+		verify(encryptionKeyDbService).get("ProviderName");
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).decrypt_AES_CBC_PKCS5P_IV("encryptedKey", "internalAux", "secretKey");
+		verify(secretCryptographer).encrypt_AES_ECB_PKCS5P("rawToken", "plainProviderKey");
+
+		assertTrue(model.isEncrypted());
+		assertEquals("encryptedToken", model.getEncryptedToken());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:methodname")
+	@Test
+	public void testEncryptTokenIfNeeded_AES_CBC_PKCS5Padding_Ok() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException,
+			IllegalBlockSizeException, BadPaddingException {
+		final TokenHeader tokenHeader = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"hashedToken",
+				"ConsumerName",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				AuthorizationTargetType.SERVICE_DEF,
+				"testService",
+				"op");
+		final TokenModel model = new TokenModel(tokenHeader, "rawToken");
+		final EncryptionKey keyRecord = new EncryptionKey(
+				"ProviderName",
+				"encryptedKey",
+				"AES/CBC/PKCS5Padding",
+				new CryptographerAuxiliary("internalAux"),
+				new CryptographerAuxiliary("externalAux"));
+
+		when(encryptionKeyDbService.get("ProviderName")).thenReturn(Optional.of(keyRecord));
+		when(sysInfo.getSecretCryptographerKey()).thenReturn("secretKey");
+		when(secretCryptographer.decrypt_AES_CBC_PKCS5P_IV("encryptedKey", "internalAux", "secretKey")).thenReturn("plainProviderKey");
+		when(secretCryptographer.encrypt_AES_CBC_PKCS5P_IV("rawToken", "plainProviderKey", "externalAux")).thenReturn(Pair.of("encryptedToken", "externalAux"));
+
+		assertFalse(model.isEncrypted());
+
+		assertDoesNotThrow(() -> engine.encryptTokenIfNeeded(model, "testOrigin"));
+
+		verify(encryptionKeyDbService).get("ProviderName");
+		verify(sysInfo).getSecretCryptographerKey();
+		verify(secretCryptographer).decrypt_AES_CBC_PKCS5P_IV("encryptedKey", "internalAux", "secretKey");
+		verify(secretCryptographer).encrypt_AES_CBC_PKCS5P_IV("rawToken", "plainProviderKey", "externalAux");
+
+		assertTrue(model.isEncrypted());
+		assertEquals("encryptedToken", model.getEncryptedToken());
 	}
 }
