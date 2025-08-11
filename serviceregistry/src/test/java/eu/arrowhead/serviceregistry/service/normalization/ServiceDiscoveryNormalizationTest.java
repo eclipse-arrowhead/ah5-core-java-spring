@@ -82,11 +82,12 @@ public class ServiceDiscoveryNormalizationTest {
     	when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
     	when(interfaceNormalizer.normalizeInterfaceDTO(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
+    	final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+
 		assertAll(
 
 			// nothing is empty
 			() -> {
-				final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 				final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO("AlertProvider", "alertService", "16.4.3", "2025-11-04T01:53:02Z\n\n", Map.of("indoor", true), List.of(intf));
 				final ServiceInstanceRequestDTO expected = new ServiceInstanceRequestDTO("AlertProvider", "alertService", "16.4.3", "2025-11-04T01:53:02Z", Map.of("indoor", true), List.of(intf));
 
@@ -99,18 +100,15 @@ public class ServiceDiscoveryNormalizationTest {
 
 			},
 
-			// expiration and interfaces are empty
+			// expiration is empty
 			() -> {
 				resetUtilitiesMock();
-				Mockito.reset(interfaceNormalizer);
-				final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO("AlertProvider", "alertService", "16.4.3", EMPTY, Map.of("indoor", true), List.of());
-				final ServiceInstanceRequestDTO expected = new ServiceInstanceRequestDTO("AlertProvider", "alertService", "16.4.3", "", Map.of("indoor", true), new ArrayList<>());
+				final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO("AlertProvider", "alertService", "16.4.3", EMPTY, Map.of("indoor", true), List.of(intf));
+				final ServiceInstanceRequestDTO expected = new ServiceInstanceRequestDTO("AlertProvider", "alertService", "16.4.3", "", Map.of("indoor", true), List.of(intf));
 
 				final ServiceInstanceRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeServiceInstanceRequestDTO(dto));
 				assertEquals(expected, normalized);
-				verify(interfaceNormalizer, never()).normalizeInterfaceDTO(any());
 				utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
-				utilitiesMock.verify(() -> Utilities.isEmpty(List.of()));
 			}
 		);
 	}

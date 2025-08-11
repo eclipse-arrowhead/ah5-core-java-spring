@@ -51,6 +51,7 @@ public class ServiceDiscoveryNormalization {
 	public ServiceInstanceRequestDTO normalizeServiceInstanceRequestDTO(final ServiceInstanceRequestDTO dto) {
 		logger.debug("normalizeServiceInstanceRequestDTO started");
 		Assert.notNull(dto, "ServiceInstanceRequestDTO is null");
+		Assert.notNull(dto.interfaces(), "interface list is null");
 
 		return new ServiceInstanceRequestDTO(
 				normalizeSystemName(dto.systemName()),
@@ -58,12 +59,10 @@ public class ServiceDiscoveryNormalization {
 				versionNormalizer.normalize(dto.version()),
 				Utilities.isEmpty(dto.expiresAt()) ? "" : dto.expiresAt().trim(),
 				dto.metadata(),
-				Utilities.isEmpty(dto.interfaces())
-						? new ArrayList<>()
-						: dto.interfaces()
-								.stream()
-								.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
-								.toList());
+				dto.interfaces()
+					.stream()
+					.map(i -> interfaceNormalizer.normalizeInterfaceDTO(i))
+					.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
