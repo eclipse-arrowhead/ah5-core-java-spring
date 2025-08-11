@@ -7,7 +7,7 @@
 		<version>${revision}</version>
 	</parent>
 	<artifactId>arrowhead-consumer-authorization</artifactId>
-	<version>5.0.0</version>
+	<version>5.1.0</version>
 	<packaging>jar</packaging>
 	<name>Arrowhead System ConsumerAuthorization</name>
 	<description>Arrowhead System ConsumerAuthorization using Spring Boot</description>
