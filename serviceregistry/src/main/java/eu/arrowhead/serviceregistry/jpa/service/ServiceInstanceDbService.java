@@ -143,7 +143,7 @@ public class ServiceInstanceDbService {
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					serviceInterfaceTemplateNames.forEach(templateName -> {
 						if (!interfaceTemplateCache.containsKey(templateName)) {
-							throw new InvalidParameterException("Interface template not exists: " + templateName);
+							throw new InvalidParameterException("Interface template does not exist: " + templateName);
 						}
 					});
 				}
@@ -306,7 +306,7 @@ public class ServiceInstanceDbService {
 
 		for (final ServiceInstanceRequestDTO candidate : candidates) {
 			if (!systemCache.containsKey(candidate.systemName())) {
-				throw new InvalidParameterException("System not exists: " + candidate.systemName());
+				throw new InvalidParameterException("System does not exist: " + candidate.systemName());
 			}
 
 			if (!definitionCache.containsKey(candidate.serviceDefinitionName())) {
@@ -411,7 +411,7 @@ public class ServiceInstanceDbService {
 				// non-existant template
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					// we don't create new template in case of restricted interface policy
-					throw new InvalidParameterException("Interface template not exists: " + dto.templateName());
+					throw new InvalidParameterException("Interface template does not exist: " + dto.templateName());
 				} else {
 					// create new template
 					template = new ServiceInterfaceTemplate(dto.templateName(), dto.protocol());
