@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service;
 
 import java.security.PublicKey;
@@ -92,7 +108,7 @@ public class AuthorizationTokenService {
 		}
 
 		// Generate token
-		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType());
+		final ServiceInterfacePolicy tokenType = ServiceInterfacePolicy.valueOf(normalizedDTO.tokenVariant());
 		final TokenModel tokenResult = tokenEngine.produce(
 				normalizedRequester,
 				normalizedRequester,
@@ -104,7 +120,7 @@ public class AuthorizationTokenService {
 				origin);
 
 		// Encrypt token if required
-		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenType()));
+		final AuthorizationTokenType authorizationTokenType = AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(normalizedDTO.tokenVariant()));
 		if (authorizationTokenType == AuthorizationTokenType.SELF_CONTAINED_TOKEN) {
 			tokenEngine.encryptTokenIfNeeded(tokenResult, origin);
 		}

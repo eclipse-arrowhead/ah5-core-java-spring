@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.util.ArrayList;
@@ -72,6 +88,7 @@ public class OrchestrationJobDbService {
 	public List<OrchestrationJob> getAllByStatusIn(final List<OrchestrationJobStatus> statuses) {
 		logger.debug("getAllByStatusIn started...");
 		Assert.isTrue(!Utilities.isEmpty(statuses), "status list is empty");
+		Assert.isTrue(!Utilities.containsNull(statuses), "status list contains null element");
 
 		try {
 			return jobRepo.findAllByStatusIn(statuses);
@@ -112,7 +129,7 @@ public class OrchestrationJobDbService {
 
 				// Match against to job ids
 				if (baseFilter != BaseFilter.ID && !Utilities.isEmpty(filter.getIds()) && !filter.getIds().contains(job.getId())) {
-					matching = false;
+					matching = false; // cannot happen theoretically
 
 					// Match against to job statuses
 				} else if (baseFilter != BaseFilter.STATUS && !Utilities.isEmpty(filter.getStatuses()) && !filter.getStatuses().contains(job.getStatus())) {
@@ -135,7 +152,7 @@ public class OrchestrationJobDbService {
 					matching = false;
 
 					// Match against to subscription ids
-				} else if (!Utilities.isEmpty(filter.getSubscriptionIds()) && !filter.getSubscriptionIds().contains(job.getSubscriptionId())) {
+				} else if (!Utilities.isEmpty(filter.getSubscriptionIds()) && !Utilities.isEmpty(job.getSubscriptionId()) && !filter.getSubscriptionIds().contains(job.getSubscriptionId())) {
 					matching = false;
 				}
 
@@ -156,6 +173,9 @@ public class OrchestrationJobDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public OrchestrationJob setStatus(final UUID jobId, final OrchestrationJobStatus status, final String message) {
 		logger.debug("setStatus started...");
+		Assert.notNull(jobId, "jobId is null");
+		Assert.notNull(status, "status is null");
+		Assert.isTrue(status != OrchestrationJobStatus.PENDING, "status can't be changed to PENDING");
 
 		try {
 			final Optional<OrchestrationJob> optional = jobRepo.findById(jobId);
@@ -170,6 +190,7 @@ public class OrchestrationJobDbService {
 			switch (status) {
 			case IN_PROGRESS:
 				job.setStartedAt(Utilities.utcNow());
+				job.setFinishedAt(null);
 				break;
 
 			case DONE:
@@ -182,6 +203,10 @@ public class OrchestrationJobDbService {
 			}
 
 			return jobRepo.saveAndFlush(job);
+
+		} catch (final IllegalArgumentException ex) {
+			throw ex;
+
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -194,6 +219,7 @@ public class OrchestrationJobDbService {
 	public void deleteInBatch(final Collection<UUID> ids) {
 		logger.debug("deleteInBatch started...");
 		Assert.isTrue(!Utilities.isEmpty(ids), "job id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "job id list contains null element");
 
 		try {
 			jobRepo.deleteAllByIdInBatch(ids);

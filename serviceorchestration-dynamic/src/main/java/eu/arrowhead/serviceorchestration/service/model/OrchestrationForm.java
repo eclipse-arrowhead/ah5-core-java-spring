@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.model;
 
 import java.util.HashMap;
@@ -79,7 +95,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean addFlag(final OrchestrationFlag flag, final boolean value) {
-		boolean changed = false;
+		Boolean changed = null;
 		for (final String rawFlag : orchestrationFlags.keySet()) {
 			if (rawFlag.equalsIgnoreCase(flag.name())) {
 				changed = orchestrationFlags.get(rawFlag) != value;
@@ -88,6 +104,7 @@ public class OrchestrationForm {
 		}
 		orchestrationFlags.put(flag.name(), value);
 
+		changed = changed == null ? true : changed;
 		return changed;
 	}
 

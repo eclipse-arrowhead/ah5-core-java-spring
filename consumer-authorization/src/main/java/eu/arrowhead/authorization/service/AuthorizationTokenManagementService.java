@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service;
 
 import java.util.ArrayList;
@@ -122,7 +138,7 @@ public class AuthorizationTokenManagementService {
 					requester,
 					request.consumer(),
 					request.consumerCloud(),
-					ServiceInterfacePolicy.valueOf(request.tokenType()),
+					ServiceInterfacePolicy.valueOf(request.tokenVariant()),
 					request.provider(),
 					AuthorizationTargetType.valueOf(request.targetType()),
 					request.target(),
@@ -151,7 +167,7 @@ public class AuthorizationTokenManagementService {
 		logger.debug("queryTokensOperation started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final AuthorizationTokenQueryRequestDTO normalized = validator.validateAndNormalizedQueryTokensRequest(dto, origin);
+		final AuthorizationTokenQueryRequestDTO normalized = validator.validateAndNormalizeQueryTokensRequest(dto, origin);
 		final PageRequest pageRequest = pageService.getPageRequest(
 				normalized.pagination(),
 				Direction.ASC,

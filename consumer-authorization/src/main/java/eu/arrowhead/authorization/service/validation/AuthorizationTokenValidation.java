@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service.validation;
 
 import org.apache.logging.log4j.LogManager;
@@ -81,8 +97,8 @@ public class AuthorizationTokenValidation {
 		final AuthorizationTokenGenerationRequestDTO normalized = normalizer.normalizeAuthorizationTokenGenerationRequestDTO(dto);
 
 		try {
-			if (!normalized.tokenType().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
-				throw new InvalidParameterException("Token type is invalid", origin);
+			if (!normalized.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
+				throw new InvalidParameterException("Token variant is invalid", origin);
 			}
 
 			systemNameValidator.validateSystemName(normalized.provider());
@@ -150,13 +166,13 @@ public class AuthorizationTokenValidation {
 			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
-		if (Utilities.isEmpty(dto.tokenType())) {
-			throw new InvalidParameterException("Token type is missing", origin);
+		if (Utilities.isEmpty(dto.tokenVariant())) {
+			throw new InvalidParameterException("Token variant is missing", origin);
 		}
 
-		final String tokenTypeName = dto.tokenType().trim().toUpperCase();
-		if (!Utilities.isEnumValue(tokenTypeName, ServiceInterfacePolicy.class)) {
-			throw new InvalidParameterException("Token type is invalid: " + tokenTypeName, origin);
+		final String tokenVariant = dto.tokenVariant().trim().toUpperCase();
+		if (!Utilities.isEnumValue(tokenVariant, ServiceInterfacePolicy.class)) {
+			throw new InvalidParameterException("Token variant is invalid: " + dto.tokenVariant(), origin);
 		}
 
 		if (Utilities.isEmpty(dto.provider())) {
@@ -166,7 +182,7 @@ public class AuthorizationTokenValidation {
 		if (!Utilities.isEmpty(dto.targetType())) {
 			final String targetTypeName = dto.targetType().trim().toUpperCase();
 			if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+				throw new InvalidParameterException("Target type is invalid: " + dto.targetType(), origin);
 			}
 		}
 

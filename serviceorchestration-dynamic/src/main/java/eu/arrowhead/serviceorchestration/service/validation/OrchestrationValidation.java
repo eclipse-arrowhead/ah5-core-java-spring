@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.validation;
 
 import java.util.UUID;
@@ -81,7 +97,7 @@ public class OrchestrationValidation {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public void validatePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
+	private void validatePushUnsubscribeService(final String requesterSystem, final String subscriptionId, final String origin) {
 		logger.debug("validatePushUnsubscribeService started...");
 
 		if (Utilities.isEmpty(requesterSystem)) {

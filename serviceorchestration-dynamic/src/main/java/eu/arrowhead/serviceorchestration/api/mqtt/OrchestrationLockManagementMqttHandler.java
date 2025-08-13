@@ -1,6 +1,21 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.mqtt;
 
-import java.security.InvalidParameterException;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +29,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
@@ -66,9 +82,10 @@ public class OrchestrationLockManagementMqttHandler extends MqttTopicHandler {
 			break;
 
 		case Constants.SERVICE_OP_ORCHESTRATION_REMOVE:
+			final String owner = request.getParams().get(DynamicServiceOrchestrationConstants.PARAM_NAME_OWNER);
 			final List<String> removeReqDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
 			});
-			remove(request.getRequester(), removeReqDTO);
+			remove(owner, removeReqDTO);
 			break;
 
 		default:

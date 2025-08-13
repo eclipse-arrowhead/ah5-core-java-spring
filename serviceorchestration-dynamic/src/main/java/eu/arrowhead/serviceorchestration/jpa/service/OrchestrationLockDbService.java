@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.time.ZonedDateTime;
@@ -57,7 +73,7 @@ public class OrchestrationLockDbService {
 	public List<OrchestrationLock> getByServiceInstanceId(final List<String> ids) {
 		logger.debug("getByServiceInstanceId started...");
 		Assert.isTrue(!Utilities.isEmpty(ids), "Service instance id list is empty");
-		Assert.isTrue(!Utilities.containsNull(ids), "Service instance id list contains null element");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(ids), "Service instance id list contains null or empty element");
 
 		try {
 			return lockRepo.findAllByServiceInstanceIdIn(ids);
@@ -85,6 +101,7 @@ public class OrchestrationLockDbService {
 	public Page<OrchestrationLock> query(final OrchestrationLockFilter filter, final PageRequest pagination) {
 		logger.debug("query started...");
 		Assert.notNull(filter, "filter is null");
+		Assert.notNull(pagination, "pagination is null");
 
 		try {
 			final BaseFilter baseFilter = filter.getBaseFilter();
@@ -108,7 +125,7 @@ public class OrchestrationLockDbService {
 
 				// Match against to lock ids
 				if (baseFilter != BaseFilter.ID && !Utilities.isEmpty(filter.getIds()) && !filter.getIds().contains(lock.getId())) {
-					matching = false;
+					matching = false; // cannot happen theoretically
 
 					// Match against to orchestration job id
 				} else if (baseFilter != BaseFilter.JOB
@@ -178,6 +195,7 @@ public class OrchestrationLockDbService {
 	public void deleteInBatch(final Collection<Long> ids) {
 		logger.debug("deleteInBatch started...");
 		Assert.isTrue(!Utilities.isEmpty(ids), "Id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "Id list is contains null element");
 
 		try {
 			lockRepo.deleteAllByIdInBatch(ids);
@@ -193,6 +211,7 @@ public class OrchestrationLockDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteInBatchByExpiredBefore(final ZonedDateTime time) {
 		logger.debug("deleteInBatchByExpiredBefore started...");
+		Assert.notNull(time, "time is null");
 
 		try {
 			final List<OrchestrationLock> toDelete = lockRepo.findAllByExpiresAtBefore(time);

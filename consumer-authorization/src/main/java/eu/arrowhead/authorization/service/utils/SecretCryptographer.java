@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service.utils;
 
 import java.nio.charset.StandardCharsets;
@@ -101,7 +117,8 @@ public class SecretCryptographer {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public String encryptHMACSHA256(final String rawData, final String key) throws NoSuchAlgorithmException, InvalidKeyException {
+	@SuppressWarnings("checkstyle:MethodName")
+	public String encrypt_HMAC_SHA256(final String rawData, final String key) throws NoSuchAlgorithmException, InvalidKeyException {
 		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
 		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 
@@ -186,8 +203,6 @@ public class SecretCryptographer {
 	@SuppressWarnings("checkstyle:MethodName")
 	private String encrypt_AES_CBC_PKCS5P_IV(final String rawData, final String key, final IvParameterSpec ivSpec)
 			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
-		Assert.isTrue(!Utilities.isEmpty(rawData), "rawData is empty");
-		Assert.isTrue(!Utilities.isEmpty(key), "key is empty");
 		Assert.notNull(ivSpec, "ivSpec is null");
 
 		final SecretKeySpec keySpec = getAESKeySpecFromString(key);

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.normalization;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -109,17 +125,17 @@ public class ManagementNormalizationTest {
 	@Test
 	public void testNormalizeSystemRequestDTOsNotEmptyList() {
 
-    	when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(addressValidator.detectType("192.168.4.4")).thenReturn(AddressType.IPV4);
+		when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(addressValidator.detectType("192.168.4.4")).thenReturn(AddressType.IPV4);
 
-    	// empty addresses
-    	final SystemRequestDTO dto1 = new SystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", List.of(), "TEST_DEVICE");
-    	final NormalizedSystemRequestDTO expected1 = new NormalizedSystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", new ArrayList<>(), "TEST_DEVICE");
+		// empty addresses
+		final SystemRequestDTO dto1 = new SystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", List.of(), "TEST_DEVICE");
+		final NormalizedSystemRequestDTO expected1 = new NormalizedSystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", new ArrayList<>(), "TEST_DEVICE");
 
-    	// empty device name
+		// empty device name
 		final SystemRequestDTO dto2 = new SystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", List.of("192.168.4.4"), EMPTY);
 		final NormalizedSystemRequestDTO expected2 = new NormalizedSystemRequestDTO("TemperatureConsumer", Map.of("indoor", false), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.4.4")), null);
 
@@ -142,54 +158,54 @@ public class ManagementNormalizationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testNormalizeSystemQueryRequestDTO() {
 
-    	when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
 		assertAll(
 
-			// nothing is empty
-			() -> {
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+				// nothing is empty
+				() -> {
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureConsumer"), List.of("192.168.4.4"), "IPv4 \n", List.of(requirement), List.of("5.0.0"), List.of("TEST_DEVICE"));
-				final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureConsumer"), List.of("192.168.4.4"), "IPV4", List.of(requirement), List.of("5.0.0"), List.of("TEST_DEVICE"));
+					final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureConsumer"), List.of("192.168.4.4"), "IPv4 \n", List.of(requirement), List.of("5.0.0"), List.of("TEST_DEVICE"));
+					final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureConsumer"), List.of("192.168.4.4"), "IPV4", List.of(requirement), List.of("5.0.0"), List.of("TEST_DEVICE"));
 
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemQueryRequestDTO(dto));
-				assertEquals(expected, normalized);
-				verify(systemNameNormalizer, times(1)).normalize("TemperatureConsumer");
-				verify(versionNormalizer, times(1)).normalize("5.0.0");
-				verify(addressNormalizer, times(1)).normalize("192.168.4.4");
-				verify(deviceNameNormalizer, times(1)).normalize("TEST_DEVICE");
-			},
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemQueryRequestDTO(dto));
+					assertEquals(expected, normalized);
+					verify(systemNameNormalizer, times(1)).normalize("TemperatureConsumer");
+					verify(versionNormalizer, times(1)).normalize("5.0.0");
+					verify(addressNormalizer, times(1)).normalize("192.168.4.4");
+					verify(deviceNameNormalizer, times(1)).normalize("TEST_DEVICE");
+				},
 
-			// everything is empty
-			() -> {
-				resetUtilitiesMock();
-				final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, List.of(), List.of(), EMPTY, List.of(), List.of(), List.of());
-				final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, List.of(), null, null);
+				// everything is empty
+				() -> {
+					resetUtilitiesMock();
+					final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(null, List.of(), List.of(), EMPTY, List.of(), List.of(), List.of());
+					final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, List.of(), null, null);
 
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemQueryRequestDTO(dto));
-				assertEquals(expected, normalized);
-				utilitiesMock.verify(() -> Utilities.isEmpty(eq(List.of())), times(4));
-				utilitiesMock.verify(() -> Utilities.isEmpty(eq(EMPTY)), times(1));
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemQueryRequestDTO(dto));
+					assertEquals(expected, normalized);
+					utilitiesMock.verify(() -> Utilities.isEmpty(eq(List.of())), times(4));
+					utilitiesMock.verify(() -> Utilities.isEmpty(eq(EMPTY)), times(1));
 
-			},
+				},
 
-			// dto is empty
-			() -> {
-				final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
-				final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemQueryRequestDTO(null));
-				assertEquals(expected, normalized);
-			}
-		);
+				// dto is empty
+				() -> {
+					final SystemQueryRequestDTO expected = new SystemQueryRequestDTO(null, null, null, null, null, null, null);
+					final SystemQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeSystemQueryRequestDTO(null));
+					assertEquals(expected, normalized);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -560,28 +576,28 @@ public class ManagementNormalizationTest {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeAll
-    private static void initializeUtilitiesMock() {
-    	createUtilitiesMock();
-    }
+	@BeforeAll
+	private static void initializeUtilitiesMock() {
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeEach
-    private void resetUtilitiesMockBeforeEach() {
-    	resetUtilitiesMock();
-    }
+	@BeforeEach
+	private void resetUtilitiesMockBeforeEach() {
+		resetUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private void resetUtilitiesMock() {
-    	if (utilitiesMock != null) {
-    		utilitiesMock.close();
-    	}
-    	createUtilitiesMock();
-    }
+	private void resetUtilitiesMock() {
+		if (utilitiesMock != null) {
+			utilitiesMock.close();
+		}
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private static void createUtilitiesMock() {
-    	utilitiesMock = mockStatic(Utilities.class);
+	private static void createUtilitiesMock() {
+		utilitiesMock = mockStatic(Utilities.class);
 
     	// mock common cases
     	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
@@ -590,9 +606,9 @@ public class ManagementNormalizationTest {
     	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
     }
 
-    //-------------------------------------------------------------------------------------------------
-    @AfterAll
-    private static void closeUtilitiesMock() {
-    	utilitiesMock.close();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@AfterAll
+	private static void closeUtilitiesMock() {
+		utilitiesMock.close();
+	}
 }

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service.validation;
 
 import java.time.DateTimeException;
@@ -111,8 +127,8 @@ public class AuthorizationTokenManagementValidation {
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationTokenGenerationMgmtListRequestDTO(dto);
 
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : normalized.list()) {
-			if (!request.tokenType().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
-				throw new InvalidParameterException("Invalid token type: " + request.tokenType(), origin);
+			if (!request.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
+				throw new InvalidParameterException("Invalid token variant: " + request.tokenVariant(), origin);
 			}
 
 			try {
@@ -138,7 +154,7 @@ public class AuthorizationTokenManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public AuthorizationTokenQueryRequestDTO validateAndNormalizedQueryTokensRequest(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
+	public AuthorizationTokenQueryRequestDTO validateAndNormalizeQueryTokensRequest(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizedQueryTokensRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
@@ -214,7 +230,6 @@ public class AuthorizationTokenManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateSystemName(final String systemName, final String origin) {
 		logger.debug("validateSystemName started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(systemName)) {
 			throw new InvalidParameterException("System name is empty", origin);
@@ -224,7 +239,6 @@ public class AuthorizationTokenManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateGenerateTokenRequests(final AuthorizationTokenGenerationMgmtListRequestDTO dto, final String origin) {
 		logger.debug("validateGenerateTokenRequests started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null || Utilities.isEmpty(dto.list())) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -235,19 +249,19 @@ public class AuthorizationTokenManagementValidation {
 		}
 
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : dto.list()) {
-			if (Utilities.isEmpty(request.tokenType())) {
-				throw new InvalidParameterException("Token type is missing", origin);
+			if (Utilities.isEmpty(request.tokenVariant())) {
+				throw new InvalidParameterException("Token variant is missing", origin);
 			}
 
-			final String tokenTypeName = request.tokenType().trim().toUpperCase();
-			if (!Utilities.isEnumValue(tokenTypeName, ServiceInterfacePolicy.class)) {
-				throw new InvalidParameterException("Token type is invalid: " + tokenTypeName, origin);
+			final String tokenVariant = request.tokenVariant().trim().toUpperCase();
+			if (!Utilities.isEnumValue(tokenVariant, ServiceInterfacePolicy.class)) {
+				throw new InvalidParameterException("Token variant is invalid: " + request.tokenVariant(), origin);
 			}
 
 			if (!Utilities.isEmpty(request.targetType())) {
 				final String targetTypeName = request.targetType().trim().toUpperCase();
 				if (!Utilities.isEnumValue(targetTypeName, AuthorizationTargetType.class)) {
-					throw new InvalidParameterException("Target type is invalid: " + targetTypeName, origin);
+					throw new InvalidParameterException("Target type is invalid: " + request.targetType(), origin);
 				}
 			}
 
@@ -287,7 +301,6 @@ public class AuthorizationTokenManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateQueryTokensRequest(final AuthorizationTokenQueryRequestDTO dto, final String origin) {
 		logger.debug("validateQueryTokensRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -298,14 +311,14 @@ public class AuthorizationTokenManagementValidation {
 		if (!Utilities.isEmpty(dto.tokenType())) {
 			final String tokenTypeStr = dto.tokenType().toUpperCase().trim();
 			if (!Utilities.isEnumValue(tokenTypeStr, AuthorizationTokenType.class)) {
-				throw new InvalidParameterException("Invalid token type: " + tokenTypeStr, origin);
+				throw new InvalidParameterException("Invalid token type: " + dto.tokenType(), origin);
 			}
 		}
 
 		if (!Utilities.isEmpty(dto.targetType())) {
 			final String targetTypeStr = dto.targetType().toUpperCase().trim();
 			if (!Utilities.isEnumValue(targetTypeStr, AuthorizationTargetType.class)) {
-				throw new InvalidParameterException("Invalid target type: " + targetTypeStr, origin);
+				throw new InvalidParameterException("Invalid target type: " + dto.targetType(), origin);
 			}
 		}
 	}
@@ -313,7 +326,6 @@ public class AuthorizationTokenManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateAddEncryptionKeysRequest(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto, final String origin) {
 		logger.debug("validateAddEncryptionKeysRequest started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null || Utilities.isEmpty(dto.list())) {
 			throw new InvalidParameterException("Request payload is missing", origin);

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.validation;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -74,37 +90,37 @@ public class SystemDiscoveryValidationTest {
 
 	private static final String EMPTY = "\n ";
 
-    // expected error messages
-    private static final String MISSING_PAYLOAD = "Request payload is missing";
-    private static final String MISSING_SYSTEM_NAME = "System name is empty";
-    private static final String MISSING_ADDRESS = "Address is missing";
-    private static final String AT_LEAST_ONE_ADDRESS_NEEDED = "At least one system address is needed for every system";
-    private static final String INVALID_SYS_NAME_LIST = "System name list contains null or empty element";
-    private static final String INVALID_ADDRESS_LIST = "Address list contains null or empty element";
-    private static final String INVALID_ADDRESS_TYPE_PREFIX = "Invalid address type: ";
-    private static final String INVALID_METADATA = "Metadata requirement list contains null element";
-    private static final String INVALID_VERSION_LIST = "Version list contains null element";
-    private static final String INVALID_DEVICE_LIST = "Device name list contains null or empty element";
+	// expected error messages
+	private static final String MISSING_PAYLOAD = "Request payload is missing";
+	private static final String MISSING_SYSTEM_NAME = "System name is empty";
+	private static final String MISSING_ADDRESS = "Address is missing";
+	private static final String AT_LEAST_ONE_ADDRESS_NEEDED = "At least one system address is needed for every system";
+	private static final String INVALID_SYS_NAME_LIST = "System name list contains null or empty element";
+	private static final String INVALID_ADDRESS_LIST = "Address list contains null or empty element";
+	private static final String INVALID_ADDRESS_TYPE_PREFIX = "Invalid address type: ";
+	private static final String INVALID_METADATA = "Metadata requirement list contains null element";
+	private static final String INVALID_VERSION_LIST = "Version list contains null element";
+	private static final String INVALID_DEVICE_LIST = "Device name list contains null or empty element";
 
-    private final NormalizedSystemRequestDTO testNormalizedRequestDto = new NormalizedSystemRequestDTO(
-    		"DummyProvider",
-    		Map.of("dummy", true),
-    		"1.0.0",
-    		List.of(new AddressDTO("HOSTNAME", "dummy.eu")),
-    		"DUMMY_DEVICE"); // the actual values don't matter
+	private final NormalizedSystemRequestDTO testNormalizedRequestDto = new NormalizedSystemRequestDTO(
+			"DummyProvider",
+			Map.of("dummy", true),
+			"1.0.0",
+			List.of(new AddressDTO("HOSTNAME", "dummy.eu")),
+			"DUMMY_DEVICE"); // the actual values don't matter
 
-    private final SystemLookupRequestDTO testNormalizedLookupDto = new SystemLookupRequestDTO(
-    		List.of("DummyProvider"),
-    		List.of("192.168.0.3"),
-    		"IPV4",
-    		List.of(),
-    		List.of("1.0.0"),
-    		List.of("DUMMY_DEVICE")); // the actual values don't matter
+	private final SystemLookupRequestDTO testNormalizedLookupDto = new SystemLookupRequestDTO(
+			List.of("DummyProvider"),
+			List.of("192.168.0.3"),
+			"IPV4",
+			List.of(),
+			List.of("1.0.0"),
+			List.of("DUMMY_DEVICE")); // the actual values don't matter
 
 	//=================================================================================================
 	// methods
 
-    // REGISTER SYSTEM
+	// REGISTER SYSTEM
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -138,8 +154,7 @@ public class SystemDiscoveryValidationTest {
 					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoOk, "test origin"));
 					assertEquals(testNormalizedRequestDto, normalized);
 					utilitiesMock.verify(() -> Utilities.isEmpty("TemperatureProvider"));
-				}
-		);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -148,35 +163,34 @@ public class SystemDiscoveryValidationTest {
 
 		assertAll("Validate addresses",
 
-			// dto with empty list
-			() -> {
+				// dto with empty list
+				() -> {
 
-				final List<String> emptyList = List.of();
-				final SystemRequestDTO dtoWithEmptyList = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", emptyList, "TEST_DEVICE");
+					final List<String> emptyList = List.of();
+					final SystemRequestDTO dtoWithEmptyList = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", emptyList, "TEST_DEVICE");
 
-				when(normalizer.normalizeSystemRequestDTO(dtoWithEmptyList)).thenReturn(testNormalizedRequestDto);
+					when(normalizer.normalizeSystemRequestDTO(dtoWithEmptyList)).thenReturn(testNormalizedRequestDto);
 
-				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithEmptyList, "test origin"));
-				assertEquals(testNormalizedRequestDto, normalized);
-				utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
-			},
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithEmptyList, "test origin"));
+					assertEquals(testNormalizedRequestDto, normalized);
+					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
+				},
 
-			// dto with empty element containing list
-			() -> {
+				// dto with empty element containing list
+				() -> {
 
-				final List<String> emptyElementList = List.of("192.168.0.1", EMPTY);
-				final SystemRequestDTO dtoWithEmptyElement = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", emptyElementList, "TEST_DEVICE");
+					final List<String> emptyElementList = List.of("192.168.0.1", EMPTY);
+					final SystemRequestDTO dtoWithEmptyElement = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", emptyElementList, "TEST_DEVICE");
 
-				resetUtilitiesMock();
-				final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> {
-					validator.validateAndNormalizeRegisterSystem(dtoWithEmptyElement, "test origin");
+					resetUtilitiesMock();
+					final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> {
+						validator.validateAndNormalizeRegisterSystem(dtoWithEmptyElement, "test origin");
+					});
+					assertEquals(MISSING_ADDRESS, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+					utilitiesMock.verify(() -> Utilities.isEmpty("192.168.0.1"));
+					utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
 				});
-				assertEquals(MISSING_ADDRESS, ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-				utilitiesMock.verify(() -> Utilities.isEmpty("192.168.0.1"));
-				utilitiesMock.verify(() -> Utilities.isEmpty(EMPTY));
-			}
-		);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -233,8 +247,7 @@ public class SystemDiscoveryValidationTest {
 					assertEquals(AT_LEAST_ONE_ADDRESS_NEEDED, ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
 					assertTrue(isEmptyCalledAtLeastOnce(EMPTY, List.of()));
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -243,46 +256,45 @@ public class SystemDiscoveryValidationTest {
 
 		assertAll("Validate metadata",
 
-			// without metadata
-			() -> {
-				utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
+				// without metadata
+				() -> {
+					utilitiesMock.when(() -> Utilities.isEmpty(Map.of())).thenReturn(true);
 
-				// mock metadata validation
-				final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+					// mock metadata validation
+					final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
 
-				final SystemRequestDTO dtoWithoutMetadata = new SystemRequestDTO("TemperatureProvider", Map.of(), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
-				when(normalizer.normalizeSystemRequestDTO(dtoWithoutMetadata)).thenReturn(testNormalizedRequestDto);
+					final SystemRequestDTO dtoWithoutMetadata = new SystemRequestDTO("TemperatureProvider", Map.of(), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+					when(normalizer.normalizeSystemRequestDTO(dtoWithoutMetadata)).thenReturn(testNormalizedRequestDto);
 
-				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithoutMetadata, "test origin"));
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithoutMetadata, "test origin"));
 
-				utilitiesMock.verify(() -> Utilities.isEmpty(Map.of()), atLeastOnce());
-				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of()), never());
-				assertEquals(testNormalizedRequestDto, normalized);
+					utilitiesMock.verify(() -> Utilities.isEmpty(Map.of()), atLeastOnce());
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of()), never());
+					assertEquals(testNormalizedRequestDto, normalized);
 
-				// reset mock
-				metadataValidationMock.close();
-			},
+					// reset mock
+					metadataValidationMock.close();
+				},
 
-			// with metadata
-			() -> {
-				resetUtilitiesMock();
+				// with metadata
+				() -> {
+					resetUtilitiesMock();
 
-				// mock metadata validation
-				final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
+					// mock metadata validation
+					final MockedStatic<MetadataValidation> metadataValidationMock = mockStatic(MetadataValidation.class);
 
-				final SystemRequestDTO dtoWithMetadata = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
-				when(normalizer.normalizeSystemRequestDTO(dtoWithMetadata)).thenReturn(testNormalizedRequestDto);
+					final SystemRequestDTO dtoWithMetadata = new SystemRequestDTO("TemperatureProvider", Map.of("indoor", true), "1.0.0", List.of("greenhouse.com"), "TEST_DEVICE");
+					when(normalizer.normalizeSystemRequestDTO(dtoWithMetadata)).thenReturn(testNormalizedRequestDto);
 
-				final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithMetadata, "test origin"));
+					final NormalizedSystemRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeRegisterSystem(dtoWithMetadata, "test origin"));
 
-				utilitiesMock.verify(() -> Utilities.isEmpty(Map.of("indoor", true)), atLeastOnce());
-				metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("indoor", true)), times(1));
-				assertEquals(testNormalizedRequestDto, normalized);
+					utilitiesMock.verify(() -> Utilities.isEmpty(Map.of("indoor", true)), atLeastOnce());
+					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("indoor", true)), times(1));
+					assertEquals(testNormalizedRequestDto, normalized);
 
-				// reset mock
-				metadataValidationMock.close();
-			}
-		);
+					// reset mock
+					metadataValidationMock.close();
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -348,8 +360,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoContainsNullOrEmpty = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider", EMPTY),
@@ -357,8 +368,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoOk = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider", "TemperatureConsumer"),
@@ -366,41 +376,39 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
 		Assertions.assertAll(
 
-			// list is empty
-			() -> {
-				final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
-				utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
-				assertEquals(testNormalizedLookupDto, normalized);
-			},
+				// list is empty
+				() -> {
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoEmptyList, "test origin"));
+					utilitiesMock.verify(() -> Utilities.isEmpty(List.of()), atLeastOnce());
+					assertEquals(testNormalizedLookupDto, normalized);
+				},
 
-			// list contains null or empty
-			() -> {
-				resetUtilitiesMock();
-				utilitiesMock.when(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", EMPTY))).thenReturn(true);
+				// list contains null or empty
+				() -> {
+					resetUtilitiesMock();
+					utilitiesMock.when(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", EMPTY))).thenReturn(true);
 
-				final InvalidParameterException ex = assertThrows(
-						InvalidParameterException.class,
-						() -> validator.validateAndNormalizeLookupSystem(dtoContainsNullOrEmpty, "test origin"));
-				assertEquals(INVALID_SYS_NAME_LIST, ex.getMessage());
-				assertEquals("test origin", ex.getOrigin());
-				utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", EMPTY)));
-			},
+					final InvalidParameterException ex = assertThrows(
+							InvalidParameterException.class,
+							() -> validator.validateAndNormalizeLookupSystem(dtoContainsNullOrEmpty, "test origin"));
+					assertEquals(INVALID_SYS_NAME_LIST, ex.getMessage());
+					assertEquals("test origin", ex.getOrigin());
+					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", EMPTY)));
+				},
 
-			// list does not contain null or empty
-			() -> {
-				resetUtilitiesMock();
-				final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
-				utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", "TemperatureConsumer")));
-				assertEquals(testNormalizedLookupDto, normalized);
-			}
-		);
+				// list does not contain null or empty
+				() -> {
+					resetUtilitiesMock();
+					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
+					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TemperatureProvider", "TemperatureConsumer")));
+					assertEquals(testNormalizedLookupDto, normalized);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -414,8 +422,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoContainsNullOrEmpty = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider"),
@@ -423,8 +430,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoOk = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider"),
@@ -432,8 +438,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
@@ -466,8 +471,7 @@ public class SystemDiscoveryValidationTest {
 					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoOk, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("192.168.6.6", "192.168.6.7")));
 					assertEquals(testNormalizedLookupDto, normalized);
-				}
-			);
+				});
 
 	}
 
@@ -482,8 +486,7 @@ public class SystemDiscoveryValidationTest {
 				EMPTY,
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoInvalid = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider"),
@@ -491,8 +494,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV8",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoValid = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider"),
@@ -500,8 +502,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
@@ -524,7 +525,7 @@ public class SystemDiscoveryValidationTest {
 							() -> validator.validateAndNormalizeLookupSystem(dtoInvalid, "test origin"));
 					assertEquals(INVALID_ADDRESS_TYPE_PREFIX + "IPV8", ex.getMessage());
 					assertEquals("test origin", ex.getOrigin());
-					utilitiesMock.verify(() ->  Utilities.isEnumValue("IPV8", AddressType.class));
+					utilitiesMock.verify(() -> Utilities.isEnumValue("IPV8", AddressType.class));
 				},
 
 				// valid address type
@@ -533,11 +534,11 @@ public class SystemDiscoveryValidationTest {
 					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.isEnumValue("IPV4", AddressType.class));
 					assertEquals(testNormalizedLookupDto, normalized);
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testLookupSystemMetadataContainsNull() {
 
@@ -548,8 +549,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final MetadataRequirementDTO req1 = new MetadataRequirementDTO();
 		req1.put("priority", Map.of("op", "LESS_THAN", "value", 10));
@@ -562,8 +562,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				requirements,
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final MetadataRequirementDTO req2 = new MetadataRequirementDTO();
 		req2.put("margin-of-error", Map.of("op", "LESS_THAN_OR_EQUALS_TO", "value", 0.5));
@@ -573,8 +572,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(req1, req2),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
@@ -609,8 +607,7 @@ public class SystemDiscoveryValidationTest {
 					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of(req1, req2)));
 					assertEquals(testNormalizedLookupDto, normalized);
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -624,8 +621,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of(),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final List<String> versions = new ArrayList<String>(2);
 		versions.add("2.0.2");
@@ -636,8 +632,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				versions,
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		final SystemLookupRequestDTO dtoValid = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider"),
@@ -645,8 +640,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0", "1.1.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
@@ -681,8 +675,7 @@ public class SystemDiscoveryValidationTest {
 					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNull(List.of("1.0.0", "1.1.0")));
 					assertEquals(testNormalizedLookupDto, normalized);
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -696,8 +689,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of()
-				);
+				List.of());
 
 		final List<String> deviceNames = new ArrayList<String>(2);
 		deviceNames.add("TEST_DEVICE");
@@ -708,8 +700,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				deviceNames
-				);
+				deviceNames);
 
 		final SystemLookupRequestDTO dtoValid = new SystemLookupRequestDTO(
 				List.of("TemperatureProvider"),
@@ -717,8 +708,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE1", "TEST_DEVICE2")
-				);
+				List.of("TEST_DEVICE1", "TEST_DEVICE2"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 
@@ -753,11 +743,11 @@ public class SystemDiscoveryValidationTest {
 					final SystemLookupRequestDTO normalized = assertDoesNotThrow(() -> validator.validateAndNormalizeLookupSystem(dtoValid, "test origin"));
 					utilitiesMock.verify(() -> Utilities.containsNullOrEmpty(List.of("TEST_DEVICE1", "TEST_DEVICE2")));
 					assertEquals(testNormalizedLookupDto, normalized);
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeLookupSystemOk() {
 
@@ -809,11 +799,11 @@ public class SystemDiscoveryValidationTest {
 					when(normalizer.normalizeSystemLookupRequestDTO(dto)).thenReturn(expected);
 					validator.validateAndNormalizeLookupSystem(dto, "test origin");
 					verify(addressValidator, never()).validateNormalizedAddress(any(), anyString());
-				}
-			);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
 	@Test
 	public void testValidateAndNormalizeLookupSystemThrowsExeption() {
 
@@ -827,8 +817,7 @@ public class SystemDiscoveryValidationTest {
 				"IPV4",
 				List.of(requirement),
 				List.of("1.0.0"),
-				List.of("TEST_DEVICE")
-				);
+				List.of("TEST_DEVICE"));
 
 		when(normalizer.normalizeSystemLookupRequestDTO(any())).thenReturn(testNormalizedLookupDto);
 		doThrow(new InvalidParameterException("Validation error")).when(systemNameValidator).validateSystemName(anyString());
@@ -877,42 +866,42 @@ public class SystemDiscoveryValidationTest {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeAll
-    private static void initializeUtilitiesMock() {
-    	createUtilitiesMock();
-    }
+	@BeforeAll
+	private static void initializeUtilitiesMock() {
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    @BeforeEach
-    private void resetUtilitiesMockBeforeEach() {
-    	resetUtilitiesMock();
-    }
+	@BeforeEach
+	private void resetUtilitiesMockBeforeEach() {
+		resetUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private void resetUtilitiesMock() {
-    	if (utilitiesMock != null) {
-    		utilitiesMock.close();
-    	}
-    	createUtilitiesMock();
-    }
+	private void resetUtilitiesMock() {
+		if (utilitiesMock != null) {
+			utilitiesMock.close();
+		}
+		createUtilitiesMock();
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private static void createUtilitiesMock() {
-    	utilitiesMock = mockStatic(Utilities.class);
+	private static void createUtilitiesMock() {
+		utilitiesMock = mockStatic(Utilities.class);
 
-    	// mock common cases
-    	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
-    	final List<String> listWithNull = new ArrayList<String>(1);
-    	listWithNull.add(null);
-    	utilitiesMock.when(() -> Utilities.containsNull(listWithNull)).thenReturn(true);
-    }
+		// mock common cases
+		utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
+		final List<String> listWithNull = new ArrayList<String>(1);
+		listWithNull.add(null);
+		utilitiesMock.when(() -> Utilities.containsNull(listWithNull)).thenReturn(true);
+	}
 
 	//-------------------------------------------------------------------------------------------------
-    private boolean isEmptyCalledAtLeastOnce(final String argString, final List<String> argStringList) {
+	private boolean isEmptyCalledAtLeastOnce(final String argString, final List<String> argStringList) {
 
 		boolean calledAtLeastOnce = false;
 
@@ -930,11 +919,11 @@ public class SystemDiscoveryValidationTest {
 		}
 
 		return calledAtLeastOnce;
-    }
+	}
 
-  //-------------------------------------------------------------------------------------------------
-    @AfterAll
-    private static void closeUtilitiesMock() {
-    	utilitiesMock.close();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@AfterAll
+	private static void closeUtilitiesMock() {
+		utilitiesMock.close();
+	}
 }

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration;
 
 public final class DynamicServiceOrchestrationConstants {
@@ -74,6 +90,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_PATH_PARAM_OWNER = "{owner}";
 	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_PATH_PARAM_OWNER;
 	public static final String PARAM_NAME_TRIGGER = "trigger";
+	public static final String PARAM_NAME_OWNER = "owner";
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "autoMatchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qosNotEnabled";

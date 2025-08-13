@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.utils;
 
 import java.time.ZonedDateTime;
@@ -308,7 +324,7 @@ public class LocalServiceOrchestration {
 
 			for (final OrchestrationLock lockRecord : lockRecords) {
 				if (!Utilities.isEmpty(lockRecord.getOrchestrationJobId()) && lockRecord.getOrchestrationJobId().equals(jobIdStr)) {
-					// lock belongs to this session
+					// lock belongs to this session (in theory it doesn't happen)
 					continue;
 				} else if (lockRecord.getExpiresAt() != null && lockRecord.getExpiresAt().isBefore(now)) {
 					expiredLocks.add(lockRecord.getId());
@@ -329,7 +345,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(final UUID jobId, final String consumerSystem, final List<OrchestrationCandidate> candidates) {
+	private List<OrchestrationCandidate> filterOutLockedOnesAndTemporaryLockIfCanBeExclusive(final UUID jobId, final String consumerSystem, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutLockedOnesAndTemporaryLockIfCanBeExclusive started...");
 
 		if (Utilities.isEmpty(candidates)) {
@@ -363,7 +379,7 @@ public class LocalServiceOrchestration {
 		logger.debug("markExclusivityIfFeasible started...");
 
 		for (final OrchestrationCandidate candidate : candidates) {
-			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+			final Object allowedExclusivityDurationObj = candidate.getServiceInstance().metadata() == null ? null : candidate.getServiceInstance().metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
 			if (allowedExclusivityDurationObj != null) {
 				try {
 					final int allowedExclusivityDuration = Utilities.parseToInt(allowedExclusivityDurationObj);
@@ -731,7 +747,7 @@ public class LocalServiceOrchestration {
 			}
 
 			candidate.getMatchingInterfaces().forEach(interf -> {
-				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_TYPE_SUFFIX)) {
+				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
 					scopeList.forEach(scope -> {
 						requestPayloadEntries.add(new AuthorizationTokenGenerationMgmtRequestDTO(
 								interf.policy(),
@@ -746,6 +762,10 @@ public class LocalServiceOrchestration {
 					});
 				}
 			});
+		}
+
+		if (Utilities.isEmpty(requestPayloadEntries)) {
+			return;
 		}
 
 		final AuthorizationTokenMgmtListResponseDTO response = ahHttpService.consumeService(

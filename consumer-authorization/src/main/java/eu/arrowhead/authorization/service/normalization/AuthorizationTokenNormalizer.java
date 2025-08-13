@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service.normalization;
 
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +67,7 @@ public class AuthorizationTokenNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public String normalizeSystemName(final String name) {
 		logger.debug("normalizeSystemName started...");
-		Assert.isTrue(!Utilities.isEmpty(name), "System name is empty.");
+		Assert.isTrue(!Utilities.isEmpty(name), "System name is empty");
 
 		return systemNameNormalizer.normalize(name);
 	}
@@ -59,7 +75,7 @@ public class AuthorizationTokenNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public String normalizeToken(final String token) {
 		logger.debug("normalizeToken started...");
-		Assert.isTrue(!Utilities.isEmpty(token), "Token is empty.");
+		Assert.isTrue(!Utilities.isEmpty(token), "Token is empty");
 
 		return token.trim();
 	}
@@ -67,7 +83,7 @@ public class AuthorizationTokenNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenGenerationRequestDTO normalizeAuthorizationTokenGenerationRequestDTO(final AuthorizationTokenGenerationRequestDTO dto) {
 		logger.debug("normalizeAuthorizationTokenGenerationRequestDTO started...");
-		Assert.notNull(dto, "AuthorizationTokenGenerationRequestDTO is null.");
+		Assert.notNull(dto, "AuthorizationTokenGenerationRequestDTO is null");
 
 		final String normalizedTargetType = Utilities.isEmpty(dto.targetType()) ? AuthorizationTargetType.SERVICE_DEF.name() : dto.targetType().toUpperCase().trim();
 		final String normalizedTarget = AuthorizationTargetType.SERVICE_DEF.name().equals(normalizedTargetType)
@@ -75,7 +91,7 @@ public class AuthorizationTokenNormalizer {
 				: eventTypeNameNormalizer.normalize(dto.target());
 
 		return new AuthorizationTokenGenerationRequestDTO(
-				dto.tokenType().toUpperCase().trim(),
+				dto.tokenVariant().toUpperCase().trim(),
 				systemNameNormalizer.normalize(dto.provider()),
 				normalizedTargetType,
 				normalizedTarget,
@@ -95,8 +111,8 @@ public class AuthorizationTokenNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenGenerationMgmtListRequestDTO normalizeAuthorizationTokenGenerationMgmtListRequestDTO(final AuthorizationTokenGenerationMgmtListRequestDTO dto) {
 		logger.debug("normalizeAuthorizationTokenGenerationMgmtListRequestDTO started...");
-		Assert.notNull(dto, "AuthorizationTokenGenerationMgmtListRequestDTO is null.");
-		Assert.notNull(dto.list(), "AuthorizationTokenGenerationMgmtListRequestDTO.list is null.");
+		Assert.notNull(dto, "AuthorizationTokenGenerationMgmtListRequestDTO is null");
+		Assert.notNull(dto.list(), "AuthorizationTokenGenerationMgmtListRequestDTO.list is null");
 
 		return new AuthorizationTokenGenerationMgmtListRequestDTO(
 				dto.list()
@@ -108,7 +124,7 @@ public class AuthorizationTokenNormalizer {
 									: eventTypeNameNormalizer.normalize(item.target());
 
 							return new AuthorizationTokenGenerationMgmtRequestDTO(
-									item.tokenType().trim().toUpperCase(),
+									item.tokenVariant().trim().toUpperCase(),
 									normalizedTargetType,
 									Utilities.isEmpty(item.consumerCloud()) ? DTODefaults.DEFAULT_CLOUD : cloudIdentifierNormalizer.normalize(item.consumerCloud()),
 									systemNameNormalizer.normalize(item.consumer()),
@@ -124,7 +140,7 @@ public class AuthorizationTokenNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenQueryRequestDTO normalizeAuthorizationTokenQueryRequestDTO(final AuthorizationTokenQueryRequestDTO dto) {
 		logger.debug("normalizeAuthorizationTokenQueryRequestDTO started...");
-		Assert.notNull(dto, "AuthorizationTokenQueryRequestDTO is null.");
+		Assert.notNull(dto, "AuthorizationTokenQueryRequestDTO is null");
 
 		final String normalizedTargetTypeStr = Utilities.isEmpty(dto.targetType()) ? null : dto.targetType().trim().toUpperCase();
 		String normalizedTarget = null;
@@ -148,8 +164,8 @@ public class AuthorizationTokenNormalizer {
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO normalizeAuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(final AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO dto) {
 		logger.debug("normalizeAuthorizationMgmtEncryptionKeyRegistrationListRequestDTO started...");
-		Assert.notNull(dto, "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO is null.");
-		Assert.notNull(dto.list(), "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO.list is null.");
+		Assert.notNull(dto, "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO is null");
+		Assert.notNull(dto.list(), "AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO.list is null");
 
 		return new AuthorizationMgmtEncryptionKeyRegistrationListRequestDTO(
 				dto.list()
@@ -157,7 +173,7 @@ public class AuthorizationTokenNormalizer {
 						.map((item) -> new AuthorizationMgmtEncryptionKeyRegistrationRequestDTO(
 								systemNameNormalizer.normalize(item.systemName()),
 								item.key(),
-								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.DEFAULT_ENCRYPTION_ALGORITHM : item.algorithm().trim().toUpperCase()))
+								Utilities.isEmpty(item.algorithm()) ? SecretCryptographer.DEFAULT_ENCRYPTION_ALGORITHM : item.algorithm().trim()))
 						.toList());
 	}
 }

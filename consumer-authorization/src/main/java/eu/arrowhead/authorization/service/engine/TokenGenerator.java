@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service.engine;
 
 import java.security.PrivateKey;
@@ -60,10 +76,8 @@ public class TokenGenerator {
 
 	//-------------------------------------------------------------------------------------------------
 	public String generateBas64SelfContainedToken(final ZonedDateTime expiry, final SelfContainedTokenPayload payload) {
-		Assert.notNull(payload, "Payload is null");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "provider is empty");
 		Assert.isTrue(!Utilities.isEmpty(payload.provider()), "consumer is empty");
-		Assert.isTrue(!Utilities.isEmpty(payload.cloud()), "cloud is empty");
 		Assert.notNull(payload.targetType(), "targetType is null");
 		Assert.isTrue(!Utilities.isEmpty(payload.target()), "target is empty");
 

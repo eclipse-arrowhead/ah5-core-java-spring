@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.service.engine;
 
 import java.security.InvalidKeyException;
@@ -191,7 +207,7 @@ public class TokenEngine {
 
 			Assert.isTrue(!Utilities.isEmpty(rawToken), "Unhandled token type: " + tokenType);
 
-			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encrypt_HMAC_SHA256(rawToken, sysInfo.getSecretCryptographerKey());
 			final Pair<SelfContainedToken, Boolean> selfContainedTokenResult = selfContainedTokenDbService.save(
 					AuthorizationTokenType.fromServiceInterfacePolicy(tokenType),
 					hashedToken,
@@ -223,7 +239,7 @@ public class TokenEngine {
 
 		String hashedToken = null;
 		try {
-			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encrypt_HMAC_SHA256(rawToken, sysInfo.getSecretCryptographerKey());
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -368,7 +384,7 @@ public class TokenEngine {
 		boolean isUnique = false;
 		do {
 			rawToken = tokenGenerator.generateSimpleToken(sysInfo.getSimpleTokenByteSize());
-			hashedToken = secretCryptographer.encryptHMACSHA256(rawToken, sysInfo.getSecretCryptographerKey());
+			hashedToken = secretCryptographer.encrypt_HMAC_SHA256(rawToken, sysInfo.getSecretCryptographerKey());
 			isUnique = tokenHeaderDbService.find(hashedToken).isEmpty();
 		} while (!isUnique);
 
