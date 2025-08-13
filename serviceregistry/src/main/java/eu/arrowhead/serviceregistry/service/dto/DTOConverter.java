@@ -170,7 +170,7 @@ public class DTOConverter {
 								device.getName(),
 								Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
 								}),
-								deviceAddresses.stream().map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress())).collect(Collectors.toList()),
+								deviceAddresses == null ? null : deviceAddresses.stream().map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress())).collect(Collectors.toList()),
 								Utilities.convertZonedDateTimeToUTCString(device.getCreatedAt()),
 								Utilities.convertZonedDateTimeToUTCString(device.getUpdatedAt())),
 				Utilities.convertZonedDateTimeToUTCString(system.getCreatedAt()),
