@@ -474,6 +474,84 @@ public class DTOConverterTest {
 
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInstanceListToDTOSystemsWithDevicesAreNull() {
+
+		final DTOConverter converterSpy = spy(new DTOConverter());
+		// entities to convert
+
+		final Entry<System, SystemAddress> systemDetails1 = createSystem1();
+		final Entry<System, SystemAddress> systemDetails2 = createSystem2();
+
+		final ServiceDefinition serviceDefinition = createServiceDefinition();
+
+		final ServiceInstance instance1 = createServiceInstance(systemDetails1.getKey(), serviceDefinition);
+		final ServiceInstance instance2 = createServiceInstance(systemDetails2.getKey(), serviceDefinition);
+
+		final ServiceInstanceInterface instanceInterface1 = createServiceInstanceInterface(instance1);
+		final ServiceInstanceInterface instanceInterface2 = createServiceInstanceInterface(instance2);
+
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntryToConvert1 = Map.entry(instance1, List.of(instanceInterface1));
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntryToConvert2 = Map.entry(instance2, List.of(instanceInterface2));
+
+		// expected dtos
+
+		final SystemResponseDTO expectedSystem1 = createResponseSystem1(null, false);
+		final SystemResponseDTO expectedSystem2 = createResponseSystem2(null, false);
+
+		final ServiceInstanceResponseDTO expected1 = createServiceInstanceResponse(expectedSystem1);
+		final ServiceInstanceResponseDTO expected2 = createServiceInstanceResponse(expectedSystem2);
+
+		final ServiceInstanceListResponseDTO expected = new ServiceInstanceListResponseDTO(List.of(expected1, expected2), 2);
+
+		final ServiceInstanceListResponseDTO converted = converterSpy.convertServiceInstanceListToDTO(
+				List.of(instanceEntryToConvert1, instanceEntryToConvert2),
+				null);
+		assertEquals(expected, converted);
+		verify(converterSpy, times(2)).convertServiceInstanceEntityToDTO(any(), any());
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInstanceListToDTOSystemsWithDevicesAreEmpty() {
+
+		final DTOConverter converterSpy = spy(new DTOConverter());
+		// entities to convert
+
+		final Entry<System, SystemAddress> systemDetails1 = createSystem1();
+		final Entry<System, SystemAddress> systemDetails2 = createSystem2();
+
+		final ServiceDefinition serviceDefinition = createServiceDefinition();
+
+		final ServiceInstance instance1 = createServiceInstance(systemDetails1.getKey(), serviceDefinition);
+		final ServiceInstance instance2 = createServiceInstance(systemDetails2.getKey(), serviceDefinition);
+
+		final ServiceInstanceInterface instanceInterface1 = createServiceInstanceInterface(instance1);
+		final ServiceInstanceInterface instanceInterface2 = createServiceInstanceInterface(instance2);
+
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntryToConvert1 = Map.entry(instance1, List.of(instanceInterface1));
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntryToConvert2 = Map.entry(instance2, List.of(instanceInterface2));
+
+		// expected dtos
+
+		final SystemResponseDTO expectedSystem1 = createResponseSystem1(null, false);
+		final SystemResponseDTO expectedSystem2 = createResponseSystem2(null, false);
+
+		final ServiceInstanceResponseDTO expected1 = createServiceInstanceResponse(expectedSystem1);
+		final ServiceInstanceResponseDTO expected2 = createServiceInstanceResponse(expectedSystem2);
+
+		final ServiceInstanceListResponseDTO expected = new ServiceInstanceListResponseDTO(List.of(expected1, expected2), 2);
+
+		final ServiceInstanceListResponseDTO converted = converterSpy.convertServiceInstanceListToDTO(
+				List.of(instanceEntryToConvert1, instanceEntryToConvert2),
+				List.of());
+		assertEquals(expected, converted);
+		verify(converterSpy, times(2)).convertServiceInstanceEntityToDTO(any(), any());
+
+	}
+
 	//=================================================================================================
 	// assistant methods
 
