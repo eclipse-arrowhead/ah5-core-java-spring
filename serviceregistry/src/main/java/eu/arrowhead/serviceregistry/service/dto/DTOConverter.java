@@ -315,6 +315,7 @@ public class DTOConverter {
 
 		final List<ServiceInterfaceTemplateResponseDTO> dtos = new ArrayList<>(entries.size());
 		for (final Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entry : entries) {
+			Assert.notNull(entry.getValue(), "ServiceInterfaceTemplateProperty list is null");
 			final ServiceInterfaceTemplate template = entry.getKey();
 			dtos.add(new ServiceInterfaceTemplateResponseDTO(
 					template.getName(),

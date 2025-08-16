@@ -16,6 +16,7 @@
  *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.dto;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,6 +26,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,7 +37,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -45,11 +47,18 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.DeviceListResponseDTO;
 import eu.arrowhead.dto.DeviceResponseDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
+import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateResponseDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -60,8 +69,10 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
+import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
 public class DTOConverterTest {
 
@@ -70,8 +81,7 @@ public class DTOConverterTest {
 
 	private final DTOConverter converter = new DTOConverter();
 
-	// mocking Utilities to mock the creation time
-	private static MockedStatic<Utilities> utilitiesMock;
+	private static MockedStatic<Utilities> utilitiesMock; // needed to mock the creation time
 
 	//=================================================================================================
 	// methods
@@ -411,6 +421,7 @@ public class DTOConverterTest {
 	public void testConvertServiceInstancePageToDTOSystemsWithDevicesAreEmpty() {
 
 		final DTOConverter converterSpy = spy(new DTOConverter());
+
 		// entities to convert
 
 		final Entry<System, SystemAddress> systemDetails1 = createSystem1();
@@ -552,6 +563,116 @@ public class DTOConverterTest {
 
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertInterfaceTemplateEntriesToDTO() {
+
+		final DTOConverter converterSpy = spy(new DTOConverter());
+
+		final ServiceInterfaceTemplate interfaceTemplate = new ServiceInterfaceTemplate("generic_http", "http");
+		interfaceTemplate.onCreate();
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(interfaceTemplate, "maxQos", true, "MINMAX|2|4");
+		final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> toConvert = List.of(Map.entry(interfaceTemplate, List.of(property)));
+
+		final ServiceInterfaceTemplateResponseDTO expectedDTO = new ServiceInterfaceTemplateResponseDTO(
+				"generic_http",
+				"http",
+				List.of(new ServiceInterfaceTemplatePropertyDTO("maxQos", true, "MINMAX", List.of("2", "4"))),
+				"2024-11-04T01:53:02Z",
+				"2024-11-04T01:53:02Z");
+
+		final ServiceInterfaceTemplateListResponseDTO converted = converterSpy.convertInterfaceTemplateEntriesToDTO(toConvert, 1);
+		assertEquals(new ServiceInterfaceTemplateListResponseDTO(List.of(expectedDTO), 1), converted);
+		verify(converterSpy, times(1)).convertServiceInterfaceTemplatePropertytoDTO(property);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInterfaceTemplatePropertytoDTOWithValidatorParams() {
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(
+				new ServiceInterfaceTemplate("generic_http", "http"),
+				"maxQos",
+				true,
+				"MINMAX|2|4");
+
+		final ServiceInterfaceTemplatePropertyDTO expected = new ServiceInterfaceTemplatePropertyDTO("maxQos", true, "MINMAX", List.of("2", "4"));
+
+		final ServiceInterfaceTemplatePropertyDTO converted = converter.convertServiceInterfaceTemplatePropertytoDTO(property);
+		assertEquals(expected, converted);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInterfaceTemplatePropertytoDTOWithoutValidatorParams() {
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(
+				new ServiceInterfaceTemplate("generic_http", "http"),
+				"acccessPort",
+				true,
+				"PORT");
+
+		final ServiceInterfaceTemplatePropertyDTO expected = new ServiceInterfaceTemplatePropertyDTO("acccessPort", true, "PORT", new ArrayList<>());
+
+		final ServiceInterfaceTemplatePropertyDTO converted = converter.convertServiceInterfaceTemplatePropertytoDTO(property);
+		assertEquals(expected, converted);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInterfaceTemplatePropertytoDTOWithoutValidator() {
+
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(
+				new ServiceInterfaceTemplate("generic_http", "http"),
+				"basePath",
+				true,
+				null);
+
+		final ServiceInterfaceTemplatePropertyDTO expected = new ServiceInterfaceTemplatePropertyDTO("basePath", true, null, null);
+
+		final ServiceInterfaceTemplatePropertyDTO converted = converter.convertServiceInterfaceTemplatePropertytoDTO(property);
+		assertEquals(expected, converted);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInstanceQueryRequestDtoToFilterModel() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+
+		final ServiceLookupFilterModel expected = new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")));
+
+		final ServiceLookupFilterModel converted = converter.convertServiceInstanceQueryRequestDtoToFilterModel(dto);
+		assertThat(converted)
+	    	.usingRecursiveComparison()
+	    	.isEqualTo(expected);
+	}
+
 	//=================================================================================================
 	// assistant methods
 
@@ -565,7 +686,8 @@ public class DTOConverterTest {
 		utilitiesMock.when(() -> Utilities.convertZonedDateTimeToUTCString(eq(ZonedDateTime.parse("2024-11-04T01:53:02Z")))).thenReturn("2024-11-04T01:53:02Z");
 		utilitiesMock.when(() -> Utilities.convertZonedDateTimeToUTCString(eq(ZonedDateTime.parse("2025-11-04T01:53:02Z")))).thenReturn("2025-11-04T01:53:02Z");
 		utilitiesMock.when(() -> Utilities.fromJson(eq("{ }"), any(TypeReference.class))).thenReturn(Map.of());
-
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEnumValue("IPV4", AddressType.class)).thenReturn(true);
 	}
 
 	//-------------------------------------------------------------------------------------------------
