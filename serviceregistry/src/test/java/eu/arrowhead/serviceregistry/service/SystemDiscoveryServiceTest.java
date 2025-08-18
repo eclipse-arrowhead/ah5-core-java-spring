@@ -356,6 +356,7 @@ public class SystemDiscoveryServiceTest {
 
 		final Entry<SystemResponseDTO, Boolean> actual = service.registerSystem(dto, "test origin");
 		assertEquals(Map.entry(response, true), actual);
+		verify(dbService).createBulk(List.of(normalizedDto));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -463,6 +464,14 @@ public class SystemDiscoveryServiceTest {
 	    final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
 	    assertEquals(new SystemListResponseDTO(List.of(response), 1), actual);
 	    verify(dtoConverter, never()).convertSystemListResponseDtoToTerse(result);
+	    verify(dbService).getPageByFilters(
+	    		any(),
+	    		eq(List.of("TemperatureManager")),
+				eq(List.of("192.168.100.100")),
+				eq(null),
+				eq(List.of(requirement)),
+				eq(List.of("5.0.0")),
+				eq(List.of("DEVICE1")));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -504,6 +513,7 @@ public class SystemDiscoveryServiceTest {
 		when(validator.validateAndNormalizeRevokeSystem(name, "test origin")).thenReturn(name);
 		when(dbService.deleteByName(name)).thenReturn(true);
 		assertTrue(service.revokeSystem(name, "test origin"));
+		verify(dbService).deleteByName(name);
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -16,6 +16,7 @@
  *******************************************************************************/
 package eu.arrowhead.serviceregistry.service;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,7 +33,7 @@ public class ServiceDiscoveryServiceTest {
 
 	//=================================================================================================
 	// members
-	
+
 	@InjectMocks
 	private ServiceDiscoveryService service;
 
@@ -50,7 +51,13 @@ public class ServiceDiscoveryServiceTest {
 
 	@Mock
 	private DTOConverter dtoConverter;
-	
+
 	//=================================================================================================
 	// methods
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRegisterService() {
+		
+	}
 }

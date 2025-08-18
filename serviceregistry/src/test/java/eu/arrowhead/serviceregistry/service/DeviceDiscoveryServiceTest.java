@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -190,6 +191,7 @@ public class DeviceDiscoveryServiceTest {
 
 		final Entry<DeviceResponseDTO, Boolean> actual = assertDoesNotThrow(() -> service.registerDevice(dto, "test origin"));
 		assertEquals(Map.entry(response, true), actual);
+		verify(dbService).create(normalizedDto);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -250,6 +252,7 @@ public class DeviceDiscoveryServiceTest {
 
 		final DeviceListResponseDTO actual = assertDoesNotThrow(() -> service.lookupDevice(dto, "test origin"));
 		assertEquals(new DeviceListResponseDTO(List.of(response), 1), actual);
+		verify(dbService).getByFilters(List.of("ALARM"), List.of("7c:5a:2e:d1:9b:44"), AddressType.MAC, List.of(requirement));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -278,6 +281,7 @@ public class DeviceDiscoveryServiceTest {
 		when(dbService.deleteByName(name)).thenReturn(true);
 
 		assertTrue(() -> service.revokeDevice(name, "test origin"));
+		verify(dbService).deleteByName(name);
 	}
 
 	//-------------------------------------------------------------------------------------------------
