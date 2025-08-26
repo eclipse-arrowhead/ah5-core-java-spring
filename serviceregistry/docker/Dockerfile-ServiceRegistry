@@ -1,0 +1,25 @@
+# Stage 1: Build (jdk needed)
+FROM eclipse-temurin:21-jdk AS build
+
+RUN apt-get update && \
+    apt-get install -y maven
+	
+WOKDIR /common
+COPY ../../../ah5-common-java-spring .
+RUN mvn clean install -DskipTests
+
+WORKDIR /app
+COPY . .
+RUN mvn clean install -DskipTests
+
+# Stage 2: Runtime (jdk not needed)
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+COPY --from=build /app/target/arrowhead-serviceregistry-5.0.0.jar arrowhead-serviceregistry-5.0.0.jar
+COPY --from=build /app/target/application.properties application.properties
+COPY --from=build /app/src/main/certificates certifictes
+
+EXPOSE 8443
+
+ENTRYPOINT ["java", "-jar", "arrowhead-serviceregistry-5.0.0.jar"]

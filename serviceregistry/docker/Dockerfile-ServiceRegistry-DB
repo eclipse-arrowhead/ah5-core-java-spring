@@ -1,0 +1,10 @@
+FROM mysql:8.1
+
+WORKDIR /db-scripts
+
+# Copy initialization scripts
+COPY ../src/main/resources/database .
+RUN mv /db-scripts/create_empty_db.sql /docker-entrypoint-initdb.d/init.sql
+
+# Replace each "source filename.sql" with "source ../db-scripts/filename.sql"
+RUN sed -i -E 's/^(source[[:space:]]+)([^[:space:]]+)/\1..\/db-scripts\/\2/' /docker-entrypoint-initdb.d/init.sql
