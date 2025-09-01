@@ -16,11 +16,13 @@
  *******************************************************************************/
 package eu.arrowhead.serviceregistry.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,13 +35,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.http.ResponseEntity;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.LockedException;
@@ -57,6 +60,7 @@ import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
+import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -500,7 +504,243 @@ public class ManagementServiceTest {
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
-	
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsAddressTypeEmpty() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", Map.of("op", "EQUALS", "value", true));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureManager"), List.of("192.168.100.100"), "", List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+
+		when(validator.validateAndNormalizeQuerySystems(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
+	    final Device device = new Device("DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
+
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
+		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("indoor", true), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
+
+	    try (MockedStatic<Utilities> utilitiesMock = mockStatic(Utilities.class)) {
+	    	utilitiesMock.when(() -> Utilities.isEmpty("")).thenReturn(true);
+
+	    	service.querySystems(dto, true, "test origin");
+	    	utilitiesMock.verify(() -> Utilities.isEmpty(""));
+	    }
+	    verify(systemDbService).getPageByFilters(pageRequest, List.of("TemperatureManager"), List.of("192.168.100.100"), null, List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsAddressTypeNotEmpty() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", Map.of("op", "EQUALS", "value", true));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureManager"), List.of("192.168.100.100"), "IPV4", List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+
+		when(validator.validateAndNormalizeQuerySystems(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
+	    final Device device = new Device("DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
+
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
+		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("indoor", true), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
+
+	    service.querySystems(dto, true, "test origin");
+	    verify(systemDbService).getPageByFilters(pageRequest, List.of("TemperatureManager"), List.of("192.168.100.100"), AddressType.IPV4, List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsVerboseTrue() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", Map.of("op", "EQUALS", "value", true));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureManager"), List.of("192.168.100.100"), "IPV4", List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+
+		when(validator.validateAndNormalizeQuerySystems(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
+	    final Device device = new Device("DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
+
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
+		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("indoor", true), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
+
+	    final SystemListResponseDTO actual = service.querySystems(dto, true, "test origin");
+	    assertEquals(result, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsVerboseFalse() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", Map.of("op", "EQUALS", "value", true));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureManager"), List.of("192.168.100.100"), "IPV4", List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+
+		when(validator.validateAndNormalizeQuerySystems(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
+	    final Device device = new Device("DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
+
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
+		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("indoor", true), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
+
+		final DeviceResponseDTO deviceTerse = new DeviceResponseDTO("DEVICE1", null, null, null, null);
+		final SystemResponseDTO responseTerse = new SystemResponseDTO("TemperatureManager", Map.of("indoor", true), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceTerse, null, null);
+		final SystemListResponseDTO resultTerse = new SystemListResponseDTO(List.of(responseTerse), 1);
+		when(dtoConverter.convertSystemListResponseDtoToTerse(result)).thenReturn(resultTerse);
+
+	    final SystemListResponseDTO actual = service.querySystems(dto, false, "test origin");
+	    assertEquals(resultTerse, actual);
+	    verify(dtoConverter).convertSystemListResponseDtoToTerse(result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsThrowsInternalServerError() {
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", Map.of("op", "EQUALS", "value", true));
+
+		final SystemQueryRequestDTO dto = new SystemQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TemperatureManager"), List.of("192.168.100.100"), "IPV4", List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+
+		when(validator.validateAndNormalizeQuerySystems(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenThrow(new InternalServerError("Database error", "test origin"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.querySystems(dto, true, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateSystemsOk() {
+
+		final SystemRequestDTO systemRequest = new SystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of("192.168.100.100"), "DEVICE1");
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(systemRequest));
+
+		final NormalizedSystemRequestDTO normalizedDto = new NormalizedSystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), "DEVICE1");
+		when(validator.validateAndNormalizeUpdateSystems(dto, "test origin")).thenReturn(List.of(normalizedDto));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 2\r\n}", "5.0.0");
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
+	    final Device device = new Device("DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+	    final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> dbResult = List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress))));
+	    when(systemDbService.updateBulk(List.of(normalizedDto))).thenReturn(dbResult);
+
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
+	    final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+	    when(dtoConverter.convertSystemTripletListToDTO(dbResult)).thenReturn(result);
+
+	    final SystemListResponseDTO actual = service.updateSystems(dto, "test origin");
+	    assertEquals(result, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateSystemsThrowsInvalidParameterException() {
+
+		final SystemRequestDTO systemRequest = new SystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of("192.168.100.100"), "DEVICE1");
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(systemRequest));
+
+		final NormalizedSystemRequestDTO normalizedDto = new NormalizedSystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), "DEVICE1");
+		when(validator.validateAndNormalizeUpdateSystems(dto, "test origin")).thenReturn(List.of(normalizedDto));
+
+		when(systemDbService.updateBulk(List.of(normalizedDto))).thenThrow(new InvalidParameterException("Invalid parameter"));
+
+	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateSystems(dto, "test origin"));
+		assertEquals("Invalid parameter", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateSystemsThrowsInternalServerError() {
+
+		final SystemRequestDTO systemRequest = new SystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of("192.168.100.100"), "DEVICE1");
+		final SystemListRequestDTO dto = new SystemListRequestDTO(List.of(systemRequest));
+
+		final NormalizedSystemRequestDTO normalizedDto = new NormalizedSystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), "DEVICE1");
+		when(validator.validateAndNormalizeUpdateSystems(dto, "test origin")).thenReturn(List.of(normalizedDto));
+
+		when(systemDbService.updateBulk(List.of(normalizedDto))).thenThrow(new InternalServerError("Database error"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateSystems(dto, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSystemsOk() {
+
+		final List<String> names = List.of("TemperatureManager");
+		when(validator.validateAndNormalizeRemoveSystems(names, "test origin")).thenReturn(names);
+
+		assertDoesNotThrow(() -> service.removeSystems(names, "test origin"));
+		verify(systemDbService).deleteByNameList(names);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSystemsThrowsInternalServerError() {
+
+		final List<String> names = List.of("TemperatureManager");
+		when(validator.validateAndNormalizeRemoveSystems(names, "test origin")).thenReturn(names);
+		doThrow(new InternalServerError("Database error", "test origin")).when(systemDbService).deleteByNameList(names);
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeSystems(names, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
 	// SERVICE INSTANCES
 	
 	// INTERFACE TEMPLATES

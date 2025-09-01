@@ -26,12 +26,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -188,7 +186,7 @@ public class SystemDiscoveryServiceTest {
 		assertEquals("test origin", ex.getOrigin());
 		verify(addressMatcher).isAddressListMatching(List.of(new AddressDTO("IPV4", "192.168.100.100")), List.of(new AddressDTO("HOSTNAME", "greenhouse.com")));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testRegisterSystemExistingSystemNoAddressProvidedAndNoDeviceToInheritFrom() {
