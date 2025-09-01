@@ -26,6 +26,9 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -58,15 +61,29 @@ import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceDefinitionListRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionListResponseDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceCreateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceResponseDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
 import eu.arrowhead.dto.SystemRequestDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
 import eu.arrowhead.dto.enums.AddressType;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
@@ -77,6 +94,7 @@ import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
+import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
 
 @ExtendWith(MockitoExtension.class)
@@ -742,6 +760,450 @@ public class ManagementServiceTest {
 	}
 
 	// SERVICE INSTANCES
-	
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceInstancesOk() {
+
+		final ServiceInstanceRequestDTO instanceRequest = new ServiceInstanceRequestDTO(
+				"TemperatureManager",
+				"temperatureManagement",
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080))));
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instanceRequest));
+
+		when(validator.validateAndNormalizeCreateServiceInstances(dto, "test origin")).thenReturn(List.of(instanceRequest));
+
+		// entities in the database
+		final System system = new System("TemperatureManager", "{ }", "1.0.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance instance = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				system,
+				serviceDefinition,
+				"5.0.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"priority\" : 2\r\n}");
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfacePolicy policy = ServiceInterfacePolicy.NONE;
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(instance, template, "{ }", policy);
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = Map.entry(instance, List.of(instanceInterface));
+		when(instanceDbService.createBulk(List.of(instanceRequest))).thenReturn(List.of(instanceEntry));
+
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
+	    final Device device = new Device("TEST_DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+	    when(systemDbService.getByNameList(List.of("TemperatureManager"))).thenReturn(List.of(systemTriplet));
+
+	    // responses after conversion
+	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+	    final ServiceInstanceResponseDTO responseInstance = new ServiceInstanceResponseDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				systemResponse,
+				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(interfaceResponse),
+				null,
+				null);
+	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(responseInstance), 1);
+	    when(dtoConverter.convertServiceInstanceListToDTO(List.of(instanceEntry), List.of(systemTriplet))).thenReturn(response);
+
+	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.createServiceInstances(dto, "test origin"));
+	    assertEquals(response, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceInstancesThrowsInvalidParameterException() {
+
+		final ServiceInstanceRequestDTO instanceRequest = new ServiceInstanceRequestDTO(
+				"TemperatureManager",
+				"temperatureManagement",
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080))));
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instanceRequest));
+
+		when(validator.validateAndNormalizeCreateServiceInstances(dto, "test origin")).thenReturn(List.of(instanceRequest));
+
+		// entities in the database
+		when(instanceDbService.createBulk(List.of(instanceRequest))).thenThrow(new InvalidParameterException("Invalid parameter"));
+
+	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createServiceInstances(dto, "test origin"));
+		assertEquals("Invalid parameter", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceInstancesThrowsInternalServerError() {
+
+		final ServiceInstanceRequestDTO instanceRequest = new ServiceInstanceRequestDTO(
+				"TemperatureManager",
+				"temperatureManagement",
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080))));
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instanceRequest));
+
+		when(validator.validateAndNormalizeCreateServiceInstances(dto, "test origin")).thenReturn(List.of(instanceRequest));
+
+		// entities in the database
+		when(instanceDbService.createBulk(List.of(instanceRequest))).thenThrow(new InternalServerError("Database error"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createServiceInstances(dto, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateServiceInstancesOk() {
+
+		final ServiceInstanceUpdateRequestDTO instanceRequest = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080))));
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instanceRequest));
+
+		when(validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin")).thenReturn(List.of(instanceRequest));
+
+		// entities in the database
+		final System system = new System("TemperatureManager", "{ }", "1.0.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance instance = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				system,
+				serviceDefinition,
+				"5.0.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"priority\" : 2\r\n}");
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfacePolicy policy = ServiceInterfacePolicy.NONE;
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(instance, template, "{ }", policy);
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = Map.entry(instance, List.of(instanceInterface));
+		when(instanceDbService.updateBulk(List.of(instanceRequest))).thenReturn(List.of(instanceEntry));
+
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
+	    final Device device = new Device("TEST_DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+	    when(systemDbService.getByNameList(List.of("TemperatureManager"))).thenReturn(List.of(systemTriplet));
+
+	    // responses after conversion
+	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+	    final ServiceInstanceResponseDTO responseInstance = new ServiceInstanceResponseDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				systemResponse,
+				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(interfaceResponse),
+				null,
+				null);
+	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(responseInstance), 1);
+	    when(dtoConverter.convertServiceInstanceListToDTO(List.of(instanceEntry), List.of(systemTriplet))).thenReturn(response);
+
+	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.updateServiceInstances(dto, "test origin"));
+	    assertEquals(response, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateServiceInstancesThrowsInvalidParameterException() {
+
+		final ServiceInstanceUpdateRequestDTO instanceRequest = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080))));
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instanceRequest));
+
+		when(validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin")).thenReturn(List.of(instanceRequest));
+
+		// entities in the database
+		when(instanceDbService.updateBulk(List.of(instanceRequest))).thenThrow(new InvalidParameterException("Invalid parameter"));
+
+	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateServiceInstances(dto, "test origin"));
+		assertEquals("Invalid parameter", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateServiceInstancesThrowsInternalServerError() {
+
+		final ServiceInstanceUpdateRequestDTO instanceRequest = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080))));
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instanceRequest));
+
+		when(validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin")).thenReturn(List.of(instanceRequest));
+
+		// entities in the database
+		when(instanceDbService.updateBulk(List.of(instanceRequest))).thenThrow(new InternalServerError("Database error"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateServiceInstances(dto, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveServiceInstancesOk() {
+
+		final List<String> ids = List.of("TemperatureManager|temperatureManagement|5.0.0");
+		when(validator.validateAndNormalizeRemoveServiceInstances(ids, "test origin")).thenReturn(ids);
+
+		assertDoesNotThrow(() -> service.removeServiceInstances(ids, "test origin"));
+		verify(instanceDbService).deleteByInstanceIds(ids);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveServiceInstancesThrowsInternalServerError() {
+
+		final List<String> ids = List.of("TemperatureManager|temperatureManagement|5.0.0");
+		when(validator.validateAndNormalizeRemoveServiceInstances(ids, "test origin")).thenReturn(ids);
+		doThrow(new InternalServerError("Database error")).when(instanceDbService).deleteByInstanceIds(ids);
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeServiceInstances(ids, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryServiceInstancesVerboseTrue() {
+
+		// dto
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("management", false);
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+		when(validator.validateAndNormalizeQueryServiceInstances(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		// filter model
+		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")));
+		when(dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(dto)).thenReturn(filterModel);
+
+		// entities in the database
+		final System system = new System("TemperatureManager", "{ }", "1.0.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance instance = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				system,
+				serviceDefinition,
+				"5.0.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"priority\" : 2\r\n}");
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfacePolicy policy = ServiceInterfacePolicy.NONE;
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(instance, template, "{ }", policy);
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = Map.entry(instance, List.of(instanceInterface));
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = new PageImpl<>(List.of(instanceEntry));
+		when(instanceDbService.getPageByFilters(pageRequest, filterModel)).thenReturn(servicesWithInterfaces);
+
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
+	    final Device device = new Device("TEST_DEVICE1", "{ }");
+	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = new PageImpl<>(List.of(systemTriplet));
+	    when(systemDbService.getPageByFilters(
+	    		PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+	    		List.of("TemperatureManager"),
+	    		null, null, null, null, null)).thenReturn(systemsWithDevices);
+
+	    // responses after conversion
+	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+	    final ServiceInstanceResponseDTO instanceResponse = new ServiceInstanceResponseDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				systemResponse,
+				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(interfaceResponse),
+				null,
+				null);
+	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(instanceResponse), 1);
+	    when(dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices)).thenReturn(response);
+
+	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.queryServiceInstances(dto, true, "test origin"));
+	    assertEquals(response, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryServiceInstancesVerboseFalse() {
+
+		// dto
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("management", false);
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+		when(validator.validateAndNormalizeQueryServiceInstances(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		// filter model
+		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")));
+		when(dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(dto)).thenReturn(filterModel);
+
+		// entities in the database
+		final System system = new System("TemperatureManager", "{ }", "1.0.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance instance = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				system,
+				serviceDefinition,
+				"5.0.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"priority\" : 2\r\n}");
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfacePolicy policy = ServiceInterfacePolicy.NONE;
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(instance, template, "{ }", policy);
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = Map.entry(instance, List.of(instanceInterface));
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = new PageImpl<>(List.of(instanceEntry));
+		when(instanceDbService.getPageByFilters(pageRequest, filterModel)).thenReturn(servicesWithInterfaces);
+
+	    // responses after conversion
+	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", null, null, null, null);
+	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+	    final ServiceInstanceResponseDTO instanceResponse = new ServiceInstanceResponseDTO(
+				"TemperatureManager|temperatureManagement|5.0.0",
+				systemResponse,
+				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
+				"5.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("priority", 2),
+				List.of(interfaceResponse),
+				null,
+				null);
+	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(instanceResponse), 1);
+	    when(dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, null)).thenReturn(response);
+
+	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.queryServiceInstances(dto, false, "test origin"));
+	    assertEquals(response, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryServiceInstancesThrowsInternalServerError() {
+
+		// dto
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("management", false);
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE"));
+		when(validator.validateAndNormalizeQueryServiceInstances(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		// filter model
+		final ServiceLookupFilterModel filterModel = new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(
+				List.of("AlertProvider|alertService|16.4.3"),
+				List.of("AlertProvider"),
+				List.of("alertService"),
+				List.of("16.4.3"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("NONE")));
+		when(dtoConverter.convertServiceInstanceQueryRequestDtoToFilterModel(dto)).thenReturn(filterModel);
+
+		when(instanceDbService.getPageByFilters(pageRequest, filterModel)).thenThrow(new InternalServerError("Database error"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.queryServiceInstances(dto, true, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
 	// INTERFACE TEMPLATES
 }
