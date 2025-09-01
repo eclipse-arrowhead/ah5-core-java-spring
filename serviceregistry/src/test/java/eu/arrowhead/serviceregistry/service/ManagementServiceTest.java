@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -71,6 +70,12 @@ import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateListRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateListResponseDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateQueryRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateResponseDTO;
 import eu.arrowhead.dto.SystemListRequestDTO;
 import eu.arrowhead.dto.SystemListResponseDTO;
 import eu.arrowhead.dto.SystemQueryRequestDTO;
@@ -84,6 +89,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
+import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.jpa.service.DeviceDbService;
@@ -1206,4 +1212,137 @@ public class ManagementServiceTest {
 	}
 
 	// INTERFACE TEMPLATES
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateInterfaceTemplatesOk() {
+
+		// dto
+		final ServiceInterfaceTemplatePropertyDTO property = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST", List.of());
+		final ServiceInterfaceTemplateRequestDTO templateRequest = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(property));
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(templateRequest));
+		when(validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin")).thenReturn(dto);
+
+		// db entities
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfaceTemplateProperty templateProperty = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST");
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entries = Map.of(template, List.of(templateProperty));
+		when(interfaceTemplateDbService.createBulk(List.of(templateRequest))).thenReturn(entries);
+
+		// responses after conversion
+		final ServiceInterfaceTemplateResponseDTO templateResponse = new ServiceInterfaceTemplateResponseDTO(
+				"generic_http",
+				"http",
+				List.of(new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST", List.of())),
+				"2024-11-04T01:53:02Z",
+				"2024-11-04T01:53:02Z");
+		final ServiceInterfaceTemplateListResponseDTO response = new ServiceInterfaceTemplateListResponseDTO(List.of(templateResponse), 1);
+		when(dtoConverter.convertInterfaceTemplateEntriesToDTO(entries.entrySet(), 1)).thenReturn(response);
+
+		final ServiceInterfaceTemplateListResponseDTO actual = assertDoesNotThrow(() -> service.createInterfaceTemplates(dto, "test origin"));
+		assertEquals(response, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateInterfaceTemplatesThrowsInvalidParameterException() {
+
+		// dto
+		final ServiceInterfaceTemplatePropertyDTO property = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST", List.of());
+		final ServiceInterfaceTemplateRequestDTO templateRequest = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(property));
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(templateRequest));
+		when(validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin")).thenReturn(dto);
+
+		when(interfaceTemplateDbService.createBulk(List.of(templateRequest))).thenThrow(new InvalidParameterException("Invalid parameter"));
+
+	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createInterfaceTemplates(dto, "test origin"));
+		assertEquals("Invalid parameter", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateInterfaceTemplatesThrowsInternalServerError() {
+
+		// dto
+		final ServiceInterfaceTemplatePropertyDTO property = new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST", List.of());
+		final ServiceInterfaceTemplateRequestDTO templateRequest = new ServiceInterfaceTemplateRequestDTO("generic_http", "http", List.of(property));
+		final ServiceInterfaceTemplateListRequestDTO dto = new ServiceInterfaceTemplateListRequestDTO(List.of(templateRequest));
+		when(validator.validateAndNormalizeCreateInterfaceTemplates(dto, "test origin")).thenReturn(dto);
+
+		when(interfaceTemplateDbService.createBulk(List.of(templateRequest))).thenThrow(new InternalServerError("Database error"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createInterfaceTemplates(dto, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryInterfaceTemplatesOk() {
+
+		final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_http"), List.of("http"));
+		when(validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfaceTemplateProperty templateProperty = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST");
+		final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = new PageImpl<>(List.of(Map.entry(template, List.of(templateProperty))));
+		when(interfaceTemplateDbService.getPageByFilters(pageRequest, List.of("generic_http"), List.of("http"))).thenReturn(entries);
+
+		final ServiceInterfaceTemplateResponseDTO templateResponse = new ServiceInterfaceTemplateResponseDTO(
+				"generic_http",
+				"http",
+				List.of(new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST", List.of())),
+				"2024-11-04T01:53:02Z",
+				"2024-11-04T01:53:02Z");
+		final ServiceInterfaceTemplateListResponseDTO response = new ServiceInterfaceTemplateListResponseDTO(List.of(templateResponse), 1);
+		when(dtoConverter.convertInterfaceTemplateEntriesToDTO(List.of(Map.entry(template, List.of(templateProperty))), 1)).thenReturn(response);
+
+		final ServiceInterfaceTemplateListResponseDTO actual = assertDoesNotThrow(() -> service.queryInterfaceTemplates(dto, "test origin"));
+		assertEquals(response, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryInterfaceTemplatesThrowsInternalServerError() {
+
+		final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_http"), List.of("http"));
+		when(validator.validateAndNormalizeQueryInterfaceTemplates(dto, "test origin")).thenReturn(dto);
+
+		final PageRequest pageRequest = PageRequest.of(10, 20, Direction.ASC, "id");
+		when(pageService.getPageRequest(eq(new PageDTO(10, 20, "ASC", "id")), any(), any(), any(), eq("test origin"))).thenReturn(pageRequest);
+
+		when(interfaceTemplateDbService.getPageByFilters(pageRequest, List.of("generic_http"), List.of("http"))).thenThrow(new InternalServerError("Database error"));
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.queryInterfaceTemplates(dto, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveInterfaceTemplatesOk() {
+
+		final List<String> names = List.of("generic_http");
+		when(validator.validateAndNormalizeRemoveInterfaceTemplates(names, "test origin")).thenReturn(names);
+
+		assertDoesNotThrow(() -> service.removeInterfaceTemplates(names, "test origin"));
+		verify(interfaceTemplateDbService).deleteByTemplateNameList(names);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveInterfaceTemplatesThrowsInternalServerError() {
+
+		final List<String> names = List.of("generic_http");
+		when(validator.validateAndNormalizeRemoveInterfaceTemplates(names, "test origin")).thenReturn(names);
+		doThrow(new InternalServerError("Database error")).when(interfaceTemplateDbService).deleteByTemplateNameList(names);
+
+	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeInterfaceTemplates(names, "test origin"));
+		assertEquals("Database error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
 }
