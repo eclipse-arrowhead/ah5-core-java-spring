@@ -17,22 +17,30 @@
 package eu.arrowhead.serviceregistry.jpa.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -41,15 +49,20 @@ import org.springframework.data.domain.Sort.Direction;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.dto.AddressDTO;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceSystemConnector;
+import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceAddressRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.DeviceSystemConnectorRepository;
+import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 
 @ExtendWith(MockitoExtension.class)
 public class DeviceDbServiceTest {
@@ -58,6 +71,7 @@ public class DeviceDbServiceTest {
 	// members
 
 	@InjectMocks
+	@Spy
 	private DeviceDbService service;
 
 	@Mock
@@ -77,9 +91,24 @@ public class DeviceDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetByFilters() {
-		// TODO
+
+		final Device device = new Device("DEVICE", "{\r\n  \"indoor\" : true\r\n}");
+		when(deviceRepo.findAll()).thenReturn(List.of(device));
+
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "3a:7f:12:b4:9c:e1");
+		when(addressRepo.findAllByDeviceAndAddressIn(any(), any())).thenReturn(List.of(deviceAddress));
+
+		when(deviceRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of(device)));
+		when(addressRepo.findAllByDevice(any())).thenReturn(List.of(deviceAddress));
+
+		final List<Entry<Device, List<DeviceAddress>>> expected = List.of(Map.entry(device, List.of(deviceAddress)));
+		final List<Entry<Device, List<DeviceAddress>>> actual = service.getByFilters(List.of(), List.of("3a:7f:12:b4:9c:e1"), null, List.of());
+
+		assertEquals(expected, actual);
+		verify(service).getPage(any(), eq(List.of()), eq(List.of("3a:7f:12:b4:9c:e1")), eq(null), eq(List.of()));
 	}
-	
+
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageWithoutFilterParameters() {
@@ -282,6 +311,297 @@ public class DeviceDbServiceTest {
 		when(deviceRepo.findAll(pageRequest)).thenThrow(new LockedException("error"));
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getPage(pageRequest, List.of(), List.of(), null, List.of()));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameEmptyResult() {
+
+		when(deviceRepo.findByName(any())).thenReturn(Optional.empty());
+
+		final Optional<Entry<Device, List<DeviceAddress>>> result = service.getByName("DEVICE");
+		assertEquals(Optional.empty(), result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNamePresentResult() {
+
+		final Device device = new Device("DEVICE", "{\r\n  \"indoor\" : true\r\n}");
+		when(deviceRepo.findByName(any())).thenReturn(Optional.of(device));
+
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "3a:7f:12:b4:9c:e1");
+		when(addressRepo.findAllByDevice(any())).thenReturn(List.of(deviceAddress));
+
+		final Optional<Entry<Device, List<DeviceAddress>>> result = service.getByName("DEVICE");
+		assertEquals(Optional.of(Map.entry(device, List.of(deviceAddress))), result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameThrowsInternalServerError() {
+
+		when(deviceRepo.findByName(any())).thenThrow(new LockedException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getByName("DEVICE"));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkExistingDevicesThrowsInvalidParameterException() {
+
+		final NormalizedDeviceRequestDTO dto1 = new NormalizedDeviceRequestDTO("DEVICE1", Map.of("indoor", false), List.of());
+		final NormalizedDeviceRequestDTO dto2 = new NormalizedDeviceRequestDTO("DEVICE2", Map.of("indoor", true), List.of());
+		final NormalizedDeviceRequestDTO dto3 = new NormalizedDeviceRequestDTO("DEVICE3", Map.of("indoor", true), List.of());
+
+		final Device device1 = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		final Device device3 = new Device("DEVICE3", "{\r\n  \"indoor\" : true\r\n}");
+		when(deviceRepo.findAllByNameIn(any())).thenReturn(List.of(device1, device3));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createBulk(List.of(dto1, dto2, dto3)));
+		assertEquals("Device with names already exists: DEVICE1, DEVICE3", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkOk() {
+
+		final List<AddressDTO> addresses = new ArrayList<AddressDTO>(2);
+		addresses.add(new AddressDTO("MAC", "3a:7c:91:ef:2d:b6"));
+		addresses.add(new AddressDTO("MAC", "56:3e:c9:7a:11:84"));
+
+		final NormalizedDeviceRequestDTO deviceWithAddresses = new NormalizedDeviceRequestDTO("DEVICE1", Map.of("indoor", false), addresses);
+		final NormalizedDeviceRequestDTO deviceWithoutAddresses = new NormalizedDeviceRequestDTO("DEVICE2", Map.of("indoor", false), List.of());
+
+		final Device deviceEntity1 = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		final Device deviceEntity2 = new Device("DEVICE2", "{\r\n  \"indoor\" : false\r\n}");
+		when(deviceRepo.saveAllAndFlush(List.of(deviceEntity1, deviceEntity2))).thenReturn(List.of(deviceEntity1, deviceEntity2));
+
+		final DeviceAddress deviceAddress1 = new DeviceAddress(deviceEntity1, AddressType.MAC, "3a:7c:91:ef:2d:b6");
+		final DeviceAddress deviceAddress2 = new DeviceAddress(deviceEntity1, AddressType.MAC, "56:3e:c9:7a:11:84");
+		when(addressRepo.findAllByDevice(same(deviceEntity1))).thenReturn(List.of(deviceAddress1, deviceAddress2));
+		when(addressRepo.findAllByDevice(same(deviceEntity2))).thenReturn(List.of());
+
+		final List<Entry<Device, List<DeviceAddress>>> expected = List.of(Map.entry(deviceEntity1, List.of(deviceAddress1, deviceAddress2)), Map.entry(deviceEntity2, List.of()));
+		final List<Entry<Device, List<DeviceAddress>>> actual = service.createBulk(List.of(deviceWithAddresses, deviceWithoutAddresses));
+		assertEquals(expected, actual);
+		verify(deviceRepo).saveAllAndFlush(List.of(deviceEntity1, deviceEntity2));
+		verify(addressRepo).saveAllAndFlush(List.of(deviceAddress1, deviceAddress2));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkThrowsInternalServerError() {
+
+		final NormalizedDeviceRequestDTO dto = new NormalizedDeviceRequestDTO("DEVICE1", Map.of("indoor", false), List.of());
+		when(deviceRepo.findAllByNameIn(any())).thenThrow(new LockedException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of(dto)));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateExistingDeviceThrowsInvalidParameterException() {
+
+		final NormalizedDeviceRequestDTO dto = new NormalizedDeviceRequestDTO("DEVICE", Map.of("indoor", true), List.of());
+		final Device device = new Device("DEVICE", "{\r\n  \"indoor\" : true\r\n}");
+		when(deviceRepo.findByName(any())).thenReturn(Optional.of(device));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.create(dto));
+		assertEquals("Device with name 'DEVICE' already exists", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateDeviceWithAddress() {
+
+		final List<AddressDTO> addresses = List.of(new AddressDTO("MAC", "3a:7c:91:ef:2d:b6"));
+		final NormalizedDeviceRequestDTO dto = new NormalizedDeviceRequestDTO("DEVICE", Map.of("indoor", false), addresses);
+
+		when(deviceRepo.findByName(any())).thenReturn(Optional.empty());
+
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		when(deviceRepo.saveAndFlush(device)).thenReturn(device);
+
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "3a:7c:91:ef:2d:b6");
+		when(addressRepo.saveAllAndFlush(List.of(deviceAddress))).thenReturn(List.of(deviceAddress));
+
+		final Entry<Device, List<DeviceAddress>> actual = service.create(dto);
+		assertEquals(Map.entry(device, List.of(deviceAddress)), actual);
+		verify(deviceRepo).saveAndFlush(device);
+		verify(addressRepo).saveAllAndFlush(List.of(deviceAddress));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateDeviceWithoutAddress() {
+
+		final NormalizedDeviceRequestDTO dto = new NormalizedDeviceRequestDTO("DEVICE", Map.of("indoor", false), List.of());
+
+		when(deviceRepo.findByName(any())).thenReturn(Optional.empty());
+
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		when(deviceRepo.saveAndFlush(device)).thenReturn(device);
+
+		final Entry<Device, List<DeviceAddress>> actual = service.create(dto);
+		assertEquals(Map.entry(device, List.of()), actual);
+		verify(deviceRepo).saveAndFlush(device);
+		verify(addressRepo, never()).saveAllAndFlush(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateThrowsInternalServerError() {
+
+		final NormalizedDeviceRequestDTO dto = new NormalizedDeviceRequestDTO("DEVICE", Map.of("indoor", false), List.of());
+
+		when(deviceRepo.findByName(any())).thenThrow(new LockedException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.create(dto));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkNotExistingDeviceThrowsInvalidParameterException() {
+
+		final NormalizedDeviceRequestDTO dto1 = new NormalizedDeviceRequestDTO("DEVICE1", Map.of("indoor", false), List.of());
+		final NormalizedDeviceRequestDTO dto2 = new NormalizedDeviceRequestDTO("DEVICE2", Map.of("indoor", false), List.of());
+		final NormalizedDeviceRequestDTO dto3 = new NormalizedDeviceRequestDTO("DEVICE3", Map.of("indoor", false), List.of());
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		when(deviceRepo.findAllByNameIn(any())).thenReturn(List.of(device));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto1, dto2, dto3)));
+		assertEquals("Device(s) not exists: DEVICE2, DEVICE3", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkOk() {
+
+		final List<AddressDTO> addresses = new ArrayList<AddressDTO>(2);
+		addresses.add(new AddressDTO("MAC", "3a:7c:91:ef:2d:b6"));
+		addresses.add(new AddressDTO("MAC", "56:3e:c9:7a:11:84"));
+
+		final NormalizedDeviceRequestDTO deviceWithAddresses = new NormalizedDeviceRequestDTO("DEVICE1", Map.of("indoor", false), addresses);
+		final NormalizedDeviceRequestDTO deviceWithoutAddresses = new NormalizedDeviceRequestDTO("DEVICE2", Map.of("indoor", false), List.of());
+
+		final Device deviceEntity1 = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		final Device deviceEntity2 = new Device("DEVICE2", "{\r\n  \"indoor\" : false\r\n}");
+		when(deviceRepo.findAllByNameIn(any())).thenReturn(List.of(deviceEntity1, deviceEntity2));
+		when(deviceRepo.saveAllAndFlush(List.of(deviceEntity1, deviceEntity2))).thenReturn(List.of(deviceEntity1, deviceEntity2));
+
+		final DeviceAddress deviceAddress1 = new DeviceAddress(deviceEntity1, AddressType.MAC, "3a:7c:91:ef:2d:b6");
+		final DeviceAddress deviceAddress2 = new DeviceAddress(deviceEntity1, AddressType.MAC, "56:3e:c9:7a:11:84");
+		when(addressRepo.deleteAllByDeviceIn(any())).thenReturn(List.of(deviceAddress1, deviceAddress2));
+		when(addressRepo.saveAllAndFlush(any())).thenReturn(List.of(deviceAddress1, deviceAddress2));
+		when(addressRepo.findAllByDevice(same(deviceEntity1))).thenReturn(List.of(deviceAddress1, deviceAddress2));
+		when(addressRepo.findAllByDevice(same(deviceEntity2))).thenReturn(List.of());
+
+		final List<Entry<Device, List<DeviceAddress>>> expected = List.of(Map.entry(deviceEntity1, List.of(deviceAddress1, deviceAddress2)), Map.entry(deviceEntity2, List.of()));
+		final List<Entry<Device, List<DeviceAddress>>> actual = service.updateBulk(List.of(deviceWithAddresses, deviceWithoutAddresses));
+		assertEquals(expected, actual);
+		verify(deviceRepo).saveAllAndFlush(List.of(deviceEntity1, deviceEntity2));
+		verify(addressRepo).deleteAllByDeviceIn(List.of(deviceEntity1, deviceEntity2));
+		verify(addressRepo).saveAllAndFlush(List.of(deviceAddress1, deviceAddress2));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkThrowsInternalServerError() {
+
+		final NormalizedDeviceRequestDTO dto = new NormalizedDeviceRequestDTO("DEVICE", Map.of("indoor", false), List.of());
+		when(deviceRepo.findAllByNameIn(any())).thenThrow(new LockedException("error"));
+
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateBulk(List.of(dto)));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListASystemIsAssignedThrowsLockedException() {
+
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		final System system = new System("SYSTEM1",  "{\r\n  \"indoor\" : false\r\n}", "5.0.0");
+		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
+
+		when(deviceRepo.findAllByNameIn(any())).thenReturn(List.of(device));
+		when(connectorRepo.findByDeviceIn(any())).thenReturn(List.of(connection));
+
+		final LockedException ex = assertThrows(LockedException.class, () -> service.deleteByNameList(List.of("DEVICE1")));
+		assertEquals("At least one system is assigned to these devices", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListOk() {
+
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+
+		when(deviceRepo.findAllByNameIn(any())).thenReturn(List.of(device));
+		when(connectorRepo.findByDeviceIn(any())).thenReturn(List.of());
+
+		service.deleteByNameList(List.of("DEVICE1"));
+		verify(deviceRepo).deleteAll(List.of(device));
+		verify(deviceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListThrowsInternalServerError() {
+
+		when(deviceRepo.findAllByNameIn(any())).thenThrow(new RuntimeException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByNameList(List.of("DEVICE1")));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameASystemIsAssignedThrowsLockedException() {
+
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+		final System system = new System("SYSTEM1",  "{\r\n  \"indoor\" : false\r\n}", "5.0.0");
+		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
+
+		when(deviceRepo.findByName(any())).thenReturn(Optional.of(device));
+		when(connectorRepo.findByDevice(any())).thenReturn(List.of(connection));
+
+		final LockedException ex = assertThrows(LockedException.class, () -> service.deleteByName("DEVICE1"));
+		assertEquals("At least one system is assigned to this device", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameExistingDevice() {
+
+		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
+
+		when(deviceRepo.findByName(any())).thenReturn(Optional.of(device));
+		when(connectorRepo.findByDevice(any())).thenReturn(List.of());
+
+		final boolean result = service.deleteByName("DEVICE1");
+		assertTrue(result);
+		verify(deviceRepo).delete(device);
+		verify(deviceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameNotExistingDevice() {
+
+		when(deviceRepo.findByName(any())).thenReturn(Optional.empty());
+
+		final boolean result = service.deleteByName("DEVICE1");
+		assertFalse(result);
+		verify(deviceRepo, never()).delete(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameThrowsInternalServerError() {
+
+		when(deviceRepo.findByName(any())).thenThrow(new RuntimeException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByName("DEVICE1"));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
 }
