@@ -106,7 +106,7 @@ public class SystemDbService {
 
 			// writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
-			if (deviceSystemConnectorEntities != null) {
+			if (!Utilities.isEmpty(deviceSystemConnectorEntities)) {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
