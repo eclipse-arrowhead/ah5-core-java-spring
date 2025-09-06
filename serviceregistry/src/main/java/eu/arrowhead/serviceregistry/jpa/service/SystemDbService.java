@@ -317,10 +317,6 @@ public class SystemDbService {
 						}
 
 						// device names
-						if (!Utilities.isEmpty(deviceNames) && deviceSystemConnectorRepo.findBySystem(system).isPresent()
-								&& !deviceNames.contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
-							continue;
-						}
 
 						if (!Utilities.isEmpty(deviceNames)) {
 							final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);

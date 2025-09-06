@@ -16,10 +16,12 @@
  *******************************************************************************/
 package eu.arrowhead.serviceregistry.jpa.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,13 +37,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.LockedException;
+import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.AddressDTO;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.serviceregistry.jpa.entity.Device;
 import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
@@ -62,6 +72,7 @@ public class SystemDbServiceTest {
 	// members
 
 	@InjectMocks
+	@Spy
 	private SystemDbService service;
 
 	@Mock
@@ -412,5 +423,274 @@ public class SystemDbServiceTest {
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateBulk(List.of(dto)));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testdeleteByNameListOk() {
+
+		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+		when(systemRepo.findAllByNameIn(List.of("TemperatureConsumer"))).thenReturn(List.of(system));
+
+		assertDoesNotThrow(() -> service.deleteByNameList(List.of("TemperatureConsumer")));
+		final InOrder inOrder = Mockito.inOrder(systemRepo);
+		inOrder.verify(systemRepo).deleteAll(List.of(system));
+		inOrder.verify(systemRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testdeleteByNameListThrowsInternalServerError() {
+
+		when(systemRepo.findAllByNameIn(List.of("TemperatureConsumer"))).thenThrow(new LockedException("error"));
+
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByNameList(List.of("TemperatureConsumer")));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameNoMatchingSystem() {
+
+		when(systemRepo.findByName("TemperatureConsumer")).thenReturn(Optional.empty());
+		assertEquals(Optional.empty(), service.getByName("TemperatureConsumer"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameDeviceNull() {
+
+		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+		when(systemRepo.findByName("TemperatureConsumer")).thenReturn(Optional.of(system));
+
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.4.4");
+		when(systemAddressRepo.findAllBySystem(any())).thenReturn(List.of(systemAddress));
+
+		final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected = Optional.of(Triple.of(system, List.of(systemAddress), null));
+		final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> actual = service.getByName("TemperatureConsumer");
+		assertEquals(expected, actual);
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameDeviceNotNull() {
+
+		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+		when(systemRepo.findByName("TemperatureConsumer")).thenReturn(Optional.of(system));
+
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.4.4");
+		when(systemAddressRepo.findAllBySystem(any())).thenReturn(List.of(systemAddress));
+
+		final Device device = new Device("DEVICE", "{\r\n  \"indoor\" : true\r\n}");
+		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
+		when(deviceSystemConnectorRepo.findBySystem(any())).thenReturn(Optional.of(connection));
+
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "3a:7f:12:b4:9c:e1");
+		when(deviceAddressRepo.findAllByDevice(any())).thenReturn(List.of(deviceAddress));
+
+		final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected = Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress))));
+		final Optional<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> actual = service.getByName("TemperatureConsumer");
+		assertEquals(expected, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameThrowsInternalServerError() {
+
+		when(systemRepo.findByName("TemperatureConsumer")).thenThrow(new LockedException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getByName("TemperatureConsumer"));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameListElementNotPresent() {
+
+		when(systemRepo.findByName("TemperatureConsumer")).thenReturn(Optional.empty());
+		assertEquals(List.of(), service.getByNameList(List.of("TemperatureConsumer")));
+		verify(service).getByName("TemperatureConsumer");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameListElementIsPresent() {
+
+		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+		when(systemRepo.findByName("TemperatureConsumer")).thenReturn(Optional.of(system));
+
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.4.4");
+		when(systemAddressRepo.findAllBySystem(any())).thenReturn(List.of(systemAddress));
+
+		final Device device = new Device("DEVICE", "{\r\n  \"indoor\" : true\r\n}");
+		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
+		when(deviceSystemConnectorRepo.findBySystem(any())).thenReturn(Optional.of(connection));
+
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "3a:7f:12:b4:9c:e1");
+		when(deviceAddressRepo.findAllByDevice(any())).thenReturn(List.of(deviceAddress));
+
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> expectedElement = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> actual = service.getByNameList(List.of("TemperatureConsumer"));
+		assertEquals(List.of(expectedElement), actual);
+		verify(service).getByName("TemperatureConsumer");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersWithoutFilters() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
+
+		service.getPageByFilters(pageRequest, null, null, null, null, null, null);
+		verify(systemRepo).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersBySystemNames() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAllByNameIn(any())).thenReturn(List.of());
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
+
+		service.getPageByFilters(pageRequest, List.of("TemperatureProvider"), null, null, null, null, null);
+		verify(systemRepo).findAllByNameIn(List.of("TemperatureProvider"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByAddressType() {
+
+		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll()).thenReturn(List.of(system));
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
+		when(systemAddressRepo.findAllBySystemAndAddressType(any(), any())).thenReturn(List.of());
+
+		service.getPageByFilters(pageRequest, null, null, AddressType.IPV4, null, null, null);
+		verify(systemAddressRepo).findAllBySystemAndAddressType(any(), eq(AddressType.IPV4));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByAddresses() {
+
+		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll()).thenReturn(List.of(system));
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(systemAddressRepo.findAllBySystemAndAddressIn(any(), any())).thenReturn(List.of());
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
+
+		service.getPageByFilters(pageRequest, null, List.of("192.168.8.8"), null, null, null, null);
+		verify(systemAddressRepo).findAllBySystemAndAddressIn(any(), eq(List.of("192.168.8.8")));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByVersion() {
+
+		System system = new System("TemperatureConsumer1", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll()).thenReturn(List.of(system));
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(systemRepo.findAllByVersionIn(any())).thenReturn(List.of(system));
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
+
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = service.getPageByFilters(pageRequest, null, null, null, null, List.of("2.0.0"), null);
+		verify(systemRepo).findAllByVersionIn(List.of("2.0.0"));
+		assertEquals(new PageImpl<>(List.of(), pageRequest, 0), result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByDeviceNames() {
+
+		System system = new System("TemperatureConsumer1", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+
+		final Device device = new Device("COMPUTER", "{\r\n  \"indoor\" : true\r\n}");
+		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll()).thenReturn(List.of(system));
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(deviceSystemConnectorRepo.findBySystem(any())).thenReturn(Optional.of(connection));
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of(connection));
+
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = service.getPageByFilters(pageRequest, null, null, null, null, null, List.of("DEVICE"));
+		verify(deviceSystemConnectorRepo).findBySystem(system);
+		assertEquals(new PageImpl<>(List.of(), pageRequest, 0), result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByMetadata() {
+
+		System system = new System("TemperatureConsumer1", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll()).thenReturn(List.of(system));
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", true);
+
+		try (MockedStatic<MetadataRequirementsMatcher> metaMatcherMock = mockStatic(MetadataRequirementsMatcher.class)) {
+			metaMatcherMock.when(() -> MetadataRequirementsMatcher.isMetadataMatch(any(), any())).thenReturn(false);
+
+			final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = service.getPageByFilters(pageRequest, null, null, null, List.of(requirement), null, null);
+			metaMatcherMock.verify(() -> MetadataRequirementsMatcher.isMetadataMatch(Map.of("indoor", false), requirement));
+			assertEquals(new PageImpl<>(List.of(), pageRequest, 0), result);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersCheckResult() {
+
+		System system = new System("TemperatureConsumer1", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
+		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.4.4");
+
+		final Device device = new Device("COMPUTER", "{\r\n  \"indoor\" : true\r\n}");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "3a:7f:12:b4:9c:e1");
+
+		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		when(systemRepo.findAll()).thenReturn(List.of(system));
+		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of(system)));
+		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of(systemAddress));
+		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of(connection));
+		when(deviceAddressRepo.findAllByDevice(any())).thenReturn(List.of(deviceAddress));
+
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", false);
+
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected =
+				new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))), pageRequest, 1);
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = service.getPageByFilters(pageRequest, null, null, null, List.of(requirement), null, null);
+		assertEquals(expected, result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersThrowsInternalServerError() {
+
+		
 	}
 }

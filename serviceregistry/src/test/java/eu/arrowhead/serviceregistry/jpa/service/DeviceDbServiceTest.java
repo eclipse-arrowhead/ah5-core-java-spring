@@ -291,12 +291,12 @@ public class DeviceDbServiceTest {
 		when(deviceRepo.findAll()).thenReturn(List.of(device));
 		when(deviceRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
 
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+		requirement.put("indoor", true);
+
 		try (MockedStatic<MetadataRequirementsMatcher> metaMatcherMock = mockStatic(MetadataRequirementsMatcher.class)) {
 			metaMatcherMock.when(() -> MetadataRequirementsMatcher.isMetadataMatch(any(), any())).thenReturn(false);
-
-			final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
-			final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-			requirement.put("indoor", true);
 
 			service.getPage(pageRequest, List.of(), List.of(), null, List.of(requirement));
 			metaMatcherMock.verify(() -> MetadataRequirementsMatcher.isMetadataMatch(Map.of("indoor", false), requirement));
