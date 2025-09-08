@@ -19,6 +19,7 @@ package eu.arrowhead.serviceregistry.jpa.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -35,8 +36,11 @@ import java.util.Map.Entry;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -44,7 +48,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.LockedException;
+import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
+import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
@@ -164,7 +171,24 @@ public class ServiceInterfaceTemplateDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testGetPageByFiltersByProtocols() {
+	public void testGetPageByFiltersByTemplateNamesNoMatch() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+
+		when(templateRepo.findAllByNameIn(any())).thenReturn(List.of(template));
+		when(templatePropsRepo.findAllByServiceInterfaceTemplateIn(argThat(collection -> collection != null && collection.isEmpty()))).thenReturn(List.of());
+		when(templateRepo.findAllByIdIn(argThat(collection -> collection != null && collection.isEmpty()), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
+
+		final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> expected = new PageImpl<>(List.of(), pageRequest, 0);
+		final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> actual = service.getPageByFilters(pageRequest, List.of("generic_http"), null);
+		verify(templateRepo).findAllByNameIn(List.of("generic_http"));
+		assertEquals(expected, actual);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByProtocolsAndMatch() {
 
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
@@ -182,7 +206,29 @@ public class ServiceInterfaceTemplateDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testGetPageByFiltersBothFilterButNoMatch() {
+	public void testGetPageByFiltersNeedToMatchTheIntfProperties() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 2, Direction.ASC, "id");
+		final ServiceInterfaceTemplate template1 = new ServiceInterfaceTemplate("generic_http", "http");
+		template1.setId(0);
+		final ServiceInterfaceTemplate template2 = new ServiceInterfaceTemplate("generic_https", "https");
+		template2.setId(1);
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template2, "accessAddresses", true, "NOT_EMPTY_ADDRESS_LIST");
+
+		when(templateRepo.findAllByProtocolIn(any())).thenReturn(List.of(template1, template2));
+		when(templatePropsRepo.findAllByServiceInterfaceTemplateIn(any())).thenReturn(List.of(property));
+		when(templateRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of(template1, template2), pageRequest, 2));
+
+		final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> expected = new PageImpl<>(List.of(Map.entry(template1, List.of()), Map.entry(template2, List.of(property))), pageRequest, 2);
+		final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> actual = service.getPageByFilters(pageRequest, null, List.of("http", "https"));
+		verify(templateRepo).findAllByProtocolIn(List.of("http", "https"));
+		assertEquals(expected.getTotalElements(), actual.getTotalElements());
+		assertEquals(expected.getContent().size(), actual.getContent().size());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersProtocolDoesNotMatch() {
 
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
@@ -199,6 +245,166 @@ public class ServiceInterfaceTemplateDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersThrowsInternalServerError() {
-		
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		when(templateRepo.findAll()).thenThrow(new LockedException("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getPageByFilters(pageRequest, null, null));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkDuplicatedTemplateThrowsInvalidParameterException() {
+
+		when(templateRepo.existsByName(any())).thenReturn(false);
+
+		final ServiceInterfaceTemplateRequestDTO dto1 = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"http",
+				List.of());
+
+		final ServiceInterfaceTemplateRequestDTO dto2 = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"https",
+				List.of());
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createBulk(List.of(dto1, dto2)));
+		assertEquals("Duplicated interface template name: generic_http", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkExistingTemplateThrowsInvalidParameterException() {
+
+		final ServiceInterfaceTemplateRequestDTO dto = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"http",
+				List.of());
+
+		when(templateRepo.existsByName(any())).thenReturn(true);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createBulk(List.of(dto)));
+		assertEquals("Interface template already exists: generic_http", ex.getMessage());
+		verify(templateRepo).existsByName("generic_http");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkExistingTemplatePropertyWithoutValidator() {
+
+		final ServiceInterfaceTemplateRequestDTO dto = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"http",
+				List.of(new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, null, List.of())));
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, null);
+
+		when(templateRepo.existsByName(any())).thenReturn(false);
+		when(templateRepo.saveAllAndFlush(any())).thenReturn(List.of(template));
+		when(templatePropsRepo.saveAllAndFlush(any())).thenReturn(List.of(property));
+
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> expected = Map.of(template, List.of(property));
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
+		assertEquals(expected, actual);
+		verify(templateRepo).saveAllAndFlush(
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1)
+			);
+		verify(templatePropsRepo).saveAllAndFlush(
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1)
+			);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkExistingTemplatePropertyWithValidatorWithoutParams() {
+
+		final ServiceInterfaceTemplateRequestDTO dto = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"http",
+				List.of(new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "MINMAX", List.of())));
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, "MINMAX");
+
+		when(templateRepo.existsByName(any())).thenReturn(false);
+		when(templateRepo.saveAllAndFlush(any())).thenReturn(List.of(template));
+		when(templatePropsRepo.saveAllAndFlush(any())).thenReturn(List.of(property));
+
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> expected = Map.of(template, List.of(property));
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
+		assertEquals(expected, actual);
+		verify(templateRepo).saveAllAndFlush(
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1)
+			);
+		verify(templatePropsRepo).saveAllAndFlush(
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1)
+			);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkExistingTemplatePropertyWithValidatorWithParams() {
+
+		final ServiceInterfaceTemplateRequestDTO dto = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"http",
+				List.of(new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "MINMAX", List.of("192.168.0.1", "192.168.0.10"))));
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, "MINMAX|192.168.0.1|192.168.0.10");
+
+		when(templateRepo.existsByName(any())).thenReturn(false);
+		when(templateRepo.saveAllAndFlush(any())).thenReturn(List.of(template));
+		when(templatePropsRepo.saveAllAndFlush(any())).thenReturn(List.of(property));
+
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> expected = Map.of(template, List.of(property));
+		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
+		assertEquals(expected, actual);
+		verify(templateRepo).saveAllAndFlush(
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1)
+			);
+		verify(templatePropsRepo).saveAllAndFlush(
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1)
+			);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkExistingTemplateThrowsInternalServerError() {
+
+		final ServiceInterfaceTemplateRequestDTO dto = new ServiceInterfaceTemplateRequestDTO(
+				"generic_http",
+				"http",
+				List.of());
+
+		when(templateRepo.existsByName(any())).thenThrow(new LockedException("error"));
+
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of(dto)));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListOk() {
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
+		when(templateRepo.findAllByNameIn(any())).thenReturn(List.of(template));
+
+		service.deleteByTemplateNameList(List.of("generic_http"));
+		final InOrder inOrder = Mockito.inOrder(templateRepo);
+		inOrder.verify(templateRepo).deleteAll(List.of(template));
+		inOrder.verify(templateRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListThrowsInternalServerError() {
+
+		when(templateRepo.findAllByNameIn(any())).thenThrow(new LockedException("error"));
+
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByTemplateNameList(List.of("generic_http")));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
 }

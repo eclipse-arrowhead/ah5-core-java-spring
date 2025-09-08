@@ -170,7 +170,7 @@ public class ServiceInterfaceTemplateDbService {
 			final Map<String, ServiceInterfaceTemplate> templateEntries = new HashMap<>(candidates.size());
 			for (final ServiceInterfaceTemplateRequestDTO candidate : candidates) {
 				if (templateEntries.containsKey(candidate.name())) {
-					throw new InvalidParameterException("Duplicate interface template name: " + candidate.name());
+					throw new InvalidParameterException("Duplicated interface template name: " + candidate.name());
 				}
 
 				if (templateRepo.existsByName(candidate.name())) {
