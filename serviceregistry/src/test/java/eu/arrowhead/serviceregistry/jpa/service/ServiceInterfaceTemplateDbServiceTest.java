@@ -19,16 +19,11 @@ package eu.arrowhead.serviceregistry.jpa.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +31,6 @@ import java.util.Map.Entry;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -309,11 +303,9 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
 		assertEquals(expected, actual);
 		verify(templateRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1)
-			);
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
 		verify(templatePropsRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1)
-			);
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -336,11 +328,9 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
 		assertEquals(expected, actual);
 		verify(templateRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1)
-			);
+				argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
 		verify(templatePropsRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1)
-			);
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -350,10 +340,10 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		final ServiceInterfaceTemplateRequestDTO dto = new ServiceInterfaceTemplateRequestDTO(
 				"generic_http",
 				"http",
-				List.of(new ServiceInterfaceTemplatePropertyDTO("accessAddresses", true, "MINMAX", List.of("192.168.0.1", "192.168.0.10"))));
+				List.of(new ServiceInterfaceTemplatePropertyDTO("accessPort", true, "MINMAX", List.of("4040", "4045"))));
 
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_http", "http");
-		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, "MINMAX|192.168.0.1|192.168.0.10");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessAddresses", true, "MINMAX|4040|4045");
 
 		when(templateRepo.existsByName(any())).thenReturn(false);
 		when(templateRepo.saveAllAndFlush(any())).thenReturn(List.of(template));
@@ -363,11 +353,9 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
 		assertEquals(expected, actual);
 		verify(templateRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1)
-			);
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
 		verify(templatePropsRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1)
-			);
+			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
 	}
 
 	//-------------------------------------------------------------------------------------------------
