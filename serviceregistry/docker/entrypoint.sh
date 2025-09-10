@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+VERSION="${AH_VERSION}"
+
 # Check if /app/config_temp exists and is not empty
 if [ -d "/app/config_temp" ] && [ "$(ls -A /app/config_temp)" ]; then
 	# Copy from /config_temp to /config and remove /config_temp
@@ -9,4 +11,4 @@ if [ -d "/app/config_temp" ] && [ "$(ls -A /app/config_temp)" ]; then
 fi
 
 # Run
-exec java -jar /app/arrowhead-serviceregistry-5.0.0.jar -Dlog4j.configurationFile=/app/config/log4j2.xml
+exec java -jar "/app/arrowhead-serviceregistry-${VERSION}.jar" -Dlog4j.configurationFile=/app/config/log4j2.xml
