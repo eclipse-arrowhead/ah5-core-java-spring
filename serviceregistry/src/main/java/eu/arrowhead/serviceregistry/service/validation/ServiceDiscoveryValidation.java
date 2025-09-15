@@ -93,6 +93,12 @@ public class ServiceDiscoveryValidation {
 			versionValidator.validateNormalizedVersion(normalizedInstance.version());
 			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
 
+			normalizedInterfaces.forEach(i -> {
+				if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(i.policy()))) {
+					throw new InvalidParameterException("Invalid interface policy: " + i.policy());
+				}
+			});
+
 			if (!Utilities.isEmpty(normalizedInstance.metadata()) && normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
 				try {
 					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
@@ -140,6 +146,14 @@ public class ServiceDiscoveryValidation {
 
 			if (!Utilities.isEmpty(normalized.interfaceTemplateNames())) {
 				normalized.interfaceTemplateNames().forEach(n -> interfaceTemplateNameValidator.validateInterfaceTemplateName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.policies())) {
+				normalized.policies().forEach(p -> {
+					if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(p))) {
+						throw new InvalidParameterException("Invalid interface policy: " + p);
+					}
+				});
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

@@ -224,7 +224,6 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	// SERVICE DEFINITION VALIDATION AND NORMALIZATION
 
-
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeCreateServiceDefinitions(final ServiceDefinitionListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateServiceDefinitions started");
@@ -365,6 +364,11 @@ public class ManagementValidation {
 				serviceDefNameValidator.validateServiceDefinitionName(n.serviceDefinitionName());
 				versionValidator.validateNormalizedVersion(n.version());
 				interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
+				n.interfaces().forEach(i -> {
+					if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(i.policy()))) {
+						throw new InvalidParameterException("Invalid interface policy: " + i.policy());
+					}
+				});
 			});
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -384,6 +388,11 @@ public class ManagementValidation {
 			normalized.forEach(n -> {
 				serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(n.instanceId());
 				interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(n.interfaces());
+				n.interfaces().forEach(i -> {
+					if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(i.policy()))) {
+						throw new InvalidParameterException("Invalid interface policy: " + i.policy());
+					}
+				});
 			});
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -434,6 +443,14 @@ public class ManagementValidation {
 
 			if (!Utilities.isEmpty(normalized.interfaceTemplateNames())) {
 				normalized.interfaceTemplateNames().forEach(i -> interfaceTemplateNameValidator.validateInterfaceTemplateName(i));
+			}
+
+			if (!Utilities.isEmpty(normalized.policies())) {
+				normalized.policies().forEach(p -> {
+					if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(p))) {
+						throw new InvalidParameterException("Invalid interface policy: " + p);
+					}
+				});
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

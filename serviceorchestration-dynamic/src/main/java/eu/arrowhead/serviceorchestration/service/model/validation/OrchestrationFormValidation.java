@@ -180,7 +180,8 @@ public class OrchestrationFormValidation {
 
 			if (!Utilities.isEmpty(form.getSecurityPolicies())) {
 				form.getSecurityPolicies().forEach(sp -> {
-					if (!Utilities.isEnumValue(sp, ServiceInterfacePolicy.class)) {
+					if (!Utilities.isEnumValue(sp, ServiceInterfacePolicy.class)
+							|| !ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(sp))) {
 						throw new InvalidParameterException("Invalid security policy: " + sp);
 					}
 				});

@@ -97,6 +97,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String ORCH_WARN_NOT_EXCLUSIVE = "notExclusive";
 	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "partTimeExclusivity";
 	public static final String ORCH_WARN_INTER_CLOUD = "interCloud";
+	public static final String ORCH_WARN_FORCED_INTERFACE_SECURITY_POLICY = "forcedInterfaceSecurityPolicy";
 
 	public static final String NOTIFY_KEY_ADDRESS = "address";
 	public static final String NOTIFY_KEY_PORT = "port";

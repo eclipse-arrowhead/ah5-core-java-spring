@@ -97,7 +97,8 @@ public class AuthorizationTokenValidation {
 		final AuthorizationTokenGenerationRequestDTO normalized = normalizer.normalizeAuthorizationTokenGenerationRequestDTO(dto);
 
 		try {
-			if (!normalized.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
+			if (!normalized.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)
+					|| !ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(normalized.tokenVariant()))) {
 				throw new InvalidParameterException("Token variant is invalid", origin);
 			}
 

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
@@ -43,6 +44,9 @@ import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
+import eu.arrowhead.common.service.validation.meta.MetaOps;
+import eu.arrowhead.common.service.validation.meta.MetadataRequirementExpression;
+import eu.arrowhead.common.service.validation.meta.MetadataRequirementTokenizer;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
@@ -61,9 +65,17 @@ import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.TranslationBridgeCandidateDTO;
+import eu.arrowhead.dto.TranslationDiscoveryMgmtRequestDTO;
+import eu.arrowhead.dto.TranslationDiscoveryResponseDTO;
+import eu.arrowhead.dto.TranslationNegotiationMgmtRequestDTO;
+import eu.arrowhead.dto.TranslationNegotiationResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
+import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.QoSEvaulationType;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import eu.arrowhead.dto.enums.TranslationDiscoveryFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
@@ -196,11 +208,14 @@ public class LocalServiceOrchestration {
 			}
 
 			// Deal with translations
+			String translationBirdgeId = null;
 			if (translationAllowed) {
 				if (checkIfHasNativeOnes(candidates)) {
 					candidates = filterOutNonNativeOnes(candidates);
 				} else {
-					candidates = filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(candidates); // translation discovery
+					final Pair<String, List<OrchestrationCandidate>> translatable = filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(form, candidates); // translation discovery
+					translationBirdgeId = translatable.getFirst();
+					candidates = translatable.getSecond();
 					if (Utilities.isEmpty(candidates)) {
 						return doInterCloudOrReturn(jobId, form);
 					}
@@ -249,13 +264,15 @@ public class LocalServiceOrchestration {
 			}
 
 			// Obtain Authorization tokens when required
-			if (sysInfo.isAuthorizationEnabled()) {
+			if (sysInfo.isAuthorizationEnabled() && Utilities.isEmpty(translationBirdgeId)) {
 				obtainAuthorizationTokensIfRequired(form, candidates);
 			}
 
 			// Create translation bridge if necessary
-			if (form.getFlag(OrchestrationFlag.MATCHMAKING) && candidates.get(0).isNonNative()) {
-				buildTranslationBridge(candidates.get(0));
+			if (!Utilities.isEmpty(translationBirdgeId)) {
+				Assert.isTrue(form.getFlag(OrchestrationFlag.MATCHMAKING), "There was no matchmaking, while translation bridge should have been initiated.");
+				buildTranslationBridge(translationBirdgeId, form.getOperations().getFirst(), candidates.getFirst());
+				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_FORCED_INTERFACE_SECURITY_POLICY);
 			}
 
 			final OrchestrationResponseDTO result = convertToOrchestrationResponse(candidates, warnings);
@@ -626,13 +643,81 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(final List<OrchestrationCandidate> candidates) {
+	private Pair<String, List<OrchestrationCandidate>> filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNotTranslatableOnesAndChooseTranslatableInterfaces started...");
+		Assert.isTrue(!(Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1),
+				"There should be exactly one operation requested for performing translationDiscovery, but there is more/all."); // responsibility of OrchestrationFromContextValidation
+		Assert.isTrue(!Utilities.isEmpty(form.getInterfaceTemplateNames()),
+				"There should be at least one interface name requested for performing translationDiscovery, but there is zero."); // responsibility of OrchestrationFromContextValidation
 
-		// TODO here comes the translation discovery
-		// Choose exactly one interface and put that into candidate.matchingInterfaces
-		logger.warn("Translation support is not implemented yet");
-		return List.of();
+		final String operation = form.getOperations().getFirst();
+		final String inputDataModelIdKey = "dataModels" + Constants.DOT + operation + Constants.DOT + "input";
+		final String outputDataModelIdKey = "dataModels" + Constants.DOT + operation + Constants.DOT + "output";
+		String inputDataModelId = null;
+		String outputDataModelId = null;
+		if (!Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+			for (final MetadataRequirementDTO requirementBundle : form.getInterfacePropertyRequirements()) {
+				if (inputDataModelId != null && outputDataModelId != null) {
+					break;
+				}
+				for (final MetadataRequirementExpression requirement : MetadataRequirementTokenizer.parseRequirements(requirementBundle)) {
+					if (inputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(inputDataModelIdKey)) {
+						inputDataModelId = (String) requirement.value();
+					}
+					if (outputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(outputDataModelIdKey)) {
+						outputDataModelId = (String) requirement.value();
+					}
+				}
+			}
+		}
+
+		final TranslationDiscoveryMgmtRequestDTO discoveryRequest = new TranslationDiscoveryMgmtRequestDTO(
+				candidates.stream().map(c -> c.getServiceInstance()).toList(),
+				form.getTargetSystemName(),
+				operation,
+				form.getInterfaceTemplateNames(),
+				inputDataModelId,
+				outputDataModelId,
+				Map.of(TranslationDiscoveryFlag.CONSUMER_BLACKLIST_CHECK.toString(), false,
+						TranslationDiscoveryFlag.CANDIDATES_BLACKLIST_CHECK.toString(), false,
+						TranslationDiscoveryFlag.CANDIDATES_AUTH_CHECK.toString(), false,
+						TranslationDiscoveryFlag.TRANSLATORS_BLACKLIST_CHECK.toString(), sysInfo.isBlacklistEnabled(),
+						TranslationDiscoveryFlag.TRANSLATORS_AUTH_CHECK.toString(), sysInfo.isAuthorizationEnabled()));
+
+		final TranslationDiscoveryResponseDTO discoveryResults = ahHttpService.consumeService(
+				Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT,
+				Constants.SERVICE_OP_DISCOVERY,
+				Constants.SYS_NAME_TRANSLATIONMANAGER,
+				TranslationDiscoveryResponseDTO.class,
+				discoveryRequest);
+
+		if (Utilities.isEmpty(discoveryResults.candidates())) {
+			return Pair.of("", List.of());
+		}
+
+		Assert.isTrue(!(Utilities.isEmpty(discoveryResults.bridgeId())), "No bridgeId has been provided by " + Constants.SYS_NAME_TRANSLATIONMANAGER);
+
+		final List<OrchestrationCandidate> translatableCandidates = new ArrayList<>();
+		for (final OrchestrationCandidate candidate : candidates) {
+			for (final ServiceInstanceInterfaceResponseDTO candidateInterface : candidate.getServiceInstance().interfaces()) {
+				if (!Utilities.isEmpty(candidate.getMatchingInterfaces())) {
+					break;
+				}
+				for (final TranslationBridgeCandidateDTO discovered : discoveryResults.candidates()) {
+					if (!candidate.getServiceInstance().instanceId().equals(discovered.serviceInstanceId())) {
+						continue;
+					} else if (candidateInterface.templateName().equals(discovered.interfaceTemplateName())) {
+						candidate.addMatchingInterface(candidateInterface);
+						break;
+					}
+				}
+			}
+			if (!Utilities.isEmpty(candidate.getMatchingInterfaces())) {
+				translatableCandidates.add(candidate);
+			}
+		}
+
+		return Pair.of(discoveryResults.bridgeId(), translatableCandidates);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -742,9 +827,7 @@ public class LocalServiceOrchestration {
 		final List<String> scopeList = Utilities.isEmpty(form.getOperations()) ? List.of("") : form.getOperations();
 		final List<AuthorizationTokenGenerationMgmtRequestDTO> requestPayloadEntries = new ArrayList<>();
 		for (final OrchestrationCandidate candidate : candidates) {
-			if (candidate.isNonNative()) {
-				Assert.isTrue(candidate.getMatchingInterfaces().size() == 1, "Non native candidate has more than 1 matching interface");
-			}
+			Assert.isTrue(!candidate.isNonNative(), "There is a non-native candidte before generate-token attempt.");
 
 			candidate.getMatchingInterfaces().forEach(interf -> {
 				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
@@ -790,13 +873,34 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void buildTranslationBridge(final OrchestrationCandidate candidate) {
+	private void buildTranslationBridge(final String translationBridgeId, final String operation, final OrchestrationCandidate candidate) {
 		logger.debug("buildTranslationBridge started...");
+		Assert.isTrue(candidate.isNonNative(), "Candidate for translation bridge initiation is native!");
 
-		// TODO use the exactly one connection details from the candidate.matchingInterfaces list to build the bridge
-		// TODO change the old (non-native) connection details to the new connection details in the candidate.matchingInterfaces list
+		final TranslationNegotiationMgmtRequestDTO negotiationRequest = new TranslationNegotiationMgmtRequestDTO(translationBridgeId, candidate.getServiceInstance().instanceId());
+		final TranslationNegotiationResponseDTO negotiationResponse = ahHttpService.consumeService(
+				Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT,
+				Constants.SERVICE_OP_NEGOTIATION,
+				Constants.SYS_NAME_TRANSLATIONMANAGER,
+				TranslationNegotiationResponseDTO.class,
+				negotiationRequest);
+		logger.debug("Translation bridge has been created with id of '" + negotiationResponse.bridgeId() + "' and with target interface '" + candidate.getMatchingInterfaces().getFirst().templateName() + "'.");
 
-		logger.warn("Translation bridge support is not implemented yet");
+		Assert.isTrue(translationBridgeId.equals(negotiationResponse.bridgeId()), "Translation bridge ID is different in negotiation response.");
+		Assert.isTrue(Utilities.isEnumValue(negotiationResponse.bridgeInterface().policy(), ServiceInterfacePolicy.class), "Transation bridge interface policy should be a ServiceInterfacePolicy enum");
+
+		candidate.getMatchingInterfaces().clear();
+		candidate.addMatchingInterface(negotiationResponse.bridgeInterface());
+
+		candidate.addAuthorizationToken(
+				negotiationResponse.bridgeInterface().policy(),
+				operation,
+				new AuthorizationTokenGenerationResponseDTO(
+						AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(negotiationResponse.bridgeInterface().policy())),
+						AuthorizationTargetType.SERVICE_DEF,
+						translationBridgeId,
+						null,
+						null)); // TODO would be good to have usageLimit or expiresAt if any.
 	}
 
 	//-------------------------------------------------------------------------------------------------
