@@ -592,11 +592,13 @@ public class LocalServiceOrchestration {
 					// Checking interface properties
 				} else if (hasPropRequirements) {
 					for (final MetadataRequirementDTO interfacePropertyRequirement : form.getInterfacePropertyRequirements()) {
-						if (!MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
-							propsAreOk = false;
+						boolean propReqMatch = false;
+						if (MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
+							propReqMatch = true;
 							break;
 						}
 					}
+					propsAreOk = propReqMatch;
 				}
 
 				// Checking address types
