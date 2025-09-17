@@ -591,8 +591,8 @@ public class LocalServiceOrchestration {
 
 					// Checking interface properties
 				} else if (hasPropRequirements) {
+					boolean propReqMatch = false;
 					for (final MetadataRequirementDTO interfacePropertyRequirement : form.getInterfacePropertyRequirements()) {
-						boolean propReqMatch = false;
 						if (MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
 							propReqMatch = true;
 							break;
