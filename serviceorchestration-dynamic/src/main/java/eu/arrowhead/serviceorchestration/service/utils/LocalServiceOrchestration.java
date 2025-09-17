@@ -45,6 +45,7 @@ import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.common.service.validation.meta.MetaOps;
+import eu.arrowhead.common.service.validation.meta.MetadataKeyEvaluator;
 import eu.arrowhead.common.service.validation.meta.MetadataRequirementExpression;
 import eu.arrowhead.common.service.validation.meta.MetadataRequirementTokenizer;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
@@ -65,6 +66,7 @@ import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.TranslationBridgeCandidateDTO;
 import eu.arrowhead.dto.TranslationDiscoveryMgmtRequestDTO;
 import eu.arrowhead.dto.TranslationDiscoveryResponseDTO;
@@ -188,8 +190,13 @@ public class LocalServiceOrchestration {
 				return doInterCloudOrReturn(jobId, form);
 			}
 
-			// Collect matching interfaces and mark if translation is necessary
+			// Collect matching interfaces or interfaces for which translation is an option
 			assortInterfacesAndMarkIfNonNative(form, candidates, translationAllowed);
+			candidates = filterOutNonInterfaceableOnes(candidates);
+
+			if (Utilities.isEmpty(candidates)) {
+				return doInterCloudOrReturn(jobId, form);
+			}
 
 			// QoS cross-check
 			if (form.hasQoSRequirements()) {
@@ -270,7 +277,7 @@ public class LocalServiceOrchestration {
 
 			// Create translation bridge if necessary
 			if (!Utilities.isEmpty(translationBirdgeId)) {
-				Assert.isTrue(form.getFlag(OrchestrationFlag.MATCHMAKING), "There was no matchmaking, while translation bridge should have been initiated.");
+				Assert.isTrue(form.getFlag(OrchestrationFlag.MATCHMAKING), "There was no matchmaking, while translation bridge should have been initiated");
 				buildTranslationBridge(translationBirdgeId, form.getOperations().getFirst(), candidates.getFirst());
 				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_FORCED_INTERFACE_SECURITY_POLICY);
 			}
@@ -550,7 +557,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean considerAddressTypes) {
+	private final void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean translationAllowed) {
 		logger.debug("assortInterfacesAndMarkIfNonNative started...");
 
 		if (Utilities.isEmpty(form.getInterfaceTemplateNames())
@@ -559,43 +566,85 @@ public class LocalServiceOrchestration {
 			for (final OrchestrationCandidate candidate : candidates) {
 				candidate.addMatchingInterfaces(candidate.getServiceInstance().interfaces());
 			}
-
+			// No interface requirements at all, everything is considered as matching
 			return;
 		}
 
+		final boolean hasTemplateRequirement = !Utilities.isEmpty(form.getInterfaceTemplateNames());
+		final boolean hasPropRequirements = !Utilities.isEmpty(form.getInterfacePropertyRequirements());
+		final boolean hasAddressTypeRequirements = !Utilities.isEmpty(form.getInterfaceAddressTypes());
+		final Pair<Optional<String>, Optional<String>> interfaceModelIDRequirements = extractInterfaceModelIDRequirements(form.getOperations().getFirst(), form.getInterfacePropertyRequirements());
+		final boolean hasInputModelIDRequirement = interfaceModelIDRequirements.getFirst().isPresent();
+		final boolean hasOutputModelIDRequirement = interfaceModelIDRequirements.getSecond().isPresent();
+
 		for (final OrchestrationCandidate candidate : candidates) {
+			boolean hasNativeInterface = false;
 			for (final ServiceInstanceInterfaceResponseDTO offeredInterface : candidate.getServiceInstance().interfaces()) {
-				boolean isMatchingInterface = true;
+				boolean templateIsOk = true;
+				boolean propsAreOk = true;
+				boolean addressTypeIsOk = true;
 
 				// Checking interface template names
-				if (!Utilities.isEmpty(form.getInterfaceTemplateNames())
+				if (hasTemplateRequirement
 						&& !form.getInterfaceTemplateNames().contains(offeredInterface.templateName())) {
-					isMatchingInterface = false;
+					templateIsOk = false;
 
 					// Checking interface properties
-				} else if (!Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
+				} else if (hasPropRequirements) {
 					for (final MetadataRequirementDTO interfacePropertyRequirement : form.getInterfacePropertyRequirements()) {
 						if (!MetadataRequirementsMatcher.isMetadataMatch(offeredInterface.properties(), interfacePropertyRequirement)) {
-							isMatchingInterface = false;
+							propsAreOk = false;
 							break;
 						}
 					}
 				}
 
 				// Checking address types
-				if (considerAddressTypes
-						&& isMatchingInterface
-						&& !Utilities.isEmpty(form.getInterfaceAddressTypes())) {
-					isMatchingInterface = interfaceAddressPropertyProcessor.filterOnAddressTypes(offeredInterface.properties(), form.getInterfaceAddressTypes());
+				if (translationAllowed // Has to consider address types because it wasn't sent to SR as filter parameter
+						&& hasAddressTypeRequirements) {
+					addressTypeIsOk = interfaceAddressPropertyProcessor.filterOnAddressTypes(offeredInterface.properties(), form.getInterfaceAddressTypes());
 				}
 
-				if (isMatchingInterface) {
+				if (templateIsOk && propsAreOk) {
+					// This might be a matching interface
+					if (!addressTypeIsOk) {
+						// This is a not matching interface and translation is not an option
+						continue;
+					}
+					// This is a matching interface
+					hasNativeInterface = true;
 					candidate.addMatchingInterface(offeredInterface);
+
+				} else if (!hasNativeInterface && translationAllowed && hasTemplateRequirement) {
+					// This is a not matching interface, but translation might be an option
+
+					final Pair<Optional<String>, Optional<String>> offeredInterfaceModelID = extractOfferedInterfaceModelID(form.getOperations().getFirst(), offeredInterface.properties());
+					boolean candidateOffersInputModelId = offeredInterfaceModelID.getFirst().isPresent();
+					boolean candidateOffersOutputModelId = offeredInterfaceModelID.getSecond().isPresent();
+
+					if ((hasInputModelIDRequirement && !candidateOffersInputModelId)
+							|| hasOutputModelIDRequirement && !candidateOffersOutputModelId) {
+						// Requester expects input/output, but candidate has no
+						continue;
+					}
+
+					if ((!hasInputModelIDRequirement && candidateOffersInputModelId)
+							|| !hasOutputModelIDRequirement && candidateOffersOutputModelId) {
+						// Requester not expects input/output, but candidate has
+						continue;
+					}
+
+					candidate.addTranslatableInterface(offeredInterface);
 				}
 			}
-
-			candidate.setNonNative(Utilities.isEmpty(candidate.getMatchingInterfaces()));
+			candidate.setNonNative(!hasNativeInterface);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private final List<OrchestrationCandidate> filterOutNonInterfaceableOnes(final List<OrchestrationCandidate> candidates) {
+		logger.debug("filterOutNonInterfaceable started...");
+		return candidates.stream().filter(c -> !Utilities.isEmpty(c.getMatchingInterfaces()) || !Utilities.isEmpty(c.getTranslatableInterfaces())).toList();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -645,39 +694,28 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private Pair<String, List<OrchestrationCandidate>> filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNotTranslatableOnesAndChooseTranslatableInterfaces started...");
-		Assert.isTrue(!(Utilities.isEmpty(form.getOperations()) || form.getOperations().size() != 1),
-				"There should be exactly one operation requested for performing translationDiscovery, but there is more/all."); // responsibility of OrchestrationFromContextValidation
+		Assert.isTrue(!Utilities.isEmpty(form.getOperations()) && form.getOperations().size() == 1,
+				"There should be exactly one operation requested for performing translationDiscovery, but there is more/all"); // responsibility of OrchestrationFromContextValidation
 		Assert.isTrue(!Utilities.isEmpty(form.getInterfaceTemplateNames()),
-				"There should be at least one interface name requested for performing translationDiscovery, but there is zero."); // responsibility of OrchestrationFromContextValidation
+				"There should be at least one interface name requested for performing translationDiscovery, but there is zero"); // responsibility of OrchestrationFromContextValidation
 
-		final String operation = form.getOperations().getFirst();
-		final String inputDataModelIdKey = "dataModels" + Constants.DOT + operation + Constants.DOT + "input";
-		final String outputDataModelIdKey = "dataModels" + Constants.DOT + operation + Constants.DOT + "output";
-		String inputDataModelId = null;
-		String outputDataModelId = null;
-		if (!Utilities.isEmpty(form.getInterfacePropertyRequirements())) {
-			for (final MetadataRequirementDTO requirementBundle : form.getInterfacePropertyRequirements()) {
-				if (inputDataModelId != null && outputDataModelId != null) {
-					break;
-				}
-				for (final MetadataRequirementExpression requirement : MetadataRequirementTokenizer.parseRequirements(requirementBundle)) {
-					if (inputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(inputDataModelIdKey)) {
-						inputDataModelId = (String) requirement.value();
-					}
-					if (outputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(outputDataModelIdKey)) {
-						outputDataModelId = (String) requirement.value();
-					}
-				}
-			}
-		}
+		final List<ServiceInstanceResponseDTO> discoveryCandidates = candidates.stream().map(candidate -> {
+			Assert.isTrue(candidate.isNonNative(), "There is a native candidate within the translation discovery candidates");
+			candidate.getServiceInstance().interfaces().clear();
+			candidate.getServiceInstance().interfaces().addAll(candidate.getTranslatableInterfaces());
+			Assert.isTrue(!Utilities.isEmpty(candidate.getServiceInstance().interfaces()), "There is candidate without interface within the translation discovery candidates");
+			return candidate.getServiceInstance();
+		}).toList();
+
+		final Pair<Optional<String>, Optional<String>> interfaceModelIDRequirements = extractInterfaceModelIDRequirements(form.getOperations().getFirst(), form.getInterfacePropertyRequirements());
 
 		final TranslationDiscoveryMgmtRequestDTO discoveryRequest = new TranslationDiscoveryMgmtRequestDTO(
-				candidates.stream().map(c -> c.getServiceInstance()).toList(),
+				discoveryCandidates,
 				form.getTargetSystemName(),
-				operation,
+				form.getOperations().getFirst(),
 				form.getInterfaceTemplateNames(),
-				inputDataModelId,
-				outputDataModelId,
+				interfaceModelIDRequirements.getFirst().orElseGet(() -> null),
+				interfaceModelIDRequirements.getFirst().orElseGet(() -> null),
 				Map.of(TranslationDiscoveryFlag.CONSUMER_BLACKLIST_CHECK.toString(), false,
 						TranslationDiscoveryFlag.CANDIDATES_BLACKLIST_CHECK.toString(), false,
 						TranslationDiscoveryFlag.CANDIDATES_AUTH_CHECK.toString(), false,
@@ -687,7 +725,7 @@ public class LocalServiceOrchestration {
 		final TranslationDiscoveryResponseDTO discoveryResults = ahHttpService.consumeService(
 				Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT,
 				Constants.SERVICE_OP_DISCOVERY,
-				Constants.SYS_NAME_TRANSLATIONMANAGER,
+				Constants.SYS_NAME_TRANSLATION_MANAGER,
 				TranslationDiscoveryResponseDTO.class,
 				discoveryRequest);
 
@@ -695,24 +733,25 @@ public class LocalServiceOrchestration {
 			return Pair.of("", List.of());
 		}
 
-		Assert.isTrue(!(Utilities.isEmpty(discoveryResults.bridgeId())), "No bridgeId has been provided by " + Constants.SYS_NAME_TRANSLATIONMANAGER);
+		Assert.isTrue(!Utilities.isEmpty(discoveryResults.bridgeId()), "No bridgeId has been provided by " + Constants.SYS_NAME_TRANSLATION_MANAGER);
 
-		final List<OrchestrationCandidate> translatableCandidates = new ArrayList<>();
+		final List<OrchestrationCandidate> translatableCandidates = new ArrayList<>(discoveryResults.candidates().size());
 		for (final OrchestrationCandidate candidate : candidates) {
+			candidate.getTranslatableInterfaces().clear();
 			for (final ServiceInstanceInterfaceResponseDTO candidateInterface : candidate.getServiceInstance().interfaces()) {
-				if (!Utilities.isEmpty(candidate.getMatchingInterfaces())) {
+				if (!Utilities.isEmpty(candidate.getTranslatableInterfaces())) {
 					break;
 				}
 				for (final TranslationBridgeCandidateDTO discovered : discoveryResults.candidates()) {
 					if (!candidate.getServiceInstance().instanceId().equals(discovered.serviceInstanceId())) {
 						continue;
 					} else if (candidateInterface.templateName().equals(discovered.interfaceTemplateName())) {
-						candidate.addMatchingInterface(candidateInterface);
+						candidate.addTranslatableInterface(candidateInterface);
 						break;
 					}
 				}
 			}
-			if (!Utilities.isEmpty(candidate.getMatchingInterfaces())) {
+			if (!Utilities.isEmpty(candidate.getTranslatableInterfaces())) {
 				translatableCandidates.add(candidate);
 			}
 		}
@@ -827,7 +866,7 @@ public class LocalServiceOrchestration {
 		final List<String> scopeList = Utilities.isEmpty(form.getOperations()) ? List.of("") : form.getOperations();
 		final List<AuthorizationTokenGenerationMgmtRequestDTO> requestPayloadEntries = new ArrayList<>();
 		for (final OrchestrationCandidate candidate : candidates) {
-			Assert.isTrue(!candidate.isNonNative(), "There is a non-native candidte before generate-token attempt.");
+			Assert.isTrue(!candidate.isNonNative(), "There is a non-native candidate before generate-token attempt");
 
 			candidate.getMatchingInterfaces().forEach(interf -> {
 				if (interf.policy().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
@@ -875,21 +914,21 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private void buildTranslationBridge(final String translationBridgeId, final String operation, final OrchestrationCandidate candidate) {
 		logger.debug("buildTranslationBridge started...");
-		Assert.isTrue(candidate.isNonNative(), "Candidate for translation bridge initiation is native!");
+		Assert.isTrue(candidate.isNonNative(), "Candidate for translation bridge initiation is native");
 
 		final TranslationNegotiationMgmtRequestDTO negotiationRequest = new TranslationNegotiationMgmtRequestDTO(translationBridgeId, candidate.getServiceInstance().instanceId());
 		final TranslationNegotiationResponseDTO negotiationResponse = ahHttpService.consumeService(
 				Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT,
 				Constants.SERVICE_OP_NEGOTIATION,
-				Constants.SYS_NAME_TRANSLATIONMANAGER,
+				Constants.SYS_NAME_TRANSLATION_MANAGER,
 				TranslationNegotiationResponseDTO.class,
 				negotiationRequest);
-		logger.debug("Translation bridge has been created with id of '" + negotiationResponse.bridgeId() + "' and with target interface '" + candidate.getMatchingInterfaces().getFirst().templateName() + "'.");
+		logger.debug("Translation bridge has been created with id of '" + negotiationResponse.bridgeId() + "' and with target interface '" + candidate.getTranslatableInterfaces().getFirst().templateName() + "'");
 
-		Assert.isTrue(translationBridgeId.equals(negotiationResponse.bridgeId()), "Translation bridge ID is different in negotiation response.");
-		Assert.isTrue(Utilities.isEnumValue(negotiationResponse.bridgeInterface().policy(), ServiceInterfacePolicy.class), "Transation bridge interface policy should be a ServiceInterfacePolicy enum");
+		Assert.isTrue(translationBridgeId.equals(negotiationResponse.bridgeId()), "Translation bridge ID is different in negotiation response");
+		Assert.isTrue(Utilities.isEnumValue(negotiationResponse.bridgeInterface().policy(), ServiceInterfacePolicy.class), "Translation bridge interface policy should be a ServiceInterfacePolicy enum value");
 
-		candidate.getMatchingInterfaces().clear();
+		candidate.getMatchingInterfaces().clear(); // just for sure
 		candidate.addMatchingInterface(negotiationResponse.bridgeInterface());
 
 		candidate.addAuthorizationToken(
@@ -899,8 +938,8 @@ public class LocalServiceOrchestration {
 						AuthorizationTokenType.fromServiceInterfacePolicy(ServiceInterfacePolicy.valueOf(negotiationResponse.bridgeInterface().policy())),
 						AuthorizationTargetType.SERVICE_DEF,
 						translationBridgeId,
-						null,
-						null)); // TODO would be good to have usageLimit or expiresAt if any.
+						negotiationResponse.tokenUsageLimit(),
+						negotiationResponse.tokenExpiresAt()));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -934,5 +973,45 @@ public class LocalServiceOrchestration {
 				.collect(Collectors.toList());
 
 		return new OrchestrationResponseDTO(results, new ArrayList<>(warnings));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Pair<Optional<String>, Optional<String>> extractInterfaceModelIDRequirements(final String operation, final List<MetadataRequirementDTO> propRequirements) {
+		logger.debug("extractInterfaceModelIDRequirements started...");
+
+		final String inputDataModelIdKey = Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_INPUT;
+		final String outputDataModelIdKey = Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_OUTPUT;
+		String inputDataModelId = null;
+		String outputDataModelId = null;
+		if (!Utilities.isEmpty(propRequirements)) {
+			for (final MetadataRequirementDTO requirementBundle : propRequirements) {
+				if (inputDataModelId != null && outputDataModelId != null) {
+					break;
+				}
+				for (final MetadataRequirementExpression requirement : MetadataRequirementTokenizer.parseRequirements(requirementBundle)) {
+					if (inputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(inputDataModelIdKey)) {
+						inputDataModelId = requirement.value().toString();
+					}
+					if (outputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(outputDataModelIdKey)) {
+						outputDataModelId = requirement.value().toString();
+					}
+				}
+			}
+		}
+
+		return Pair.of(Optional.ofNullable(inputDataModelId), Optional.ofNullable(outputDataModelId));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private Pair<Optional<String>, Optional<String>> extractOfferedInterfaceModelID(final String operation, final Map<String, Object> offeredInterfaceProps) {
+		logger.debug("extractOfferedInterfaceModelID started...");
+
+		final Object inputIDObj = MetadataKeyEvaluator.getMetadataValueForCompositeKey(offeredInterfaceProps, Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_INPUT);
+		final Object outputIDObj = MetadataKeyEvaluator.getMetadataValueForCompositeKey(offeredInterfaceProps, Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_OUTPUT);
+
+		final String inputDataModelId = inputIDObj == null ? null : Utilities.isEmpty(inputIDObj.toString()) ? null : inputIDObj.toString();
+		final String outputDataModelId = outputIDObj == null ? null : Utilities.isEmpty(outputIDObj.toString()) ? null : inputIDObj.toString();
+
+		return Pair.of(Optional.ofNullable(inputDataModelId), Optional.ofNullable(outputDataModelId));
 	}
 }
