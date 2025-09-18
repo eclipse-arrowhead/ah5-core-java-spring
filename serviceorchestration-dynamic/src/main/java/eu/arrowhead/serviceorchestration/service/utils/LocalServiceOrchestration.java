@@ -557,7 +557,7 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private final void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean translationAllowed) {
+	private void assortInterfacesAndMarkIfNonNative(final OrchestrationForm form, final List<OrchestrationCandidate> candidates, final boolean translationAllowed) {
 		logger.debug("assortInterfacesAndMarkIfNonNative started...");
 
 		if (Utilities.isEmpty(form.getInterfaceTemplateNames())
@@ -621,8 +621,8 @@ public class LocalServiceOrchestration {
 					// This is a not matching interface, but translation might be an option
 
 					final Pair<Optional<String>, Optional<String>> offeredInterfaceModelID = extractOfferedInterfaceModelID(form.getOperations().getFirst(), offeredInterface.properties());
-					boolean candidateOffersInputModelId = offeredInterfaceModelID.getFirst().isPresent();
-					boolean candidateOffersOutputModelId = offeredInterfaceModelID.getSecond().isPresent();
+					final boolean candidateOffersInputModelId = offeredInterfaceModelID.getFirst().isPresent();
+					final boolean candidateOffersOutputModelId = offeredInterfaceModelID.getSecond().isPresent();
 
 					if ((hasInputModelIDRequirement && !candidateOffersInputModelId)
 							|| hasOutputModelIDRequirement && !candidateOffersOutputModelId) {
@@ -645,7 +645,7 @@ public class LocalServiceOrchestration {
 
 	//-------------------------------------------------------------------------------------------------
 	private final List<OrchestrationCandidate> filterOutNonInterfaceableOnes(final List<OrchestrationCandidate> candidates) {
-		logger.debug("filterOutNonInterfaceable started...");
+		logger.debug("filterOutNonInterfaceableOnes started...");
 		return candidates.stream().filter(c -> !Utilities.isEmpty(c.getMatchingInterfaces()) || !Utilities.isEmpty(c.getTranslatableInterfaces())).toList();
 	}
 
@@ -1012,7 +1012,7 @@ public class LocalServiceOrchestration {
 		final Object outputIDObj = MetadataKeyEvaluator.getMetadataValueForCompositeKey(offeredInterfaceProps, Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_OUTPUT);
 
 		final String inputDataModelId = inputIDObj == null ? null : Utilities.isEmpty(inputIDObj.toString()) ? null : inputIDObj.toString();
-		final String outputDataModelId = outputIDObj == null ? null : Utilities.isEmpty(outputIDObj.toString()) ? null : inputIDObj.toString();
+		final String outputDataModelId = outputIDObj == null ? null : Utilities.isEmpty(outputIDObj.toString()) ? null : outputIDObj.toString();
 
 		return Pair.of(Optional.ofNullable(inputDataModelId), Optional.ofNullable(outputDataModelId));
 	}
