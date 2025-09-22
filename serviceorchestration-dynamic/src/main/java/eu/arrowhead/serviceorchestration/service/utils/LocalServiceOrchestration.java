@@ -573,7 +573,7 @@ public class LocalServiceOrchestration {
 		final boolean hasTemplateRequirement = !Utilities.isEmpty(form.getInterfaceTemplateNames());
 		final boolean hasPropRequirements = !Utilities.isEmpty(form.getInterfacePropertyRequirements());
 		final boolean hasAddressTypeRequirements = !Utilities.isEmpty(form.getInterfaceAddressTypes());
-		final Pair<Optional<String>, Optional<String>> interfaceModelIDRequirements = extractInterfaceModelIDRequirements(form.getOperations().getFirst(), form.getInterfacePropertyRequirements());
+		final Pair<Optional<String>, Optional<String>> interfaceModelIDRequirements = extractInterfaceModelIDRequirements(form.getOperations(), form.getInterfacePropertyRequirements());
 		final boolean hasInputModelIDRequirement = interfaceModelIDRequirements.getFirst().isPresent();
 		final boolean hasOutputModelIDRequirement = interfaceModelIDRequirements.getSecond().isPresent();
 
@@ -620,7 +620,7 @@ public class LocalServiceOrchestration {
 				} else if (!hasNativeInterface && translationAllowed && hasTemplateRequirement) {
 					// This is a not matching interface, but translation might be an option
 
-					final Pair<Optional<String>, Optional<String>> offeredInterfaceModelID = extractOfferedInterfaceModelID(form.getOperations().getFirst(), offeredInterface.properties());
+					final Pair<Optional<String>, Optional<String>> offeredInterfaceModelID = extractOfferedInterfaceModelID(form.getOperations(), offeredInterface.properties());
 					final boolean candidateOffersInputModelId = offeredInterfaceModelID.getFirst().isPresent();
 					final boolean candidateOffersOutputModelId = offeredInterfaceModelID.getSecond().isPresent();
 
@@ -646,7 +646,7 @@ public class LocalServiceOrchestration {
 	//-------------------------------------------------------------------------------------------------
 	private final List<OrchestrationCandidate> filterOutNonInterfaceableOnes(final List<OrchestrationCandidate> candidates) {
 		logger.debug("filterOutNonInterfaceableOnes started...");
-		return candidates.stream().filter(c -> !Utilities.isEmpty(c.getMatchingInterfaces()) || !Utilities.isEmpty(c.getTranslatableInterfaces())).toList();
+		return candidates.stream().filter(c -> !Utilities.isEmpty(c.getMatchingInterfaces()) || !Utilities.isEmpty(c.getTranslatableInterfaces())).collect(Collectors.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -709,7 +709,7 @@ public class LocalServiceOrchestration {
 			return candidate.getServiceInstance();
 		}).toList();
 
-		final Pair<Optional<String>, Optional<String>> interfaceModelIDRequirements = extractInterfaceModelIDRequirements(form.getOperations().getFirst(), form.getInterfacePropertyRequirements());
+		final Pair<Optional<String>, Optional<String>> interfaceModelIDRequirements = extractInterfaceModelIDRequirements(form.getOperations(), form.getInterfacePropertyRequirements());
 
 		final TranslationDiscoveryMgmtRequestDTO discoveryRequest = new TranslationDiscoveryMgmtRequestDTO(
 				discoveryCandidates,
@@ -978,9 +978,14 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private Pair<Optional<String>, Optional<String>> extractInterfaceModelIDRequirements(final String operation, final List<MetadataRequirementDTO> propRequirements) {
+	private Pair<Optional<String>, Optional<String>> extractInterfaceModelIDRequirements(final List<String> operations, final List<MetadataRequirementDTO> propRequirements) {
 		logger.debug("extractInterfaceModelIDRequirements started...");
 
+		if (Utilities.isEmpty(operations) || operations.size() > 1) {
+			return Pair.of(Optional.ofNullable(null), Optional.ofNullable(null));
+		}
+
+		final String operation = operations.getFirst();
 		final String inputDataModelIdKey = Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_INPUT;
 		final String outputDataModelIdKey = Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_OUTPUT;
 		String inputDataModelId = null;
@@ -1005,9 +1010,14 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private Pair<Optional<String>, Optional<String>> extractOfferedInterfaceModelID(final String operation, final Map<String, Object> offeredInterfaceProps) {
+	private Pair<Optional<String>, Optional<String>> extractOfferedInterfaceModelID(final List<String> operations, final Map<String, Object> offeredInterfaceProps) {
 		logger.debug("extractOfferedInterfaceModelID started...");
 
+		if (Utilities.isEmpty(operations) || operations.size() > 1) {
+			return Pair.of(Optional.ofNullable(null), Optional.ofNullable(null));
+		}
+
+		final String operation = operations.getFirst();
 		final Object inputIDObj = MetadataKeyEvaluator.getMetadataValueForCompositeKey(offeredInterfaceProps, Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_INPUT);
 		final Object outputIDObj = MetadataKeyEvaluator.getMetadataValueForCompositeKey(offeredInterfaceProps, Constants.PROPERTY_KEY_DATA_MODELS + Constants.DOT + operation + Constants.DOT + Constants.PROPERTY_KEY_OUTPUT);
 
