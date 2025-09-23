@@ -624,14 +624,14 @@ public class LocalServiceOrchestration {
 					final boolean candidateOffersInputModelId = offeredInterfaceModelID.getFirst().isPresent();
 					final boolean candidateOffersOutputModelId = offeredInterfaceModelID.getSecond().isPresent();
 
-					if (hasInputModelIDRequirement && !candidateOffersInputModelId
-							|| hasOutputModelIDRequirement && !candidateOffersOutputModelId) {
+					if ((hasInputModelIDRequirement && !candidateOffersInputModelId)
+							|| (hasOutputModelIDRequirement && !candidateOffersOutputModelId)) {
 						// Requester expects input/output, but candidate has no
 						continue;
 					}
 
-					if (!hasInputModelIDRequirement && candidateOffersInputModelId
-							|| !hasOutputModelIDRequirement && candidateOffersOutputModelId) {
+					if ((!hasInputModelIDRequirement && candidateOffersInputModelId)
+							|| (!hasOutputModelIDRequirement && candidateOffersOutputModelId)) {
 						// Requester not expects input/output, but candidate has
 						continue;
 					}
@@ -982,7 +982,7 @@ public class LocalServiceOrchestration {
 		logger.debug("extractInterfaceModelIDRequirements started...");
 
 		if (Utilities.isEmpty(operations) || operations.size() > 1) {
-			return Pair.of(Optional.ofNullable(null), Optional.ofNullable(null));
+			return Pair.of(Optional.empty(), Optional.empty());
 		}
 
 		final String operation = operations.getFirst();
@@ -1014,7 +1014,7 @@ public class LocalServiceOrchestration {
 		logger.debug("extractOfferedInterfaceModelID started...");
 
 		if (Utilities.isEmpty(operations) || operations.size() > 1) {
-			return Pair.of(Optional.ofNullable(null), Optional.ofNullable(null));
+			return Pair.of(Optional.empty(), Optional.empty());
 		}
 
 		final String operation = operations.getFirst();
