@@ -184,7 +184,7 @@ public class AuthorizationTokenManagementValidation {
 			}
 			if (!Utilities.isEmpty(normalized.tokenType())
 					&& !AuthorizationTokenType.isOfferable(AuthorizationTokenType.valueOf(normalized.tokenType()))) {
-				throw new InvalidParameterException("Token variant is invalid: " + normalized.tokenType());
+				throw new InvalidParameterException("Token type is invalid: " + normalized.tokenType());
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
