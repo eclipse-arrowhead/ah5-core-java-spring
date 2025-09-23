@@ -624,13 +624,13 @@ public class LocalServiceOrchestration {
 					final boolean candidateOffersInputModelId = offeredInterfaceModelID.getFirst().isPresent();
 					final boolean candidateOffersOutputModelId = offeredInterfaceModelID.getSecond().isPresent();
 
-					if ((hasInputModelIDRequirement && !candidateOffersInputModelId)
+					if (hasInputModelIDRequirement && !candidateOffersInputModelId
 							|| hasOutputModelIDRequirement && !candidateOffersOutputModelId) {
 						// Requester expects input/output, but candidate has no
 						continue;
 					}
 
-					if ((!hasInputModelIDRequirement && candidateOffersInputModelId)
+					if (!hasInputModelIDRequirement && candidateOffersInputModelId
 							|| !hasOutputModelIDRequirement && candidateOffersOutputModelId) {
 						// Requester not expects input/output, but candidate has
 						continue;
