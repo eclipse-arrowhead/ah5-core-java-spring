@@ -28,7 +28,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.ForbiddenException;
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
@@ -167,10 +169,20 @@ public class OrchestrationService {
 	private OrchestrationResponseDTO orchestrate(final UUID jobId, final OrchestrationForm form) {
 		logger.debug("orchestrate started...");
 
-		if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
-			return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
-		}
+		try {
+			if (form.getFlag(OrchestrationFlag.ONLY_INTERCLOUD)) {
+				return interCloudOrch.doInterCloudServiceOrchestration(jobId, form);
+			}
 
-		return localOrch.doLocalServiceOrchestration(jobId, form);
+			return localOrch.doLocalServiceOrchestration(jobId, form);
+
+		} catch (final ArrowheadException ex) {
+			throw ex;
+
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError(ex.getMessage());
+		}
 	}
 }

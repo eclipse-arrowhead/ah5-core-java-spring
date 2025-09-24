@@ -77,9 +77,15 @@ import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
 import eu.arrowhead.dto.SystemResponseDTO;
+import eu.arrowhead.dto.TranslationBridgeCandidateDTO;
+import eu.arrowhead.dto.TranslationDiscoveryMgmtRequestDTO;
+import eu.arrowhead.dto.TranslationDiscoveryResponseDTO;
+import eu.arrowhead.dto.TranslationNegotiationMgmtRequestDTO;
+import eu.arrowhead.dto.TranslationNegotiationResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
+import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
@@ -365,8 +371,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO prefCandidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO prefCandidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO prefCandidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO prefCandidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(prefCandidate2, true, false);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
@@ -445,9 +451,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO notPrefCandidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO prefCandidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO prefCandidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO notPrefCandidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO prefCandidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO prefCandidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(prefCandidate2, true, false);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
@@ -497,9 +503,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO notPrefCandidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO prefCandidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO prefCandidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO notPrefCandidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO prefCandidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO prefCandidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord = new OrchestrationLock(UUID.randomUUID().toString(), prefCandidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(60), true);
 		tempLockRecord.setId(1);
 		final OrchestrationLock mgmtLockRecord = new OrchestrationLock(UUID.randomUUID().toString(), prefCandidate3.instanceId(), requester, null, true);
@@ -543,8 +549,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO lockedCandidate = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO notLockedCandidate = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO lockedCandidate = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO notLockedCandidate = serviceInstanceResponseDTO("TestProvider2", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(lockedCandidate, notLockedCandidate), 2));
@@ -586,8 +592,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO lockExpiredCandidate = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO notLockedCandidate = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO lockExpiredCandidate = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO notLockedCandidate = serviceInstanceResponseDTO("TestProvider2", true);
 		final OrchestrationLock lockRecord = new OrchestrationLock(UUID.randomUUID().toString(), lockExpiredCandidate.instanceId(), null, Utilities.utcNow().minusMinutes(1), false);
 		lockRecord.setId(78);
 
@@ -639,9 +645,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
@@ -705,8 +711,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 90);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 90, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
@@ -763,8 +769,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 90);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 90, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
@@ -820,8 +826,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
 		candidateMatch.setCanBeExclusive(true);
 		candidateMatch.setLocked(true);
@@ -862,8 +868,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 		final OrchestrationCandidate candidateMatch = new OrchestrationCandidate(candidate1, true, false);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
@@ -906,9 +912,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
@@ -972,9 +978,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
@@ -1037,9 +1043,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
@@ -1072,9 +1078,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord = new OrchestrationLock(UUID.randomUUID().toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(60), true);
 		tempLockRecord.setId(1);
 		final OrchestrationLock mgmtLockRecord = new OrchestrationLock(UUID.randomUUID().toString(), candidate2.instanceId(), requester, null, true);
@@ -1151,7 +1157,7 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", -6);
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", -6, true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1), 1));
@@ -1184,9 +1190,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
@@ -1235,9 +1241,9 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
 		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
 		tempLockRecord1.setId(1);
 		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
@@ -1308,10 +1314,10 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
-		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4", true);
 		final BlacklistEntryDTO blacklisted1 = new BlacklistEntryDTO(candidate1.provider().name(), null, null, null, null, null, null, true);
 		final BlacklistEntryDTO blacklisted2 = new BlacklistEntryDTO(candidate2.provider().name(), null, null, null, null, null, null, true);
 		final BlacklistEntryDTO blacklisted3 = new BlacklistEntryDTO(candidate3.provider().name(), null, null, null, null, null, null, true);
@@ -1372,10 +1378,10 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
-		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4", true);
 		final BlacklistEntryDTO blacklisted1 = new BlacklistEntryDTO(candidate1.provider().name(), null, null, null, null, null, null, true);
 		final BlacklistEntryDTO blacklisted2 = new BlacklistEntryDTO(candidate2.provider().name(), null, null, null, null, null, null, true);
 		final BlacklistEntryDTO blacklisted4 = new BlacklistEntryDTO(candidate4.provider().name(), null, null, null, null, null, null, true);
@@ -1436,10 +1442,10 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
-		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 4));
@@ -1490,10 +1496,10 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
-		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 4));
@@ -1544,10 +1550,10 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
-		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 4));
@@ -1599,10 +1605,10 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3");
-		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
+		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
+		final ServiceInstanceResponseDTO candidate4 = serviceInstanceResponseDTO("TestProvider4", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3, candidate4), 4));
@@ -1654,8 +1660,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 
 		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
 		final AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
@@ -1713,8 +1719,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 
 		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
 		final AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
@@ -1772,8 +1778,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
@@ -1827,8 +1833,8 @@ public class LocalServiceOrchestrationTest {
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1");
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2");
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", true);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", true);
 
 		final AuthorizationVerifyResponseDTO authRespDTO1 = new AuthorizationVerifyResponseDTO(candidate1.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, true);
 		final AuthorizationVerifyResponseDTO authRespDTO2 = new AuthorizationVerifyResponseDTO(candidate2.provider().name(), "TestConsumer", null, AuthorizationTargetType.SERVICE_DEF, testSerfviceDef, null, false);
@@ -2224,15 +2230,15 @@ public class LocalServiceOrchestrationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testDoLocalServiceOrchestrationInterfaceRequirementsNonMatchingTemplateNameAndMatchingAddressTypeWhenTranslationAllowed() {
+	public void testDoLocalServiceOrchestrationWhenTranslationAllowedAndCandidateHasOneNativeAndOneNonNativeInterface() {
 		final UUID jobId = UUID.randomUUID();
-		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, List.of("something"), List.of("IPV4"), null, null, null);
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, List.of("generic_http"), null, null, null, null);
 		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("192.168.56.116")));
-		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("test.com")));
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of());
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_mqtt", "mqtt", "TIME_LIMITED_TOKEN_AUTH", Map.of());
 		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", List.of(candidateInterface1, candidateInterface2));
 
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
@@ -2248,24 +2254,380 @@ public class LocalServiceOrchestrationTest {
 		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
 		verify(sysInfo).isBlacklistEnabled();
 		verify(sysInfo).isTranslationEnabled();
-		verify(sysInfo, times(1)).isAuthorizationEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
 		verify(orchLockDbService, never()).create(anyList());
 		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
 		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
 		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidate.provider().name(), result.results().get(0).providerName());
+		assertTrue(result.results().get(0).interfaces().size() == 1);
+		assertEquals("generic_http", result.results().get(0).interfaces().get(0).templateName());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationInterfaceRequirementsNonMatchingTemplateNameAndMatchingAddressTypeWhenTranslationAllowedButNoTranslationDiscoveryResult() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operatio-1"), null, null, null, List.of("something"), List.of("IPV4"), null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("192.168.56.116")));
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("accessAddresses", List.of("test.com")));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidateInterface1, candidateInterface2)));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class)))
+				.thenReturn(new TranslationDiscoveryResponseDTO(null, List.of()));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo, times(2)).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor).filterOnAddressTypes(eq(candidateInterface1.properties()), eq(form.getInterfaceAddressTypes()));
+		verify(interfaceAddressPropertyProcessor).filterOnAddressTypes(eq(candidateInterface2.properties()), eq(form.getInterfaceAddressTypes()));
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
 		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
 
 		assertEquals("No results were found", stringCaptor.getValue());
 		assertTrue(result.results().size() == 0);
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesButTranslationIsNotAnOptionBecauseNoInputModelIdOffered() {
+		final UUID jobId = UUID.randomUUID();
+		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
+		interfaceProosReq.put("dataModels.operation-1.input", "abc");
+		interfaceProosReq.put("dataModels.operation-1.output", "def");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of("dataModels", Map.of("operation-1", Map.of("output", "def"))));
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("dataModels", Map.of("operation-1", Map.of())));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidateInterface1, candidateInterface2)));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesButTranslationIsNotAnOptionBecauseNoOutputModelIdOffered() {
+		final UUID jobId = UUID.randomUUID();
+		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
+		interfaceProosReq.put("dataModels.operation-1.input", "abc");
+		interfaceProosReq.put("dataModels.operation-1.output", "def");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", Map.of("dataModels", Map.of("operation-1", Map.of("input", "def"))));
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH", Map.of("dataModels", Map.of("operation-1", Map.of())));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidateInterface1, candidateInterface2)));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesButTranslationIsNotAnOptionBecauseNoInputModelIdExpected() {
+		final UUID jobId = UUID.randomUUID();
+		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
+		interfaceProosReq.put("dataModels.operation-1.output", "def");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("input", "abc", "output", "def"))));
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("input", "abc"))));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidateInterface1, candidateInterface2)));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesButTranslationIsNotAnOptionBecauseNoOutputModelIdExpected() {
+		final UUID jobId = UUID.randomUUID();
+		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
+		interfaceProosReq.put("dataModels.operation-1.input", "abc");
+		interfaceProosReq.put("dataModels.operation-1.output", "def");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("input", "abc", "output", "def"))));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidateInterface1)));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class)))
+				.thenReturn(new TranslationDiscoveryResponseDTO(null, List.of()));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo, times(2)).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesButNoTranslationDiscoveryResults() {
+		final UUID jobId = UUID.randomUUID();
+		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
+		interfaceProosReq.put("dataModels.operation-1.input", "abc");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface1 = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("input", "abc", "output", "def"))));
+
+		final ServiceInstanceInterfaceResponseDTO candidateInterface2 = new ServiceInstanceInterfaceResponseDTO("generic_https", "https", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("output", "def"))));
+		final ServiceInstanceResponseDTO candidate = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidateInterface1, candidateInterface2)));
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertEquals("No results were found", stringCaptor.getValue());
+		assertTrue(result.results().size() == 0);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesAndWithOneTranslationDiscoveryResult() {
+		final UUID jobId = UUID.randomUUID();
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
+		final String requester = "RequesterSystem";
+		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
+
+		final ServiceInstanceInterfaceResponseDTO candidate1Interface = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidate1Interface)));
+		final ServiceInstanceInterfaceResponseDTO candidate2Interface = new ServiceInstanceInterfaceResponseDTO("generic_mqtt", "mqtt", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidate2Interface)));
+
+		final String translationBridgeId = UUID.randomUUID().toString();
+
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
+				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2), 2));
+		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
+		when(sysInfo.isTranslationEnabled()).thenReturn(true);
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class)))
+				.thenReturn(new TranslationDiscoveryResponseDTO(translationBridgeId, List.of(new TranslationBridgeCandidateDTO(candidate2.instanceId(), candidate2.interfaces().getFirst().templateName()))));
+		final List<OrchestrationCandidate> matchmakingInput = new ArrayList<OrchestrationCandidate>();
+		when(matchmaker.doMatchmaking(eq(form), anyList())).thenAnswer(invocation -> {
+			matchmakingInput.addAll((List<OrchestrationCandidate>) invocation.getArgument(1));
+			return matchmakingInput.getFirst();
+		});
+		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class)))
+			.thenReturn(new TranslationNegotiationResponseDTO(translationBridgeId,
+					new ServiceInstanceInterfaceResponseDTO(form.getInterfaceTemplateNames().getFirst(), null, ServiceInterfacePolicy.TRANSLATION_BRIDGE_TOKEN_AUTH.name(), null), null, null));
+
+		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
+
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
+				any(ServiceInstanceLookupRequestDTO.class), any());
+		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
+		verify(sysInfo, times(2)).isBlacklistEnabled();
+		verify(sysInfo).isTranslationEnabled();
+		verify(sysInfo, times(3)).isAuthorizationEnabled();
+		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
+		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+		verify(orchLockDbService, never()).create(anyList());
+		verify(matchmaker).doMatchmaking(eq(form), anyList());
+		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
+		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
+		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
+
+		assertTrue(matchmakingInput.size() == 1);
+		assertEquals(candidate2.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+
+		assertEquals("1 local result", stringCaptor.getValue());
+		assertTrue(result.results().size() == 1);
+		assertEquals(candidate2.provider().name(), result.results().get(0).providerName());
+		assertTrue(result.results().get(0).interfaces().size() == 1);
+		assertEquals(form.getInterfaceTemplateNames().getFirst(), result.results().get(0).interfaces().get(0).templateName());
+	}
+
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private ServiceInstanceResponseDTO serviceInstanceResponseDTO(final String sysName) {
+	private ServiceInstanceResponseDTO serviceInstanceResponseDTO(final String sysName, final boolean withFakeInterface) {
 		return new ServiceInstanceResponseDTO(
 				sysName + "|" + testSerfviceDef + "|1.0.0",
 				new SystemResponseDTO(sysName, null, null, null, null, null, null),
@@ -2273,13 +2635,13 @@ public class LocalServiceOrchestrationTest {
 				null,
 				null,
 				null,
-				new ArrayList<>(),
+				!withFakeInterface ? new ArrayList<>() : List.of(new ServiceInstanceInterfaceResponseDTO("whatever", "xyz", "NONE", null)),
 				null,
 				null);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private ServiceInstanceResponseDTO serviceInstanceResponseDTO(final String sysName, final Integer exclusivity) {
+	private ServiceInstanceResponseDTO serviceInstanceResponseDTO(final String sysName, final Integer exclusivity, final boolean withFakeInterface) {
 		return new ServiceInstanceResponseDTO(
 				sysName + "|" + testSerfviceDef + "|1.0.0",
 				new SystemResponseDTO(sysName, null, null, null, null, null, null),
@@ -2287,7 +2649,7 @@ public class LocalServiceOrchestrationTest {
 				null,
 				null,
 				exclusivity == null ? null : Map.of(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY, exclusivity),
-				new ArrayList<>(),
+				!withFakeInterface ? new ArrayList<>() : List.of(new ServiceInstanceInterfaceResponseDTO("whatever", "xyz", "NONE", null)),
 				null,
 				null);
 	}

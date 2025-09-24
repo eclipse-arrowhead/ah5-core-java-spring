@@ -445,6 +445,32 @@ public class AuthorizationTokenManagementValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testValidateAndNormalizeGenerateTokenRequestsNotOfferableVariant() {
+		final List<AuthorizationTokenGenerationMgmtRequestDTO> list = List.of(
+				new AuthorizationTokenGenerationMgmtRequestDTO(
+						"TRANSLATION_BRIDGE_TOKEN_AUTH",
+						"SERVICE_DEF",
+						"LOCAL",
+						"ConsumerName",
+						"ProviderName",
+						"testService",
+						"op",
+						"2100-05-02T10:00:00Z",
+						null));
+		final AuthorizationTokenGenerationMgmtListRequestDTO request = new AuthorizationTokenGenerationMgmtListRequestDTO(list);
+
+		when(tokenNormalizer.normalizeAuthorizationTokenGenerationMgmtListRequestDTO(request)).thenReturn(request);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeGenerateTokenRequests(request, "testOrigin"));
+
+		verify(tokenNormalizer).normalizeAuthorizationTokenGenerationMgmtListRequestDTO(request);
+
+		assertEquals("Invalid token variant: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testValidateAndNormalizeGenerateTokenRequestsExceptionInAValidator() {
 		final List<AuthorizationTokenGenerationMgmtRequestDTO> list = List.of(
 				new AuthorizationTokenGenerationMgmtRequestDTO(
@@ -589,6 +615,31 @@ public class AuthorizationTokenManagementValidationTest {
 		verify(pageValidator).validatePageParameter(eq(pageDTO), anyList(), eq("testOrigin"));
 
 		assertEquals("Invalid token type: invalid", ex.getMessage());
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQueryTokensRequestNotOfferableTokenType() {
+		final PageDTO pageDTO = new PageDTO(0, 5, "ASC", "id");
+		final AuthorizationTokenQueryRequestDTO request = new AuthorizationTokenQueryRequestDTO(
+				pageDTO,
+				"Requester",
+				"TRANSLATION_BRIDGE_TOKEN",
+				"LOCAL",
+				"ConsumerName",
+				"ProviderName",
+				"SERVICE_DEF",
+				"testService");
+
+		doNothing().when(pageValidator).validatePageParameter(eq(pageDTO), anyList(), eq("testOrigin"));
+		when(tokenNormalizer.normalizeAuthorizationTokenQueryRequestDTO(request)).thenReturn(request);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeQueryTokensRequest(request, "testOrigin"));
+
+		verify(pageValidator).validatePageParameter(eq(pageDTO), anyList(), eq("testOrigin"));
+
+		assertEquals("Token type is invalid: TRANSLATION_BRIDGE_TOKEN", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -754,6 +805,37 @@ public class AuthorizationTokenManagementValidationTest {
 				pageDTO,
 				null,
 				"",
+				null,
+				"",
+				"",
+				null,
+				"");
+
+		doNothing().when(pageValidator).validatePageParameter(eq(pageDTO), anyList(), eq("testOrigin"));
+		when(tokenNormalizer.normalizeAuthorizationTokenQueryRequestDTO(request)).thenReturn(request);
+
+		final AuthorizationTokenQueryRequestDTO result = validator.validateAndNormalizeQueryTokensRequest(request, "testOrigin");
+
+		final InOrder orderValidator = Mockito.inOrder(pageValidator, tokenNormalizer);
+
+		orderValidator.verify(pageValidator).validatePageParameter(eq(pageDTO), anyList(), eq("testOrigin"));
+		orderValidator.verify(tokenNormalizer).normalizeAuthorizationTokenQueryRequestDTO(request);
+		verify(systemNameValidator, never()).validateSystemName(anyString());
+		verify(cloudIdentifierValidator, never()).validateCloudIdentifier(anyString());
+		verify(serviceDefinitionNameValidator, never()).validateServiceDefinitionName(anyString());
+		verify(eventTypeNameValidator, never()).validateEventTypeName(anyString());
+
+		assertEquals(request, result);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeQueryTokensRequestOk5() {
+		final PageDTO pageDTO = new PageDTO(0, 5, "ASC", "id");
+		final AuthorizationTokenQueryRequestDTO request = new AuthorizationTokenQueryRequestDTO(
+				pageDTO,
+				null,
+				"SELF_CONTAINED_TOKEN",
 				null,
 				"",
 				"",
