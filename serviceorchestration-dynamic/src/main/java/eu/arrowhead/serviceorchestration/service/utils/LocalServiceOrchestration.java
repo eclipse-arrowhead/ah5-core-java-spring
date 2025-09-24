@@ -41,6 +41,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.ForbiddenException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
@@ -48,6 +49,8 @@ import eu.arrowhead.common.service.validation.meta.MetaOps;
 import eu.arrowhead.common.service.validation.meta.MetadataKeyEvaluator;
 import eu.arrowhead.common.service.validation.meta.MetadataRequirementExpression;
 import eu.arrowhead.common.service.validation.meta.MetadataRequirementTokenizer;
+import eu.arrowhead.common.service.validation.name.DataModelIdentifierNormalizer;
+import eu.arrowhead.common.service.validation.name.DataModelIdentifierValidator;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenGenerationResponseDTO;
@@ -115,6 +118,12 @@ public class LocalServiceOrchestration {
 
 	@Autowired
 	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
+
+	@Autowired
+	private DataModelIdentifierNormalizer dataModelIDNormalizer;
+
+	@Autowired
+	private DataModelIdentifierValidator dataModelIDValidator;
 
 	private static final int TEMPORARY_LOCK_DURATION = 60; // sec
 
@@ -997,13 +1006,25 @@ public class LocalServiceOrchestration {
 				}
 				for (final MetadataRequirementExpression requirement : MetadataRequirementTokenizer.parseRequirements(requirementBundle)) {
 					if (inputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(inputDataModelIdKey)) {
-						inputDataModelId = requirement.value().toString();
+						inputDataModelId = dataModelIDNormalizer.normalize(requirement.value().toString());
 					}
 					if (outputDataModelId == null && requirement.operation() == MetaOps.EQUALS && requirement.keyPath().equals(outputDataModelIdKey)) {
-						outputDataModelId = requirement.value().toString();
+						outputDataModelId = dataModelIDNormalizer.normalize(requirement.value().toString());
 					}
 				}
 			}
+		}
+
+		try {
+			dataModelIDValidator.validateDataModelIdentifier(inputDataModelId);
+		} catch (final InvalidParameterException ex) {
+			inputDataModelId = null;
+		}
+
+		try {
+			dataModelIDValidator.validateDataModelIdentifier(outputDataModelId);
+		} catch (final InvalidParameterException ex) {
+			outputDataModelId = null;
 		}
 
 		return Pair.of(Optional.ofNullable(inputDataModelId), Optional.ofNullable(outputDataModelId));

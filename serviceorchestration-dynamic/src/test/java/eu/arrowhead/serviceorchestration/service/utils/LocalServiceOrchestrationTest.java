@@ -48,7 +48,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
@@ -58,6 +60,8 @@ import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.common.service.validation.name.DataModelIdentifierNormalizer;
+import eu.arrowhead.common.service.validation.name.DataModelIdentifierValidator;
 import eu.arrowhead.dto.AuthorizationTokenGenerationMgmtListRequestDTO;
 import eu.arrowhead.dto.AuthorizationTokenMgmtListResponseDTO;
 import eu.arrowhead.dto.AuthorizationTokenResponseDTO;
@@ -127,6 +131,12 @@ public class LocalServiceOrchestrationTest {
 	@Mock
 	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
 
+	@Spy
+	private DataModelIdentifierNormalizer dataModelIDNormalizer;
+
+	@Spy
+	private DataModelIdentifierValidator dataModelIDValidator;
+	
 	@Captor
 	private ArgumentCaptor<String> stringCaptor;
 
@@ -2353,6 +2363,10 @@ public class LocalServiceOrchestrationTest {
 		verify(sysInfo).isAuthorizationEnabled();
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(dataModelIDNormalizer).normalize(eq("abc"));
+		verify(dataModelIDNormalizer).normalize(eq("def"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("abc"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("def"));
 		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
 				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
 		verify(orchLockDbService, never()).create(anyList());
@@ -2399,6 +2413,10 @@ public class LocalServiceOrchestrationTest {
 		verify(sysInfo).isAuthorizationEnabled();
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(dataModelIDNormalizer).normalize(eq("abc"));
+		verify(dataModelIDNormalizer).normalize(eq("def"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("abc"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("def"));
 		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
 				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
 		verify(orchLockDbService, never()).create(anyList());
@@ -2447,6 +2465,8 @@ public class LocalServiceOrchestrationTest {
 		verify(sysInfo).isAuthorizationEnabled();
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(dataModelIDNormalizer).normalize(eq("def"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("def"));
 		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
 				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
 		verify(orchLockDbService, never()).create(anyList());
@@ -2467,7 +2487,6 @@ public class LocalServiceOrchestrationTest {
 		final UUID jobId = UUID.randomUUID();
 		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
 		interfaceProosReq.put("dataModels.operation-1.input", "abc");
-		interfaceProosReq.put("dataModels.operation-1.output", "def");
 		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
 		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
 		final String requester = "RequesterSystem";
@@ -2481,9 +2500,6 @@ public class LocalServiceOrchestrationTest {
 				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate), 1));
 		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of());
 		when(sysInfo.isTranslationEnabled()).thenReturn(true);
-		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
-				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class)))
-				.thenReturn(new TranslationDiscoveryResponseDTO(null, List.of()));
 
 		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
 
@@ -2491,12 +2507,14 @@ public class LocalServiceOrchestrationTest {
 		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
 				any(ServiceInstanceLookupRequestDTO.class), any());
 		verify(orchLockDbService, times(2)).getByServiceInstanceId(anyList());
-		verify(sysInfo, times(2)).isBlacklistEnabled();
+		verify(sysInfo, times(1)).isBlacklistEnabled();
 		verify(sysInfo).isTranslationEnabled();
-		verify(sysInfo, times(2)).isAuthorizationEnabled();
+		verify(sysInfo, times(1)).isAuthorizationEnabled();
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
-		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
+		verify(dataModelIDNormalizer).normalize(eq("abc"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("abc"));
+		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
 				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
 		verify(orchLockDbService, never()).create(anyList());
 		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
@@ -2544,6 +2562,8 @@ public class LocalServiceOrchestrationTest {
 		verify(sysInfo).isAuthorizationEnabled();
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
+		verify(dataModelIDNormalizer).normalize(eq("abc"));
+		verify(dataModelIDValidator).validateDataModelIdentifier(eq("abc"));
 		verify(ahHttpService, never()).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
 				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
 		verify(orchLockDbService, never()).create(anyList());
