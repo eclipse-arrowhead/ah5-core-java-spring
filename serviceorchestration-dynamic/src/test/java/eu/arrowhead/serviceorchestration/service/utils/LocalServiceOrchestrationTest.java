@@ -18,6 +18,7 @@ package eu.arrowhead.serviceorchestration.service.utils;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +51,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.MultiValueMap;
 
 import eu.arrowhead.common.Constants;
@@ -90,6 +90,7 @@ import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
+import eu.arrowhead.dto.enums.TranslationDiscoveryFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
@@ -136,7 +137,7 @@ public class LocalServiceOrchestrationTest {
 
 	@Spy
 	private DataModelIdentifierValidator dataModelIDValidator;
-	
+
 	@Captor
 	private ArgumentCaptor<String> stringCaptor;
 
@@ -169,6 +170,12 @@ public class LocalServiceOrchestrationTest {
 
 	@Captor
 	private ArgumentCaptor<Map<String, Object>> stringObjectMapCaptor;
+
+	@Captor
+	private ArgumentCaptor<TranslationDiscoveryMgmtRequestDTO> translationDiscoveryReqCaptor;
+
+	@Captor
+	private ArgumentCaptor<TranslationNegotiationMgmtRequestDTO> translationNegotiationCaptor;
 
 	private static final String testSerfviceDef = "testService";
 
@@ -2583,14 +2590,19 @@ public class LocalServiceOrchestrationTest {
 	@Test
 	public void testDoLocalServiceOrchestrationWithOnlyNonNativeCandidatesAndWithOneTranslationDiscoveryResult() {
 		final UUID jobId = UUID.randomUUID();
-		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, null, null, null);
+		final MetadataRequirementDTO interfaceProosReq = new MetadataRequirementDTO();
+		interfaceProosReq.put("dataModels.operation-1.input", "abc");
+		interfaceProosReq.put("dataModels.operation-1.output", "def");
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, List.of("operation-1"), null, null, null, List.of("something_else"), null, List.of(interfaceProosReq), null, null);
 		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ALLOW_TRANSLATION.name(), true), null, null);
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 
-		final ServiceInstanceInterfaceResponseDTO candidate1Interface = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceInterfaceResponseDTO candidate1Interface = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("input", "abc", "output", "def"))));
 		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidate1Interface)));
-		final ServiceInstanceInterfaceResponseDTO candidate2Interface = new ServiceInstanceInterfaceResponseDTO("generic_mqtt", "mqtt", "TIME_LIMITED_TOKEN_AUTH", null);
+		final ServiceInstanceInterfaceResponseDTO candidate2Interface = new ServiceInstanceInterfaceResponseDTO("generic_mqtt", "mqtt", "TIME_LIMITED_TOKEN_AUTH",
+				Map.of("dataModels", Map.of("operation-1", Map.of("input", "abc", "output", "def"))));
 		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", new ArrayList<ServiceInstanceInterfaceResponseDTO>(List.of(candidate2Interface)));
 
 		final String translationBridgeId = UUID.randomUUID().toString();
@@ -2609,8 +2621,8 @@ public class LocalServiceOrchestrationTest {
 		});
 		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
 				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class)))
-			.thenReturn(new TranslationNegotiationResponseDTO(translationBridgeId,
-					new ServiceInstanceInterfaceResponseDTO(form.getInterfaceTemplateNames().getFirst(), null, ServiceInterfacePolicy.TRANSLATION_BRIDGE_TOKEN_AUTH.name(), null), null, null));
+				.thenReturn(new TranslationNegotiationResponseDTO(translationBridgeId,
+						new ServiceInstanceInterfaceResponseDTO(form.getInterfaceTemplateNames().getFirst(), null, ServiceInterfacePolicy.TRANSLATION_BRIDGE_TOKEN_AUTH.name(), null), null, null));
 
 		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
 
@@ -2624,17 +2636,34 @@ public class LocalServiceOrchestrationTest {
 		verify(interfaceAddressPropertyProcessor, never()).filterOnAddressTypes(any(), anyList());
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
 		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_DISCOVERY), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
-				eq(TranslationDiscoveryResponseDTO.class), any(TranslationDiscoveryMgmtRequestDTO.class));
+				eq(TranslationDiscoveryResponseDTO.class), translationDiscoveryReqCaptor.capture());
 		verify(orchLockDbService, never()).create(anyList());
 		verify(matchmaker).doMatchmaking(eq(form), anyList());
 		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
 		verify(orchLockDbService, never()).deleteInBatch(anyCollection());
 		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_TRANSLATION_BRIDGE_MANAGEMENT), eq(Constants.SERVICE_OP_NEGOTIATION), eq(Constants.SYS_NAME_TRANSLATION_MANAGER),
-				eq(TranslationNegotiationResponseDTO.class), any(TranslationNegotiationMgmtRequestDTO.class));
+				eq(TranslationNegotiationResponseDTO.class), translationNegotiationCaptor.capture());
 		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
 
 		assertTrue(matchmakingInput.size() == 1);
 		assertEquals(candidate2.instanceId(), matchmakingInput.get(0).getServiceInstance().instanceId());
+
+		final TranslationDiscoveryMgmtRequestDTO translationDiscReq = translationDiscoveryReqCaptor.getValue();
+		assertTrue(candidate1.instanceId().equals(translationDiscReq.candidates().get(0).instanceId()));
+		assertTrue(candidate2.instanceId().equals(translationDiscReq.candidates().get(1).instanceId()));
+		assertTrue(form.getTargetSystemName().equals(translationDiscReq.consumer()));
+		assertTrue(form.getInterfaceTemplateNames().getFirst().equals(translationDiscReq.interfaceTemplateNames().getFirst()));
+		assertTrue("abc".equals(translationDiscReq.inputDataModelId()));
+		assertTrue("def".equals(translationDiscReq.outputDataModelId()));
+		assertFalse(translationDiscReq.flags().get(TranslationDiscoveryFlag.CONSUMER_BLACKLIST_CHECK.toString()));
+		assertFalse(translationDiscReq.flags().get(TranslationDiscoveryFlag.CANDIDATES_BLACKLIST_CHECK.toString()));
+		assertFalse(translationDiscReq.flags().get(TranslationDiscoveryFlag.CANDIDATES_AUTH_CHECK.toString()));
+		assertFalse(translationDiscReq.flags().get(TranslationDiscoveryFlag.TRANSLATORS_BLACKLIST_CHECK.toString()));
+		assertFalse(translationDiscReq.flags().get(TranslationDiscoveryFlag.TRANSLATORS_AUTH_CHECK.toString()));
+
+		final TranslationNegotiationMgmtRequestDTO translationNegReq = translationNegotiationCaptor.getValue();
+		assertTrue(translationBridgeId.equals(translationNegReq.bridgeId()));
+		assertTrue(matchmakingInput.getFirst().getServiceInstance().instanceId().equals(translationNegReq.targetInstanceId()));
 
 		assertEquals("1 local result", stringCaptor.getValue());
 		assertTrue(result.results().size() == 1);

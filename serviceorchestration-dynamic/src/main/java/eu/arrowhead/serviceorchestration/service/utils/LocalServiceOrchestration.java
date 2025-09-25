@@ -726,7 +726,7 @@ public class LocalServiceOrchestration {
 				form.getOperations().getFirst(),
 				form.getInterfaceTemplateNames(),
 				interfaceModelIDRequirements.getFirst().orElseGet(() -> null),
-				interfaceModelIDRequirements.getFirst().orElseGet(() -> null),
+				interfaceModelIDRequirements.getSecond().orElseGet(() -> null),
 				Map.of(TranslationDiscoveryFlag.CONSUMER_BLACKLIST_CHECK.toString(), false,
 						TranslationDiscoveryFlag.CANDIDATES_BLACKLIST_CHECK.toString(), false,
 						TranslationDiscoveryFlag.CANDIDATES_AUTH_CHECK.toString(), false,
