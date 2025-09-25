@@ -38,7 +38,7 @@ import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 @ExtendWith(MockitoExtension.class)
-public class OrchestrationFromContextValidationTest {
+public class OrchestrationFormContextValidationTest {
 
 	//=================================================================================================
 	// members
@@ -174,22 +174,24 @@ public class OrchestrationFromContextValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateAllowTranslationButNoOperation() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().orchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION.name(), true).build();
+	public void testValidateAllowTranslationButNoInterfaceTemplateName() {
+		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder()
+				.orchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION.name(), true)
+				.serviceRequirement(new OrchestrationServiceRequirementDTO.Builder().operations(List.of("op1")).build())
+				.build();
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
 
 		final Throwable ex = assertThrows(InvalidParameterException.class, () -> validator.validate(orchestrationForm, "test.origin"));
 
-		assertEquals("Exactly one operation must be defined when translation is allowed", ex.getMessage());
+		assertEquals("Interface template name(s) must be defined when translation is allowed", ex.getMessage());
 		assertEquals("test.origin", ((InvalidParameterException) ex).getOrigin());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateAllowTranslationButMoreThanOneOperation() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder()
-				.orchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION.name(), true)
-				.serviceRequirement(new OrchestrationServiceRequirementDTO.Builder().operations(List.of("op1", "op2")).build())
+	public void testValidateAllowTranslationWithInterfaceNameButNoOperation() {
+		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().orchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION.name(), true)
+				.serviceRequirement(new OrchestrationServiceRequirementDTO.Builder().interfaceTemplateName("interface1").build())
 				.build();
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
 
@@ -201,10 +203,25 @@ public class OrchestrationFromContextValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateAllowTranslationAndExactlyOneOperation() {
+	public void testValidateAllowTranslationWithInterfaceNameButMoreThanOneOperation() {
 		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder()
 				.orchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION.name(), true)
-				.serviceRequirement(new OrchestrationServiceRequirementDTO.Builder().operations(List.of("op1")).build())
+				.serviceRequirement(new OrchestrationServiceRequirementDTO.Builder().interfaceTemplateName("interface1").operations(List.of("op1", "op2")).build())
+				.build();
+		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class, () -> validator.validate(orchestrationForm, "test.origin"));
+
+		assertEquals("Exactly one operation must be defined when translation is allowed", ex.getMessage());
+		assertEquals("test.origin", ((InvalidParameterException) ex).getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAllowTranslationWithInterfaceNameAndExactlyOneOperation() {
+		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder()
+				.orchestrationFlag(OrchestrationFlag.ALLOW_TRANSLATION.name(), true)
+				.serviceRequirement(new OrchestrationServiceRequirementDTO.Builder().interfaceTemplateName("interface1").operations(List.of("op1")).build())
 				.build();
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
 

@@ -23,7 +23,7 @@ ARG AH_VERSION
 ENV AH_VERSION=$AH_VERSION
 
 WORKDIR /app
-COPY --from=build /app/authentication/target/arrowhead-authentication-5.0.0.jar arrowhead-authentication-5.0.0.jar
+COPY --from=build /app/authentication/target/arrowhead-authentication-${AH_VERSION}.jar arrowhead-authentication-${AH_VERSION}.jar
 COPY --from=build /app/authentication/target/application.properties config_temp/application.properties
 COPY --from=build /app/authentication/target/log4j2.xml config_temp/log4j2.xml
 COPY --from=build /app/authentication/src/main/resources/certificate config_temp/certificte
