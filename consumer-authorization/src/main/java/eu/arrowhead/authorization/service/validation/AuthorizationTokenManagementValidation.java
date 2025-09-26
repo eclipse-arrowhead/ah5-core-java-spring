@@ -127,7 +127,8 @@ public class AuthorizationTokenManagementValidation {
 		final AuthorizationTokenGenerationMgmtListRequestDTO normalized = tokenNormalizer.normalizeAuthorizationTokenGenerationMgmtListRequestDTO(dto);
 
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : normalized.list()) {
-			if (!request.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)) {
+			if (!request.tokenVariant().endsWith(Constants.AUTHORIZATION_TOKEN_VARIANT_SUFFIX)
+					|| !ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(request.tokenVariant()))) {
 				throw new InvalidParameterException("Invalid token variant: " + request.tokenVariant(), origin);
 			}
 
@@ -180,6 +181,10 @@ public class AuthorizationTokenManagementValidation {
 				} else {
 					eventTypeNameValidator.validateEventTypeName(normalized.target());
 				}
+			}
+			if (!Utilities.isEmpty(normalized.tokenType())
+					&& !AuthorizationTokenType.isOfferable(AuthorizationTokenType.valueOf(normalized.tokenType()))) {
+				throw new InvalidParameterException("Token type is invalid: " + normalized.tokenType());
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);

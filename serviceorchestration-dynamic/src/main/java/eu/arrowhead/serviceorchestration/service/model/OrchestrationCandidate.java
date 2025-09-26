@@ -44,6 +44,7 @@ public class OrchestrationCandidate {
 	private boolean properQoS;
 	private Map<String, Map<String, AuthorizationTokenGenerationResponseDTO>> authorizationTokens = new HashMap<>();
 	private final List<ServiceInstanceInterfaceResponseDTO> matchingInterfaces = new ArrayList<>();
+	private final List<ServiceInstanceInterfaceResponseDTO> translatableInterfaces = new ArrayList<>();
 
 	//=================================================================================================
 	// methods
@@ -159,5 +160,20 @@ public class OrchestrationCandidate {
 	//-------------------------------------------------------------------------------------------------
 	public void addMatchingInterfaces(final List<ServiceInstanceInterfaceResponseDTO> matchingInterfaces) {
 		this.matchingInterfaces.addAll(matchingInterfaces);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<ServiceInstanceInterfaceResponseDTO> getTranslatableInterfaces() {
+		return translatableInterfaces;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void addTranslatableInterface(final ServiceInstanceInterfaceResponseDTO translatableInterface) {
+		this.translatableInterfaces.add(translatableInterface);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void addTranslatableInterfaces(final List<ServiceInstanceInterfaceResponseDTO> translatableInterfaces) {
+		this.translatableInterfaces.addAll(translatableInterfaces);
 	}
 }

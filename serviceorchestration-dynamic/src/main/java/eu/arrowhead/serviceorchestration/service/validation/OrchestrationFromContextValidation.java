@@ -71,6 +71,11 @@ public class OrchestrationFromContextValidation {
 			throw new InvalidParameterException("Exactly one operation must be defined when translation is allowed", origin);
 		}
 
+		if (form.getFlag(OrchestrationFlag.ALLOW_TRANSLATION) && Utilities.isEmpty(form.getInterfaceTemplateNames())) {
+			// The creation of a translation bridge requires interface template name(s) being defined.
+			throw new InvalidParameterException("Interface template name(s) must be defined when translation is allowed", origin);
+		}
+
 		if (form.getFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {
 			throw new InvalidParameterException("ONLY_PREFERRED falg is present, but no preferred provider is defined", origin);
 		}
