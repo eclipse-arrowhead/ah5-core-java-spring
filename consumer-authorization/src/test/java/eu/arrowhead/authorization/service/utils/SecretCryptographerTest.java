@@ -70,7 +70,7 @@ public class SecretCryptographerTest {
 				})) {
 			assertEquals(expected, sc.generateInitializationVectorBase64());
 
-			SecureRandom randomMock = constructorMock.constructed().get(0);
+			final SecureRandom randomMock = constructorMock.constructed().get(0);
 			verify(randomMock).nextBytes(any(byte[].class));
 		}
 	}
