@@ -602,7 +602,7 @@ public class SystemDbServiceTest {
 		verify(systemAddressRepo).findAllBySystemAndAddressType(any(), eq(AddressType.IPV4));
 		assertEquals(expected, actual);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersByAddressesNoMatch() {

@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
+import org.apache.commons.lang3.tuple.Triple;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -42,12 +44,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
 
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
@@ -58,13 +66,17 @@ import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepository;
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
+import eu.arrowhead.serviceregistry.jpa.entity.Device;
+import eu.arrowhead.serviceregistry.jpa.entity.DeviceAddress;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
+import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
 @ExtendWith(MockitoExtension.class)
 public class ServiceInstanceDbServiceTest {
@@ -926,5 +938,268 @@ public class ServiceInstanceDbServiceTest {
 		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateBulk(List.of(dto)));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersWithoutFilters() {
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		when(serviceInstanceRepo.findAll(eq(pageRequest))).thenReturn(new PageImpl<>(List.of(existing)));
+		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
+
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
+				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, null)));
+		assertEquals(expected, actual);
+		verify(serviceInstanceRepo).findAll(eq(pageRequest));
+		verify(serviceInstanceInterfaceRepo).findAllByServiceInstance(eq(existing));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByInstanceIds() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		when(serviceInstanceRepo.findAllByServiceInstanceIdIn(any())).thenReturn(List.of());
+		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+		service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), null, null, null, null, null, null, null, null, null)));
+		verify(serviceInstanceRepo).findAllByServiceInstanceIdIn(
+			argThat(list -> list.contains("TemperatureManager|temperatureManagement|5.1.0"))
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByProviderNames() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		when(serviceInstanceRepo.findAllBySystem_NameIn(any())).thenReturn(List.of());
+		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+		service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, List.of("TemperatureManager"), null, null, null, null, null, null, null, null)));
+		verify(serviceInstanceRepo).findAllBySystem_NameIn(
+			argThat(list -> list.contains("TemperatureManager"))
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersByServiceDefinitionNames() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		when(serviceInstanceRepo.findAllByServiceDefinition_NameIn(any())).thenReturn(List.of());
+		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+
+		service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, List.of("temperatureManagement"), null, null, null, null, null, null, null)));
+		verify(serviceInstanceRepo).findAllByServiceDefinition_NameIn(
+			argThat(list -> list.contains("temperatureManagement"))
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersNoBaseFilterMatchingCases() {
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
+				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+
+		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
+		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
+		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of(existing)));
+
+		Assertions.assertAll(
+			// versions
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, List.of("5.1.0"), null, null, null, null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// alivesAt
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, "2030-11-04T01:53:02Z", null, null, null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// metadata
+			() -> {
+				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+				requirement.put("indoor", true);
+
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, List.of(requirement), null, null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// address types
+			() -> {
+				when(interfaceAddressPropertyProcessor.filterOnAddressTypes(any(), any())).thenReturn(true);
+
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, List.of("IPV4"), null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// interface templates
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, List.of("generic_https"), null, null)));
+				assertEquals(expected, actual);
+			},
+			// interface properties
+			() -> {
+				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+				requirement.put("accessPort", 4041);
+
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, List.of(requirement), null)));
+				assertEquals(expected, actual);
+			},
+			// policies
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, List.of("RSA_SHA512_JSON_WEB_TOKEN_AUTH"))));
+				assertEquals(expected, actual);
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersNoBaseFilterNotMatchingCases() {
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<>(List.of(), pageRequest, 0);
+
+		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
+		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
+		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
+
+		Assertions.assertAll(
+			// versions
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, List.of("5.2.0"), null, null, null, null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// alivesAt
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, "2035-11-04T01:53:02Z", null, null, null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// metadata
+			() -> {
+				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+				requirement.put("indoor", false);
+
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, List.of(requirement), null, null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// address types
+			() -> {
+				when(interfaceAddressPropertyProcessor.filterOnAddressTypes(any(), any())).thenReturn(true);
+
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, List.of("IPV6"), null, null, null)));
+				assertEquals(expected, actual);
+			},
+			// interface templates
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, List.of("generic_http"), null, null)));
+				assertEquals(expected, actual);
+			},
+			// interface properties
+			() -> {
+				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+				requirement.put("accessPort", 4042);
+
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, List.of(requirement), null)));
+				assertEquals(expected, actual);
+			},
+			// policies
+			() -> {
+				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+						pageRequest,
+						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, List.of("NONE"))));
+				assertEquals(expected, actual);
+			}
+		);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersDeleteExpiredEntities() {
+		
 	}
 }
