@@ -144,6 +144,7 @@ public class DTOConverter {
 	public AuthorizationPolicyDTO convertAuthPolicyToDTO(final AuthPolicy policy) {
 		logger.debug("convertAuthPolicyToDTO started...");
 		Assert.notNull(policy, "policy is null");
+		Assert.notNull(policy.getPolicyType(), "policy type is null");
 
 		List<String> list = null;
 		MetadataRequirementDTO metadataRequirement = null;
