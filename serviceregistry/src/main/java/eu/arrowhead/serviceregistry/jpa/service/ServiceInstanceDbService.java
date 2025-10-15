@@ -505,13 +505,8 @@ public class ServiceInstanceDbService {
 
 				boolean matching = true;
 
-				// Match against to service instance id requirements
-				if (baseFilter != BaseFilter.INSTANCE_ID && !Utilities.isEmpty(filters.getInstanceIds()) && !filters.getInstanceIds().contains(serviceCandidate.getServiceInstanceId())) {
-					matching = false;
-				}
-
 				// Match against to provider name requirements
-				if (matching && baseFilter != BaseFilter.SYSTEM_NAME && !Utilities.isEmpty(filters.getProviderNames()) && !filters.getProviderNames().contains(serviceCandidate.getSystem().getName())) {
+				if (baseFilter != BaseFilter.SYSTEM_NAME && !Utilities.isEmpty(filters.getProviderNames()) && !filters.getProviderNames().contains(serviceCandidate.getSystem().getName())) {
 					matching = false;
 				}
 
