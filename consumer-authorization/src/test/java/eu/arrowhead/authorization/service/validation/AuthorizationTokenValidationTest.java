@@ -271,6 +271,27 @@ public class AuthorizationTokenValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testValidateAndNormalizeGenerateRequestNotOfferableVariant() {
+
+		final AuthorizationTokenGenerationRequestDTO request = new AuthorizationTokenGenerationRequestDTO(
+				"TRANSLATION_BRIDGE_TOKEN_AUTH",
+				"ProviderName",
+				null,
+				"testService",
+				"op");
+
+		when(normalizer.normalizeAuthorizationTokenGenerationRequestDTO(request)).thenReturn(request);
+
+		final Throwable ex = assertThrows(InvalidParameterException.class,
+				() -> validator.validateAndNormalizeGenerateRequest(request, "testOrigin"));
+
+		verify(normalizer).normalizeAuthorizationTokenGenerationRequestDTO(request);
+
+		assertEquals("Token variant is invalid", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testValidateAndNormalizeGenerateRequestExceptionInAValidator() {
 		final AuthorizationTokenGenerationRequestDTO request = new AuthorizationTokenGenerationRequestDTO(
 				"TIME_LIMITED_TOKEN_AUTH",

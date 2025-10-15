@@ -532,7 +532,7 @@ public class OrchestrationFormValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateAndNormalizeOrchestrationFormInvaliSecurity() {
+	public void testValidateAndNormalizeOrchestrationFormInvalidSecurity() {
 		final String origin = "test.origin";
 		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
 		metadataReq.put("foo", "bar");
@@ -557,6 +557,36 @@ public class OrchestrationFormValidationTest {
 		verify(systemNameValidator, never()).validateSystemName(eq("PreferredProvider2"));
 
 		assertEquals("Invalid security policy: INVALID_SECURITY", ex.getMessage());
+		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeOrchestrationFormNotOfferableSecurity() {
+		final String origin = "test.origin";
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("foo", "bar");
+		final MetadataRequirementDTO interfacePropsReq = new MetadataRequirementDTO();
+		interfacePropsReq.put("method", "put");
+		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
+				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
+				List.of("TRANSLATION_BRIDGE_TOKEN_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
+
+		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, true, origin));
+
+		verify(normalizer).normalizeOrchestrationForm(eq(orchestrationForm));
+		verify(systemNameValidator).validateSystemName(eq("TestManager"));
+		verify(systemNameValidator).validateSystemName(eq("TestConsumer"));
+		verify(serviceDefNameValidator).validateServiceDefinitionName(eq("testService"));
+		verify(serviceOpNameValidator).validateServiceOperationName(eq("read"));
+		verify(serviceOpNameValidator).validateServiceOperationName(eq("write"));
+		verify(interfaceTemplateNameValidator).validateInterfaceTemplateName(eq("generic_http"));
+		verify(systemNameValidator, never()).validateSystemName(eq("PreferredProvider1"));
+		verify(systemNameValidator, never()).validateSystemName(eq("PreferredProvider2"));
+
+		assertEquals("Invalid security policy: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
 		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
 	}
 }
