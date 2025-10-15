@@ -21,18 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.awt.event.InvocationEvent;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +49,7 @@ import eu.arrowhead.common.exception.LockedException;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
+import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.jpa.repository.ServiceDefinitionRepository;
@@ -96,7 +98,7 @@ public class ServiceInstanceDbServiceTest {
 
 	@Mock
 	private ServiceInterfaceAddressPropertyProcessor interfaceAddressPropertyProcessor;
-	
+
 	private static final String DB_ERROR_MSG = "Database operation error";
 
 	//=================================================================================================
@@ -454,8 +456,8 @@ public class ServiceInstanceDbServiceTest {
 		final System system1 = new System("TemperatureManager1", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
 		final System system2 = new System("TemperatureManager2", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
 		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
-		final ServiceInterfaceTemplate newTemplate = new ServiceInterfaceTemplate("generic_https", "https");
-		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(newTemplate, "accessPort", true, null);
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", true, null);
 
 		when(systemRepo.findAllByNameIn(any())).thenReturn(List.of(system1, system2));
 		when(serviceDefinitionRepo.findAllByNameIn(any())).thenReturn(List.of(serviceDefinition));
@@ -519,6 +521,410 @@ public class ServiceInstanceDbServiceTest {
 
 		doThrow(new LockedException("error")).when(serviceInstanceRepo).deleteAllByServiceInstanceIdIn(any());
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of(dto)));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkNotExistingInstanceThrowsInvalidParameterException() {
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of());
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.empty());
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
+		assertEquals("Instance id does not exist: TemperatureManager|temperatureManagement|5.1.0", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeMetadata() {
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+				"generic_https",
+				"",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
+
+			final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+			final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+			final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+
+			final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : false\r\n}");
+
+			final ServiceInstance changed = new ServiceInstance(
+					"TemperatureManager|temperatureManagement|5.1.0",
+					system,
+					serviceDefinition,
+					"5.1.0",
+					ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+					"{\r\n  \"indoor\" : true\r\n}"); // the metadata should be different after update
+
+			final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+			final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
+			final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+			when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+			when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
+			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
+			when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+			when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(changed, List.of(instanceInterface)));
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+
+			assertEquals(expected, actual);
+			verify(serviceInstanceRepo).saveAndFlush(changed);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeExpiresAt() {
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+				"generic_https",
+				"",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
+
+			final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2040-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+			final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+			final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+
+			final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+			final ServiceInstance changed = new ServiceInstance(
+					"TemperatureManager|temperatureManagement|5.1.0",
+					system,
+					serviceDefinition,
+					"5.1.0",
+					ZonedDateTime.of(2040, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")), // expiration should be changed after update
+					"{\r\n  \"indoor\" : true\r\n}");
+
+			final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+			final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
+			final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+			when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+			when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
+			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
+			when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+			when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(changed, List.of(instanceInterface)));
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+
+			assertEquals(expected, actual);
+			verify(serviceInstanceRepo).saveAndFlush(changed);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeInterfaceNotExistingTemplateButRestrictedPolicyThrowsInvalidParameterException() {
+
+		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.RESTRICTED);
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+			"generic_http",
+			"http",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.empty());
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
+		assertEquals("Interface template does not exist: generic_http", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeInterfaceNotExistingTemplateExtendablePolicy() {
+
+		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+			"generic_https",
+			"https",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		final ServiceInterfaceTemplate newTemplate = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(newTemplate, "accessPort", true, null);
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, newTemplate, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInterfaceTemplatePropsRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(existing, List.of(instanceInterface)));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+
+		assertEquals(expected, actual);
+		final InOrder inOrderTemplate = Mockito.inOrder(serviceInterfaceTemplateRepo);
+		final InOrder inOrderTemplateProps = Mockito.inOrder(serviceInterfaceTemplatePropsRepo);
+		final InOrder inOrderInterface = Mockito.inOrder(serviceInstanceInterfaceRepo);
+
+		inOrderTemplate.verify(serviceInterfaceTemplateRepo).save(newTemplate);
+		inOrderTemplate.verify(serviceInterfaceTemplateRepo).flush();
+
+		inOrderTemplateProps.verify(serviceInterfaceTemplatePropsRepo).saveAll(List.of(property));
+		inOrderTemplateProps.verify(serviceInterfaceTemplatePropsRepo).flush();
+
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).deleteAllByServiceInstance(existing);
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).saveAll(List.of(instanceInterface));
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeInterfaceNotExistingTemplateOpenPolicy() {
+
+		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+			"generic_https",
+			"https",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		final ServiceInterfaceTemplate newTemplate = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, newTemplate, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(existing, List.of(instanceInterface)));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+
+		assertEquals(expected, actual);
+		final InOrder inOrderTemplate = Mockito.inOrder(serviceInterfaceTemplateRepo);
+		final InOrder inOrderInterface = Mockito.inOrder(serviceInstanceInterfaceRepo);
+
+		inOrderTemplate.verify(serviceInterfaceTemplateRepo).save(newTemplate);
+		inOrderTemplate.verify(serviceInterfaceTemplateRepo).flush();
+
+		verify(serviceInterfaceTemplatePropsRepo, never()).saveAll(any());
+
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).deleteAllByServiceInstance(existing);
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).saveAll(List.of(instanceInterface));
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeInterfaceExistingTemplateButDifferentProtocolThrowsInvalidParameterException() {
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+			"generic_https",
+			"http",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+		final ServiceInterfaceTemplate existingTemplate = new ServiceInterfaceTemplate("generic_https", "https");
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(existingTemplate));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
+
+		assertEquals("Interface has different protocol than generic_https template", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeInterfaceExistingTemplateButMandatoryPropertyMissingThrowsInvalidParameterException() {
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO1 = new ServiceInstanceInterfaceRequestDTO(
+			"generic_https",
+			"https",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO2 = new ServiceInstanceInterfaceRequestDTO(
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of());
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+			"TemperatureManager1|temperatureManagement|5.1.0",
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(requestDTO1, requestDTO2));
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", true, null);
+
+		final System system1 = new System("TemperatureManager1", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition1 = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing1 = new ServiceInstance(
+				"TemperatureManager1|temperatureManagement|5.1.0",
+				system1,
+				serviceDefinition1,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager1|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing1));
+		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
+		when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
+		assertEquals("Mandatory interface property is missing: accessPort", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkChangeInterfaceExistingTemplateOk() {
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+			"generic_https",
+			"",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+			"TemperatureManager|temperatureManagement|5.1.0",
+			"2030-11-04T01:53:02Z",
+			Map.of("indoor", true),
+			List.of(requestDTO));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+			"TemperatureManager|temperatureManagement|5.1.0",
+			system,
+			serviceDefinition,
+			"5.1.0",
+			ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+			"{\r\n  \"indoor\" : true\r\n}");
+
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
+		when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
+		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(existing, List.of(instanceInterface)));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+
+		assertEquals(expected, actual);
+		final InOrder inOrderInterface = Mockito.inOrder(serviceInstanceInterfaceRepo);
+
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).deleteAllByServiceInstance(existing);
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).saveAll(List.of(instanceInterface));
+		inOrderInterface.verify(serviceInstanceInterfaceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkThrowsInternalServerError() {
+
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of());
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateBulk(List.of(dto)));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
 }
