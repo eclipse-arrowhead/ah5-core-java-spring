@@ -18,7 +18,9 @@ package eu.arrowhead.serviceregistry.jpa.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -1326,5 +1328,101 @@ public class ServiceInstanceDbServiceTest {
 		final InOrder inOrder = Mockito.inOrder(serviceInstanceRepo);
 		inOrder.verify(serviceInstanceRepo).deleteAllById(eq(Set.of(existing.getId())));
 		inOrder.verify(serviceInstanceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageByFiltersThrowsException() {
+
+		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
+
+		when(serviceInstanceRepo.findAll()).thenThrow(new InternalServerError("test error"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getPageByFilters(
+			pageRequest,
+			new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, null))));
+
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdExistingInstance() {
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2010, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+
+		final boolean answer = service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0");
+		assertTrue(answer);
+		final InOrder inOrder = Mockito.inOrder(serviceInstanceRepo);
+		inOrder.verify(serviceInstanceRepo).delete(existing);
+		inOrder.verify(serviceInstanceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdNotExistingInstance() {
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.empty());
+		final boolean answer = service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0");
+		assertFalse(answer);
+		verify(serviceInstanceRepo, never()).delete(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdThrowsException() {
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("test error"));
+		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0"));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdsExistingInstance() {
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInstance existing = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2010, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+
+		service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0")));
+		final InOrder inOrder = Mockito.inOrder(serviceInstanceRepo);
+		inOrder.verify(serviceInstanceRepo).delete(existing);
+		inOrder.verify(serviceInstanceRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdsNotExistingInstance() {
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.empty());
+		service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0")));
+		verify(serviceInstanceRepo, never()).delete(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdsThrowsException() {
+
+		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("test error"));
+		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0"))));
+		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
 }
