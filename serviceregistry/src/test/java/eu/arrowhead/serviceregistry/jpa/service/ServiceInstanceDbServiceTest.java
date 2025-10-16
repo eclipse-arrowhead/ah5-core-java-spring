@@ -1377,7 +1377,7 @@ public class ServiceInstanceDbServiceTest {
 
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
 
-		when(serviceInstanceRepo.findAll()).thenThrow(new InternalServerError("test error"));
+		when(serviceInstanceRepo.findAll(eq(pageRequest))).thenThrow(new InternalServerError("test error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getPageByFilters(
 			pageRequest,
 			new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, null))));
