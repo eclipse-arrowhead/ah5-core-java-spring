@@ -168,7 +168,7 @@ public class DTOConverter {
 		Assert.notNull(entity, "entity is null");
 		Assert.notNull(entity.getLeft(), "the System in the triplet is null");
 		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the system address list in the triplet is null");
-		Assert.isTrue(entity.getRight() == null || entity.getRight().getValue() != null && !Utilities.isEmpty(entity.getRight().getValue()), "the device address list in the triplet is null or empty");
+		Assert.isTrue(entity.getRight() == null || !Utilities.isEmpty(entity.getRight().getValue()), "the device address list in the triplet is null or empty");
 
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
