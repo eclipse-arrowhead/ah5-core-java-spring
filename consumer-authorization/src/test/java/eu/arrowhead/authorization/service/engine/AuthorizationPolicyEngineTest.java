@@ -45,7 +45,6 @@ import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.service.AuthorizationPolicyDbService;
 import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
-import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.dto.AddressDTO;
