@@ -586,7 +586,7 @@ public class ServiceInstanceDbServiceTest {
 				Map.of("indoor", true),
 				List.of());
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.empty());
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
 		assertEquals("Instance id does not exist: TemperatureManager|temperatureManagement|5.1.0", ex.getMessage());
 	}
@@ -631,8 +631,8 @@ public class ServiceInstanceDbServiceTest {
 			final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
 			when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
-			when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
-			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
+			when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
+			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(eq(template))).thenReturn(List.of(property));
 			when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 			when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 
@@ -683,8 +683,8 @@ public class ServiceInstanceDbServiceTest {
 			final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
 			when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
-			when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
-			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
+			when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
+			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(eq(template))).thenReturn(List.of(property));
 			when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 			when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 
@@ -723,8 +723,8 @@ public class ServiceInstanceDbServiceTest {
 				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
 				"{\r\n  \"indoor\" : true\r\n}");
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
-		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_http"))).thenReturn(Optional.empty());
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
 		assertEquals("Interface template does not exist: generic_http", ex.getMessage());
@@ -764,8 +764,8 @@ public class ServiceInstanceDbServiceTest {
 
 		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 		when(serviceInterfaceTemplatePropsRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
-		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.empty());
 		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 
 		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(existing, List.of(instanceInterface)));
@@ -819,8 +819,8 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, newTemplate, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
 		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
-		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.empty());
 		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 
 		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(existing, List.of(instanceInterface)));
@@ -867,8 +867,8 @@ public class ServiceInstanceDbServiceTest {
 				"{\r\n  \"indoor\" : true\r\n}");
 		final ServiceInterfaceTemplate existingTemplate = new ServiceInterfaceTemplate("generic_https", "https");
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
-		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(existingTemplate));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(existingTemplate));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
 
@@ -911,7 +911,7 @@ public class ServiceInstanceDbServiceTest {
 				"{\r\n  \"indoor\" : true\r\n}");
 
 		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager1|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing1));
-		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
 		when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateBulk(List.of(dto)));
@@ -949,7 +949,7 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
 		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
-		when(serviceInterfaceTemplateRepo.findByName(any())).thenReturn(Optional.of(template));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
 		when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(any())).thenReturn(List.of(property));
 		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
@@ -1125,7 +1125,7 @@ public class ServiceInstanceDbServiceTest {
 				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
-		when(serviceInstanceRepo.findAllByServiceInstanceIdIn(any())).thenReturn(List.of(existing));
+		when(serviceInstanceRepo.findAllByServiceInstanceIdIn(argThat(list -> list.contains("TemperatureManager|temperatureManagement|5.1.0")))).thenReturn(List.of(existing));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
 		when(serviceInstanceRepo.findAllByIdIn(eq(Set.of(existing.getId())), any())).thenReturn(new PageImpl<>(List.of(existing)));
 
@@ -1228,7 +1228,7 @@ public class ServiceInstanceDbServiceTest {
 		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<>(List.of(), pageRequest, 0);
 
 		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
-		when(serviceInstanceRepo.findAllByServiceInstanceIdIn(any())).thenReturn(List.of(existing));
+		when(serviceInstanceRepo.findAllByServiceInstanceIdIn(argThat(list -> list.contains("TemperatureManager|temperatureManagement|5.1.0")))).thenReturn(List.of(existing));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
 		when(serviceInstanceRepo.findAllByIdIn(eq(new HashSet<>()), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
 
@@ -1311,7 +1311,7 @@ public class ServiceInstanceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testGetPageByFiltersByAlivesAtButItIsNullInTheExistingEntity() {
+	public void testGetPageByFiltersByAlivesAtButExpirationIsNullInTheExistingEntity() {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
 		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
@@ -1328,11 +1328,12 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<>(List.of(), pageRequest, 0);
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
+				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
-		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
+		when(serviceInstanceRepo.findAllByIdIn(eq(Set.of(existing.getId())), any())).thenReturn(new PageImpl<>(List.of(existing), pageRequest, 1));
 
 		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
 				pageRequest,
@@ -1356,7 +1357,7 @@ public class ServiceInstanceDbServiceTest {
 
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
 
-		when(serviceInstanceRepo.findAllByServiceDefinition_NameIn(any())).thenReturn(List.of(existing));
+		when(serviceInstanceRepo.findAllByServiceDefinition_NameIn(argThat(list -> list.contains("temperatureManagement")))).thenReturn(List.of(existing));
 		when(serviceInstanceRepo.findAllByIdIn(eq(Set.of()), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
 
 		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual =
@@ -1398,7 +1399,7 @@ public class ServiceInstanceDbServiceTest {
 				ZonedDateTime.of(2010, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
 				"{\r\n  \"indoor\" : true\r\n}");
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
 
 		final boolean answer = service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0");
 		assertTrue(answer);
@@ -1411,7 +1412,7 @@ public class ServiceInstanceDbServiceTest {
 	@Test
 	public void testDeleteByInstanceIdNotExistingInstance() {
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.empty());
 		final boolean answer = service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0");
 		assertFalse(answer);
 		verify(serviceInstanceRepo, never()).delete(any());
@@ -1421,7 +1422,7 @@ public class ServiceInstanceDbServiceTest {
 	@Test
 	public void testDeleteByInstanceIdThrowsException() {
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("test error"));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenThrow(new InternalServerError("test error"));
 		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0"));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
@@ -1440,7 +1441,7 @@ public class ServiceInstanceDbServiceTest {
 				ZonedDateTime.of(2010, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
 				"{\r\n  \"indoor\" : true\r\n}");
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.of(existing));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
 
 		service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0")));
 		final InOrder inOrder = Mockito.inOrder(serviceInstanceRepo);
@@ -1452,7 +1453,7 @@ public class ServiceInstanceDbServiceTest {
 	@Test
 	public void testDeleteByInstanceIdsNotExistingInstance() {
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenReturn(Optional.empty());
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.empty());
 		service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0")));
 		verify(serviceInstanceRepo, never()).delete(any());
 	}
@@ -1461,7 +1462,7 @@ public class ServiceInstanceDbServiceTest {
 	@Test
 	public void testDeleteByInstanceIdsThrowsInternalServerError() {
 
-		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("test error"));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenThrow(new InternalServerError("test error"));
 		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0"))));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
