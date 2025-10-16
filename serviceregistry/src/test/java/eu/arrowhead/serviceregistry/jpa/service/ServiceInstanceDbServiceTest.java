@@ -521,6 +521,46 @@ public class ServiceInstanceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testCreateBulkIntfProtocolIsNull() {
+
+		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
+
+		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
+			"generic_https",
+			"",
+			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+			Map.of("accessPort", 4041));
+
+		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
+				"TemperatureManager",
+				"temperatureManagement",
+				"5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
+
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInstance instance = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0", system, serviceDefinition, "5.1.0", ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")), "{\r\n  \"indoor\" : true\r\n}");
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(instance, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+
+		when(systemRepo.findAllByNameIn(any())).thenReturn(List.of(system));
+		when(serviceDefinitionRepo.findAllByNameIn(any())).thenReturn(List.of(serviceDefinition));
+		when(serviceInterfaceTemplateRepo.findAllByNameIn(any())).thenReturn(List.of(template));
+		when(serviceInstanceRepo.saveAllAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceInterfaceRepo.saveAllAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(instance, List.of(instanceInterface)));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.createBulk(List.of(dto));
+
+		assertEquals(expected, actual);
+
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testCreateBulkNotRestricedIntfPolicyThrowsInternalServerError() {
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
@@ -1419,7 +1459,7 @@ public class ServiceInstanceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testDeleteByInstanceIdsThrowsException() {
+	public void testDeleteByInstanceIdsThrowsInternalServerError() {
 
 		when(serviceInstanceRepo.findByServiceInstanceId(any())).thenThrow(new InternalServerError("test error"));
 		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0"))));

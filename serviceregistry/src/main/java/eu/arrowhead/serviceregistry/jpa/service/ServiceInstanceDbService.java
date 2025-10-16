@@ -284,15 +284,7 @@ public class ServiceInstanceDbService {
 		logger.debug("deleteByInstanceIds started");
 		Assert.isTrue(!Utilities.isEmpty(serviceInstanceIds), "serviceInstanceId list is empty");
 
-		try {
-			serviceInstanceIds.forEach(id -> deleteByInstanceId(id));
-		} catch (final InternalServerError ex) {
-			throw ex;
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Database operation error");
-		}
+		serviceInstanceIds.forEach(id -> deleteByInstanceId(id));
 	}
 
 	//=================================================================================================
@@ -374,14 +366,14 @@ public class ServiceInstanceDbService {
 				// Need to validate the properties if the template was created in this bulk operation (only in case of EXTENDABLE policy)
 				if (templatesCreated.contains(interfaceCandidate.templateName()) && sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
 					serviceInterfaceTemplatePropsRepo.findByServiceInterfaceTemplate(interfaceTemplateCache.get(interfaceCandidate.templateName())).forEach(templateProp -> {
+						// each newly created property is mandatory
 						if (!interfaceCandidate.properties().containsKey(templateProp.getPropertyName())) {
 							throw new InvalidParameterException("Mandatory interface property is missing: " + templateProp.getPropertyName());
 						}
 					});
 				}
 
-				Assert.isTrue(!Utilities.isEmpty(interfaceCandidate.protocol()), "Interface candidate protocol is null");
-				if (!interfaceTemplateCache.get(interfaceCandidate.templateName()).getProtocol().equalsIgnoreCase(interfaceCandidate.protocol())) {
+				if (!Utilities.isEmpty(interfaceCandidate.protocol()) && !interfaceTemplateCache.get(interfaceCandidate.templateName()).getProtocol().equalsIgnoreCase(interfaceCandidate.protocol())) {
 					throw new InvalidParameterException("Interface has different protocol than " + interfaceCandidate.templateName() + " template");
 				}
 
