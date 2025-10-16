@@ -497,6 +497,8 @@ public class ServiceInstanceDbService {
 
 				boolean matching = true;
 
+				// Match against to service instance id requirements -> already happened in the BaseFilter if needed
+
 				// Match against to provider name requirements
 				if (baseFilter != BaseFilter.SYSTEM_NAME && !Utilities.isEmpty(filters.getProviderNames()) && !filters.getProviderNames().contains(serviceCandidate.getSystem().getName())) {
 					matching = false;

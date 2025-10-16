@@ -202,7 +202,7 @@ public class SystemDiscoveryService {
 		final String existingName = existing.getRight() == null ? null : existing.getRight().getKey().getName();
 		final String dtoName = dto.deviceName();
 
-		if ((existingName == null && dtoName != null) || (existingName != null && dtoName == null)) {
+		if ((existingName == null && dtoName != null) || existingName != null && dtoName == null) {
 			throw new InvalidParameterException("System with name: " + existingSystem.getName() + " already exists, but provided device name is not matching");
 		}
 

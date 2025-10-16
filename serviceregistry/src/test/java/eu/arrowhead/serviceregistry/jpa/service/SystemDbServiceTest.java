@@ -706,7 +706,7 @@ public class SystemDbServiceTest {
 
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
 		when(systemRepo.findAll()).thenReturn(List.of(system));
-		when(systemRepo.findAllByNameIn(any(), any())).thenReturn(new PageImpl<>(List.of()));
+		when(systemRepo.findAllByNameIn(eq(List.of()), any())).thenReturn(new PageImpl<>(List.of()));
 		when(systemAddressRepo.findAllBySystemIn(any())).thenReturn(List.of());
 		when(deviceSystemConnectorRepo.findBySystem(any())).thenReturn(Optional.empty());
 		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());

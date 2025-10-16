@@ -320,7 +320,7 @@ public class SystemDbService {
 
 						if (!Utilities.isEmpty(deviceNames)) {
 							final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
-							if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
+							if (connection.isEmpty() || !deviceNames.contains(connection.get().getDevice().getName())) {
 								continue;
 							}
 						}
