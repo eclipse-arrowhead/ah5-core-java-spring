@@ -103,6 +103,7 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 import eu.arrowhead.serviceregistry.service.validation.ManagementValidation;
 
+@SuppressWarnings("checkstyle:magicnumber")
 @ExtendWith(MockitoExtension.class)
 public class ManagementServiceTest {
 

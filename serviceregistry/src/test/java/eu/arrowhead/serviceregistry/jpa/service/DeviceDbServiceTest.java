@@ -162,6 +162,7 @@ public class DeviceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	@SuppressWarnings("checkstyle:magicnumber")
 	public void testGetPageEmptyFiltersOnly() {
 
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");

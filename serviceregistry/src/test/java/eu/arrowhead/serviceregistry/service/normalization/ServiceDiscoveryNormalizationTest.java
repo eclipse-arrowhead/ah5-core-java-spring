@@ -37,6 +37,7 @@ import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 
+@SuppressWarnings("checkstyle:magicnumber")
 @ExtendWith(MockitoExtension.class)
 public class ServiceDiscoveryNormalizationTest {
 

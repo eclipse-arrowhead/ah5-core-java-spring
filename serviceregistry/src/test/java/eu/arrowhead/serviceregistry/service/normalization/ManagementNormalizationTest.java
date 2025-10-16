@@ -76,6 +76,7 @@ import eu.arrowhead.serviceregistry.service.dto.NormalizedDeviceRequestDTO;
 import eu.arrowhead.serviceregistry.service.dto.NormalizedSystemRequestDTO;
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceNormalizer;
 
+@SuppressWarnings("checkstyle:magicnumber")
 @ExtendWith(MockitoExtension.class)
 public class ManagementNormalizationTest {
 
@@ -547,7 +548,7 @@ public class ManagementNormalizationTest {
 
 				final ServiceInterfaceTemplateQueryRequestDTO normalized =  assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto));
 				assertEquals(expected, normalized);
-				utilitiesMock.verify(() -> Utilities.isEmpty((List<String>)null), times(2));
+				utilitiesMock.verify(() -> Utilities.isEmpty((List<String>) null), times(2));
 			},
 
 			// dto is null
@@ -601,8 +602,8 @@ public class ManagementNormalizationTest {
 
     	// mock common cases
     	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((String)null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>)null)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
     	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
     }
 

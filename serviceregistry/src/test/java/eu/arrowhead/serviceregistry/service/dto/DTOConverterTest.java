@@ -74,6 +74,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.jpa.entity.SystemAddress;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public class DTOConverterTest {
 
 	//=================================================================================================

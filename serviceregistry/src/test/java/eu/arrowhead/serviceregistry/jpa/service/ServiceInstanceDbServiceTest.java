@@ -78,6 +78,7 @@ import eu.arrowhead.serviceregistry.jpa.entity.System;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
+@SuppressWarnings("checkstyle:magicnumber")
 @ExtendWith(MockitoExtension.class)
 public class ServiceInstanceDbServiceTest {
 

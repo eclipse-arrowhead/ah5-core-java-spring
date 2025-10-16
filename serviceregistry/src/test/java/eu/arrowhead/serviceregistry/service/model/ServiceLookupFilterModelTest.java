@@ -23,6 +23,7 @@ import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public class ServiceLookupFilterModelTest {
 
 	//=================================================================================================
@@ -79,7 +80,7 @@ public class ServiceLookupFilterModelTest {
 	public void testConstructorEverythingIsEmpty() {
 		try (MockedStatic<Utilities> utilitiesMock = Mockito.mockStatic(Utilities.class)) {
 
-			utilitiesMock.when(() -> Utilities.isEmpty((List<?>)null)).thenReturn(true);
+			utilitiesMock.when(() -> Utilities.isEmpty((List<?>) null)).thenReturn(true);
 
 			final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, null);
 			final ServiceLookupFilterModel model = new ServiceLookupFilterModel(dto);
@@ -95,7 +96,7 @@ public class ServiceLookupFilterModelTest {
 					() -> assertEquals(List.of(), model.getInterfacePropertyRequirementsList()),
 					() -> assertEquals(Set.of(), model.getPolicies())
 				);
-			utilitiesMock.verify(() -> Utilities.isEmpty((List<?>)any()), times(9));
+			utilitiesMock.verify(() -> Utilities.isEmpty((List<?>) any()), times(9));
 		}
 	}
 

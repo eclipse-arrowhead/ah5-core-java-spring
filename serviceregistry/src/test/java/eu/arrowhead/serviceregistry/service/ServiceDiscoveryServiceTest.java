@@ -72,6 +72,7 @@ import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 import eu.arrowhead.serviceregistry.service.validation.ServiceDiscoveryValidation;
 
+@SuppressWarnings("checkstyle:magicnumber")
 @ExtendWith(MockitoExtension.class)
 public class ServiceDiscoveryServiceTest {
 
