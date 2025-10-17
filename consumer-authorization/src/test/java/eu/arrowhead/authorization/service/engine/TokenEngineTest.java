@@ -14,7 +14,7 @@
  *  	Arrowhead Consortia - conceptualization
  *
  *******************************************************************************/
-package eu.arrowhead.authorization.engine;
+package eu.arrowhead.authorization.service.engine;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,8 +78,6 @@ import eu.arrowhead.authorization.jpa.service.TimeLimitedTokenDbService;
 import eu.arrowhead.authorization.jpa.service.TokenHeaderDbService;
 import eu.arrowhead.authorization.jpa.service.UsageLimitedTokenDbService;
 import eu.arrowhead.authorization.service.dto.SelfContainedTokenPayload;
-import eu.arrowhead.authorization.service.engine.TokenEngine;
-import eu.arrowhead.authorization.service.engine.TokenGenerator;
 import eu.arrowhead.authorization.service.model.TokenModel;
 import eu.arrowhead.authorization.service.utils.SecretCryptographer;
 import eu.arrowhead.common.Utilities;

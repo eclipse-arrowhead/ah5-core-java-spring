@@ -616,7 +616,7 @@ public class AuthorizationTokenManagementValidationTest {
 
 		assertEquals("Invalid token type: invalid", ex.getMessage());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeQueryTokensRequestNotOfferableTokenType() {
@@ -827,7 +827,7 @@ public class AuthorizationTokenManagementValidationTest {
 
 		assertEquals(request, result);
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeQueryTokensRequestOk5() {

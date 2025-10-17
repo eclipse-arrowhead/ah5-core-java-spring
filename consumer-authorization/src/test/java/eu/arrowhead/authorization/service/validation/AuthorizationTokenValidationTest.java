@@ -268,7 +268,7 @@ public class AuthorizationTokenValidationTest {
 
 		assertEquals("Token variant is invalid", ex.getMessage());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeGenerateRequestNotOfferableVariant() {
