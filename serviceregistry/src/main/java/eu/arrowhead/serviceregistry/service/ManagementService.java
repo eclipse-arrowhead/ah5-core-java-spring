@@ -160,7 +160,8 @@ public class ManagementService {
 					pageRequest,
 					normalized.deviceNames(),
 					normalized.addresses(),
-					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
+					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
+					normalized.metadataRequirementList());
 
 			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(page, page.getTotalElements());
 		} catch (final InternalServerError ex) {

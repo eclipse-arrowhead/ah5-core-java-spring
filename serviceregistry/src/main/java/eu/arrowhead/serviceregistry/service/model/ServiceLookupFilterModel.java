@@ -71,6 +71,7 @@ public class ServiceLookupFilterModel {
 		}
 
 		alivesAt = Utilities.parseUTCStringToZonedDateTime(dto.alivesAt());
+
 		if (!Utilities.isEmpty(dto.metadataRequirementsList())) {
 			metadataRequirementsList.addAll(dto.metadataRequirementsList());
 		}

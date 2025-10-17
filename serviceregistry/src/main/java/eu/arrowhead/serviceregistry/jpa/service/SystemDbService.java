@@ -106,7 +106,7 @@ public class SystemDbService {
 
 			// writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
-			if (deviceSystemConnectorEntities != null) {
+			if (!Utilities.isEmpty(deviceSystemConnectorEntities)) {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
@@ -317,14 +317,10 @@ public class SystemDbService {
 						}
 
 						// device names
-						if (!Utilities.isEmpty(deviceNames) && deviceSystemConnectorRepo.findBySystem(system).isPresent()
-								&& !deviceNames.contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
-							continue;
-						}
 
 						if (!Utilities.isEmpty(deviceNames)) {
 							final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
-							if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
+							if (connection.isEmpty() || !deviceNames.contains(connection.get().getDevice().getName())) {
 								continue;
 							}
 						}
