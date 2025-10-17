@@ -84,7 +84,7 @@ public class DeviceDiscoveryService {
 
 				if (!Utilities.isEmpty(existing.getMetadata()) || !Utilities.isEmpty(normalized.metadata())) {
 					if ((!Utilities.isEmpty(existing.getMetadata()) && Utilities.isEmpty(normalized.metadata()))
-							|| (Utilities.isEmpty(existing.getMetadata()) && !Utilities.isEmpty(normalized.metadata()))) {
+							|| Utilities.isEmpty(existing.getMetadata())) {
 						throw new InvalidParameterException("Device with name '" + normalized.name() + "' already exists, but provided metadata is not matching");
 					}
 

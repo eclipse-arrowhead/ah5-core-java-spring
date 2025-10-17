@@ -96,6 +96,7 @@ import eu.arrowhead.serviceregistry.service.normalization.ManagementNormalizatio
 import eu.arrowhead.serviceregistry.service.validation.interf.InterfaceValidator;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("checkstyle:FileLength")
 public class ManagementValidationTest {
 
 	//=================================================================================================
