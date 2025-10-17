@@ -107,8 +107,8 @@ public class DTOConverter {
 		logger.debug("convertPolicyToResponse started...");
 		Assert.notNull(level, "level is null");
 		Assert.notNull(entities, "entities is null");
-		Assert.notNull(entities.getFirst(), "header is null");
 		Assert.isTrue(!Utilities.isEmpty(entities.getSecond()), "list is missing");
+		Assert.isTrue(!Utilities.containsNull(entities.getSecond()), "list contains null element");
 
 		final AuthPolicyHeader header = entities.getFirst();
 		final List<AuthPolicy> policies = entities.getSecond();
@@ -144,6 +144,7 @@ public class DTOConverter {
 	public AuthorizationPolicyDTO convertAuthPolicyToDTO(final AuthPolicy policy) {
 		logger.debug("convertAuthPolicyToDTO started...");
 		Assert.notNull(policy, "policy is null");
+		Assert.notNull(policy.getPolicyType(), "policy type is null");
 
 		List<String> list = null;
 		MetadataRequirementDTO metadataRequirement = null;
