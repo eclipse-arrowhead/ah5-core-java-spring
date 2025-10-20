@@ -38,7 +38,7 @@ public final class SimpleServiceOrchestrationConstants {
 	public static final String FIELD_INTF_ADDRESS_TYPES = " interfaceAddressTypes,";
 	public static final String FIELD_INTF_PROP_REQ = " interfacePropertyRequirements,";
 	public static final String FIELD_SECURITY_POLICIES = " securityPolicies,";
-	public static final String FIELD_PREFFERED_PROVIDERS = " preferredProviders,";-
+	public static final String FIELD_PREFFERED_PROVIDERS = " preferredProviders,";
 	public static final String FIELD_QOS_REQ = " qosRequirements,";
 	public static final String FIELD_EXCLUSIVITY_DURATION = " exclusivityDuration,";
 
