@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
@@ -51,8 +67,16 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:ParameterNumberCheck")
-	public Subscription(final String ownerSystem, final String targetSystem, final String serviceDefinition,
-			final ZonedDateTime expiresAt, final String notifyProtocol, final String notifyProperties, final String orchestrationRequest) {
+	public Subscription(
+			final UUID id,
+			final String ownerSystem,
+			final String targetSystem,
+			final String serviceDefinition,
+			final ZonedDateTime expiresAt,
+			final String notifyProtocol,
+			final String notifyProperties,
+			final String orchestrationRequest) {
+		this.id = id;
 		this.ownerSystem = ownerSystem;
 		this.targetSystem = targetSystem;
 		this.serviceDefinition = serviceDefinition;
@@ -142,4 +166,13 @@ public class Subscription extends UnmodifiableUUIDArrowheadEntity {
 		this.orchestrationRequest = orchestrationRequest;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public void setCreatedAt(final ZonedDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="https://maven.apache.org/POM/4.0.0" xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>eu.arrowhead</groupId>
@@ -7,12 +7,19 @@
 		<version>${revision}</version>
 	</parent>
 	<artifactId>arrowhead-consumer-authorization</artifactId>
-	<version>5.0.0</version>
 	<packaging>jar</packaging>
-	<name>Arrowhead System Consumer Authorization</name>
-	<description>Arrowhead System Consumer Authorization using Spring Boot</description>
+	<name>Arrowhead System ConsumerAuthorization</name>
+	<description>Arrowhead System ConsumerAuthorization using Spring Boot</description>
 
-	<url>https://github.com/Aitia-IIOT/ah5-core-java-spring</url>
+	<url>https://github.com/eclipse-arrowhead/ah5-core-java-spring</url>
+	
+	<dependencies>
+		<dependency>
+		    <groupId>org.bitbucket.b_c</groupId>
+		    <artifactId>jose4j</artifactId>
+		    <version>0.9.6</version>
+		</dependency>
+	</dependencies>
 	
 	<build>
 	 	<plugins>

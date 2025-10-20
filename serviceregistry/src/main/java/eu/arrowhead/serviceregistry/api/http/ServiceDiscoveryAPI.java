@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.api.http;
 
 import org.apache.logging.log4j.LogManager;
@@ -102,9 +118,9 @@ public class ServiceDiscoveryAPI {
 	public @ResponseBody ServiceInstanceListResponseDTO lookup(
 			final HttpServletRequest httpServletRequest,
 			@RequestBody final ServiceInstanceLookupRequestDTO dto,
-			@Parameter(name = "verbose",
-					   description = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.)",
-					   example = "true") @RequestParam final boolean verbose) {
+			@Parameter(name = Constants.VERBOSE,
+					   description = "Set true if you want the response to contain the system and device details. (It should be configured in the Application properties as well.")
+			           @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;

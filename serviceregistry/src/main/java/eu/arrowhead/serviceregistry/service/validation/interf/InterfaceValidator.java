@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.validation.interf;
 
 import java.util.ArrayList;
@@ -23,7 +39,7 @@ import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor.AddressData;
 import eu.arrowhead.common.service.validation.address.AddressNormalizer;
 import eu.arrowhead.common.service.validation.address.AddressValidator;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
 import eu.arrowhead.dto.enums.AddressType;
@@ -41,7 +57,7 @@ public class InterfaceValidator {
 	private ServiceInterfaceTemplateDbService interfaceTemplateDbService;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
 
 	@Autowired
 	private PropertyValidators interfacePropertyValidator;
@@ -61,17 +77,14 @@ public class InterfaceValidator {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<ServiceInstanceInterfaceRequestDTO> validateNormalizedInterfaceInstancesWithPropsNormalization(final List<ServiceInstanceInterfaceRequestDTO> interfaces) throws InvalidParameterException {
+	public List<ServiceInstanceInterfaceRequestDTO> validateNormalizedInterfaceInstancesWithPropsNormalization(final List<ServiceInstanceInterfaceRequestDTO> interfaces)
+			throws InvalidParameterException {
 		logger.debug("validateNormalizedInterfaceInstances started...");
 		Assert.isTrue(!Utilities.isEmpty(interfaces), "Interface instance list is empty");
 
 		final List<ServiceInstanceInterfaceRequestDTO> normalized = new ArrayList<>(interfaces.size());
 		interfaces.forEach(interfaceInstance -> {
-			nameValidator.validateName(interfaceInstance.templateName());
-
-			if (interfaceInstance.templateName().length() > Constants.INTERFACE_TEMPLATE_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Interface template name is too long");
-			}
+			interfaceTemplateNameValidator.validateInterfaceTemplateName(interfaceInstance.templateName());
 
 			final Optional<ServiceInterfaceTemplate> templateOpt = interfaceTemplateDbService.getByName(interfaceInstance.templateName());
 			if (templateOpt.isEmpty()) { // no existing template
@@ -98,6 +111,8 @@ public class InterfaceValidator {
 				}
 
 				final Map<String, Object> normalizedProperties = new HashMap<>(interfaceInstance.properties());
+				boolean addressesDiscovered = false;
+
 				interfaceTemplateDbService.getPropertiesByTemplateName(interfaceInstance.templateName())
 						.forEach(templateProp -> {
 							final Object instanceProp = interfaceInstance.properties().get(templateProp.getPropertyName());
@@ -107,17 +122,22 @@ public class InterfaceValidator {
 							}
 
 							if (instanceProp != null && !Utilities.isEmpty(templateProp.getValidator())) {
-								final String[] validatorWithArgs = templateProp.getValidator().split("\\" + ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER);
+								final String[] validatorWithArgs = templateProp.getValidator().split(ServiceRegistryConstants.INTERFACE_PROPERTY_VALIDATOR_DELIMITER_REGEXP);
 								final PropertyValidatorType propertyValidatorType = PropertyValidatorType.valueOf(validatorWithArgs[0]);
-								if (propertyValidatorType != PropertyValidatorType.NOT_EMPTY_ADDRESS_LIST) {
+
+								// discover addresses, if it is not done already and the current validator won't do that
+								if (!addressesDiscovered && propertyValidatorType != PropertyValidatorType.NOT_EMPTY_ADDRESS_LIST) {
 									discoverAndNormalizeAndValidateAddressProperty(interfaceInstance.properties());
 								}
+
 								final IPropertyValidator validator = interfacePropertyValidator.getValidator(propertyValidatorType);
 								if (validator != null) {
 									final Object normalizedProp = validator.validateAndNormalize(
 											instanceProp,
 											validatorWithArgs.length <= 1 ? new String[0] : Arrays.copyOfRange(validatorWithArgs, 1, validatorWithArgs.length));
 									normalizedProperties.put(templateProp.getPropertyName(), normalizedProp);
+								} else {
+									logger.info("The validator belonging to the interface template property is not implemented: " + propertyValidatorType.name());
 								}
 							}
 						});
@@ -134,11 +154,7 @@ public class InterfaceValidator {
 		Assert.isTrue(!Utilities.isEmpty(templates), "Interface template list is empty");
 
 		templates.forEach(template -> {
-			nameValidator.validateName(template.name());
-
-			if (template.name().length() > Constants.INTERFACE_TEMPLATE_NAME_MAX_LENGTH) {
-				throw new InvalidParameterException("Interface template name is too long");
-			}
+			interfaceTemplateNameValidator.validateInterfaceTemplateName(template.name());
 
 			if (template.protocol().length() > Constants.INTERFACE_TEMPLATE_PROTOCOL_MAX_LENGTH) {
 				throw new InvalidParameterException("Interface protocol is too long");

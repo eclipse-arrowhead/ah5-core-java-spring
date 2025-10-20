@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.model;
 
 import java.util.ArrayList;
@@ -27,7 +43,13 @@ public class OrchestrationJobFilter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationJobFilter(final List<UUID> ids, final List<OrchestrationJobStatus> statuses, final OrchestrationType type, final List<String> requesterSystems, final List<String> targetSystems, final List<String> serviceDefinitions,
+	public OrchestrationJobFilter(
+			final List<UUID> ids,
+			final List<OrchestrationJobStatus> statuses,
+			final OrchestrationType type,
+			final List<String> requesterSystems,
+			final List<String> targetSystems,
+			final List<String> serviceDefinitions,
 			final List<String> subscriptionIds) {
 		this.ids = ids;
 		this.statuses = statuses;
@@ -69,6 +91,7 @@ public class OrchestrationJobFilter {
 		if (!Utilities.isEmpty(serviceDefinitions)) {
 			return BaseFilter.SERVICE;
 		}
+
 		return BaseFilter.NONE;
 	}
 
@@ -109,5 +132,4 @@ public class OrchestrationJobFilter {
 	public List<String> getSubscriptionIds() {
 		return subscriptionIds;
 	}
-
 }

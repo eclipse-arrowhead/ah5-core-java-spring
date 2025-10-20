@@ -73,5 +73,50 @@
     "name": "disable.hostname.verifier",
     "type": "java.lang.Boolean",
     "description": "A description for 'disable.hostname.verifier'"
+  },
+  {
+    "name": "normalization.mode",
+    "type": "eu.arrowhead.common.service.normalization.NormalizationMode",
+    "description": "A description for 'normalization.mode'"
+  },
+  {
+    "name": "token.max.age",
+    "type": "java.lang.Integer",
+    "description": "A description for 'token.max.age'"
+  },
+  {
+    "name": "token.time.limit",
+    "type": "java.lang.Integer",
+    "description": "A description for 'token.time.limit'"
+  },
+  {
+    "name": "simple.token.byte.size",
+    "type": "java.lang.Integer",
+    "description": "A description for 'simple.token.byte.size'"
+  },
+  {
+    "name": "simple.token.usage.limit",
+    "type": "java.lang.Integer",
+    "description": "A description for 'simple.token.usage.limit'"
+  },
+  {
+    "name": "secret.cryptographer.key",
+    "type": "java.lang.String",
+    "description": "A description for 'secret.cryptographer.key'"
+  },
+  {
+    "name": "unbounded.token.generation.whitelist",
+    "type": "java.util.List",
+    "description": "A description for 'unbounded.token.generation.whitelist'"
+  },
+  {
+    "name": "cleaner.job.interval",
+    "type": "java.lang.Long",
+    "description": "A description for 'cleaner.job.interval'"
+  },
+  {
+    "name": "blacklist.check.exclude.list",
+    "type": "java.util.List",
+    "description": "A description for 'blacklist.check.exclude.list'"
   }
 ]}

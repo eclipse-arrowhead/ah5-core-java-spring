@@ -1,6 +1,21 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.api.mqtt;
 
-import java.security.InvalidParameterException;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,6 +28,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
@@ -65,7 +81,11 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_LOOKUP:
 			final SystemLookupRequestDTO lookupDTO = readPayload(request.getPayload(), SystemLookupRequestDTO.class);
 			final Boolean verbose = Boolean.valueOf(request.getParams().get("verbose"));
-			responsePayload = lookup(lookupDTO, verbose);
+			responsePayload = lookup(
+					lookupDTO,
+					verbose != null
+						? verbose
+						: Boolean.valueOf(ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT));
 			break;
 
 		case Constants.SERVICE_OP_REVOKE:
@@ -86,7 +106,13 @@ public class SystemDiscoveryMqttHandler extends MqttTopicHandler {
 	private Pair<SystemResponseDTO, MqttStatus> register(final String identifiedRequester, final SystemRegisterRequestDTO dto) {
 		logger.debug("SystemDiscoveryMqttHandler.register started");
 
-		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(identifiedRequester, dto.metadata(), dto.version(), dto.addresses(), dto.deviceName()), baseTopic() + Constants.SERVICE_OP_REGISTER);
+		final Entry<SystemResponseDTO, Boolean> result = sdService.registerSystem(new SystemRequestDTO(
+				identifiedRequester,
+				dto.metadata(),
+				dto.version(),
+				dto.addresses(),
+				dto.deviceName()),
+				baseTopic() + Constants.SERVICE_OP_REGISTER);
 
 		return Pair.of(result.getKey(), result.getValue() ? MqttStatus.CREATED : MqttStatus.OK);
 	}

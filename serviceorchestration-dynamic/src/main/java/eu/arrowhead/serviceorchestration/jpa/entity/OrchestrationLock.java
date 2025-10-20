@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
@@ -61,6 +77,13 @@ public class OrchestrationLock {
 		this.expiresAt = expiresAt;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestrationLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = "
+				+ expiresAt + ", temporary = " + temporary + "]";
+	}
+
 	//=================================================================================================
 	// boilerplate
 
@@ -122,11 +145,5 @@ public class OrchestrationLock {
 	//-------------------------------------------------------------------------------------------------
 	public void setTemporary(final boolean temporary) {
 		this.temporary = temporary;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public String toString() {
-		return "OrchestrationLock [id = " + id + ", orchestrationJobId = " + orchestrationJobId + ", serviceInstanceId = " + serviceInstanceId + ", owner = " + owner + ", expiresAt = " + expiresAt + ", temporary = " + temporary + "]";
 	}
 }

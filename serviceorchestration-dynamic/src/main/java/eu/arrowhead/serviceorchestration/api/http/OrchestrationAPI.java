@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.http;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,6 +42,7 @@ import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -70,12 +88,13 @@ public class OrchestrationAPI {
 		logger.debug("pull started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH;
-
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
+
 		return orchService.pull(requesterSystem, dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:linelength")
 	@Operation(summary = "Returns a subscription id. Existing subscriptions will be overwritten.")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
@@ -92,13 +111,16 @@ public class OrchestrationAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@PostMapping(path = DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
-	public ResponseEntity<String> pushSubscribe(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSubscriptionRequestDTO dto) {
+	public ResponseEntity<String> pushSubscribe(
+			final HttpServletRequest httpServletRequest,
+			@RequestBody final OrchestrationSubscriptionRequestDTO dto,
+			@Parameter(name = DynamicServiceOrchestrationConstants.PARAM_NAME_TRIGGER, description = "Set to true in order to initiate a push orchestration after the successful subscription") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
 		logger.debug("pushSubscribe started...");
 
 		final String origin = HttpMethod.POST.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
-
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
-		final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, origin);
+		final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, trigger, origin);
+
 		return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
 	}
 
@@ -122,9 +144,9 @@ public class OrchestrationAPI {
 
 		final String origin = HttpMethod.DELETE.name() + " " + DynamicServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH
 				+ DynamicServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH.replace(DynamicServiceOrchestrationConstants.HTTP_PATH_PARAM_ID, id);
-
 		final String requesterSystem = sysNamePreprocessor.process(httpServletRequest, origin);
 		final boolean result = orchService.pushUnsubscribe(requesterSystem, id, origin);
+
 		return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
 	}
 }

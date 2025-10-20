@@ -1,6 +1,21 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.api.mqtt;
 
-import java.security.InvalidParameterException;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +29,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
@@ -92,7 +108,11 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_SYSTEM_QUERY:
 			final SystemQueryRequestDTO systemQueryDTO = readPayload(request.getPayload(), SystemQueryRequestDTO.class);
 			final Boolean systemQueryVerbose = Boolean.valueOf(request.getParams().get(Constants.VERBOSE));
-			responsePayload = systemQuery(systemQueryDTO, systemQueryVerbose);
+			responsePayload = systemQuery(
+					systemQueryDTO,
+					systemQueryVerbose != null
+						? systemQueryVerbose
+						: Boolean.valueOf(ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT));
 			break;
 
 		case Constants.SERVICE_OP_SYSTEM_CREATE:
@@ -132,7 +152,11 @@ public class ManagementMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_SERVICE_QUERY:
 			final ServiceInstanceQueryRequestDTO serviceInstanceQueryDTO = readPayload(request.getPayload(), ServiceInstanceQueryRequestDTO.class);
 			final Boolean serviceQueryVerbose = Boolean.valueOf(request.getParams().get(Constants.VERBOSE));
-			responsePayload = serviceInstanceQuery(serviceInstanceQueryDTO, serviceQueryVerbose);
+			responsePayload = serviceInstanceQuery(
+					serviceInstanceQueryDTO,
+					serviceQueryVerbose != null
+						? serviceQueryVerbose
+						: Boolean.valueOf(ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT));
 			break;
 
 		case Constants.SERVICE_OP_SERVICE_CREATE:

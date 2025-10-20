@@ -1,9 +1,26 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.matching;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import eu.arrowhead.dto.AddressDTO;
 
@@ -16,6 +33,9 @@ public class AddressMatching {
 	//-------------------------------------------------------------------------------------------------
 	// checks if the two list contain exactly the same addresses (the order does not matter)
 	public boolean isAddressListMatching(final List<AddressDTO> addresses1, final List<AddressDTO> addresses2) {
+		Assert.notNull(addresses1, "first parameter is null");
+		Assert.notNull(addresses2, "second parameter is null");
+
 		if (addresses1.size() != addresses2.size()) {
 			return false;
 		}

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.api.http;
 
 import java.util.Map.Entry;
@@ -101,9 +117,9 @@ public class SystemDiscoveryAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO lookup(@RequestBody(required = false) final SystemLookupRequestDTO dto,
-			@Parameter(name = "verbose",
-					   description = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)",
-					   example = "true") @RequestParam final boolean verbose) {
+			@Parameter(name = Constants.VERBOSE,
+					   description = "Set true if you want the response to contain device details. (It should be configured in the Application properties as well.)")
+					   @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("lookup started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_SYSTEM_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH;

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.ArrayList;
@@ -150,7 +166,7 @@ public class SystemDiscoveryService {
 	// throws exception, if the two systems doesn't have the same attributes
 	private void checkSameSystemAttributes(final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existing, final NormalizedSystemRequestDTO dto) {
 		logger.debug("checkSameSystemAttributes started");
-		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical!");
+		Assert.isTrue(existing.getLeft().getName().equals(dto.name()), "The systems are not identical");
 
 		final System existingSystem = existing.getLeft();
 
@@ -186,7 +202,7 @@ public class SystemDiscoveryService {
 		final String existingName = existing.getRight() == null ? null : existing.getRight().getKey().getName();
 		final String dtoName = dto.deviceName();
 
-		if ((existingName == null && dtoName != null) || existingName != null && dtoName == null) {
+		if ((existingName == null && dtoName != null) || (existingName != null && dtoName == null)) {
 			throw new InvalidParameterException("System with name: " + existingSystem.getName() + " already exists, but provided device name is not matching");
 		}
 

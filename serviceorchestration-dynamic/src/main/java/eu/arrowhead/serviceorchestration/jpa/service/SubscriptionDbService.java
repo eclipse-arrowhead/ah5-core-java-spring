@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.time.ZonedDateTime;
@@ -71,10 +87,12 @@ public class SubscriptionDbService {
 						Utilities.toJson(candidate.getOrchestrationForm().extractOrchestrationRequestDTO())));
 			}
 
-			subscriptionRepo.deleteAllById(toRemove);
+			if (!Utilities.isEmpty(toRemove)) {
+				subscriptionRepo.deleteAllById(toRemove);
+			}
 			subscriptionRepo.flush();
-			return subscriptionRepo.saveAllAndFlush(toSave);
 
+			return subscriptionRepo.saveAllAndFlush(toSave);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -89,7 +107,6 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findById(id);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -101,10 +118,10 @@ public class SubscriptionDbService {
 	public List<Subscription> get(final List<UUID> ids) {
 		logger.debug("get started..");
 		Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "subscription id list contains null element");
 
 		try {
 			return subscriptionRepo.findAllById(ids);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -117,10 +134,10 @@ public class SubscriptionDbService {
 		logger.debug("get started..");
 		Assert.isTrue(!Utilities.isEmpty(ownerSystem), "ownerSystem is empty");
 		Assert.isTrue(!Utilities.isEmpty(targetSystem), "targetSystem is empty");
+		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
 
 		try {
 			return subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(ownerSystem, targetSystem, serviceDefinition);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -134,7 +151,6 @@ public class SubscriptionDbService {
 
 		try {
 			return subscriptionRepo.findAll();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -150,6 +166,7 @@ public class SubscriptionDbService {
 		try {
 			BaseFilter baseFilter = BaseFilter.NONE;
 			List<Subscription> toFilter;
+
 			if (!Utilities.isEmpty(ownerSystems)) {
 				toFilter = subscriptionRepo.findByOwnerSystemIn(ownerSystems);
 				baseFilter = BaseFilter.OWNER;
@@ -168,7 +185,7 @@ public class SubscriptionDbService {
 				boolean matching = true;
 
 				if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(ownerSystems) && !ownerSystems.contains(subscription.getOwnerSystem())) {
-					matching = false;
+					matching = false; // cannot happen theoretically
 
 				} else if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(subscription.getTargetSystem())) {
 					matching = false;
@@ -183,7 +200,6 @@ public class SubscriptionDbService {
 			}
 
 			return subscriptionRepo.findByIdIn(matchingIds, pagination);
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -201,10 +217,11 @@ public class SubscriptionDbService {
 			if (subscriptionRepo.existsById(id)) {
 				subscriptionRepo.deleteById(id);
 				subscriptionRepo.flush();
+
 				return true;
 			}
-			return false;
 
+			return false;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -217,11 +234,11 @@ public class SubscriptionDbService {
 	public void deleteInBatch(final Collection<UUID> ids) {
 		logger.debug("deleteInBatch started..");
 		Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "subscription id list contains null element");
 
 		try {
 			subscriptionRepo.deleteAllByIdInBatch(ids);
 			subscriptionRepo.flush();
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -233,13 +250,14 @@ public class SubscriptionDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteInBatchByExpiredBefore(final ZonedDateTime time) {
 		logger.debug("deleteInBatchByExpiredBefore started...");
+		Assert.notNull(time, "time is null");
 
 		try {
 			final List<Subscription> toDelete = subscriptionRepo.findAllByExpiresAtBefore(time);
 			if (!Utilities.isEmpty(toDelete)) {
 				subscriptionRepo.deleteAllInBatch(toDelete);
+				subscriptionRepo.flush();
 			}
-
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);

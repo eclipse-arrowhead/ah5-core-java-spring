@@ -1,6 +1,22 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.jpa.entity;
 
-import eu.arrowhead.authorization.AuthorizationDefaults;
+import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
 import eu.arrowhead.dto.enums.AuthorizationPolicyType;
@@ -18,6 +34,8 @@ public class AuthPolicy {
 	//=================================================================================================
 	// members
 
+	public static final String LIST_POLICY_DELIMITER = ",";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
@@ -27,10 +45,10 @@ public class AuthPolicy {
 	private AuthorizationLevel level;
 
 	@Column(nullable = false)
-	private long headerId; // can't be a foreign key because it can references a record from one of two tables
+	private long headerId; // can't be a foreign key because it can reference a record from one of two tables
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String scope = AuthorizationDefaults.DEFAULT_SCOPE;
+	private String scope = Defaults.DEFAULT_AUTHORIZATION_SCOPE;
 
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)

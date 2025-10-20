@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.init;
 
 import java.util.Arrays;
@@ -55,9 +71,12 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 		logger.debug("initServiceInterfaceAddressTypeFilter started...");
 
 		final MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>(Map.of(Constants.SERVICE_OP_GET_CONFIG_REQ_PARAM, List.of(Constants.SERVICE_ADDRESS_ALIAS)));
-
-		final KeyValuesDTO srConfigDTO = arrowheadHttpService.consumeService(Constants.SERVICE_DEF_GENERAL_MANAGEMENT, Constants.SERVICE_OP_GET_CONFIG, Constants.SYS_NAME_SERVICE_REGISTRY, KeyValuesDTO.class, queryParams);
-
+		final KeyValuesDTO srConfigDTO = arrowheadHttpService.consumeService(
+				Constants.SERVICE_DEF_GENERAL_MANAGEMENT,
+				Constants.SERVICE_OP_GET_CONFIG,
+				Constants.SYS_NAME_SERVICE_REGISTRY,
+				KeyValuesDTO.class,
+				queryParams);
 		final String serviceAddressAliasListStr = srConfigDTO.map().get(Constants.SERVICE_ADDRESS_ALIAS);
 
 		if (!Utilities.isEmpty(serviceAddressAliasListStr)) {
@@ -65,5 +84,4 @@ public class DynamicServiceOrchestrationApplicationInitListener extends Applicat
 			serviceInterfaceAddressPropertyProcessor.setAddressAliasNames(serviceAddressAliasList.stream().map(alias -> alias.trim()).toList());
 		}
 	}
-
 }

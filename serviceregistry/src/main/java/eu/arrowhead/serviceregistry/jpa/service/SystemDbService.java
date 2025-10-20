@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.jpa.service;
 
 import java.util.ArrayList;
@@ -90,7 +106,7 @@ public class SystemDbService {
 
 			// writing the device-system connections to the database
 			final List<DeviceSystemConnector> deviceSystemConnectorEntities = createDeviceSystemConnectorEntities(candidates);
-			if (deviceSystemConnectorEntities != null) {
+			if (!Utilities.isEmpty(deviceSystemConnectorEntities)) {
 				deviceSystemConnectorRepo.saveAllAndFlush(deviceSystemConnectorEntities);
 			}
 
@@ -301,14 +317,10 @@ public class SystemDbService {
 						}
 
 						// device names
-						if (!Utilities.isEmpty(deviceNames) && deviceSystemConnectorRepo.findBySystem(system).isPresent()
-								&& !deviceNames.contains(deviceSystemConnectorRepo.findBySystem(system).get().getDevice().getName())) {
-							continue;
-						}
 
 						if (!Utilities.isEmpty(deviceNames)) {
 							final Optional<DeviceSystemConnector> connection = deviceSystemConnectorRepo.findBySystem(system);
-							if (connection.isPresent() && !deviceNames.contains(connection.get().getDevice().getName())) {
+							if (connection.isEmpty() || !deviceNames.contains(connection.get().getDevice().getName())) {
 								continue;
 							}
 						}
@@ -523,7 +535,7 @@ public class SystemDbService {
 			final List<System> systems,
 			final List<SystemAddress> addresses,
 			final List<DeviceSystemConnector> deviceConnections) {
-		logger.debug("createTriples started");
+		logger.debug("createTriplets started");
 		Assert.notNull(systems, "systems are null");
 
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>(systems.size());

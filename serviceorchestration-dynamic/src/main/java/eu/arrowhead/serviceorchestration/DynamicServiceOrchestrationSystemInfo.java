@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration;
 
 import java.util.List;
@@ -22,6 +38,12 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// members
+
+	@Value(Constants.$ENABLE_BLACKLIST_FILTER_WD)
+	private boolean enableBlackistFilter;
+
+	@Value(Constants.$FORCE_BLACKLIST_FILTER_WD)
+	private boolean forceBlackistFilter;
 
 	@Value(DynamicServiceOrchestrationConstants.$ENABLE_AUTHORIZATION_WD)
 	private boolean enableAuthorization;
@@ -49,7 +71,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return DynamicServiceOrchestrationConstants.SYSTEM_NAME;
+		return Constants.SYS_NAME_DYNAMIC_SERVICE_ORCHESTRATION;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -58,7 +80,8 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		if (systemModel == null) {
 			SystemModel.Builder builder = new SystemModel.Builder()
 					.address(getAddress())
-					.version(Constants.AH_FRAMEWORK_VERSION);
+					.version(Constants.AH_FRAMEWORK_VERSION)
+					.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY);
 
 			if (AuthenticationPolicy.CERTIFICATE == this.getAuthenticationPolicy()) {
 				builder = builder.metadata(Constants.METADATA_KEY_X509_PUBLIC_KEY, getPublicKey());
@@ -87,32 +110,48 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 				.build();
 
 		final ServiceModel orchestration = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION)
 				.metadata(DynamicServiceOrchestrationConstants.METADATA_KEY_ORCHESTRATION_STRATEGY, DynamicServiceOrchestrationConstants.METADATA_VALUE_ORCHESTRATION_STRATEGY)
+				.metadata(Constants.METADATA_KEY_UNRESTRICTED_DISCOVERY, true)
 				.serviceInterface(getHttpServiceInterfaceForOrchestration())
+				.serviceInterface(getMqttServiceInterfaceForOrchestration())
 				.build();
 
 		final ServiceModel orchestrationPushManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_PUSH_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_PUSH_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationPushManagement())
+				.serviceInterface(getMqttServiceInterfaceForOrchestrationPushManagement())
 				.build();
 
 		final ServiceModel orchestrationLockManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_LOCK_MANAGEMENT)
-				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_PUSH_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_LOCK_MANAGEMENT)
+				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_LOCK_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationLockManagement())
+				.serviceInterface(getMqttServiceInterfaceForOrchestrationLockManagement())
 				.build();
 
 		final ServiceModel orchestrationHistoryManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_ORCHESTRATION_HISTORY_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_HISTORY_MANAGEMENT)
 				.version(DynamicServiceOrchestrationConstants.VERSION_ORCHESTRATION_HISTORY_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationHistoryManagement())
+				.serviceInterface(getMqttServiceInterfaceForOrchestrationHistoryManagement())
 				.build();
 
-		return List.of(generalManagement, orchestration, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement);
+		// starting with management services speeds up management filters
+		return List.of(generalManagement, orchestrationPushManagement, orchestrationLockManagement, orchestrationHistoryManagement, orchestration);
 		// TODO: add monitor service when it is specified and implemented
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isBlacklistEnabled() {
+		return enableBlackistFilter;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public boolean isBlacklistForced() {
+		return forceBlackistFilter;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -164,6 +203,7 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 						Constants.ALLOW_SELF_ADDRESSING,
 						Constants.ALLOW_NON_ROUTABLE_ADDRESSING,
 						Constants.MAX_PAGE_SIZE,
+						Constants.NORMALIZATION_MODE,
 						Constants.SERVICE_ADDRESS_ALIAS,
 						DynamicServiceOrchestrationConstants.ENABLE_AUTHORIZATION,
 						DynamicServiceOrchestrationConstants.ENABLE_INTERCLOUD,
@@ -349,6 +389,58 @@ public class DynamicServiceOrchestrationSystemInfo extends SystemInfo {
 		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
 				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC)
 				.operations(Set.of(Constants.SERVICE_OP_GET_LOG, Constants.SERVICE_OP_GET_CONFIG))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestration() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_PULL, Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE, Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestrationPushManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_PUSH_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE, Constants.SERVICE_OP_ORCHESTRATION_TRIGGER, Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE, Constants.SERVICE_OP_ORCHESTRATION_QUERY))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestrationLockManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_LOCK_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_CREATE, Constants.SERVICE_OP_ORCHESTRATION_QUERY, Constants.SERVICE_OP_ORCHESTRATION_REMOVE))
+				.build();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private InterfaceModel getMqttServiceInterfaceForOrchestrationHistoryManagement() {
+		if (!isMqttApiEnabled()) {
+			return null;
+		}
+
+		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME;
+		return new MqttInterfaceModel.Builder(templateName, getMqttBrokerAddress(), getMqttBrokerPort())
+				.baseTopic(DynamicServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_HISTORY_MANAGEMENT_BASE_TOPIC)
+				.operations(Set.of(Constants.SERVICE_OP_ORCHESTRATION_QUERY))
 				.build();
 	}
 }

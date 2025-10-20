@@ -1,6 +1,21 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authentication.jpa.service;
 
-import java.security.InvalidParameterException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +47,7 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryReq
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
 
 @Service
 public class IdentityDbService {
@@ -157,7 +173,7 @@ public class IdentityDbService {
 				// check if extras list size is correct
 				if (extras.size() != identityList.size()) {
 					// something is not right => roll back everything
-					logger.error("Extra list's size is incorrect.");
+					logger.error("Extra list's size is incorrect");
 					dto.authenticationMethod().dbService().rollbackCreateIdentifiableSystemsInBulk(identityList);
 					throw new InternalServerError("Database operation error");
 				}
@@ -206,7 +222,7 @@ public class IdentityDbService {
 				// check if extras list size is correct
 				if (extras.size() != identityList.size()) {
 					// something is not right => roll back everything
-					logger.error("Extra list's size is incorrect.");
+					logger.error("Extra list's size is incorrect");
 					authenticationMethod.dbService().rollbackUpdateIdentifiableSystemsInBulk(identityList);
 					throw new InternalServerError("Database operation error");
 				}
@@ -527,7 +543,7 @@ public class IdentityDbService {
 		synchronized (SYSTEM_LOCK) {
 			final ZonedDateTime now = Utilities.utcNow();
 			final List<Long> matchings = new ArrayList<>();
-			final List<System> toFilter = dto.namePart() == null ? systemRepository.findAll() : systemRepository.findAllByNameContains(dto.namePart());
+			final List<System> toFilter = dto.namePart() == null ? systemRepository.findAll() : systemRepository.findAllByNameContainsIgnoreCase(dto.namePart());
 
 			for (final System system : toFilter) {
 				// sysop
@@ -573,7 +589,7 @@ public class IdentityDbService {
 
 		synchronized (SESSION_LOCK) {
 			final List<Long> matchings = new ArrayList<>();
-			final List<ActiveSession> toFilter = dto.namePart() == null ? asRepository.findAll() : asRepository.findAllBySystem_NameContains(dto.namePart());
+			final List<ActiveSession> toFilter = dto.namePart() == null ? asRepository.findAll() : asRepository.findAllBySystem_NameContainsIgnoreCase(dto.namePart());
 
 			for (final ActiveSession session : toFilter) {
 				// login from

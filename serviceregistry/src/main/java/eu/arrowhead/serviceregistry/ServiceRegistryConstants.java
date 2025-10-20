@@ -1,11 +1,25 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry;
 
 public final class ServiceRegistryConstants {
 
 	//=================================================================================================
 	// members
-
-	public static final String SYSTEM_NAME = "serviceregistry";
 
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.serviceregistry.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceregistry.jpa.repository";
@@ -69,6 +83,8 @@ public final class ServiceRegistryConstants {
 	// Others
 
 	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER = "|";
+	public static final String INTERFACE_PROPERTY_VALIDATOR_DELIMITER_REGEXP = "\\|";
+	public static final String VERBOSE_PARAM_DEFAULT = "false"; // this is the query parameter default, not the same as the configuration default
 
 	//=================================================================================================
 	// assistant methods

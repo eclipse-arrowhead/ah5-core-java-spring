@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.model;
 
 import java.time.ZonedDateTime;
@@ -24,7 +40,13 @@ public class OrchestrationLockFilter {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationLockFilter(final List<Long> ids, final List<String> orchestrationJobIds, final List<String> serviceInstanceIds, final List<String> owners, final ZonedDateTime expiresBefore, final ZonedDateTime expiresAfter) {
+	public OrchestrationLockFilter(
+			final List<Long> ids,
+			final List<String> orchestrationJobIds,
+			final List<String> serviceInstanceIds,
+			final List<String> owners,
+			final ZonedDateTime expiresBefore,
+			final ZonedDateTime expiresAfter) {
 		this.ids = ids;
 		this.orchestrationJobIds = orchestrationJobIds;
 		this.serviceInstanceIds = serviceInstanceIds;

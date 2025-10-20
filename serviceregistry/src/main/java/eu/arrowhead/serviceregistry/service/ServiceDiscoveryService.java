@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
@@ -19,6 +35,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -35,7 +52,6 @@ import eu.arrowhead.serviceregistry.jpa.service.ServiceInstanceDbService;
 import eu.arrowhead.serviceregistry.jpa.service.SystemDbService;
 import eu.arrowhead.serviceregistry.service.dto.DTOConverter;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
-import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 import eu.arrowhead.serviceregistry.service.validation.ServiceDiscoveryValidation;
 
 @Service
@@ -134,12 +150,12 @@ public class ServiceDiscoveryService {
 
 		final Entry<String, String> normalized = validator.validateAndNormalizeRevokeService(identifiedSystemName, instanceId, origin);
 
-		if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstaceId(normalized.getValue()).equals(normalized.getKey())) {
+		if (!ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(normalized.getValue()).equals(normalized.getKey())) {
 			throw new ForbiddenException("Revoking other systems' service is forbidden", origin);
 		}
 
 		try {
-			return instanceDbService.deleteByInstanceId(instanceId);
+			return instanceDbService.deleteByInstanceId(normalized.getValue());
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}

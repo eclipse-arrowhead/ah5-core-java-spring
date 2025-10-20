@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service;
 
 import java.util.List;
@@ -144,7 +160,8 @@ public class ManagementService {
 					pageRequest,
 					normalized.deviceNames(),
 					normalized.addresses(),
-					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()), normalized.metadataRequirementList());
+					Utilities.isEmpty(normalized.addressType()) ? null : AddressType.valueOf(normalized.addressType()),
+					normalized.metadataRequirementList());
 
 			return dtoConverter.convertDeviceAndDeviceAddressEntriesToDTO(page, page.getTotalElements());
 		} catch (final InternalServerError ex) {
@@ -157,8 +174,9 @@ public class ManagementService {
 		logger.debug("removeDevices started");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
+		final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
+
 		try {
-			final List<String> normalized = validator.validateAndNormalizeRemoveDevices(names, origin);
 			deviceDbService.deleteByNameList(normalized);
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -417,7 +435,12 @@ public class ManagementService {
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final ServiceInterfaceTemplateQueryRequestDTO normalized = validator.validateAndNormalizeQueryInterfaceTemplates(dto, origin);
-		final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Direction.DESC, ServiceInterfaceTemplate.SORTABLE_FIELDS_BY, ServiceInterfaceTemplate.DEFAULT_SORT_FIELD, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(
+				normalized.pagination(),
+				Direction.DESC,
+				ServiceInterfaceTemplate.SORTABLE_FIELDS_BY,
+				ServiceInterfaceTemplate.DEFAULT_SORT_FIELD,
+				origin);
 
 		try {
 			final Page<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = interfaceTemplateDbService.getPageByFilters(

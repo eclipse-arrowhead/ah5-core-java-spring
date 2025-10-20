@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.model;
 
 import java.util.HashMap;
@@ -16,7 +32,7 @@ public class OrchestrationForm {
 	// members
 
 	private String requesterSystemName;
-	private String targetSystemName;
+	private String targetSystemName; // consumer
 	private Map<String, Boolean> orchestrationFlags = new HashMap<>();
 	private Map<String, String> qosRequirements;
 	private Integer exclusivityDuration;
@@ -79,7 +95,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean addFlag(final OrchestrationFlag flag, final boolean value) {
-		boolean changed = false;
+		Boolean changed = null;
 		for (final String rawFlag : orchestrationFlags.keySet()) {
 			if (rawFlag.equalsIgnoreCase(flag.name())) {
 				changed = orchestrationFlags.get(rawFlag) != value;
@@ -87,6 +103,8 @@ public class OrchestrationForm {
 			}
 		}
 		orchestrationFlags.put(flag.name(), value);
+
+		changed = changed == null ? true : changed;
 		return changed;
 	}
 
@@ -107,8 +125,18 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationRequestDTO extractOrchestrationRequestDTO() {
-		final OrchestrationServiceRequirementDTO serviceReq = new OrchestrationServiceRequirementDTO(serviceDefinition, operations, versions, alivesAt, metadataRequirements, interfaceTemplateNames, interfaceAddressTypes,
-				interfacePropertyRequirements, securityPolicies, preferredProviders);
+		final OrchestrationServiceRequirementDTO serviceReq = new OrchestrationServiceRequirementDTO(
+				serviceDefinition,
+				operations,
+				versions,
+				alivesAt,
+				metadataRequirements,
+				interfaceTemplateNames,
+				interfaceAddressTypes,
+				interfacePropertyRequirements,
+				securityPolicies,
+				preferredProviders);
+
 		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qosRequirements, exclusivityDuration);
 	}
 
@@ -264,5 +292,4 @@ public class OrchestrationForm {
 	public void setPreferredProviders(final List<String> preferredProviders) {
 		this.preferredProviders = preferredProviders;
 	}
-
 }

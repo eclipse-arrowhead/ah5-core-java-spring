@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authentication.service;
 
 import java.util.Optional;
@@ -93,7 +109,10 @@ public class IdentityService {
 		try {
 			final ActiveSession session = dbService.createOrUpdateSession(system, token);
 
-			return new IdentityLoginData(normalized, system, new IdentityLoginResponseDTO(token, Utilities.convertZonedDateTimeToUTCString(session.getExpirationTime())));
+			return new IdentityLoginData(
+					normalized,
+					system,
+					new IdentityLoginResponseDTO(token, Utilities.convertZonedDateTimeToUTCString(session.getExpirationTime())));
 		} catch (final InternalServerError ex) {
 			method.service().rollbackCredentialsVerification(system, normalized.credentials(), ex.getMessage());
 			throw new InternalServerError(ex.getMessage(), origin);
@@ -132,7 +151,7 @@ public class IdentityService {
 		final IAuthenticationMethod method = methods.method(methodType);
 		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
 
-		// further validation & normalization
+		// further normalization & validation
 		IdentityChangeRequestDTO normalized = new IdentityChangeRequestDTO(data.normalizedRequest().systemName(), data.normalizedRequest().credentials(), dto.newCredentials());
 
 		try {

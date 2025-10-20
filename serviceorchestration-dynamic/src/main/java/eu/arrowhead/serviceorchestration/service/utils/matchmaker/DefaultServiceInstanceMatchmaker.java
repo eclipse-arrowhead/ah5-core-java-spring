@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.utils.matchmaker;
 
 import java.security.SecureRandom;
@@ -19,9 +35,9 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 	//=================================================================================================
 	// members
 
-	private final int fullTimeExclusivityScore = 15;
-	private final int canBeExclusiveScore = 10;
-	private final int isPreferredScore = 5;
+	private static final int fullTimeExclusivityScore = 15;
+	private static final int canBeExclusiveScore = 10;
+	private static final int isPreferredScore = 5;
 
 	// preferred and full time exclusive		 		30
 	// not preferred, but can be full-time exclusive	25
@@ -58,7 +74,10 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 		scoredCandidates.sort(Comparator.comparingInt(Scored::score).reversed());
 
 		final int highestScore = scoredCandidates.getFirst().score();
-		List<Scored> bestCandidates = scoredCandidates.stream().filter(s -> s.score() == highestScore).collect(Collectors.toList());
+		List<Scored> bestCandidates = scoredCandidates
+				.stream()
+				.filter(s -> s.score() == highestScore)
+				.collect(Collectors.toList());
 		if (bestCandidates.size() == 1) {
 			return bestCandidates.getFirst().candidate();
 		}
@@ -68,19 +87,25 @@ public class DefaultServiceInstanceMatchmaker implements ServiceInstanceMatchmak
 			// all of them can be exclusive, but not full-time
 			bestCandidates.sort(Comparator.comparingInt((final Scored s) -> s.candidate().getExclusivityDuration()).reversed());
 			final int bestExclusivityDuration = bestCandidates.getFirst().candidate().getExclusivityDuration();
-			bestCandidates = bestCandidates.stream().filter(s -> s.candidate().getExclusivityDuration() == bestExclusivityDuration).toList();
+			bestCandidates = bestCandidates
+					.stream()
+					.filter(s -> s.candidate().getExclusivityDuration() == bestExclusivityDuration)
+					.toList();
+
 			if (bestCandidates.size() == 1) {
 				return bestCandidates.getFirst().candidate();
 			}
 		}
 
 		final SecureRandom rng = new SecureRandom();
+
 		return bestCandidates.get(rng.nextInt(bestCandidates.size())).candidate();
 	}
 
 	//=================================================================================================
 	// nested record
 
+	//-------------------------------------------------------------------------------------------------
 	private record Scored(OrchestrationCandidate candidate, int score) {
 	}
 }

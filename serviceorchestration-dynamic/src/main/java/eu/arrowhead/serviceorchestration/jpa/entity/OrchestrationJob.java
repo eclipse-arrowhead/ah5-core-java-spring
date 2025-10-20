@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
@@ -67,6 +83,14 @@ public class OrchestrationJob extends UnmodifiableUUIDArrowheadEntity {
 		this.targetSystem = targetSystem;
 		this.serviceDefinition = serviceDefinition;
 		this.subscriptionId = subscriptionId;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestartionJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
+				+ serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
+				+ finishedAt + "]";
 	}
 
 	//=================================================================================================
@@ -160,12 +184,5 @@ public class OrchestrationJob extends UnmodifiableUUIDArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	public void setFinishedAt(final ZonedDateTime finishedAt) {
 		this.finishedAt = finishedAt;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public String toString() {
-		return "OrchestartionJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition" + serviceDefinition
-				+ ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = " + finishedAt + "]";
 	}
 }

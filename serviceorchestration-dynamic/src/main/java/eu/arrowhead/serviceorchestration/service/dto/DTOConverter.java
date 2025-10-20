@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.dto;
 
 import java.util.List;
@@ -47,7 +63,11 @@ public class DTOConverter {
 		logger.debug("convertSubscriptionListToDTO started...");
 		Assert.notNull(subscriptions, "subscriptions list is null");
 
-		final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions.stream().map(subscription -> convertSubscriptionToDTO(subscription)).toList();
+		final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions
+				.stream()
+				.map(subscription -> convertSubscriptionToDTO(subscription))
+				.toList();
+
 		return new OrchestrationSubscriptionListResponseDTO(entries, count);
 	}
 
@@ -71,7 +91,10 @@ public class DTOConverter {
 		logger.debug("convertOrchestrationJobListToDTO started...");
 		Assert.notNull(jobs, "job list is null");
 
-		return new OrchestrationPushJobListResponseDTO(jobs.stream().map(j -> convertOrchestrationJobToDTO(j)).toList());
+		return new OrchestrationPushJobListResponseDTO(jobs
+				.stream()
+				.map(j -> convertOrchestrationJobToDTO(j))
+				.toList());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -79,7 +102,11 @@ public class DTOConverter {
 		logger.debug("convertOrchestrationJobPageToHistoryDTO started...");
 		Assert.notNull(page, "page is null");
 
-		final List<OrchestrationJobDTO> entries = page.stream().map(job -> convertOrchestrationJobToDTO(job)).toList();
+		final List<OrchestrationJobDTO> entries = page
+				.stream()
+				.map(job -> convertOrchestrationJobToDTO(job))
+				.toList();
+
 		return new OrchestrationHistoryResponseDTO(entries, page.getTotalElements());
 	}
 
@@ -148,6 +175,7 @@ public class DTOConverter {
 
 		final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
 		};
+
 		try {
 			return new OrchestrationNotifyInterfaceDTO(protocol, mapper.readValue(propertiesStr, typeReference));
 		} catch (final JsonProcessingException ex) {

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.jpa.entity;
 
 import java.util.List;
@@ -15,7 +31,7 @@ public class ServiceInterfaceTemplate extends ArrowheadEntity {
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "name", "createdAt");
 	public static final String DEFAULT_SORT_FIELD = "name";
 
-	@Column(nullable = false, unique = true, length = VARCHAR_MEDIUM)
+	@Column(nullable = false, unique = true, length = VARCHAR_SMALL)
 	private String name;
 
 	@Column(nullable = false, length = VARCHAR_SMALL)

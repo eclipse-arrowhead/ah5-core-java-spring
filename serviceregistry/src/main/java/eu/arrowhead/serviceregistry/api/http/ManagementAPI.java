@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.api.http;
 
 import java.util.List;
@@ -61,7 +77,6 @@ public class ManagementAPI {
 
 	//=================================================================================================
 	// methods
-
 
 	//-------------------------------------------------------------------------------------------------
 	// DEVICES
@@ -179,7 +194,9 @@ public class ManagementAPI {
 	})
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody SystemListResponseDTO querySystems(@RequestBody(required = false) final SystemQueryRequestDTO dto,
-			@Parameter(name = "verbose", description = "Set true if you want the response to contain device details.", example = "true") @RequestParam final boolean verbose) {
+			@Parameter(name = Constants.VERBOSE,
+					   description = "Set true if you want the response to contain device details.")
+					   @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("querySystems started, verbose = {}", verbose);
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SYSTEM_QUERY_PATH;
@@ -349,7 +366,9 @@ public class ManagementAPI {
 	@PostMapping(path = ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody ServiceInstanceListResponseDTO queryServiceInstances(
 			@RequestBody final ServiceInstanceQueryRequestDTO dto,
-			@Parameter(name = "verbose", description = "Set true if you want the response to contain the system and device details.", example = "true") @RequestParam final boolean verbose) {
+			@Parameter(name = Constants.VERBOSE,
+					   description = "Set true if you want the response to contain the system and device details.")
+					   @RequestParam(defaultValue = ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT) final boolean verbose) {
 		logger.debug("queryServiceInstances started");
 
 		final String origin = HttpMethod.POST.name() + " " + ServiceRegistryConstants.HTTP_API_MANAGEMENT_PATH + ServiceRegistryConstants.HTTP_API_OP_SERVICE_INSTANCE_QUERY_PATH;

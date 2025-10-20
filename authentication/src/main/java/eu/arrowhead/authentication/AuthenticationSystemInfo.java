@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authentication;
 
 import java.security.InvalidKeyException;
@@ -42,7 +58,7 @@ public class AuthenticationSystemInfo extends SystemInfo {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String getSystemName() {
-		return AuthenticationConstants.SYSTEM_NAME;
+		return Constants.SYS_NAME_AUTHENTICATION;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -83,7 +99,8 @@ public class AuthenticationSystemInfo extends SystemInfo {
 				.serviceInterface(getMqttServiceInterfaceForGeneralManagement())
 				.build();
 
-		return List.of(identity, identityManagement, generalManagement);
+		// starting with management services speeds up management filters
+		return List.of(generalManagement, identityManagement, identity);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -101,14 +118,15 @@ public class AuthenticationSystemInfo extends SystemInfo {
 		return new PublicConfigurationKeysAndDefaults(
 				Set.of(Constants.SERVER_ADDRESS,
 						Constants.SERVER_PORT,
-						Constants.SERVICEREGISTRY_ADDRESS,
-						Constants.SERVICEREGISTRY_PORT,
+						Constants.SERVICE_REGISTRY_ADDRESS,
+						Constants.SERVICE_REGISTRY_PORT,
 						Constants.MQTT_API_ENABLED,
 						Constants.DOMAIN_NAME,
 						Constants.AUTHENTICATION_POLICY,
 						Constants.ENABLE_MANAGEMENT_FILTER,
 						Constants.MANAGEMENT_POLICY,
 						Constants.MAX_PAGE_SIZE,
+						Constants.NORMALIZATION_MODE,
 						AuthenticationConstants.IDENTITY_TOKEN_DURATION,
 						AuthenticationConstants.CLEANER_JOB_INTERVAL),
 				AuthenticationDefaults.class);

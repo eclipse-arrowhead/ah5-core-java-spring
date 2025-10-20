@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.validation.interf;
 
 import java.util.ArrayList;
@@ -9,7 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplatePropertyDTO;
 import eu.arrowhead.dto.ServiceInterfaceTemplateRequestDTO;
@@ -21,7 +37,7 @@ public class InterfaceNormalizer {
 	// members
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -34,7 +50,7 @@ public class InterfaceNormalizer {
 		Assert.notNull(dto, "Interface instance dto is null");
 
 		return new ServiceInstanceInterfaceRequestDTO(
-				nameNormalizer.normalize(dto.templateName()),
+				interfaceTemplateNameNormalizer.normalize(dto.templateName()),
 				Utilities.isEmpty(dto.protocol()) ? "" : dto.protocol().trim().toLowerCase(),
 				dto.policy().trim().toUpperCase(),
 				dto.properties());
@@ -44,9 +60,11 @@ public class InterfaceNormalizer {
 	public ServiceInterfaceTemplateRequestDTO normalizeTemplateDTO(final ServiceInterfaceTemplateRequestDTO dto) {
 		logger.debug("normalizeTemplateDTO started...");
 		Assert.notNull(dto, "Interface template dto is null");
+		Assert.notNull(dto.protocol(), "protocol is null");
+		Assert.isTrue(dto.propertyRequirements() == null || !Utilities.containsNull(dto.propertyRequirements().stream().map(prop -> prop.name()).toList()), "propertyRequirements contains null name element");
 
 		return new ServiceInterfaceTemplateRequestDTO(
-				nameNormalizer.normalize(dto.name()),
+				interfaceTemplateNameNormalizer.normalize(dto.name()),
 				dto.protocol().trim().toLowerCase(),
 				Utilities.isEmpty(dto.propertyRequirements()) ? new ArrayList<>()
 						: dto.propertyRequirements()
@@ -55,7 +73,8 @@ public class InterfaceNormalizer {
 										prop.name().trim(),
 										prop.mandatory(),
 										Utilities.isEmpty(prop.validator()) ? "" : prop.validator().trim().toUpperCase(),
-										Utilities.isEmpty(prop.validatorParams()) ? new ArrayList<>()
+										Utilities.isEmpty(prop.validatorParams())
+												? new ArrayList<>()
 												: prop.validatorParams()
 														.stream()
 														.map(param -> param.trim())

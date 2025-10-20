@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.service.validation;
 
 import java.time.DateTimeException;
@@ -15,7 +31,10 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
 import eu.arrowhead.common.service.validation.version.VersionValidator;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -41,17 +60,134 @@ public class ServiceDiscoveryValidation {
 	private InterfaceValidator interfaceValidator;
 
 	@Autowired
-	private NameValidator nameValidator;
+	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
+
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
+
+	@Autowired
+	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private ServiceInstanceIdentifierValidator serviceInstanceIdentifierValidator;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
+	//-------------------------------------------------------------------------------------------------
+	// VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceRequestDTO validateAndNormalizeRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeRegisterService started");
+
+		validateRegisterService(dto, origin);
+		final ServiceInstanceRequestDTO normalizedInstance = normalizer.normalizeServiceInstanceRequestDTO(dto);
+
+		try {
+			systemNameValidator.validateSystemName(normalizedInstance.systemName());
+			serviceDefNameValidator.validateServiceDefinitionName(normalizedInstance.serviceDefinitionName());
+
+			versionValidator.validateNormalizedVersion(normalizedInstance.version());
+			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
+
+			normalizedInterfaces.forEach(i -> {
+				if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(i.policy()))) {
+					throw new InvalidParameterException("Invalid interface policy: " + i.policy());
+				}
+			});
+
+			if (!Utilities.isEmpty(normalizedInstance.metadata()) && normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
+				try {
+					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
+					Integer.parseInt(str);
+				} catch (final ClassCastException | NumberFormatException ex) {
+					throw new InvalidParameterException(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata must have the string representation of an integer value.");
+				}
+			}
+
+			return new ServiceInstanceRequestDTO(
+					normalizedInstance.systemName(),
+					normalizedInstance.serviceDefinitionName(),
+					normalizedInstance.version(),
+					normalizedInstance.expiresAt(),
+					normalizedInstance.metadata(),
+					normalizedInterfaces);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public ServiceInstanceLookupRequestDTO validateAndNormalizeLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeLookupService started");
+
+		validateLookupService(dto, origin);
+		final ServiceInstanceLookupRequestDTO normalized = normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.instanceIds())) {
+				normalized.instanceIds().forEach(i -> serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(i));
+			}
+
+			if (!Utilities.isEmpty(normalized.providerNames())) {
+				normalized.providerNames().forEach(n -> systemNameValidator.validateSystemName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.serviceDefinitionNames())) {
+				normalized.serviceDefinitionNames().forEach(n -> serviceDefNameValidator.validateServiceDefinitionName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.versions())) {
+				normalized.versions().forEach(v -> versionValidator.validateNormalizedVersion(v));
+			}
+
+			if (!Utilities.isEmpty(normalized.interfaceTemplateNames())) {
+				normalized.interfaceTemplateNames().forEach(n -> interfaceTemplateNameValidator.validateInterfaceTemplateName(n));
+			}
+
+			if (!Utilities.isEmpty(normalized.policies())) {
+				normalized.policies().forEach(p -> {
+					if (!ServiceInterfacePolicy.isOfferable(ServiceInterfacePolicy.valueOf(p))) {
+						throw new InvalidParameterException("Invalid interface policy: " + p);
+					}
+				});
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public Entry<String, String> validateAndNormalizeRevokeService(final String systemName, final String instanceId, final String origin) {
+		logger.debug("validateAndNormalizeRevokeService started");
+
+		validateRevokeService(systemName, instanceId, origin);
+		final String normalizedSystemName = normalizer.normalizeSystemName(systemName);
+		final String normalizedInstanceId = normalizer.normalizeServiceInstanceId(instanceId);
+
+		try {
+			systemNameValidator.validateSystemName(normalizedSystemName);
+			serviceInstanceIdentifierValidator.validateServiceInstanceIdentifier(normalizedInstanceId);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return Map.entry(normalizedSystemName, normalizedInstanceId);
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
+	private void validateRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
 		logger.debug("validateRegisterService started");
 
 		if (dto == null) {
@@ -65,12 +201,6 @@ public class ServiceDiscoveryValidation {
 		if (Utilities.isEmpty(dto.serviceDefinitionName())) {
 			throw new InvalidParameterException("Service definition name is empty", origin);
 		}
-
-		if (dto.serviceDefinitionName().length() > Constants.SERVICE_DEFINITION_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Service definition name is too long", origin);
-		}
-
-		nameValidator.validateName(dto.serviceDefinitionName());
 
 		if (!Utilities.isEmpty(dto.expiresAt())) {
 			ZonedDateTime expiresAt = null;
@@ -86,7 +216,11 @@ public class ServiceDiscoveryValidation {
 		}
 
 		if (!Utilities.isEmpty(dto.metadata())) {
-			MetadataValidation.validateMetadataKey(dto.metadata());
+			try {
+				MetadataValidation.validateMetadataKey(dto.metadata());
+			} catch (InvalidParameterException ex) {
+				throw new InvalidParameterException(ex.getMessage(), origin);
+			}
 		}
 
 		if (Utilities.isEmpty(dto.interfaces())) {
@@ -109,13 +243,17 @@ public class ServiceDiscoveryValidation {
 			if (Utilities.isEmpty(interfaceDTO.properties())) {
 				throw new InvalidParameterException("Interface properties are missing", origin);
 			} else {
-				MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				try {
+					MetadataValidation.validateMetadataKey(interfaceDTO.properties());
+				} catch (InvalidParameterException ex) {
+					throw new InvalidParameterException(ex.getMessage(), origin);
+				}
 			}
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
+	private void validateLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
 		logger.debug("validateLookupService started");
 
 		if (dto == null) {
@@ -185,11 +323,10 @@ public class ServiceDiscoveryValidation {
 				}
 			}
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRevokeService(final String systemName, final String instanceId, final String origin) {
+	private void validateRevokeService(final String systemName, final String instanceId, final String origin) {
 		logger.debug("validateRevokeService started");
 
 		if (Utilities.isEmpty(systemName)) {
@@ -199,59 +336,5 @@ public class ServiceDiscoveryValidation {
 		if (Utilities.isEmpty(instanceId)) {
 			throw new InvalidParameterException("Service instance ID is missing", origin);
 		}
-	}
-
-	// VALIDATION AND NORMALIZATION
-
-	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceRequestDTO validateAndNormalizeRegisterService(final ServiceInstanceRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeRegisterService started");
-
-		validateRegisterService(dto, origin);
-
-		final ServiceInstanceRequestDTO normalizedInstance = normalizer.normalizeServiceInstanceRequestDTO(dto);
-
-		try {
-			versionValidator.validateNormalizedVersion(normalizedInstance.version());
-			final List<ServiceInstanceInterfaceRequestDTO> normalizedInterfaces = interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(normalizedInstance.interfaces());
-
-			if (normalizedInstance.metadata().containsKey(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY)) {
-				try {
-					final String str = (String) normalizedInstance.metadata().get(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY);
-					Integer.parseInt(str);
-
-				} catch (final ClassCastException | NumberFormatException ex) {
-					throw new InvalidParameterException(Constants.METADATA_KEY_ALLOW_EXCLUSIVITY + " metadata must have integer value.");
-				}
-			}
-
-			return new ServiceInstanceRequestDTO(
-					normalizedInstance.systemName(),
-					normalizedInstance.serviceDefinitionName(),
-					normalizedInstance.version(),
-					normalizedInstance.expiresAt(),
-					normalizedInstance.metadata(),
-					normalizedInterfaces);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public ServiceInstanceLookupRequestDTO validateAndNormalizeLookupService(final ServiceInstanceLookupRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeLookupService started");
-
-		validateLookupService(dto, origin);
-
-		return normalizer.normalizeServiceInstanceLookupRequestDTO(dto);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public Entry<String, String> validateAndNormalizeRevokeService(final String systemName, final String instanceId, final String origin) {
-		logger.debug("validateAndNormalizeRevokeService started");
-
-		validateRevokeService(systemName, instanceId, origin);
-
-		return Map.entry(normalizer.normalizeSystemName(systemName), normalizer.normalizeServiceInstanceId(instanceId));
 	}
 }

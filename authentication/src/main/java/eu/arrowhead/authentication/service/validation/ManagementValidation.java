@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authentication.service.validation;
 
 import java.time.DateTimeException;
@@ -21,13 +37,12 @@ import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
 import eu.arrowhead.authentication.service.normalization.ManagementNormalization;
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.IdentityListMgmtCreateRequestDTO;
 import eu.arrowhead.dto.IdentityListMgmtUpdateRequestDTO;
 import eu.arrowhead.dto.IdentityMgmtRequestDTO;
@@ -44,13 +59,13 @@ public class ManagementValidation {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private NameValidator nameValidator;
-
-	@Autowired
 	private PageValidator pageValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private SystemNameNormalizer systemNameNormalizer;
 
 	@Autowired
 	private ManagementNormalization normalizer;
@@ -62,29 +77,162 @@ public class ManagementValidation {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	// VALIDATION AND NORMALIZATION
+
+	//-------------------------------------------------------------------------------------------------
+	public String validateAndNormalizeRequester(final String requester, final String origin) {
+		logger.debug("validateAndNormalizeRequester started...");
+
+		validateRequester(requester, origin);
+		final String normalized = systemNameNormalizer.normalize(requester);
+
+		try {
+			systemNameValidator.validateSystemName(normalized);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentityListMgmtRequestDTO validateAndNormalizeCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeCreateIdentityList started...");
+
+		validateCreateIdentityList(dto, origin);
+
+		try {
+			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeCreateIdentityList(dto);
+			checkNameDuplications(result.identities().stream().map(ni -> ni.systemName()).toList(), origin);
+
+			final IAuthenticationMethod method = result.authenticationMethod();
+			result.identities().forEach(i -> {
+				systemNameValidator.validateSystemName(i.systemName());
+				method.validator().validateCredentials(i.credentials());
+			});
+
+			return result;
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeUpdateIdentityListPhase1 started...");
+
+		validateUpdateIdentityListPhase1(dto, origin);
+
+		final List<NormalizedIdentityMgmtRequestDTO> result = normalizer.normalizeUpdateIdentityListWithoutCredentials(dto);
+		checkNameDuplications(result.stream().map(ni -> ni.systemName()).toList(), origin);
+
+		try {
+			result.forEach(i -> systemNameValidator.validateSystemName(i.systemName()));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase2(
+			final IAuthenticationMethod authenticationMethod,
+			final List<NormalizedIdentityMgmtRequestDTO> identities,
+			final String origin) {
+		logger.debug("validateAndNormalizeUpdateIdentityListPhase2 started...");
+
+		try {
+			final List<NormalizedIdentityMgmtRequestDTO> normalized = normalizer.normalizeCredentials(authenticationMethod, identities);
+			validateUpdateIdentityListPhase2(authenticationMethod, normalized);
+
+			return normalized;
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeRemoveIdentities(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeRemoveIdentities started...");
+
+		validateIdentityNames(names, origin);
+
+		final List<String> normalized = normalizer.normalizeIdentifiableSystemNames(names);
+
+		try {
+			normalized.forEach(n -> systemNameValidator.validateSystemName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), ex);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentityQueryRequestDTO validateAndNormalizeIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeIdentityQueryRequest started...");
+
+		validateIdentityQueryRequest(dto, origin);
+		final NormalizedIdentityQueryRequestDTO normalized = normalizer.normalizeIdentityQueryRequest(dto);
+
+		try {
+			if (!Utilities.isEmpty(normalized.createdBy())) {
+				systemNameValidator.validateSystemName(normalized.createdBy());
+			}
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<String> validateAndNormalizeCloseSessions(final List<String> names, final String origin) {
+		logger.debug("validateAndNormalizeCloseSessions started...");
+
+		validateIdentityNames(names, origin);
+		final List<String> normalized = normalizer.normalizeIdentifiableSystemNames(names);
+
+		try {
+			normalized.forEach(n -> systemNameValidator.validateSystemName(n));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedIdentitySessionQueryRequestDTO validateAndNormalizeSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeSessionQueryRequest started...");
+
+		validateSessionQueryRequest(dto, origin);
+
+		return normalizer.normalizeSessionQueryRequest(dto);
+	}
+
+	//=================================================================================================
+	// assistant methods
+
+	//-------------------------------------------------------------------------------------------------
 	// VALIDATION
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateRequester(final String requester, final String origin) {
+	private void validateRequester(final String requester, final String origin) {
 		logger.debug("validateRequester started...");
 
 		if (Utilities.isEmpty(requester)) {
 			throw new InvalidParameterException("Requester name is missing or empty", origin);
 		}
-
-		if (requester.length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("Requester name is too long: " + requester, origin);
-		}
-
-		try {
-			nameValidator.validateName(requester);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
+	private void validateCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
 		logger.debug("validateCreateIdentityList started...");
 
 		if (dto == null) {
@@ -117,12 +265,12 @@ public class ManagementValidation {
 		}
 
 		for (final IdentityMgmtRequestDTO identity : list) {
-			validateIdentity(method, identity, origin);
+			validateIdentity(identity, origin);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
+	private void validateUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
 		logger.debug("validateUpdateIdentityListPhase1 started...");
 
 		if (dto == null) {
@@ -139,30 +287,47 @@ public class ManagementValidation {
 		}
 
 		for (final IdentityMgmtRequestDTO identity : list) {
-			validateIdentityWithoutCredentials(identity, origin);
+			validateIdentity(identity, origin);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateUpdateIdentityListPhase2(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities, final String origin) {
+	private void validateIdentity(final IdentityMgmtRequestDTO identity, final String origin) {
+		logger.debug("validateIdentity started...");
+
+		if (Utilities.isEmpty(identity.systemName())) {
+			throw new InvalidParameterException("System name is missing or empty", origin);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void checkNameDuplications(final List<String> names, final String origin) {
+		logger.debug("checkNameDuplications started...");
+
+		final Set<String> uniqueNames = new HashSet<>();
+		for (final String name : names) {
+			if (uniqueNames.contains(name)) {
+				throw new InvalidParameterException("Duplicated system name: " + name, origin);
+			}
+
+			uniqueNames.add(name);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private void validateUpdateIdentityListPhase2(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities) {
 		logger.debug("validateUpdateIdentityListPhase2 started...");
 		Assert.notNull(authenticationMethod, "Authentication method is null");
 		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
 		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
 
 		for (final NormalizedIdentityMgmtRequestDTO identity : identities) {
-			try {
-				authenticationMethod.validator().validateCredentials(identity.credentials());
-			} catch (final InvalidParameterException ex) {
-				throw new InvalidParameterException(ex.getMessage(), origin);
-			} catch (final InternalServerError ex) {
-				throw new InternalServerError(ex.getMessage(), origin);
-			}
+			authenticationMethod.validator().validateCredentials(identity.credentials());
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateIdentityNames(final List<String> originalNames, final String origin) {
+	private void validateIdentityNames(final List<String> originalNames, final String origin) {
 		logger.debug("validateIdentityNames started");
 
 		if (Utilities.isEmpty(originalNames)) {
@@ -175,7 +340,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
+	private void validateIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
 		logger.debug("validateIdentityQueryRequest started");
 
 		if (dto != null) {
@@ -207,7 +372,7 @@ public class ManagementValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validateSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
+	private void validateSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
 		logger.debug("validateSessionQueryRequest started");
 
 		if (dto != null) {
@@ -235,149 +400,6 @@ public class ManagementValidation {
 			if (from != null && to != null && to.isBefore(from)) {
 				throw new InvalidParameterException("Empty login time interval", origin);
 			}
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	// VALIDATION AND NORMALIZATION
-
-	//-------------------------------------------------------------------------------------------------
-	public String validateAndNormalizeRequester(final String requester, final String origin) {
-		logger.debug("validateAndNormalizeRequester started...");
-
-		validateRequester(requester, origin);
-
-		return nameNormalizer.normalize(requester);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public NormalizedIdentityListMgmtRequestDTO validateAndNormalizeCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeCreateIdentityList started...");
-
-		validateCreateIdentityList(dto, origin);
-
-		try {
-			final NormalizedIdentityListMgmtRequestDTO result = normalizer.normalizeCreateIdentityList(dto);
-			checkNameDuplications(result.identities().stream().map(ni -> ni.systemName()).toList(), origin);
-
-			return result;
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeUpdateIdentityListPhase1 started...");
-
-		validateUpdateIdentityListPhase1(dto, origin);
-
-		final List<NormalizedIdentityMgmtRequestDTO> result = normalizer.normalizeUpdateIdentityListWithoutCredentials(dto);
-		checkNameDuplications(result.stream().map(ni -> ni.systemName()).toList(), origin);
-
-		return result;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase2(
-			final IAuthenticationMethod authenticationMethod,
-			final List<NormalizedIdentityMgmtRequestDTO> identities,
-			final String origin) {
-		logger.debug("validateAndNormalizeUpdateIdentityListPhase2 started...");
-
-		validateUpdateIdentityListPhase2(authenticationMethod, identities, origin);
-
-		try {
-			return normalizer.normalizeCredentials(authenticationMethod, identities);
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeRemoveIdentities(final List<String> names, final String origin) {
-		logger.debug("validateAndNormalizeRemoveIdentities started...");
-
-		validateIdentityNames(names, origin);
-
-		return normalizer.normalizeIdentifiableSystemNames(names);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public NormalizedIdentityQueryRequestDTO validateAndNormalizeIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeIdentityQueryRequest started...");
-
-		validateIdentityQueryRequest(dto, origin);
-
-		return normalizer.normalizeIdentityQueryRequest(dto);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public List<String> validateAndNormalizeCloseSessions(final List<String> names, final String origin) {
-		logger.debug("validateAndNormalizeCloseSessions started...");
-
-		validateIdentityNames(names, origin);
-
-		return normalizer.normalizeIdentifiableSystemNames(names);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public NormalizedIdentitySessionQueryRequestDTO validateAndNormalizeSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
-		logger.debug("validateAndNormalizeSessionQueryRequest started...");
-
-		validateSessionQueryRequest(dto, origin);
-
-		return normalizer.normalizeSessionQueryRequest(dto);
-	}
-
-	//=================================================================================================
-	// assistant methods
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateIdentity(final IAuthenticationMethod method, final IdentityMgmtRequestDTO identity, final String origin) {
-		logger.debug("validateIdentity started...");
-
-		validateIdentityWithoutCredentials(identity, origin);
-
-		try {
-			method.validator().validateCredentials(identity.credentials());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		} catch (final InternalServerError ex) {
-			throw new InternalServerError(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private void validateIdentityWithoutCredentials(final IdentityMgmtRequestDTO identity, final String origin) {
-		logger.debug("validateIdentityWithoutCredentials started...");
-
-		if (Utilities.isEmpty(identity.systemName())) {
-			throw new InvalidParameterException("System name is missing or empty", origin);
-		}
-
-		if (identity.systemName().length() > Constants.SYSTEM_NAME_MAX_LENGTH) {
-			throw new InvalidParameterException("System name is too long: " + identity.systemName(), origin);
-		}
-
-		try {
-			nameValidator.validateName(identity.systemName());
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private void checkNameDuplications(final List<String> names, final String origin) {
-		logger.debug("checkNameDuplications started...");
-
-		final Set<String> uniqueNames = new HashSet<>();
-		for (final String name : names) {
-			if (uniqueNames.contains(name)) {
-				throw new InvalidParameterException("Duplicated system name: " + name, origin);
-			}
-
-			uniqueNames.add(name);
 		}
 	}
 }

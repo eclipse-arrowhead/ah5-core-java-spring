@@ -1,11 +1,27 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authentication;
+
+import eu.arrowhead.common.jpa.ArrowheadEntity;
 
 public final class AuthenticationConstants {
 
 	//=================================================================================================
 	// members
-
-	public static final String SYSTEM_NAME = "authentication";
 
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.authentication.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.authentication.jpa.repository";
@@ -52,6 +68,9 @@ public final class AuthenticationConstants {
 	// Quartz related
 	public static final String CLEANER_TRIGGER = "authenticationCleanerTrigger";
 	public static final String CLEANER_JOB = "authenticationCleanerJob";
+
+	// Db related
+	public static final int PASSWORD_MAX_LENGTH = ArrowheadEntity.VARCHAR_SMALL;
 
 	//=================================================================================================
 	// assistant methods

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authorization.api.http;
 
 import java.util.List;
@@ -68,6 +84,7 @@ public class GeneralManagementAPI {
 		logger.debug("getLogEntries started...");
 
 		final String origin = HttpMethod.POST.name() + " " + AuthorizationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
+
 		return logService.getLogEntries(dto, origin);
 	}
 
@@ -91,6 +108,7 @@ public class GeneralManagementAPI {
 		logger.debug("getConfig started ...");
 
 		final String origin = HttpMethod.GET.name() + " " + AuthorizationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
+
 		return configService.getConfig(keys, origin);
 	}
 }

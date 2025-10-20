@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.authentication.jpa.repository;
 
 import java.util.List;
@@ -23,7 +39,7 @@ public interface SystemRepository extends RefreshableRepository<System, Long> {
 	public List<System> findAllByNameIn(final List<String> names);
 
 	//-------------------------------------------------------------------------------------------------
-	public List<System> findAllByNameContains(final String namePart);
+	public List<System> findAllByNameContainsIgnoreCase(final String namePart);
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<System> findAllByIdIn(final Pageable pageable, final List<Long> ids);

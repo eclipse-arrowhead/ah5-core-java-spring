@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.jpa.service;
 
 import java.time.ZonedDateTime;
@@ -27,6 +43,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.dto.MetadataRequirementDTO;
@@ -49,7 +66,6 @@ import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepos
 import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
-import eu.arrowhead.serviceregistry.service.utils.ServiceInstanceIdUtils;
 
 @Service
 public class ServiceInstanceDbService {
@@ -103,7 +119,7 @@ public class ServiceInstanceDbService {
 			List<ServiceInstanceInterface> instanceInterfaceEntities = new ArrayList<>();
 
 			synchronized (LOCK) {
-				// Deleting current records & Caching necessary entities
+				// Deleting current records & caching necessary entities
 				final Set<String> instanceIdsToDelete = new HashSet<>(candidates.size());
 				final Set<String> systemNames = new HashSet<>();
 				final Set<String> serviceDefinitionNames = new HashSet<>();
@@ -127,7 +143,7 @@ public class ServiceInstanceDbService {
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					serviceInterfaceTemplateNames.forEach(templateName -> {
 						if (!interfaceTemplateCache.containsKey(templateName)) {
-							throw new InvalidParameterException("Interface template not exists: " + templateName);
+							throw new InvalidParameterException("Interface template does not exist: " + templateName);
 						}
 					});
 				}
@@ -176,9 +192,7 @@ public class ServiceInstanceDbService {
 					} else {
 						// modify the properties (only metadata, expiresAt and interface can be changed)
 						ServiceInstance instance = optionalInstance.get();
-						// set metadata
 						instance.setMetadata(Utilities.toJson(dto.metadata()));
-						// set expires At
 						instance.setExpiresAt(Utilities.parseUTCStringToZonedDateTime(dto.expiresAt()));
 
 						// delete old interfaces
@@ -270,15 +284,7 @@ public class ServiceInstanceDbService {
 		logger.debug("deleteByInstanceIds started");
 		Assert.isTrue(!Utilities.isEmpty(serviceInstanceIds), "serviceInstanceId list is empty");
 
-		try {
-			serviceInstanceIds.forEach(id -> deleteByInstanceId(id));
-		} catch (final InternalServerError ex) {
-			throw ex;
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Database operation error");
-		}
+		serviceInstanceIds.forEach(id -> deleteByInstanceId(id));
 	}
 
 	//=================================================================================================
@@ -292,7 +298,7 @@ public class ServiceInstanceDbService {
 
 		for (final ServiceInstanceRequestDTO candidate : candidates) {
 			if (!systemCache.containsKey(candidate.systemName())) {
-				throw new InvalidParameterException("System not exists: " + candidate.systemName());
+				throw new InvalidParameterException("System does not exist: " + candidate.systemName());
 			}
 
 			if (!definitionCache.containsKey(candidate.serviceDefinitionName())) {
@@ -360,7 +366,8 @@ public class ServiceInstanceDbService {
 				// Need to validate the properties if the template was created in this bulk operation (only in case of EXTENDABLE policy)
 				if (templatesCreated.contains(interfaceCandidate.templateName()) && sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.EXTENDABLE) {
 					serviceInterfaceTemplatePropsRepo.findByServiceInterfaceTemplate(interfaceTemplateCache.get(interfaceCandidate.templateName())).forEach(templateProp -> {
-						if (templateProp.isMandatory() && !interfaceCandidate.properties().containsKey(templateProp.getPropertyName())) {
+						// each newly created property is mandatory
+						if (!interfaceCandidate.properties().containsKey(templateProp.getPropertyName())) {
 							throw new InvalidParameterException("Mandatory interface property is missing: " + templateProp.getPropertyName());
 						}
 					});
@@ -397,7 +404,7 @@ public class ServiceInstanceDbService {
 				// non-existant template
 				if (sysInfo.getServiceDiscoveryInterfacePolicy() == ServiceDiscoveryInterfacePolicy.RESTRICTED) {
 					// we don't create new template in case of restricted interface policy
-					throw new InvalidParameterException("Interface template not exists: " + dto.templateName());
+					throw new InvalidParameterException("Interface template does not exist: " + dto.templateName());
 				} else {
 					// create new template
 					template = new ServiceInterfaceTemplate(dto.templateName(), dto.protocol());
@@ -490,13 +497,10 @@ public class ServiceInstanceDbService {
 
 				boolean matching = true;
 
-				// Match against to service instance id requirements
-				if (baseFilter != BaseFilter.INSTANCE_ID && !Utilities.isEmpty(filters.getInstanceIds()) && !filters.getInstanceIds().contains(serviceCandidate.getServiceInstanceId())) {
-					matching = false;
-				}
+				// Match against to service instance id requirements -> already happened in the BaseFilter if needed
 
 				// Match against to provider name requirements
-				if (matching && baseFilter != BaseFilter.SYSTEM_NAME && !Utilities.isEmpty(filters.getProviderNames()) && !filters.getProviderNames().contains(serviceCandidate.getSystem().getName())) {
+				if (baseFilter != BaseFilter.SYSTEM_NAME && !Utilities.isEmpty(filters.getProviderNames()) && !filters.getProviderNames().contains(serviceCandidate.getSystem().getName())) {
 					matching = false;
 				}
 
@@ -604,6 +608,7 @@ public class ServiceInstanceDbService {
 	//=================================================================================================
 	// nested classes
 
+	//-------------------------------------------------------------------------------------------------
 	private enum BaseFilter {
 		NONE, INSTANCE_ID, SYSTEM_NAME, SERVICE_NAME
 	}

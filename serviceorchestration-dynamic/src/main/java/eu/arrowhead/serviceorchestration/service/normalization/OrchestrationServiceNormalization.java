@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.normalization;
 
 import java.util.UUID;
@@ -10,7 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 
 @Service
 public class OrchestrationServiceNormalization {
@@ -19,7 +35,7 @@ public class OrchestrationServiceNormalization {
 	// members
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private SystemNameNormalizer systemNameNormalizer;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -32,6 +48,6 @@ public class OrchestrationServiceNormalization {
 		Assert.isTrue(!Utilities.isEmpty(requesterSystem), "requesterSystem is empty");
 		Assert.isTrue(!Utilities.isEmpty(subscriptionId), "subscriptionId is empty");
 
-		return Pair.of(nameNormalizer.normalize(requesterSystem), UUID.fromString(subscriptionId.trim()));
+		return Pair.of(systemNameNormalizer.normalize(requesterSystem), UUID.fromString(subscriptionId.trim()));
 	}
 }

@@ -1,6 +1,20 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.api.mqtt;
-
-import java.security.InvalidParameterException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,6 +25,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.ArrowheadException;
+import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
@@ -62,7 +77,12 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 			final ServiceInstanceLookupRequestDTO lookupDTO = readPayload(request.getPayload(), ServiceInstanceLookupRequestDTO.class);
 			final Boolean verbose = Boolean.valueOf(request.getParams().get("verbose"));
 			final Boolean restricted = Boolean.valueOf(request.getAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP));
-			responsePayload = lookup(lookupDTO, verbose, restricted);
+			responsePayload = lookup(
+					lookupDTO,
+					verbose != null
+						? verbose
+						: Boolean.valueOf(ServiceRegistryConstants.VERBOSE_PARAM_DEFAULT),
+					restricted);
 			break;
 
 		case Constants.SERVICE_OP_REVOKE:
@@ -84,7 +104,14 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 	private ServiceInstanceResponseDTO register(final String identifiedRequester, final ServiceInstanceCreateRequestDTO dto) {
 		logger.debug("ServiceDiscoveryMqttHandler.register started");
 
-		return sdService.registerService(new ServiceInstanceRequestDTO(identifiedRequester, dto.serviceDefinitionName(), dto.version(), dto.expiresAt(), dto.metadata(), dto.interfaces()), baseTopic() + Constants.SERVICE_OP_REGISTER);
+		return sdService.registerService(new ServiceInstanceRequestDTO(
+				identifiedRequester,
+				dto.serviceDefinitionName(),
+				dto.version(),
+				dto.expiresAt(),
+				dto.metadata(),
+				dto.interfaces()),
+				baseTopic() + Constants.SERVICE_OP_REGISTER);
 	}
 
 	//-------------------------------------------------------------------------------------------------

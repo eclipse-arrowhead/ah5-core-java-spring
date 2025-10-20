@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceregistry.collector;
 
 import java.util.ArrayList;
@@ -28,8 +44,10 @@ import eu.arrowhead.common.intf.properties.validators.HttpOperationsValidator;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.mqtt.model.MqttInterfaceModel;
-import eu.arrowhead.common.service.validation.name.NameNormalizer;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameNormalizer;
+import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
@@ -44,10 +62,16 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private NameValidator nameValidator;
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
 
 	@Autowired
-	private NameNormalizer nameNormalizer;
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+	@Autowired
+	private InterfaceTemplateNameValidator interfaceTemplateNameValidator;
+
+	@Autowired
+	private InterfaceTemplateNameNormalizer interfaceTemplateNameNormalizer;
 
 	@Autowired
 	private ServiceInstanceDbService instanceDbService;
@@ -59,7 +83,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME,
 			Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME,
 			Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME,
-			Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME);
+			Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME);
 
 	//=================================================================================================
 	// methods
@@ -116,12 +140,12 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			}
 
 			// HTTP or HTTPS
-			if (templateName.contains(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME)) {
+			if (templateName.equals(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME) || templateName.equals(Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME)) {
 				interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
 			}
 
 			// MQTT or MQTTS
-			if (templateName.contains(Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME)) {
+			if (templateName.equals(Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME) || templateName.equals(Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME)) {
 				interfaceModelList.add(createMqttInterfaceModel(templateName, properties));
 			}
 		}
@@ -143,11 +167,12 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	//-------------------------------------------------------------------------------------------------
 	private Page<Map.Entry<ServiceInstance, List<ServiceInstanceInterface>>> getInstanceEntries(final String serviceDefinitionName, final String interfaceTemplateName) {
 
-		// validate and normalize
-		nameValidator.validateName(serviceDefinitionName);
-		nameValidator.validateName(interfaceTemplateName);
-		final String nServiceDefinitionName = nameNormalizer.normalize(serviceDefinitionName);
-		final String nInterfaceTemplateName = nameNormalizer.normalize(interfaceTemplateName);
+		// normalize and validate
+		final String nServiceDefinitionName = serviceDefNameNormalizer.normalize(serviceDefinitionName);
+		serviceDefNameValidator.validateServiceDefinitionName(nServiceDefinitionName);
+
+		final String nInterfaceTemplateName = interfaceTemplateNameNormalizer.normalize(interfaceTemplateName);
+		interfaceTemplateNameValidator.validateInterfaceTemplateName(nInterfaceTemplateName);
 
 		final PageRequest pagination = PageRequest.of(0, 1, Direction.DESC, ServiceInstance.DEFAULT_SORT_FIELD);
 

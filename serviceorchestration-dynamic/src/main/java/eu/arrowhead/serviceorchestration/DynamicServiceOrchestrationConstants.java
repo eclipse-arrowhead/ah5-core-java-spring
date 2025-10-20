@@ -1,11 +1,25 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration;
 
 public final class DynamicServiceOrchestrationConstants {
 
 	//=================================================================================================
 	// members
-
-	public static final String SYSTEM_NAME = "serviceorchestration-dynamic";
 
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.entity";
 	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
@@ -37,6 +51,11 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String MQTT_API_BASE_TOPIC_PREFIX = "arrowhead/serviceorchestration";
 	public static final String MQTT_API_MONITOR_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/monitor/";
 	public static final String MQTT_API_GENERAL_MANAGEMENT_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/general/management/";
+	public static final String MQTT_API_ORCHESTRATION_BASE_TOPIC = MQTT_API_BASE_TOPIC_PREFIX + "/orchestration/";
+	public static final String MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX = MQTT_API_ORCHESTRATION_BASE_TOPIC + "management";
+	public static final String MQTT_API_ORCHESTRATION_PUSH_MANAGEMENT_BASE_TOPIC = MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX + "/push/";
+	public static final String MQTT_API_ORCHESTRATION_HISTORY_MANAGEMENT_BASE_TOPIC = MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX + "/history/";
+	public static final String MQTT_API_ORCHESTRATION_LOCK_MANAGEMENT_BASE_TOPIC = MQTT_API_ORCHESTRATION_MANAGEMENT_PREFIX + "/lock/";
 
 	public static final String VERSION_MONITOR = "1.0.0";
 	public static final String VERSION_GENERAL_MANAGEMENT = "1.0.0";
@@ -45,7 +64,7 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String VERSION_ORCHESTRATION_LOCK_MANAGEMENT = "1.0.0";
 	public static final String VERSION_ORCHESTRATION_HISTORY_MANAGEMENT = "1.0.0";
 
-	public static final String METADATA_KEY_ORCHESTRATION_STRATEGY = "orchestration-strategy";
+	public static final String METADATA_KEY_ORCHESTRATION_STRATEGY = "orchestrationStrategy";
 	public static final String METADATA_VALUE_ORCHESTRATION_STRATEGY = "dynamic";
 
 	public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
@@ -70,12 +89,15 @@ public final class DynamicServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
 	public static final String HTTP_PATH_PARAM_OWNER = "{owner}";
 	public static final String HTTP_API_OP_REMOVE_LOCK_PATH = "/remove/" + HTTP_PATH_PARAM_OWNER;
+	public static final String PARAM_NAME_TRIGGER = "trigger";
+	public static final String PARAM_NAME_OWNER = "owner";
 
-	public static final String ORCH_WARN_AUTO_MATCHMAKING = "auto_matchmaking";
-	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qos_not_enabled";
-	public static final String ORCH_WARN_NOT_EXCLUSIVE = "not_exclusive";
-	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "part_time_exclusivity";
-	public static final String ORCH_WARN_INTER_CLOUD = "inter_cloud";
+	public static final String ORCH_WARN_AUTO_MATCHMAKING = "autoMatchmaking";
+	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qosNotEnabled";
+	public static final String ORCH_WARN_NOT_EXCLUSIVE = "notExclusive";
+	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "partTimeExclusivity";
+	public static final String ORCH_WARN_INTER_CLOUD = "interCloud";
+	public static final String ORCH_WARN_FORCED_INTERFACE_SECURITY_POLICY = "forcedInterfaceSecurityPolicy";
 
 	public static final String NOTIFY_KEY_ADDRESS = "address";
 	public static final String NOTIFY_KEY_PORT = "port";
