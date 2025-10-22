@@ -1,0 +1,882 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
+package eu.arrowhead.authorization.jpa.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.Pair;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
+import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
+import eu.arrowhead.authorization.jpa.repository.AuthMgmtPolicyHeaderRepository;
+import eu.arrowhead.authorization.jpa.repository.AuthPolicyRepository;
+import eu.arrowhead.authorization.jpa.repository.AuthProviderPolicyHeaderRepository;
+import eu.arrowhead.authorization.service.dto.DTOConverter;
+import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.MetadataRequirementDTO;
+import eu.arrowhead.dto.enums.AuthorizationLevel;
+import eu.arrowhead.dto.enums.AuthorizationPolicyType;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
+
+@ExtendWith(MockitoExtension.class)
+public class AuthorizationPolicyDbServiceTest {
+
+	//=================================================================================================
+	// members
+
+	@InjectMocks
+	private AuthorizationPolicyDbService dbService;
+
+	@Mock
+	private AuthProviderPolicyHeaderRepository providerHeaderRepository;
+
+	@Mock
+	private AuthMgmtPolicyHeaderRepository mgmtHeaderRepository;
+
+	@Mock
+	private AuthPolicyRepository authPolicyRepository;
+
+	@Spy
+	private DTOConverter dtoConverter;
+
+	//=================================================================================================
+	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyRequestNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.createProviderLevelPolicy(null));
+
+		assertEquals("request is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyInternalServerError() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenThrow(new RuntimeException());
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.createProviderLevelPolicy(request));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyExistingCombinationButNotTheSame1() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+		request.setDescription("desc");
+		request.setPolicies(Map.of(
+				"*", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.ALL, null, null),
+				"operation", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("SpecialConsumer"), null)));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy));
+
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> dbService.createProviderLevelPolicy(request));
+
+		assertEquals("A provider level policy is already existing with the specified cloud / provider / target type / target combination, but the policy details are different", ex.getMessage());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyExistingCombinationButNotTheSame2() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+		request.setDescription("desc");
+		request.setPolicies(Map.of(
+				"*", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.ALL, null, null),
+				"operation", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("SpecialConsumer"), null)));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"other desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		final AuthPolicy policy2 = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"operation2",
+				AuthorizationPolicyType.BLACKLIST,
+				"BadSystem");
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy2, policy));
+
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> dbService.createProviderLevelPolicy(request));
+
+		assertEquals("A provider level policy is already existing with the specified cloud / provider / target type / target combination, but the policy details are different", ex.getMessage());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyExistingCombinationButNotTheSame3() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+		request.setDescription("desc");
+		request.setPolicies(Map.of(
+				"*", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("SpecialConsumer"), null)));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"other desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy));
+
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> dbService.createProviderLevelPolicy(request));
+
+		assertEquals("A provider level policy is already existing with the specified cloud / provider / target type / target combination, but the policy details are different", ex.getMessage());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyExistingCombinationNoDescriptionChange() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+		request.setDescription("desc");
+		request.setPolicies(Map.of(
+				"*", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.ALL, null, null)));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy));
+
+		final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(request);
+
+		assertEquals(header, result.getFirst().getFirst());
+		assertEquals(1, result.getFirst().getSecond().size());
+		assertEquals(policy, result.getFirst().getSecond().get(0));
+		assertFalse(result.getSecond());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyExistingCombinationWithDescriptionChange() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+		request.setDescription("desc");
+		request.setPolicies(Map.of(
+				"*", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.ALL, null, null)));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"old desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy));
+		when(providerHeaderRepository.saveAndFlush(header)).thenReturn(header);
+
+		final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(request);
+
+		assertEquals(header, result.getFirst().getFirst());
+		assertEquals("desc", result.getFirst().getFirst().getDescription());
+		assertEquals(1, result.getFirst().getSecond().size());
+		assertEquals(policy, result.getFirst().getSecond().get(0));
+		assertFalse(result.getSecond());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+		verify(providerHeaderRepository).saveAndFlush(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateProviderLevelPolicyNotExistingCombination() {
+		final NormalizedGrantRequest request = new NormalizedGrantRequest(AuthorizationLevel.PROVIDER);
+		request.setCloud("LOCAL");
+		request.setProvider("TestProvider");
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setTarget("serviceDef");
+		request.setDescription("desc");
+		request.setPolicies(Map.of(
+				"*", new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.ALL, null, null)));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+
+		final AuthProviderPolicyHeader savedHeader = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		savedHeader.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		final AuthPolicy savedPolicy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+		savedPolicy.setId(1);
+
+		when(providerHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.empty());
+		when(providerHeaderRepository.saveAndFlush(header)).thenReturn(savedHeader);
+		when(authPolicyRepository.saveAllAndFlush(List.of(policy))).thenReturn(List.of(savedPolicy));
+
+		final Pair<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>, Boolean> result = dbService.createProviderLevelPolicy(request);
+
+		assertEquals(savedHeader, result.getFirst().getFirst());
+		assertEquals(1, result.getFirst().getSecond().size());
+		assertEquals(savedPolicy, result.getFirst().getSecond().get(0));
+		assertTrue(result.getSecond());
+
+		verify(providerHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+		verify(providerHeaderRepository).saveAndFlush(header);
+		verify(authPolicyRepository).saveAllAndFlush(List.of(policy));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteProviderLevelPolicyByInstanceIdNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.deleteProviderLevelPolicyByInstanceId(null));
+
+		assertEquals("instanceId is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteProviderLevelPolicyByInstanceIdEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.deleteProviderLevelPolicyByInstanceId(" "));
+
+		assertEquals("instanceId is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteProviderLevelPolicyByInstanceIdInternalServerError() {
+		final String instanceId = "PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef";
+
+		when(providerHeaderRepository.findByInstanceId(instanceId)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.deleteProviderLevelPolicyByInstanceId(instanceId));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(providerHeaderRepository).findByInstanceId(instanceId);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteProviderLevelPolicyByInstanceIdUnknownInstanceId() {
+		final String instanceId = "PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef";
+
+		when(providerHeaderRepository.findByInstanceId(instanceId)).thenReturn(Optional.empty());
+
+		final boolean result = dbService.deleteProviderLevelPolicyByInstanceId(instanceId);
+
+		assertFalse(result);
+
+		verify(providerHeaderRepository).findByInstanceId(instanceId);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteProviderLevelPolicyByInstanceIdOk() {
+		final String instanceId = "PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef";
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findByInstanceId(instanceId)).thenReturn(Optional.of(header));
+		doNothing().when(providerHeaderRepository).delete(header);
+		doNothing().when(providerHeaderRepository).flush();
+		doNothing().when(authPolicyRepository).deleteByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+		doNothing().when(authPolicyRepository).flush();
+
+		final boolean result = dbService.deleteProviderLevelPolicyByInstanceId(instanceId);
+
+		assertTrue(result);
+
+		verify(providerHeaderRepository).findByInstanceId(instanceId);
+		verify(providerHeaderRepository).delete(header);
+		verify(providerHeaderRepository).flush();
+		verify(authPolicyRepository).deleteByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+		verify(authPolicyRepository).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersPaginationNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getProviderLevelPoliciesByFilters(null, null));
+
+		assertEquals("pagination is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersInternalServerError() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+
+		when(providerHeaderRepository.findAll(pageRequest)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.getProviderLevelPoliciesByFilters(pageRequest, null));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(providerHeaderRepository).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersNoFilterOk() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"old desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		when(providerHeaderRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(header)));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, new NormalizedLookupRequest());
+
+		assertEquals(1, result.getSize());
+		final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> pair = result.getContent().get(0);
+		assertEquals(header, pair.getFirst());
+		assertEquals(1, pair.getSecond().size());
+		assertEquals(policy, pair.getSecond().get(0));
+
+		verify(providerHeaderRepository).findAll(pageRequest);
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersInstanceIdBaseTargetNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setInstanceIds(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		request.setTargetNames(List.of("otherServiceDef"));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findByInstanceIdIn(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"))).thenReturn(List.of(header));
+		when(providerHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(providerHeaderRepository).findByInstanceIdIn(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
+		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
+		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
+		verify(providerHeaderRepository, never()).findAll(pageRequest);
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersTargetBaseCloudNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setTargetNames(List.of("serviceDef"));
+		request.setCloudIdentifiers(List.of("TestCloud|Company"));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findByTargetIn(List.of("serviceDef"))).thenReturn(List.of(header));
+		when(providerHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(providerHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(providerHeaderRepository).findByTargetIn(List.of("serviceDef"));
+		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
+		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
+		verify(providerHeaderRepository, never()).findAll(pageRequest);
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersCloudBaseProviderNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setCloudIdentifiers(List.of("LOCAL"));
+		request.setProviders(List.of("OtherProvider"));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findByCloudIn(List.of("LOCAL"))).thenReturn(List.of(header));
+		when(providerHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(providerHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
+		verify(providerHeaderRepository).findByCloudIn(List.of("LOCAL"));
+		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
+		verify(providerHeaderRepository, never()).findAll(pageRequest);
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+	
+	// TODO: continue with the case: Provider base target type does not match
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsDifferentTypes() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("SpecialConsumer"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertFalse(result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoAlls() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.ALL, null, null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertTrue(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoBlacklistsFalse1() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.BLACKLIST,
+				"System1,System2");
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.BLACKLIST, List.of("System1"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertFalse(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoBlacklistsFalse2() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.BLACKLIST,
+				"System1,System2");
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.BLACKLIST, List.of("System1", "System3"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertFalse(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoBlacklistsTrue() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.BLACKLIST,
+				"System1,System2");
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.BLACKLIST, List.of("System2", "System1"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertTrue(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoWhitelistsFalse1() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.WHITELIST,
+				"System1,System2");
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("System1"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertFalse(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoWhitelistsFalse2() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.WHITELIST,
+				"System1,System2");
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("System1", "System3"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertFalse(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoWhitelistsTrue() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.WHITELIST,
+				"System1,System2");
+
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.WHITELIST, List.of("System2", "System1"), null);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertTrue(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoSysMetadatasFalse() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.SYS_METADATA,
+				"{ \"key\": \"value\" }");
+
+		final MetadataRequirementDTO req = new MetadataRequirementDTO();
+		req.put("key", "othervalue");
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.SYS_METADATA, null, req);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertFalse(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPolicyDetailsEqualsTwoSysMetadatasTrue() {
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.SYS_METADATA,
+				"{ \"key\": \"value\" }");
+
+		final MetadataRequirementDTO req = new MetadataRequirementDTO();
+		req.put("key", "value");
+		final NormalizedAuthorizationPolicyRequest candidate = new NormalizedAuthorizationPolicyRequest(AuthorizationPolicyType.SYS_METADATA, null, req);
+
+		final boolean result = (boolean) ReflectionTestUtils.invokeMethod(dbService, "policyDetailsEquals", policy, candidate);
+		assertTrue(result);
+
+		verify(dtoConverter).convertAuthPolicyToDTO(policy);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testStringifyPolicyAll() {
+		final NormalizedAuthorizationPolicyRequest policy = new NormalizedAuthorizationPolicyRequest(
+				AuthorizationPolicyType.ALL,
+				null,
+				null);
+
+		final String result = (String) ReflectionTestUtils.invokeMethod(dbService, "stringifyPolicy", policy);
+		assertNull(result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testStringifyPolicyBlacklist() {
+		final NormalizedAuthorizationPolicyRequest policy = new NormalizedAuthorizationPolicyRequest(
+				AuthorizationPolicyType.BLACKLIST,
+				List.of("System1", "System2"),
+				null);
+
+		final String result = (String) ReflectionTestUtils.invokeMethod(dbService, "stringifyPolicy", policy);
+		assertEquals("System1,System2", result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testStringifyPolicyWhitelist() {
+		final NormalizedAuthorizationPolicyRequest policy = new NormalizedAuthorizationPolicyRequest(
+				AuthorizationPolicyType.WHITELIST,
+				List.of("System1", "System2", "System4"),
+				null);
+
+		final String result = (String) ReflectionTestUtils.invokeMethod(dbService, "stringifyPolicy", policy);
+		assertEquals("System1,System2,System4", result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testStringifyPolicySysMetadata() {
+		final MetadataRequirementDTO req = new MetadataRequirementDTO();
+		req.put("key", "value");
+		final NormalizedAuthorizationPolicyRequest policy = new NormalizedAuthorizationPolicyRequest(
+				AuthorizationPolicyType.SYS_METADATA,
+				null,
+				req);
+
+		final String result = (String) ReflectionTestUtils.invokeMethod(dbService, "stringifyPolicy", policy);
+		final Map<String, String> resultMap = Utilities.fromJson(result, new TypeReference<Map<String, String>>() {
+		});
+
+		assertEquals(1, resultMap.size());
+		assertEquals("value", resultMap.get("key"));
+	}
+}

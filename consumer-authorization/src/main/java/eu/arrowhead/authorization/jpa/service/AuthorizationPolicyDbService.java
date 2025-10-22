@@ -383,7 +383,6 @@ public class AuthorizationPolicyDbService {
 	//-------------------------------------------------------------------------------------------------
 	private Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> findProviderLevelPoliciesByFilters(final Pageable pagination, final NormalizedLookupRequest request) {
 		logger.debug("findProviderLevelPoliciesByFilters started...");
-		Assert.notNull(request, "request is null");
 
 		BaseFilter baseFilter = BaseFilter.NONE;
 		List<AuthProviderPolicyHeader> toFilter = new ArrayList<>();
@@ -408,10 +407,7 @@ public class AuthorizationPolicyDbService {
 		final Map<Long, List<AuthPolicy>> authPolicyMap = new HashMap<>();
 
 		for (final AuthProviderPolicyHeader header : toFilter) {
-			// Match against instance id requirements
-			if (baseFilter != BaseFilter.INSTANCE_ID && !Utilities.isEmpty(request.instanceIds()) && !request.instanceIds().contains(header.getInstanceId())) {
-				continue;
-			}
+			// No need to match against instance id requirements, because if instance ids are specified then header is selected using those
 
 			// Match against target requirements
 			if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(request.targetNames()) && !request.targetNames().contains(header.getTarget())) {

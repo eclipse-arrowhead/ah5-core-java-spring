@@ -19,6 +19,7 @@ package eu.arrowhead.authorization.mqtt.filter.authorization;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
 import eu.arrowhead.common.SystemInfo;
 import eu.arrowhead.common.exception.ForbiddenException;
@@ -212,7 +214,7 @@ public class InternalManagementServiceMqttFilterTest {
 		verify(sysInfo).getManagementPolicy();
 		verify(sysInfo).getManagementWhitelist();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoFilterAuthorizationNotAuthorizedServiceDefNotFoundNoServices() {
@@ -345,6 +347,93 @@ public class InternalManagementServiceMqttFilterTest {
 
 		assertEquals("Requester has no management permission", ex.getMessage());
 	}
-	
-	// TODO: következő: not auth és után auth esetek
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAuthorizationNotAuthorized() {
+		final MqttRequestModel request = new MqttRequestModel("something/management/", "test-operation", new MqttRequestTemplate("trace", "authKey", "response", 0, null, "payload"));
+		request.setRequester("RequesterSystem");
+		request.setSysOp(false);
+
+		final InterfaceModel serviceInterfaceModel = new MqttInterfaceModel.Builder("generic_mqtt", "localhost", 4763)
+				.baseTopic("something/management/")
+				.operation("test-operation")
+				.build();
+
+		final ServiceModel serviceModel = new ServiceModel.Builder()
+				.serviceDefinition("testService")
+				.version("1.0.0")
+				.serviceInterface(serviceInterfaceModel)
+				.build();
+
+		when(systemNameNormalizer.normalize("RequesterSystem")).thenReturn("RequesterSystem");
+		when(sysInfo.getManagementPolicy()).thenReturn(ManagementPolicy.AUTHORIZATION);
+		when(sysInfo.getManagementWhitelist()).thenReturn(List.of("NotTheRequesterSystem"));
+		when(sysInfo.isSslEnabled()).thenReturn(false);
+		when(sysInfo.getServices()).thenReturn(List.of(serviceModel));
+		when(sysInfo.getSystemName()).thenReturn("ConsumerAuthorization");
+		when(systemNameNormalizer.normalize("ConsumerAuthorization")).thenReturn("ConsumerAuthorization");
+		when(serviceDefNameNormalizer.normalize("testService")).thenReturn("testService");
+		when(serviceOpNameNormalizer.normalize("test-operation")).thenReturn("test-operation");
+		when(policyEngine.isAccessGranted(any(NormalizedVerifyRequest.class))).thenReturn(false);
+
+		final Throwable ex = assertThrows(ForbiddenException.class,
+				() -> filter.doFilter("authKey", request));
+
+		verify(systemNameNormalizer).normalize("RequesterSystem");
+		verify(sysInfo).getManagementPolicy();
+		verify(sysInfo).getManagementWhitelist();
+		verify(sysInfo).isSslEnabled();
+		verify(sysInfo).getServices();
+		verify(sysInfo).getSystemName();
+		verify(serviceDefNameNormalizer).normalize("testService");
+		verify(systemNameNormalizer).normalize("ConsumerAuthorization");
+		verify(serviceOpNameNormalizer).normalize("test-operation");
+		verify(policyEngine).isAccessGranted(any(NormalizedVerifyRequest.class));
+
+		assertEquals("Requester has no management permission", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAuthorizationAuthorized() {
+		final MqttRequestModel request = new MqttRequestModel("something/management/", "test-operation", new MqttRequestTemplate("trace", "authKey", "response", 0, null, "payload"));
+		request.setRequester("RequesterSystem");
+		request.setSysOp(false);
+
+		final InterfaceModel serviceInterfaceModel = new MqttInterfaceModel.Builder("generic_mqtt", "localhost", 4763)
+				.baseTopic("something/management/")
+				.operation("test-operation")
+				.build();
+
+		final ServiceModel serviceModel = new ServiceModel.Builder()
+				.serviceDefinition("testService")
+				.version("1.0.0")
+				.serviceInterface(serviceInterfaceModel)
+				.build();
+
+		when(systemNameNormalizer.normalize("RequesterSystem")).thenReturn("RequesterSystem");
+		when(sysInfo.getManagementPolicy()).thenReturn(ManagementPolicy.AUTHORIZATION);
+		when(sysInfo.getManagementWhitelist()).thenReturn(List.of("NotTheRequesterSystem"));
+		when(sysInfo.isSslEnabled()).thenReturn(false);
+		when(sysInfo.getServices()).thenReturn(List.of(serviceModel));
+		when(sysInfo.getSystemName()).thenReturn("ConsumerAuthorization");
+		when(systemNameNormalizer.normalize("ConsumerAuthorization")).thenReturn("ConsumerAuthorization");
+		when(serviceDefNameNormalizer.normalize("testService")).thenReturn("testService");
+		when(serviceOpNameNormalizer.normalize("test-operation")).thenReturn("test-operation");
+		when(policyEngine.isAccessGranted(any(NormalizedVerifyRequest.class))).thenReturn(true);
+
+		assertDoesNotThrow(() -> filter.doFilter("authKey", request));
+
+		verify(systemNameNormalizer).normalize("RequesterSystem");
+		verify(sysInfo).getManagementPolicy();
+		verify(sysInfo).getManagementWhitelist();
+		verify(sysInfo).isSslEnabled();
+		verify(sysInfo).getServices();
+		verify(sysInfo).getSystemName();
+		verify(serviceDefNameNormalizer).normalize("testService");
+		verify(systemNameNormalizer).normalize("ConsumerAuthorization");
+		verify(serviceOpNameNormalizer).normalize("test-operation");
+		verify(policyEngine).isAccessGranted(any(NormalizedVerifyRequest.class));
+	}
 }

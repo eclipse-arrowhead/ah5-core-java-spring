@@ -16,6 +16,8 @@
  *******************************************************************************/
 package eu.arrowhead.authorization.jpa.entity;
 
+import java.util.Objects;
+
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.dto.enums.AuthorizationLevel;
@@ -145,5 +147,30 @@ public class AuthPolicy {
 	//-------------------------------------------------------------------------------------------------
 	public void setPolicy(final String policy) {
 		this.policy = policy;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (obj == null) {
+			return false;
+		}
+
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final AuthPolicy other = (AuthPolicy) obj;
+		return id == other.id;
 	}
 }
