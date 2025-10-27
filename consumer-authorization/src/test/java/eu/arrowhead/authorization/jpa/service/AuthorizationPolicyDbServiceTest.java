@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -49,7 +49,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import eu.arrowhead.authorization.jpa.entity.AuthMgmtPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthPolicy;
+import eu.arrowhead.authorization.jpa.entity.AuthPolicyHeader;
 import eu.arrowhead.authorization.jpa.entity.AuthProviderPolicyHeader;
 import eu.arrowhead.authorization.jpa.repository.AuthMgmtPolicyHeaderRepository;
 import eu.arrowhead.authorization.jpa.repository.AuthPolicyRepository;
@@ -58,6 +60,8 @@ import eu.arrowhead.authorization.service.dto.DTOConverter;
 import eu.arrowhead.authorization.service.dto.NormalizedAuthorizationPolicyRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedGrantRequest;
 import eu.arrowhead.authorization.service.dto.NormalizedLookupRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedQueryRequest;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
@@ -571,7 +575,7 @@ public class AuthorizationPolicyDbServiceTest {
 		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
 		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
 		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
-		verify(providerHeaderRepository, never()).findAll(pageRequest);
+		verify(providerHeaderRepository, never()).findAll();
 		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
 		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
 	}
@@ -604,7 +608,7 @@ public class AuthorizationPolicyDbServiceTest {
 		verify(providerHeaderRepository).findByTargetIn(List.of("serviceDef"));
 		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
 		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
-		verify(providerHeaderRepository, never()).findAll(pageRequest);
+		verify(providerHeaderRepository, never()).findAll();
 		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
 		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
 	}
@@ -637,12 +641,689 @@ public class AuthorizationPolicyDbServiceTest {
 		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
 		verify(providerHeaderRepository).findByCloudIn(List.of("LOCAL"));
 		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
-		verify(providerHeaderRepository, never()).findAll(pageRequest);
+		verify(providerHeaderRepository, never()).findAll();
 		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
 		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersProviderBaseTargetTypeNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setProviders(List.of("TestProvider"));
+		request.setTargetType(AuthorizationTargetType.EVENT_TYPE);
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findByProviderIn(List.of("TestProvider"))).thenReturn(List.of(header));
+		when(providerHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(providerHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
+		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
+		verify(providerHeaderRepository).findByProviderIn(List.of("TestProvider"));
+		verify(providerHeaderRepository, never()).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersNoneBase() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setTargetType(AuthorizationTargetType.EVENT_TYPE);
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findAll()).thenReturn(List.of(header));
+		when(providerHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(providerHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
+		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
+		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
+		verify(providerHeaderRepository).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.PROVIDER), anyLong());
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersAllMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setInstanceIds(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setCloudIdentifiers(List.of("LOCAL"));
+		request.setProviders(List.of("TestProvider"));
+		request.setTargetNames(List.of("serviceDef"));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.PROVIDER,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+		policy.setId(1);
+
+		when(providerHeaderRepository.findByInstanceIdIn(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"))).thenReturn(List.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of(policy));
+		when(providerHeaderRepository.findAllByIdIn(Set.of(1L), pageRequest)).thenReturn(new PageImpl<>(List.of(header)));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertFalse(result.isEmpty());
+		final Pair<AuthProviderPolicyHeader, List<AuthPolicy>> pair = result.getContent().get(0);
+		assertEquals(header, pair.getFirst());
+		assertFalse(pair.getSecond().isEmpty());
+		assertEquals(policy, pair.getSecond().get(0));
+
+		verify(providerHeaderRepository).findByInstanceIdIn(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
+		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
+		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
+		verify(providerHeaderRepository, never()).findAll();
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(1L), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetProviderLevelPoliciesByFiltersNoPolicy() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedLookupRequest request = new NormalizedLookupRequest();
+		request.setInstanceIds(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+
+		final AuthProviderPolicyHeader header = new AuthProviderPolicyHeader(
+				"PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc");
+		header.setId(1);
+
+		when(providerHeaderRepository.findByInstanceIdIn(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"))).thenReturn(List.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1)).thenReturn(List.of());
+		when(providerHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthProviderPolicyHeader, List<AuthPolicy>>> result = dbService.getProviderLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(providerHeaderRepository).findByInstanceIdIn(List.of("PR|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		verify(providerHeaderRepository, never()).findByTargetIn(anyList());
+		verify(providerHeaderRepository, never()).findByCloudIn(anyList());
+		verify(providerHeaderRepository, never()).findByProviderIn(anyList());
+		verify(providerHeaderRepository, never()).findAll();
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.PROVIDER, 1);
+		verify(providerHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersPaginationNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getMgmtLevelPoliciesByFilters(null, null));
+
+		assertEquals("pagination is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersRequestNull() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getMgmtLevelPoliciesByFilters(pageRequest, null));
+
+		assertEquals("request is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersProviderLevelRequest() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.PROVIDER);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getMgmtLevelPoliciesByFilters(pageRequest, request));
+
+		assertEquals("Can't use this method for provider level filtering", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersInternalServerError() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+
+		when(mgmtHeaderRepository.findAll(pageRequest)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.getMgmtLevelPoliciesByFilters(pageRequest, request));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(mgmtHeaderRepository).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersNoFilterOk() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"old desc",
+				"AdminSystem");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.MGMT,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+
+		when(mgmtHeaderRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(header)));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1)).thenReturn(List.of(policy));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertEquals(1, result.getSize());
+		final Pair<AuthMgmtPolicyHeader, List<AuthPolicy>> pair = result.getContent().get(0);
+		assertEquals(header, pair.getFirst());
+		assertEquals(1, pair.getSecond().size());
+		assertEquals(policy, pair.getSecond().get(0));
+
+		verify(mgmtHeaderRepository).findAll(pageRequest);
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersInstanceIdBaseProviderNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setInstanceIds(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		request.setProviders(List.of("OtherTestProvider"));
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByInstanceIdIn(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"))).thenReturn(List.of(header));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository).findByInstanceIdIn(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByProviderIn(anyList());
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.MGMT), anyLong());
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersTargetBaseCloudNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setTargetNames(List.of("serviceDef"));
+		request.setCloudIdentifiers(List.of("TestCloud|Company"));
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByTargetIn(List.of("serviceDef"))).thenReturn(List.of(header));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(mgmtHeaderRepository).findByTargetIn(List.of("serviceDef"));
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByProviderIn(anyList());
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.MGMT), anyLong());
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersCloudBaseTargetTypeNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setCloudIdentifiers(List.of("LOCAL"));
+		request.setTargetType(AuthorizationTargetType.EVENT_TYPE);
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByCloudIn(List.of("LOCAL"))).thenReturn(List.of(header));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository).findByCloudIn(List.of("LOCAL"));
+		verify(mgmtHeaderRepository, never()).findByProviderIn(anyList());
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.MGMT), anyLong());
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersProviderBaseTargetNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setProviders(List.of("TestProvider"));
+		request.setTargetNames(List.of("otherServiceDef"));
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByProviderIn(List.of("TestProvider"))).thenReturn(List.of(header));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository).findByProviderIn(List.of("TestProvider"));
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.MGMT), anyLong());
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersNoneBase() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setTargetType(AuthorizationTargetType.EVENT_TYPE);
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findAll()).thenReturn(List.of(header));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByProviderIn(anyList());
+		verify(mgmtHeaderRepository).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.MGMT), anyLong());
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersAllMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setInstanceIds(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		request.setTargetType(AuthorizationTargetType.SERVICE_DEF);
+		request.setCloudIdentifiers(List.of("LOCAL"));
+		request.setProviders(List.of("TestProvider"));
+		request.setTargetNames(List.of("serviceDef"));
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.MGMT,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+		policy.setId(1);
+
+		when(mgmtHeaderRepository.findByInstanceIdIn(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"))).thenReturn(List.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1)).thenReturn(List.of(policy));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(1L), pageRequest)).thenReturn(new PageImpl<>(List.of(header)));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertFalse(result.isEmpty());
+		final Pair<AuthMgmtPolicyHeader, List<AuthPolicy>> pair = result.getContent().get(0);
+		assertEquals(header, pair.getFirst());
+		assertFalse(pair.getSecond().isEmpty());
+		assertEquals(policy, pair.getSecond().get(0));
+
+		verify(mgmtHeaderRepository).findByInstanceIdIn(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByProviderIn(anyList());
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1);
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(1L), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersNoPolicy() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setInstanceIds(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByInstanceIdIn(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"))).thenReturn(List.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1)).thenReturn(List.of());
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository).findByInstanceIdIn(List.of("MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef"));
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByProviderIn(anyList());
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1);
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetMgmtLevelPoliciesByFiltersProviderBaseTargetTypeNotMacth() {
+		final PageRequest pageRequest = PageRequest.of(0, 10);
+		final NormalizedQueryRequest request = new NormalizedQueryRequest();
+		request.setLevel(AuthorizationLevel.MGMT);
+		request.setProviders(List.of("TestProvider"));
+		request.setTargetType(AuthorizationTargetType.EVENT_TYPE);
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByProviderIn(List.of("TestProvider"))).thenReturn(List.of(header));
+		when(mgmtHeaderRepository.findAllByIdIn(Set.of(), pageRequest)).thenReturn(new PageImpl<>(List.of()));
+
+		final Page<Pair<AuthMgmtPolicyHeader, List<AuthPolicy>>> result = dbService.getMgmtLevelPoliciesByFilters(pageRequest, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository, never()).findByInstanceIdIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByTargetIn(anyList());
+		verify(mgmtHeaderRepository, never()).findByCloudIn(anyList());
+		verify(mgmtHeaderRepository).findByProviderIn(List.of("TestProvider"));
+		verify(mgmtHeaderRepository, never()).findAll();
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(eq(AuthorizationLevel.MGMT), anyLong());
+		verify(mgmtHeaderRepository).findAllByIdIn(Set.of(), pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindRelevantPoliciesLevelNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.findRelevantPolicies(null, null));
+
+		assertEquals("level is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindRelevantPoliciesRequestNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.findRelevantPolicies(AuthorizationLevel.MGMT, null));
+
+		assertEquals("request is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindRelevantPoliciesInternalServerError() {
+		final NormalizedVerifyRequest request = new NormalizedVerifyRequest(
+				"TestProvider",
+				"TestConsumer",
+				"LOCAL",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+
+		when(mgmtHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenThrow(InternalServerError.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.findRelevantPolicies(AuthorizationLevel.MGMT, request));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(mgmtHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindRelevantPoliciesNoRelevantMgmtPolicies() {
+		final NormalizedVerifyRequest request = new NormalizedVerifyRequest(
+				"TestProvider",
+				"TestConsumer",
+				"LOCAL",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+
+		when(mgmtHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.empty());
+
+		final Optional<Pair<? extends AuthPolicyHeader, List<AuthPolicy>>> result = dbService.findRelevantPolicies(AuthorizationLevel.MGMT, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(providerHeaderRepository, never()).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindRelevantPoliciesMgmtNoScopeReq() {
+		final NormalizedVerifyRequest request = new NormalizedVerifyRequest(
+				"TestProvider",
+				"TestConsumer",
+				"LOCAL",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				null);
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		final AuthPolicy policy = new AuthPolicy(
+				AuthorizationLevel.MGMT,
+				1,
+				"*",
+				AuthorizationPolicyType.ALL,
+				null);
+		policy.setId(1);
+
+		when(mgmtHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1)).thenReturn(List.of(policy));
+
+		final Optional<Pair<? extends AuthPolicyHeader, List<AuthPolicy>>> result = dbService.findRelevantPolicies(AuthorizationLevel.MGMT, request);
+
+		assertFalse(result.isEmpty());
+		assertEquals(header, result.get().getFirst());
+		assertFalse(result.get().getSecond().isEmpty());
+		assertEquals(policy, result.get().getSecond().get(0));
+
+		verify(mgmtHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(providerHeaderRepository, never()).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository).findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1);
+		verify(authPolicyRepository, never()).findByLevelAndHeaderIdAndScopeIn(eq(AuthorizationLevel.MGMT), eq(1L), anySet());
+	}
 	
-	// TODO: continue with the case: Provider base target type does not match
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindRelevantPoliciesMgmtScopeReqZombie() {
+		final NormalizedVerifyRequest request = new NormalizedVerifyRequest(
+				"TestProvider",
+				"TestConsumer",
+				"LOCAL",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+
+		final AuthMgmtPolicyHeader header = new AuthMgmtPolicyHeader(
+				"MGMT|LOCAL|TestProvider|SERVICE_DEF|serviceDef",
+				AuthorizationTargetType.SERVICE_DEF,
+				"LOCAL",
+				"TestProvider",
+				"serviceDef",
+				"desc",
+				"AdminSystem");
+		header.setId(1);
+
+		when(mgmtHeaderRepository.findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef")).thenReturn(Optional.of(header));
+		when(authPolicyRepository.findByLevelAndHeaderIdAndScopeIn(AuthorizationLevel.MGMT, 1, Set.of("operation", "*"))).thenReturn(List.of());
+
+		final Optional<Pair<? extends AuthPolicyHeader, List<AuthPolicy>>> result = dbService.findRelevantPolicies(AuthorizationLevel.MGMT, request);
+
+		assertTrue(result.isEmpty());
+
+		verify(mgmtHeaderRepository).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(providerHeaderRepository, never()).findByCloudAndProviderAndTargetTypeAndTarget("LOCAL", "TestProvider", AuthorizationTargetType.SERVICE_DEF, "serviceDef");
+		verify(authPolicyRepository, never()).findByLevelAndHeaderId(AuthorizationLevel.MGMT, 1);
+		verify(authPolicyRepository).findByLevelAndHeaderIdAndScopeIn(AuthorizationLevel.MGMT, 1L, Set.of("operation", "*"));
+	}
+	
+	// TODO: continue
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
