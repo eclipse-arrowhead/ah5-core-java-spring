@@ -286,7 +286,7 @@ public class AuthorizationPolicyDbService {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Pair<AuthMgmtPolicyHeader, List<AuthPolicy>> createMgmtLevelPolicy(final String requester, final NormalizedGrantRequest request) {
+	private Pair<AuthMgmtPolicyHeader, List<AuthPolicy>> createMgmtLevelPolicy(final String requester, final NormalizedGrantRequest request) {
 		logger.debug("createMgmtLevelPolicy started...");
 
 		// check existing record

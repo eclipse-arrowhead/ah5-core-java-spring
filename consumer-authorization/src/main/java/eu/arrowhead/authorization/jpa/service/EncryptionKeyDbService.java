@@ -108,7 +108,7 @@ public class EncryptionKeyDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<EncryptionKey> save(final List<EncryptionKeyModel> candidates) {
 		logger.debug("save started...");
-		Assert.notNull(candidates, "EncryptionKeyModel candidate list is null.");
+		Assert.notNull(candidates, "EncryptionKeyModel candidate list is null");
 
 		try {
 			final Set<String> sysNames = new HashSet<>();
@@ -158,6 +158,8 @@ public class EncryptionKeyDbService {
 			auxiliaryRepo.saveAllAndFlush(auxiliariesToSave);
 
 			return keyRepo.saveAllAndFlush(keysToSave);
+		} catch (final IllegalArgumentException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
