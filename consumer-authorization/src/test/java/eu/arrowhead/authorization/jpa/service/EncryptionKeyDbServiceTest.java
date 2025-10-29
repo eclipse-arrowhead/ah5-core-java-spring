@@ -16,6 +16,7 @@
  *******************************************************************************/
 package eu.arrowhead.authorization.jpa.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -826,5 +827,255 @@ public class EncryptionKeyDbServiceTest {
 		verify(keyRepo).flush();
 		verify(auxiliaryRepo).saveAllAndFlush(anyList());
 		verify(keyRepo).saveAllAndFlush(List.of(key));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete1SystemNameNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.delete((String) null));
+
+		assertEquals("systemName is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete1SystemNameEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.delete(""));
+
+		assertEquals("systemName is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete1InternalServerError() {
+		when(keyRepo.findBySystemName("TestProvider")).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.delete("TestProvider"));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(keyRepo).findBySystemName("TestProvider");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete1NotFound() {
+		when(keyRepo.findBySystemName("TestProvider")).thenReturn(Optional.empty());
+
+		final boolean result = dbService.delete("TestProvider");
+
+		assertFalse(result);
+
+		verify(keyRepo).findBySystemName("TestProvider");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete1NoExternal() {
+		final CryptographerAuxiliary internal = new CryptographerAuxiliary("internalAux");
+		internal.setId(1);
+
+		final EncryptionKey key = new EncryptionKey(
+				"TestProvider",
+				"encryptedKey",
+				"alg",
+				internal,
+				null);
+		key.setId(1);
+
+		when(keyRepo.findBySystemName("TestProvider")).thenReturn(Optional.of(key));
+		doNothing().when(keyRepo).deleteById(1L);
+		doNothing().when(auxiliaryRepo).deleteById(1L);
+		doNothing().when(keyRepo).flush();
+		doNothing().when(auxiliaryRepo).flush();
+
+		final boolean result = dbService.delete("TestProvider");
+
+		assertTrue(result);
+
+		verify(keyRepo).findBySystemName("TestProvider");
+		verify(keyRepo).deleteById(1L);
+		verify(auxiliaryRepo).deleteById(1L);
+		verify(keyRepo).flush();
+		verify(auxiliaryRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete1External() {
+		final CryptographerAuxiliary internal = new CryptographerAuxiliary("internalAux");
+		internal.setId(1);
+
+		final CryptographerAuxiliary external = new CryptographerAuxiliary("externalAux");
+		external.setId(2);
+
+		final EncryptionKey key = new EncryptionKey(
+				"TestProvider",
+				"encryptedKey",
+				"alg",
+				internal,
+				external);
+		key.setId(1);
+
+		when(keyRepo.findBySystemName("TestProvider")).thenReturn(Optional.of(key));
+		doNothing().when(keyRepo).deleteById(1L);
+		doNothing().when(auxiliaryRepo).deleteById(1L);
+		doNothing().when(auxiliaryRepo).deleteById(2L);
+		doNothing().when(keyRepo).flush();
+		doNothing().when(auxiliaryRepo).flush();
+
+		final boolean result = dbService.delete("TestProvider");
+
+		assertTrue(result);
+
+		verify(keyRepo).findBySystemName("TestProvider");
+		verify(keyRepo).deleteById(1L);
+		verify(auxiliaryRepo).deleteById(1L);
+		verify(auxiliaryRepo).deleteById(2L);
+		verify(keyRepo).flush();
+		verify(auxiliaryRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2ListNull() {
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.delete((List) null));
+
+		assertEquals("systemNames list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2ListEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.delete(List.of()));
+
+		assertEquals("systemNames list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2ListContainsNull() {
+		final List<String> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.delete(list));
+
+		assertEquals("systemNames list contains null or empty element", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2ListContainsEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.delete(List.of("")));
+
+		assertEquals("systemNames list contains null or empty element", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2InternalServerError() {
+		when(keyRepo.findBySystemName("TestProvider")).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.delete(List.of("TestProvider")));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(keyRepo).findBySystemName("TestProvider");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2NotFound() {
+		when(keyRepo.findBySystemName("TestProvider")).thenReturn(Optional.empty());
+		doNothing().when(auxiliaryRepo).deleteAllInBatch(List.of());
+		doNothing().when(keyRepo).deleteAllInBatch(List.of());
+		doNothing().when(auxiliaryRepo).flush();
+		doNothing().when(keyRepo).flush();
+
+		assertDoesNotThrow(() -> dbService.delete(List.of("TestProvider")));
+
+		verify(keyRepo).findBySystemName("TestProvider");
+		verify(auxiliaryRepo).deleteAllInBatch(List.of());
+		verify(keyRepo).deleteAllInBatch(List.of());
+		verify(auxiliaryRepo).flush();
+		verify(keyRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2NoExternal() {
+		final CryptographerAuxiliary internal = new CryptographerAuxiliary("internalAux");
+		internal.setId(1);
+
+		final EncryptionKey key = new EncryptionKey(
+				"TestProvider",
+				"encryptedKey",
+				"alg",
+				internal,
+				null);
+		key.setId(1);
+
+		when(keyRepo.findBySystemName("TestProvider")).thenReturn(Optional.of(key));
+		doNothing().when(auxiliaryRepo).deleteAllInBatch(List.of(internal));
+		doNothing().when(keyRepo).deleteAllInBatch(List.of(key));
+		doNothing().when(auxiliaryRepo).flush();
+		doNothing().when(keyRepo).flush();
+
+		assertDoesNotThrow(() -> dbService.delete(List.of("TestProvider")));
+
+		verify(keyRepo).findBySystemName("TestProvider");
+		verify(auxiliaryRepo).deleteAllInBatch(List.of(internal));
+		verify(keyRepo).deleteAllInBatch(List.of(key));
+		verify(auxiliaryRepo).flush();
+		verify(keyRepo).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDelete2External() {
+		final CryptographerAuxiliary internal = new CryptographerAuxiliary("internalAux");
+		internal.setId(1);
+
+		final CryptographerAuxiliary external = new CryptographerAuxiliary("externalAux");
+		external.setId(2);
+
+		final EncryptionKey key = new EncryptionKey(
+				"TestProvider",
+				"encryptedKey",
+				"alg",
+				internal,
+				external);
+		key.setId(1);
+
+		when(keyRepo.findBySystemName("TestProvider")).thenReturn(Optional.of(key));
+		doNothing().when(auxiliaryRepo).deleteAllInBatch(List.of(internal, external));
+		doNothing().when(keyRepo).deleteAllInBatch(List.of(key));
+		doNothing().when(auxiliaryRepo).flush();
+		doNothing().when(keyRepo).flush();
+
+		assertDoesNotThrow(() -> dbService.delete(List.of("TestProvider")));
+
+		verify(keyRepo).findBySystemName("TestProvider");
+		verify(auxiliaryRepo).deleteAllInBatch(List.of(internal, external));
+		verify(keyRepo).deleteAllInBatch(List.of(key));
+		verify(auxiliaryRepo).flush();
+		verify(keyRepo).flush();
 	}
 }

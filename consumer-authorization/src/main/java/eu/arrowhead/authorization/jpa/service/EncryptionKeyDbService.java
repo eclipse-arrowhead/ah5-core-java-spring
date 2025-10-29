@@ -202,7 +202,8 @@ public class EncryptionKeyDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void delete(final List<String> systemNames) {
 		logger.debug("delete started...");
-		Assert.isTrue(!Utilities.containsNullOrEmpty(systemNames), "systemName list contains null or empty element");
+		Assert.isTrue(!Utilities.isEmpty(systemNames), "systemNames list is empty");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(systemNames), "systemNames list contains null or empty element");
 
 		try {
 			final List<CryptographerAuxiliary> auxiliariesToDelete = new ArrayList<>();

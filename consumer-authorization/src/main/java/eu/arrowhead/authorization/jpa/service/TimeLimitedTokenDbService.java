@@ -81,7 +81,14 @@ public class TimeLimitedTokenDbService {
 
 		try {
 			boolean override = false;
-			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(consumerCloud, consumer, provider, target, targetType);
+			final String actScope = Utilities.isEmpty(scope) ? null : scope;
+			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
+					consumerCloud,
+					consumer,
+					provider,
+					targetType,
+					target,
+					actScope);
 			if (tokenHeaderOpt.isPresent()) {
 				final Optional<TimeLimitedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
 				if (tokenOpt.isPresent()) {
@@ -91,7 +98,7 @@ public class TimeLimitedTokenDbService {
 				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, actScope));
 			final TimeLimitedToken tokenRecord = tokenRepo.saveAndFlush(new TimeLimitedToken(tokenHeaderRecord, expiresAt));
 
 			return Pair.of(tokenRecord, !override);

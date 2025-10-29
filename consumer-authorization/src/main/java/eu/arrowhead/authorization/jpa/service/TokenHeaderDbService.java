@@ -85,6 +85,7 @@ public class TokenHeaderDbService {
 	//-------------------------------------------------------------------------------------------------
 	public List<TokenHeader> findByTokenHashList(final List<String> tokenHashes) {
 		logger.debug("findByTokenHashList started");
+		Assert.isTrue(!Utilities.isEmpty(tokenHashes), "token hash list is empty");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(tokenHashes), "token hash list contains null or empty element");
 
 		try {
@@ -100,7 +101,8 @@ public class TokenHeaderDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteById(final Collection<Long> ids) {
 		logger.debug("deleteById started");
-		Assert.isTrue(!Utilities.containsNull(ids), "ID list contains null element");
+		Assert.isTrue(!Utilities.isEmpty(ids), "ID collection is empty");
+		Assert.isTrue(!Utilities.containsNull(ids), "ID collection contains null element");
 
 		try {
 			headerRepo.deleteAllByIdInBatch(ids);
