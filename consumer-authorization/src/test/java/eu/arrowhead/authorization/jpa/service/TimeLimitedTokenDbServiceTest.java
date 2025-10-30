@@ -518,6 +518,32 @@ public class TimeLimitedTokenDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testGetByHeaderInternalServerError() {
+		final TokenHeader header = new TokenHeader(
+				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				"tokenHash",
+				"AdminSystem",
+				"LOCAL",
+				"TestConsumer",
+				"TestProvider",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+		header.setId(2);
+
+		when(tokenRepo.findByHeader(header)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.getByHeader(header));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(tokenRepo).findByHeader(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testGetByHeaderNotFound() {
 		final TokenHeader header = new TokenHeader(
 				AuthorizationTokenType.TIME_LIMITED_TOKEN,

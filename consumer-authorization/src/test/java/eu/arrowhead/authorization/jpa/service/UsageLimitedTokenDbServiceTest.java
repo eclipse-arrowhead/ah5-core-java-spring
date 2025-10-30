@@ -24,7 +24,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -34,26 +33,26 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.util.Pair;
 
-import eu.arrowhead.authorization.jpa.entity.SelfContainedToken;
 import eu.arrowhead.authorization.jpa.entity.TokenHeader;
-import eu.arrowhead.authorization.jpa.repository.SelfContainedTokenRepository;
+import eu.arrowhead.authorization.jpa.entity.UsageLimitedToken;
 import eu.arrowhead.authorization.jpa.repository.TokenHeaderRepository;
-import eu.arrowhead.common.Utilities;
+import eu.arrowhead.authorization.jpa.repository.UsageLimitedTokenRepository;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 @ExtendWith(MockitoExtension.class)
-public class SelfContainedTokenDbServiceTest {
+public class UsageLimitedTokenDbServiceTest {
 
 	//=================================================================================================
 	// members
 
 	@InjectMocks
-	private SelfContainedTokenDbService dbService;
+	private UsageLimitedTokenDbService dbService;
 
 	@Mock
-	private SelfContainedTokenRepository tokenRepo;
+	private UsageLimitedTokenRepository tokenRepo;
 
 	@Mock
 	private TokenHeaderRepository tokenHeaderRepo;
@@ -66,7 +65,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveTokenTypeNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(null, null, null, null, null, null, null, null, null, null, null));
+				() -> dbService.save(null, null, null, null, null, null, null, null, null, 10));
 
 		assertEquals("tokenType is null", ex.getMessage());
 	}
@@ -76,7 +75,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveTokenHashNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, null, null, null, null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, null, null, null, null, null, null, null, null, 10));
 
 		assertEquals("tokenHash is empty", ex.getMessage());
 	}
@@ -86,7 +85,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveTokenHashEmpty() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "", null, null, null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "", null, null, null, null, null, null, null, 10));
 
 		assertEquals("tokenHash is empty", ex.getMessage());
 	}
@@ -96,7 +95,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveRequesterNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", null, null, null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", null, null, null, null, null, null, null, 10));
 
 		assertEquals("requester is empty", ex.getMessage());
 	}
@@ -106,7 +105,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveRequesterEmpty() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "", null, null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "", null, null, null, null, null, null, 10));
 
 		assertEquals("requester is empty", ex.getMessage());
 	}
@@ -116,7 +115,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveConsumerCloudNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", null, null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", null, null, null, null, null, null, 10));
 
 		assertEquals("consumerCloud is empty", ex.getMessage());
 	}
@@ -126,7 +125,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveConsumerCloudEmpty() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", "", null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", "", null, null, null, null, null, 10));
 
 		assertEquals("consumerCloud is empty", ex.getMessage());
 	}
@@ -136,7 +135,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveConsumerNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", null, null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", null, null, null, null, null, 10));
 
 		assertEquals("consumer is empty", ex.getMessage());
 	}
@@ -146,7 +145,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveConsumerEmpty() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "", null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "", null, null, null, null, 10));
 
 		assertEquals("consumer is empty", ex.getMessage());
 	}
@@ -156,7 +155,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveProviderNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "TestConsumer", null, null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "TestConsumer", null, null, null, null, 10));
 
 		assertEquals("provider is empty", ex.getMessage());
 	}
@@ -166,7 +165,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveProviderEmpty() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "TestConsumer", "", null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "TestConsumer", "", null, null, null, 10));
 
 		assertEquals("provider is empty", ex.getMessage());
 	}
@@ -176,7 +175,7 @@ public class SelfContainedTokenDbServiceTest {
 	public void testSaveTargetTypeNull() {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
-				() -> dbService.save(AuthorizationTokenType.SELF_CONTAINED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "TestConsumer", "TestProvider", null, null, null, null, null));
+				() -> dbService.save(AuthorizationTokenType.USAGE_LIMITED_TOKEN, "tokenHash", "AdminSystem", "LOCAL", "TestConsumer", "TestProvider", null, null, null, 10));
 
 		assertEquals("targetType is null", ex.getMessage());
 	}
@@ -187,7 +186,7 @@ public class SelfContainedTokenDbServiceTest {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
 				() -> dbService.save(
-						AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+						AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 						"tokenHash",
 						"AdminSystem",
 						"LOCAL",
@@ -196,8 +195,7 @@ public class SelfContainedTokenDbServiceTest {
 						AuthorizationTargetType.SERVICE_DEF,
 						null,
 						null,
-						null,
-						null));
+						10));
 
 		assertEquals("target is empty", ex.getMessage());
 	}
@@ -208,7 +206,7 @@ public class SelfContainedTokenDbServiceTest {
 		final Throwable ex = assertThrows(
 				IllegalArgumentException.class,
 				() -> dbService.save(
-						AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+						AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 						"tokenHash",
 						"AdminSystem",
 						"LOCAL",
@@ -217,73 +215,9 @@ public class SelfContainedTokenDbServiceTest {
 						AuthorizationTargetType.SERVICE_DEF,
 						"",
 						null,
-						null,
-						null));
+						10));
 
 		assertEquals("target is empty", ex.getMessage());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testSaveVariantNull() {
-		final Throwable ex = assertThrows(
-				IllegalArgumentException.class,
-				() -> dbService.save(
-						AuthorizationTokenType.SELF_CONTAINED_TOKEN,
-						"tokenHash",
-						"AdminSystem",
-						"LOCAL",
-						"TestConsumer",
-						"TestProvider",
-						AuthorizationTargetType.SERVICE_DEF,
-						"serviceDef",
-						null,
-						null,
-						null));
-
-		assertEquals("variant is empty", ex.getMessage());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testSaveVariantEmpty() {
-		final Throwable ex = assertThrows(
-				IllegalArgumentException.class,
-				() -> dbService.save(
-						AuthorizationTokenType.SELF_CONTAINED_TOKEN,
-						"tokenHash",
-						"AdminSystem",
-						"LOCAL",
-						"TestConsumer",
-						"TestProvider",
-						AuthorizationTargetType.SERVICE_DEF,
-						"serviceDef",
-						null,
-						"",
-						null));
-
-		assertEquals("variant is empty", ex.getMessage());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testSaveExpiresAtNull() {
-		final Throwable ex = assertThrows(
-				IllegalArgumentException.class,
-				() -> dbService.save(
-						AuthorizationTokenType.SELF_CONTAINED_TOKEN,
-						"tokenHash",
-						"AdminSystem",
-						"LOCAL",
-						"TestConsumer",
-						"TestProvider",
-						AuthorizationTargetType.SERVICE_DEF,
-						"serviceDef",
-						null,
-						"BASE64_SELF_CONTAINED_TOKEN_AUTH",
-						null));
-
-		assertEquals("expiresAt is null", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -295,7 +229,7 @@ public class SelfContainedTokenDbServiceTest {
 		final Throwable ex = assertThrows(
 				InternalServerError.class,
 				() -> dbService.save(
-						AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+						AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 						"tokenHash",
 						"AdminSystem",
 						"LOCAL",
@@ -304,8 +238,7 @@ public class SelfContainedTokenDbServiceTest {
 						AuthorizationTargetType.SERVICE_DEF,
 						"serviceDef",
 						null,
-						"BASE64_SELF_CONTAINED_TOKEN_AUTH",
-						Utilities.utcNow()));
+						10));
 
 		assertEquals("Database operation error", ex.getMessage());
 
@@ -315,10 +248,8 @@ public class SelfContainedTokenDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testSaveNoOverride() {
-		final ZonedDateTime expiresAt = Utilities.utcNow().plusHours(1);
-
 		final TokenHeader header = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -329,7 +260,7 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 
 		final TokenHeader savedHeader = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -340,8 +271,8 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 		savedHeader.setId(1);
 
-		final SelfContainedToken token = new SelfContainedToken(savedHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
-		final SelfContainedToken savedToken = new SelfContainedToken(savedHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
+		final UsageLimitedToken token = new UsageLimitedToken(savedHeader, 10);
+		final UsageLimitedToken savedToken = new UsageLimitedToken(savedHeader, 10);
 		savedToken.setId(1);
 
 		when(tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
@@ -354,8 +285,8 @@ public class SelfContainedTokenDbServiceTest {
 		when(tokenHeaderRepo.saveAndFlush(header)).thenReturn(savedHeader);
 		when(tokenRepo.saveAndFlush(token)).thenReturn(savedToken);
 
-		final Pair<SelfContainedToken, Boolean> result = dbService.save(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+		final Pair<UsageLimitedToken, Boolean> result = dbService.save(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -364,8 +295,7 @@ public class SelfContainedTokenDbServiceTest {
 				AuthorizationTargetType.SERVICE_DEF,
 				"serviceDef",
 				"operation",
-				"BASE64_SELF_CONTAINED_TOKEN_AUTH",
-				expiresAt);
+				10);
 
 		assertEquals(savedToken, result.getFirst());
 		assertTrue(result.getSecond());
@@ -384,10 +314,8 @@ public class SelfContainedTokenDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testSaveNoOverrideWithZombieHeader() {
-		final ZonedDateTime expiresAt = Utilities.utcNow().plusHours(1);
-
 		final TokenHeader zombie = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -399,7 +327,7 @@ public class SelfContainedTokenDbServiceTest {
 		zombie.setId(1);
 
 		final TokenHeader header = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -410,7 +338,7 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 
 		final TokenHeader savedHeader = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -421,8 +349,8 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 		savedHeader.setId(2);
 
-		final SelfContainedToken token = new SelfContainedToken(savedHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
-		final SelfContainedToken savedToken = new SelfContainedToken(savedHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
+		final UsageLimitedToken token = new UsageLimitedToken(savedHeader, 10);
+		final UsageLimitedToken savedToken = new UsageLimitedToken(savedHeader, 10);
 		savedToken.setId(1);
 
 		when(tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
@@ -437,8 +365,8 @@ public class SelfContainedTokenDbServiceTest {
 		when(tokenHeaderRepo.saveAndFlush(header)).thenReturn(savedHeader);
 		when(tokenRepo.saveAndFlush(token)).thenReturn(savedToken);
 
-		final Pair<SelfContainedToken, Boolean> result = dbService.save(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+		final Pair<UsageLimitedToken, Boolean> result = dbService.save(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -447,8 +375,7 @@ public class SelfContainedTokenDbServiceTest {
 				AuthorizationTargetType.SERVICE_DEF,
 				"serviceDef",
 				"operation",
-				"BASE64_SELF_CONTAINED_TOKEN_AUTH",
-				expiresAt);
+				10);
 
 		assertEquals(savedToken, result.getFirst());
 		assertTrue(result.getSecond());
@@ -469,10 +396,8 @@ public class SelfContainedTokenDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testSaveOverride() {
-		final ZonedDateTime expiresAt = Utilities.utcNow().plusHours(1);
-
 		final TokenHeader oldHeader = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -483,10 +408,10 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 		oldHeader.setId(1);
 
-		final SelfContainedToken oldToken = new SelfContainedToken(oldHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
+		final UsageLimitedToken oldToken = new UsageLimitedToken(oldHeader, 10);
 
 		final TokenHeader header = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -497,7 +422,7 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 
 		final TokenHeader savedHeader = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -508,8 +433,8 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 		savedHeader.setId(2);
 
-		final SelfContainedToken token = new SelfContainedToken(savedHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
-		final SelfContainedToken savedToken = new SelfContainedToken(savedHeader, "BASE64_SELF_CONTAINED_TOKEN_AUTH", expiresAt);
+		final UsageLimitedToken token = new UsageLimitedToken(savedHeader, 10);
+		final UsageLimitedToken savedToken = new UsageLimitedToken(savedHeader, 10);
 		savedToken.setId(1);
 
 		when(tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
@@ -525,8 +450,8 @@ public class SelfContainedTokenDbServiceTest {
 		when(tokenHeaderRepo.saveAndFlush(header)).thenReturn(savedHeader);
 		when(tokenRepo.saveAndFlush(token)).thenReturn(savedToken);
 
-		final Pair<SelfContainedToken, Boolean> result = dbService.save(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+		final Pair<UsageLimitedToken, Boolean> result = dbService.save(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -535,8 +460,7 @@ public class SelfContainedTokenDbServiceTest {
 				AuthorizationTargetType.SERVICE_DEF,
 				"serviceDef",
 				"operation",
-				"BASE64_SELF_CONTAINED_TOKEN_AUTH",
-				expiresAt);
+				10);
 
 		assertEquals(savedToken, result.getFirst());
 		assertFalse(result.getSecond());
@@ -595,7 +519,7 @@ public class SelfContainedTokenDbServiceTest {
 	@Test
 	public void testGetByHeaderNotFound() {
 		final TokenHeader header = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -608,7 +532,7 @@ public class SelfContainedTokenDbServiceTest {
 
 		when(tokenRepo.findByHeader(header)).thenReturn(Optional.empty());
 
-		final Optional<SelfContainedToken> result = dbService.getByHeader(header);
+		final Optional<UsageLimitedToken> result = dbService.getByHeader(header);
 
 		assertTrue(result.isEmpty());
 
@@ -619,7 +543,7 @@ public class SelfContainedTokenDbServiceTest {
 	@Test
 	public void testGetByHeaderOk() {
 		final TokenHeader header = new TokenHeader(
-				AuthorizationTokenType.SELF_CONTAINED_TOKEN,
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
 				"tokenHash",
 				"AdminSystem",
 				"LOCAL",
@@ -630,16 +554,138 @@ public class SelfContainedTokenDbServiceTest {
 				"operation");
 		header.setId(2);
 
-		final SelfContainedToken token = new SelfContainedToken(header, "BASE64_SELF_CONTAINED_TOKEN_AUTH", Utilities.utcNow().plusHours(1));
+		final UsageLimitedToken token = new UsageLimitedToken(header, 10);
 		token.setId(1);
 
 		when(tokenRepo.findByHeader(header)).thenReturn(Optional.of(token));
 
-		final Optional<SelfContainedToken> result = dbService.getByHeader(header);
+		final Optional<UsageLimitedToken> result = dbService.getByHeader(header);
 
 		assertFalse(result.isEmpty());
 		assertEquals(token, result.get());
 
 		verify(tokenRepo).findByHeader(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDecreaseNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.decrease(null));
+
+		assertEquals("header is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDecreaseInternalServerError() {
+		final TokenHeader header = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"tokenHash",
+				"AdminSystem",
+				"LOCAL",
+				"TestConsumer",
+				"TestProvider",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+		header.setId(2);
+
+		when(tokenRepo.findByHeader(header)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.decrease(header));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(tokenRepo).findByHeader(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDecreaseNoUsageLimitedTokenForHeader() {
+		final TokenHeader header = new TokenHeader(
+				AuthorizationTokenType.TIME_LIMITED_TOKEN,
+				"tokenHash",
+				"AdminSystem",
+				"LOCAL",
+				"TestConsumer",
+				"TestProvider",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+		header.setId(2);
+
+		when(tokenRepo.findByHeader(header)).thenReturn(Optional.empty());
+
+		Optional<Pair<Integer, Integer>> result = dbService.decrease(header);
+
+		assertTrue(result.isEmpty());
+
+		verify(tokenRepo).findByHeader(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDecreaseExpiredToken() {
+		final TokenHeader header = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"tokenHash",
+				"AdminSystem",
+				"LOCAL",
+				"TestConsumer",
+				"TestProvider",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+		header.setId(2);
+
+		final UsageLimitedToken token = new UsageLimitedToken(header, 5);
+		token.setId(1);
+		token.setUsageLeft(0);
+
+		when(tokenRepo.findByHeader(header)).thenReturn(Optional.of(token));
+
+		Optional<Pair<Integer, Integer>> result = dbService.decrease(header);
+
+		assertTrue(result.isPresent());
+		assertEquals(0, result.get().getFirst());
+		assertEquals(0, result.get().getSecond());
+
+		verify(tokenRepo).findByHeader(header);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDecreaseOk() {
+		final TokenHeader header = new TokenHeader(
+				AuthorizationTokenType.USAGE_LIMITED_TOKEN,
+				"tokenHash",
+				"AdminSystem",
+				"LOCAL",
+				"TestConsumer",
+				"TestProvider",
+				AuthorizationTargetType.SERVICE_DEF,
+				"serviceDef",
+				"operation");
+		header.setId(2);
+
+		final UsageLimitedToken token = new UsageLimitedToken(header, 5);
+		token.setId(1);
+		token.setUsageLeft(5);
+
+		when(tokenRepo.findByHeader(header)).thenReturn(Optional.of(token));
+		when(tokenRepo.saveAndFlush(token)).thenReturn(token);
+
+		Optional<Pair<Integer, Integer>> result = dbService.decrease(header);
+
+		assertTrue(result.isPresent());
+		assertEquals(5, result.get().getFirst());
+		assertEquals(4, result.get().getSecond());
+
+		verify(tokenRepo).findByHeader(header);
+		verify(tokenRepo).saveAndFlush(token);
 	}
 }

@@ -125,6 +125,7 @@ public class UsageLimitedTokenDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Optional<Pair<Integer, Integer>> decrease(final TokenHeader header) {
 		logger.debug("decrease started...");
+		Assert.notNull(header, "header is null");
 
 		try {
 			final Optional<UsageLimitedToken> optional = tokenRepo.findByHeader(header);

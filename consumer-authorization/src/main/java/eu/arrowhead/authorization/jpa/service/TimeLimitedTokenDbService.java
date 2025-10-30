@@ -114,6 +114,12 @@ public class TimeLimitedTokenDbService {
 		logger.debug("getByHeader started...");
 		Assert.notNull(header, "header is null");
 
-		return tokenRepo.findByHeader(header);
+		try {
+			return tokenRepo.findByHeader(header);
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			throw new InternalServerError("Database operation error");
+		}
 	}
 }

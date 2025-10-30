@@ -129,9 +129,9 @@ public class TokenHeaderDbService {
 		Assert.notNull(pagination, "pagination is null");
 
 		try {
-
 			BaseFilter baseFilter = BaseFilter.NONE;
 			List<TokenHeader> baseList = null;
+
 			if (!Utilities.isEmpty(requester)) {
 				baseList = headerRepo.findAllByRequester(requester);
 				baseFilter = BaseFilter.REQUESTER;
@@ -159,10 +159,7 @@ public class TokenHeaderDbService {
 
 			final Set<Long> matchingIds = new HashSet<>();
 			for (final TokenHeader header : baseList) {
-				// Match against requester
-				if (baseFilter != BaseFilter.REQUESTER && !Utilities.isEmpty(requester) && !header.getRequester().equals(requester)) {
-					continue;
-				}
+				// No need to match against requester requirement, because if requester is specified then header is selected using those
 
 				// Match against consumer
 				if (baseFilter != BaseFilter.CONSUMER && !Utilities.isEmpty(consumer) && !header.getConsumer().equals(consumer)) {
