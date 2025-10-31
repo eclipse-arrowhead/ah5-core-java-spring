@@ -77,6 +77,7 @@ public class SubscriptionDbService {
 
 				final ZonedDateTime expireAt = candidate.getDuration() == null ? null : now.plusSeconds(candidate.getDuration());
 				toSave.add(new Subscription(
+						UUID.randomUUID(),
 						candidate.getOrchestrationForm().getRequesterSystemName(),
 						candidate.getOrchestrationForm().getTargetSystemName(),
 						candidate.getOrchestrationForm().getServiceDefinition(),

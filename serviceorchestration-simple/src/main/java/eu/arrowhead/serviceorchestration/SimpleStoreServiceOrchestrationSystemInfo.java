@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration;
 
 import java.util.List;
@@ -12,7 +28,7 @@ import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
 
 @Component(Constants.BEAN_NAME_SYSTEM_INFO)
-public class SimpleServiceOrchestrationSystemInfo extends SystemInfo {
+public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// members
@@ -21,11 +37,11 @@ public class SimpleServiceOrchestrationSystemInfo extends SystemInfo {
 
 	//=================================================================================================
 	// methods
-	
+
 	@Override
 	//-------------------------------------------------------------------------------------------------
 	public String getSystemName() {
-		return SimpleServiceOrchestrationConstants.SYSTEM_NAME;
+		return SimpleStoreServiceOrchestrationConstants.SYSTEM_NAME;
 	}
 
 	@Override
@@ -49,9 +65,10 @@ public class SimpleServiceOrchestrationSystemInfo extends SystemInfo {
 	@Override
 	//-------------------------------------------------------------------------------------------------
 	public List<ServiceModel> getServices() {
+		//TODO
 		return null;
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
 
@@ -73,6 +90,6 @@ public class SimpleServiceOrchestrationSystemInfo extends SystemInfo {
 						Constants.MAX_PAGE_SIZE
 						// Constants.SERVICE_ADDRESS_ALIAS ?
 						),
-				SimpleServiceOrchestrationDefaults.class);
+				SimpleStoreServiceOrchestrationDefaults.class);
 	}
 }

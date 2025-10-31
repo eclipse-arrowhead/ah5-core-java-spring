@@ -14,16 +14,15 @@
  *  	Arrowhead Consortia - conceptualization
  *
  *******************************************************************************/
-package eu.arrowhead.serviceorchestration.jpa.repository;
+package eu.arrowhead.serviceorchestration.api.http;
 
-import java.util.UUID;
+public class OrchestrationHistoryManagementAPI {
 
-import org.springframework.stereotype.Repository;
+	//=================================================================================================
+	// members
 
-import eu.arrowhead.common.jpa.RefreshableRepository;
-import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
+	//=================================================================================================
+	// methods
 
-@Repository
-public interface SubscriptionRepository extends RefreshableRepository<Subscription, UUID> {
-
+	//-------------------------------------------------------------------------------------------------
 }

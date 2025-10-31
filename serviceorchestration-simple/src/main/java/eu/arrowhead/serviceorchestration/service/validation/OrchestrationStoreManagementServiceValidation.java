@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.validation;
 
 import java.util.ArrayList;
@@ -5,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,16 +32,19 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
-import eu.arrowhead.common.service.validation.name.NameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
+import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
-import eu.arrowhead.serviceorchestration.service.normalization.SimpleStoreManagementServiceNormalization;
+import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationStoreManagementServiceNormalization;
 
 @Service
-public class SimpleStoreManagementServiceValidation {
+public class OrchestrationStoreManagementServiceValidation {
 
 	//=================================================================================================
 	// members
@@ -32,10 +52,13 @@ public class SimpleStoreManagementServiceValidation {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private SimpleStoreManagementServiceNormalization normalizer;
-	
+	private OrchestrationStoreManagementServiceNormalization normalizer;
+
 	@Autowired
-	private NameValidator nameValidator;
+	private ServiceInstanceIdentifierValidator serviceInstanceIdValidator;
+
+	@Autowired
+	private SystemNameValidator systemNameValidator;
 
 	@Autowired
 	private PageValidator pageValidator;
@@ -50,29 +73,29 @@ public class SimpleStoreManagementServiceValidation {
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is null", origin);
 		}
-
 		if (Utilities.containsNull(dto.candidates())) {
 			throw new InvalidParameterException("Request payload contains null element", origin);
 		}
 
-		final List<OrchestrationSimpleStoreRequestDTO> normalized = new ArrayList<OrchestrationSimpleStoreRequestDTO>(dto.candidates().size());
-
+		final List<OrchestrationSimpleStoreRequestDTO> normalizedDtos = new ArrayList<OrchestrationSimpleStoreRequestDTO>(dto.candidates().size());
 		try {
-			dto.candidates().forEach(c -> normalized.add(validateAndNormalizeCreate(c)));
-			checkDuplicates(normalized);
+			dto.candidates().forEach(c -> normalizedDtos.add(validateAndNormalizeOrchestrationSimpleStoreRequestDTO(c)));
+			checkDuplicates(normalizedDtos);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		return normalized;
+		return normalizedDtos;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreQueryRequestDTO validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeQuery started...");
 
-		validateQuery(dto, origin);
+		throw new NotImplementedException();
+
+		/*validateQuery(dto, origin);
 
 		final OrchestrationSimpleStoreQueryRequestDTO normalized = normalizer.normalizeQuery(dto);
 		try {
@@ -96,14 +119,16 @@ public class SimpleStoreManagementServiceValidation {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		return normalized;
+		return normalized;*/
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void validatePriorityMap(final PriorityRequestDTO dto, final String origin) {
 		logger.info("validatePriorityMap started...");
 
-		if (dto == null) {
+		throw new NotImplementedException();
+
+		/*if (dto == null) {
 			throw new InvalidParameterException("Priority map is null!", origin);
 		}
 
@@ -120,72 +145,53 @@ public class SimpleStoreManagementServiceValidation {
 			if (p < 0) {
 				throw new InvalidParameterException("Invalid priority: " + p);
 			}
-		}
+		}*/
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public void validateUUIDList(final List<UUID> uuids, final String origin) {
 		logger.info("validateUUIDList started...");
 
-		if (Utilities.isEmpty(uuids)) {
+		/*if (Utilities.isEmpty(uuids)) {
 			throw new InvalidParameterException("UUID list is empty!", origin);
 		}
 
 		if (Utilities.containsNull(uuids)) {
 			throw new InvalidParameterException("UUID list contains null!", origin);
-		}
+		}*/
 	}
 
 	//=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private OrchestrationSimpleStoreRequestDTO validateAndNormalizeCreate(final OrchestrationSimpleStoreRequestDTO dto) {
+	private OrchestrationSimpleStoreRequestDTO validateAndNormalizeOrchestrationSimpleStoreRequestDTO(final OrchestrationSimpleStoreRequestDTO dto) {
 		Assert.notNull(dto, "DTO is null!");
 
-		validateCreate(dto);
+		if (dto.priority() == null) {
+			throw new InvalidParameterException("Priority is missing");
+		}
+		if (dto.priority() < 0) {
+			throw new InvalidParameterException("Priority should be non-negative");
+		}
 
 		final OrchestrationSimpleStoreRequestDTO normalizedDto = normalizer.normalizeCreate(dto);
 
-		nameValidator.validateName(dto.consumer());
+		systemNameValidator.validateSystemName(normalizedDto.consumer());
+		serviceInstanceIdValidator.validateServiceInstanceIdentifier(normalizedDto.serviceInstanceId());
 
-		nameValidator.validateServiceInstanceId(dto.serviceInstanceId());
 		return normalizedDto;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void validateCreate(final OrchestrationSimpleStoreRequestDTO dto) {
-		Assert.notNull(dto, "DTO is null!");
-
-		// consumer
-		if (Utilities.isEmpty(dto.consumer())) {
-			throw new InvalidParameterException("consumer is null or empty");
-		}
-
-		// service instance id
-		if (Utilities.isEmpty(dto.serviceInstanceId())) {
-			throw new InvalidParameterException("serviceInstanceId is null or empty");
-		}
-
-		// priority
-		if (dto.priority() == null) {
-			throw new InvalidParameterException("priority is null");
-		}
-		if (dto.priority() < 0) {
-			throw new InvalidParameterException("priority should be a non-negative integer");
-		}
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	private void checkDuplicates(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
-		// consumer, serviceInstanceId and priority must be unique
+
 		final List<Triple<String, String, Integer>> existing = new ArrayList<Triple<String, String, Integer>>();
 		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
 			final Triple<String, String, Integer> current = Triple.of(candidate.consumer(), candidate.serviceInstanceId(), candidate.priority());
 			if (existing.contains(current)) {
-				throw new InvalidParameterException("The following fields must be unique: consumer, serviceInstanceId, priority");
-			}
-			else {
+				throw new InvalidParameterException("Duplicated instance: " + candidate.toString());
+			} else {
 				existing.add(current);
 			}
 		}
@@ -195,7 +201,7 @@ public class SimpleStoreManagementServiceValidation {
 	private void validateQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		Assert.notNull(dto, "dto is null");
 
-		if (dto.pagination() == null) {
+		/*if (dto.pagination() == null) {
 			throw new InvalidParameterException("Page is null!", origin);
 		}
 		else {
@@ -234,6 +240,6 @@ public class SimpleStoreManagementServiceValidation {
 
 		if (dto.maxPriority() != null && dto.minPriority() != null && dto.minPriority() > dto.maxPriority()) {
 			throw new InvalidParameterException("Minimum priority should not be greater than maxim priority!");
-		}
+		}*/
 	}
 }

@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.http;
 
 import java.util.List;
@@ -22,7 +38,7 @@ import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.KeyValuesDTO;
 import eu.arrowhead.dto.LogEntryListResponseDTO;
 import eu.arrowhead.dto.LogRequestDTO;
-import eu.arrowhead.serviceorchestration.SimpleServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,7 +47,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping(SimpleServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
+@RequestMapping(SimpleStoreServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class GeneralManagementAPI {
 
@@ -67,7 +83,7 @@ public class GeneralManagementAPI {
 	public @ResponseBody LogEntryListResponseDTO getLogEntries(@RequestBody(required = false) final LogRequestDTO dto) {
 		logger.debug("getLogEntries started...");
 
-		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
+		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_LOGS_PATH;
 		return logService.getLogEntries(dto, origin);
 	}
 
@@ -89,7 +105,7 @@ public class GeneralManagementAPI {
 	@ResponseBody public KeyValuesDTO getConfig(final @RequestParam(required = false, name = Constants.SERVICE_OP_GET_CONFIG_REQ_PARAM) List<String> keys) {
 		logger.debug("getConfig started ...");
 
-		final String origin = HttpMethod.GET.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
+		final String origin = HttpMethod.GET.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH + Constants.HTTP_API_OP_GET_CONFIG_PATH;
 		return configService.getConfig(keys, origin);
 	}
 }

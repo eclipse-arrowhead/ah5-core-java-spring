@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service;
 
 
@@ -25,10 +41,10 @@ import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.service.SimpleStoreDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
-import eu.arrowhead.serviceorchestration.service.validation.SimpleStoreManagementServiceValidation;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationStoreManagementServiceValidation;
 
 @Service
-public class SimpleStoreManagementService {
+public class OrchestrationStoreManagementService {
 
 	//=================================================================================================
 	// members
@@ -36,7 +52,7 @@ public class SimpleStoreManagementService {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private SimpleStoreManagementServiceValidation validator;
+	private OrchestrationStoreManagementServiceValidation validator;
 
 	@Autowired
 	private SimpleStoreDbService dbService;
@@ -59,12 +75,12 @@ public class SimpleStoreManagementService {
 			final List<OrchestrationStore> created = dbService.createBulk(normalized
 					.stream().map(n -> new OrchestrationStore(
 							n.consumer(),
-							n.serviceInstanceId().split(Constants.NAME_SEPARATOR)[1], // service definition
+							n.serviceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP)[1], // service definition
 							n.serviceInstanceId(),
 							n.priority(),
 							requesterName)).collect(Collectors.toList()));
 			return dtoConverter.convertStoreEntityListToResponseListDTO(created);
-		} catch (InvalidParameterException ex){
+		} catch (InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);

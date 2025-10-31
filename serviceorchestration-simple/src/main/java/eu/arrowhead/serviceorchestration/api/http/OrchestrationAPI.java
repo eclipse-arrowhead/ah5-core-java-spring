@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.http;
 
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +31,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
-import eu.arrowhead.serviceorchestration.SimpleServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,27 +43,27 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping(SimpleServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH)
+@RequestMapping(SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class OrchestrationAPI {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	@Autowired
 	private OrchestrationService orchService;
-	
+
 	@Autowired
 	private SystemNamePreprocessor preprocessor;
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	// pull
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the orchestration results from the simple store.")
+	@Operation(summary = "Returns the orchestration results from the simple store")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationResponseDTO.class)) }),
@@ -60,19 +76,18 @@ public class OrchestrationAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@PostMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody OrchestrationResponseDTO pull(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationRequestDTO dto) {
 		logger.debug("pull started...");
 
-		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH;
+		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PULL_PATH;
 
 		final String requesterSystem = preprocessor.process(httpServletRequest, origin);
 		return orchService.pull(requesterSystem, dto, origin);
 	}
-	
-	
+
 	// pushsubscribe
-	
+
 	// pushunsubscribe
 
 }

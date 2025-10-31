@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.http;
 
 import org.springframework.http.MediaType;
@@ -7,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
-import eu.arrowhead.serviceorchestration.SimpleServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,7 +32,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping(SimpleServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
+@RequestMapping(SimpleStoreServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class MonitorAPI {
 

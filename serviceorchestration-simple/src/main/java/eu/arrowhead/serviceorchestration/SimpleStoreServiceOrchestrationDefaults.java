@@ -14,20 +14,21 @@
  *  	Arrowhead Consortia - conceptualization
  *
  *******************************************************************************/
-package eu.arrowhead.serviceorchestration.swagger;
+package eu.arrowhead.serviceorchestration;
 
-import org.springframework.context.annotation.Configuration;
+import eu.arrowhead.common.Defaults;
 
-import eu.arrowhead.common.swagger.DefaultSwaggerConfig;
-
-@Configuration
-public class SwaggerConfig extends DefaultSwaggerConfig {
+public final class SimpleStoreServiceOrchestrationDefaults extends Defaults {
 
 	//=================================================================================================
-	// methods
+	// members
+
+
+	//=================================================================================================
+	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	public SwaggerConfig() {
-		super("Arrowhead Service Orchestration - Simple");
+	private SimpleStoreServiceOrchestrationDefaults() {
+		throw new UnsupportedOperationException();
 	}
 }

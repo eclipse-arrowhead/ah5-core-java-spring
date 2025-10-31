@@ -1,3 +1,19 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.http;
 
 import java.util.List;
@@ -18,9 +34,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import eu.arrowhead.serviceorchestration.SimpleServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
-import eu.arrowhead.serviceorchestration.service.SimpleStoreManagementService;
+import eu.arrowhead.serviceorchestration.service.OrchestrationStoreManagementService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
 import eu.arrowhead.dto.OrchestrationLockListResponseDTO;
@@ -37,9 +53,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping(SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH)
+@RequestMapping(SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
-public class SimpleStoreManagementAPI {
+public class OrchestrationStoreManagementAPI {
 
 	//=================================================================================================
 	// members
@@ -47,7 +63,7 @@ public class SimpleStoreManagementAPI {
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	@Autowired
-	private SimpleStoreManagementService mgmtService;
+	private OrchestrationStoreManagementService mgmtService;
 
 	@Autowired
 	private SystemNamePreprocessor preprocessor;
@@ -56,7 +72,7 @@ public class SimpleStoreManagementAPI {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the simple store records accroding to the filters.")
+	@Operation(summary = "Returns the store records according to the filters")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
@@ -69,16 +85,16 @@ public class SimpleStoreManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@PostMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody OrchestrationSimpleStoreListResponseDTO query(@RequestBody final OrchestrationSimpleStoreQueryRequestDTO dto) {
 		logger.debug("query started...");
 
-		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
+		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
 		return mgmtService.querySimpleStoreEntries(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the simple store records that were actually created.")
+	@Operation(summary = "Returns the store records that were actually created")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
@@ -92,13 +108,36 @@ public class SimpleStoreManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@ResponseStatus(HttpStatus.CREATED)
-	@PostMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody OrchestrationSimpleStoreListResponseDTO create(final HttpServletRequest httpServletRequest, @RequestBody final OrchestrationSimpleStoreListRequestDTO dto) {
 		logger.debug("create started...");
 
-		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
+		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH;
 		final String requesterName = preprocessor.process(httpServletRequest, origin);
 		return mgmtService.createSimpleStoreEntries(dto, requesterName, origin);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Operation(summary = "Returns the store records that were actually updated")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+	})
+	@PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public @ResponseBody OrchestrationSimpleStoreListResponseDTO modifyPriorities(final HttpServletRequest httpServletRequest, @RequestBody final PriorityRequestDTO dto) {
+		logger.debug("modifyPriorities started...");
+
+		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH;
+		final String requesterName = preprocessor.process(httpServletRequest, origin);
+		return mgmtService.modifyPriorities(dto, requesterName, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -115,34 +154,11 @@ public class SimpleStoreManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@DeleteMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH)
+	@DeleteMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH)
 	public void remove(final @RequestParam List<UUID> uuids) {
 		logger.debug("remove started...");
 
-		final String origin = HttpMethod.DELETE.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH;
+		final String origin = HttpMethod.DELETE.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH;
 		mgmtService.removeSimpleStoreEntries(uuids, origin);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Operation(summary = "Returns the simple store records that were actually updated.")
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OrchestrationLockListResponseDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
-			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
-					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
-	})
-	@PostMapping(path = SimpleServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public @ResponseBody OrchestrationSimpleStoreListResponseDTO modifyPriorities(final HttpServletRequest httpServletRequest, @RequestBody final PriorityRequestDTO dto) {
-		logger.debug("modifyPriorities started...");
-
-		final String origin = HttpMethod.POST.name() + " " + SimpleServiceOrchestrationConstants.HTTP_API_SIMPLE_STORE_MANAGEMENT_PATH + SimpleServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH;
-		final String requesterName = preprocessor.process(httpServletRequest, origin);
-		return mgmtService.modifyPriorities(dto, requesterName, origin);
 	}
 }

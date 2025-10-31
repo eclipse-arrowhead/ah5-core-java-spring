@@ -1,8 +1,25 @@
+/*******************************************************************************
+ *
+ * Copyright (c) 2025 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ *
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *  	AITIA - implementation
+ *  	Arrowhead Consortia - conceptualization
+ *
+ *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -48,9 +65,6 @@ public class SimpleStoreDbService {
 
 		try {
 			return storeRepo.saveAllAndFlush(candidates);
-
-		} catch (final InvalidParameterException ex) {
-			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -74,7 +88,10 @@ public class SimpleStoreDbService {
 		Assert.notNull(pagination, "page is null");
 
 		// without filters
-		if (Utilities.allEmpty(ids, consumerNames, serviceDefinitions, serviceInstanceIds)
+		if (Utilities.isEmpty(ids)
+				&& Utilities.isEmpty(serviceInstanceIds)
+				&& Utilities.isEmpty(serviceDefinitions)
+				&& Utilities.isEmpty(consumerNames)
 				&& Utilities.isEmpty(createdBy)
 				&& minPriority == null
 				&& maxPriority == null) {
@@ -165,25 +182,22 @@ public class SimpleStoreDbService {
 					final Integer newPriority = priorities.get(entry.getId());
 
 					// check if the requested <consumer, service instance id, priority> does not exist in the DB
-					final List<OrchestrationStore> existing = storeRepo.findAllByConsumerAndServiceInstanceIdAndPriority(entry.getConsumer(), entry.getServiceInstanceId(), newPriority);
-					if (existing.size() != 0) {
+					final Optional<OrchestrationStore> existing = storeRepo.findByConsumerAndServiceInstanceIdAndPriority(entry.getConsumer(), entry.getServiceInstanceId(), newPriority);
+					if (existing.isPresent()) {
 
 						// there should be max. 1 existing entry in the DB (since these fields are unique)
-						if (!existing.get(0).getId().equals(entry.getId())) {
+						if (!existing.get().getId().equals(entry.getId())) {
 
-							if (modified.contains(existing.get(0))) {
+							if (modified.contains(existing.get())) {
 								// case 1: duplication in the user input
-								throw new InvalidParameterException("Duplicated fields: consumer name: " + existing.get(0).getConsumer()
-								+ ", serviceInstanceId: " + existing.get(0).getServiceInstanceId() + ", priority: " + existing.get(0).getPriority());
-							}
-
-							else {
+								throw new InvalidParameterException("Duplicated fields: consumer name: " + existing.get().getConsumer()
+								+ ", serviceInstanceId: " + existing.get().getServiceInstanceId() + ", priority: " + existing.get().getPriority());
+							} else {
                             	// case 2: the entry was already existing in the database
-								throw new InvalidParameterException("There is already an existing entity with consumer name: " +  existing.get(0).getConsumer() + ", service instance id: "
-										+ existing.get(0).getServiceInstanceId() + ", priority: " + existing.get(0).getPriority());
+								throw new InvalidParameterException("There is already an existing entity with consumer name: " +  existing.get().getConsumer() + ", service instance id: "
+										+ existing.get().getServiceInstanceId() + ", priority: " + existing.get().getPriority());
 							}
-						}
-						else {
+						} else {
 							// no need to modify this entry, because this priority is already set
 							continue;
 						}
@@ -232,8 +246,8 @@ public class SimpleStoreDbService {
 		for (final OrchestrationStore candidate : candidates) {
 
 			// check if there is and existing record
-			final List<OrchestrationStore> existing = storeRepo.findAllByConsumerAndServiceInstanceIdAndPriority(candidate.getConsumer(), candidate.getServiceInstanceId(), candidate.getPriority());
-			if (!Utilities.isEmpty(existing)) {
+			final Optional<OrchestrationStore> existing = storeRepo.findByConsumerAndServiceInstanceIdAndPriority(candidate.getConsumer(), candidate.getServiceInstanceId(), candidate.getPriority());
+			if (existing.isPresent()) {
 				throw new InvalidParameterException("There is already an existing entity with consumer name: " +  candidate.getConsumer() + ", service instance id: "
 						+ candidate.getServiceInstanceId() + ", priority: " + candidate.getPriority());
 			}
