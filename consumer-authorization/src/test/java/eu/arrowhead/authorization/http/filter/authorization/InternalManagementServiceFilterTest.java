@@ -35,6 +35,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import eu.arrowhead.authorization.AuthorizationConstants;
+import eu.arrowhead.authorization.service.dto.NormalizedVerifyRequest;
 import eu.arrowhead.authorization.service.engine.AuthorizationPolicyEngine;
 import eu.arrowhead.common.SystemInfo;
 import eu.arrowhead.common.exception.ForbiddenException;
@@ -46,6 +47,7 @@ import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
 import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 
@@ -320,5 +322,216 @@ public class InternalManagementServiceFilterTest {
 		assertEquals("Requester has no management permission", ex.getMessage());
 	}
 
-	// TODO: continue
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAuthorizationNotAuthorizedServiceDefNotFoundMethodDoesNotMatch() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setAttribute("arrowhead.authenticated.system", "RequesterSystem");
+		request.setAttribute("arrowhead.sysop.request", false);
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8445);
+		request.setMethod(HttpMethod.GET.name());
+		request.setRequestURI("/consumerauthorization/authorization/mgmt/grant");
+
+		final InterfaceModel serviceInterfaceModel = new HttpInterfaceModel.Builder("generic_http", "localhost", 8445)
+				.basePath("/consumerauthorization/authorization/mgmt")
+				.operation("grant-policies", new HttpOperationModel.Builder()
+						.method(HttpMethod.POST.name())
+						.path(AuthorizationConstants.HTTP_API_OP_GRANT_PATH)
+						.build())
+				.build();
+
+		final ServiceModel serviceModel = new ServiceModel.Builder()
+				.serviceDefinition("authorizationManagement")
+				.version("1.0.0")
+				.serviceInterface(serviceInterfaceModel)
+				.build();
+
+		when(systemNameNormalizer.normalize("RequesterSystem")).thenReturn("RequesterSystem");
+		when(sysInfo.getManagementPolicy()).thenReturn(ManagementPolicy.AUTHORIZATION);
+		when(sysInfo.getManagementWhitelist()).thenReturn(List.of("OtherSystem"));
+		when(sysInfo.isSslEnabled()).thenReturn(false);
+		when(sysInfo.getServices()).thenReturn(List.of(serviceModel));
+
+		final Throwable ex = assertThrows(ForbiddenException.class,
+				() -> filter.doFilterInternal(request, null, chain));
+
+		verify(systemNameNormalizer).normalize("RequesterSystem");
+		verify(sysInfo).getManagementPolicy();
+		verify(sysInfo).getManagementWhitelist();
+		verify(sysInfo).isSslEnabled();
+		verify(sysInfo).getServices();
+		verify(chain, never()).doFilter(request, null);
+
+		assertEquals("Requester has no management permission", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAuthorizationNotAuthorizedServiceDefNotFoundPathDoesNotMatch() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setAttribute("arrowhead.authenticated.system", "RequesterSystem");
+		request.setAttribute("arrowhead.sysop.request", false);
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8445);
+		request.setMethod(HttpMethod.POST.name());
+		request.setRequestURI("/consumerauthorization/authorization/mgmt/grant");
+
+		final InterfaceModel serviceInterfaceModel = new HttpInterfaceModel.Builder("generic_http", "localhost", 8445)
+				.basePath("/consumerauthorization/auth/mgmt")
+				.operation("grant-policies", new HttpOperationModel.Builder()
+						.method(HttpMethod.POST.name())
+						.path(AuthorizationConstants.HTTP_API_OP_GRANT_PATH)
+						.build())
+				.build();
+
+		final ServiceModel serviceModel = new ServiceModel.Builder()
+				.serviceDefinition("authorizationManagement")
+				.version("1.0.0")
+				.serviceInterface(serviceInterfaceModel)
+				.build();
+
+		when(systemNameNormalizer.normalize("RequesterSystem")).thenReturn("RequesterSystem");
+		when(sysInfo.getManagementPolicy()).thenReturn(ManagementPolicy.AUTHORIZATION);
+		when(sysInfo.getManagementWhitelist()).thenReturn(List.of("OtherSystem"));
+		when(sysInfo.isSslEnabled()).thenReturn(false);
+		when(sysInfo.getServices()).thenReturn(List.of(serviceModel));
+
+		final Throwable ex = assertThrows(ForbiddenException.class,
+				() -> filter.doFilterInternal(request, null, chain));
+
+		verify(systemNameNormalizer).normalize("RequesterSystem");
+		verify(sysInfo).getManagementPolicy();
+		verify(sysInfo).getManagementWhitelist();
+		verify(sysInfo).isSslEnabled();
+		verify(sysInfo).getServices();
+		verify(chain, never()).doFilter(request, null);
+
+		assertEquals("Requester has no management permission", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAuthorizationNotAuthorized() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setAttribute("arrowhead.authenticated.system", "RequesterSystem");
+		request.setAttribute("arrowhead.sysop.request", false);
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8445);
+		request.setMethod(HttpMethod.POST.name());
+		request.setRequestURI("/consumerauthorization/authorization/mgmt/grant");
+
+		final InterfaceModel serviceInterfaceModel = new HttpInterfaceModel.Builder("generic_http", "localhost", 8445)
+				.basePath("/consumerauthorization/authorization/mgmt")
+				.operation("grant-policies", new HttpOperationModel.Builder()
+						.method(HttpMethod.POST.name())
+						.path(AuthorizationConstants.HTTP_API_OP_GRANT_PATH)
+						.build())
+				.build();
+
+		final ServiceModel serviceModel = new ServiceModel.Builder()
+				.serviceDefinition("authorizationManagement")
+				.version("1.0.0")
+				.serviceInterface(serviceInterfaceModel)
+				.build();
+
+		final NormalizedVerifyRequest verifyRequest = new NormalizedVerifyRequest(
+				"ConsumerAuthorization",
+				"RequesterSystem",
+				"LOCAL",
+				AuthorizationTargetType.SERVICE_DEF,
+				"authorizationManagement",
+				"grant-policies");
+
+		when(systemNameNormalizer.normalize("RequesterSystem")).thenReturn("RequesterSystem");
+		when(sysInfo.getManagementPolicy()).thenReturn(ManagementPolicy.AUTHORIZATION);
+		when(sysInfo.getManagementWhitelist()).thenReturn(List.of("OtherSystem"));
+		when(sysInfo.isSslEnabled()).thenReturn(false);
+		when(sysInfo.getServices()).thenReturn(List.of(serviceModel));
+		when(sysInfo.getSystemName()).thenReturn("ConsumerAuthorization");
+		when(systemNameNormalizer.normalize("ConsumerAuthorization")).thenReturn("ConsumerAuthorization");
+		when(serviceDefNameNormalizer.normalize("authorizationManagement")).thenReturn("authorizationManagement");
+		when(serviceOpNameNormalizer.normalize("grant-policies")).thenReturn("grant-policies");
+		when(policyEngine.isAccessGranted(verifyRequest)).thenReturn(false);
+
+		final Throwable ex = assertThrows(ForbiddenException.class,
+				() -> filter.doFilterInternal(request, null, chain));
+
+		verify(systemNameNormalizer).normalize("RequesterSystem");
+		verify(sysInfo).getManagementPolicy();
+		verify(sysInfo).getManagementWhitelist();
+		verify(sysInfo).isSslEnabled();
+		verify(sysInfo).getServices();
+		verify(sysInfo).getSystemName();
+		verify(systemNameNormalizer).normalize("ConsumerAuthorization");
+		verify(serviceDefNameNormalizer).normalize("authorizationManagement");
+		verify(serviceOpNameNormalizer).normalize("grant-policies");
+		verify(policyEngine).isAccessGranted(verifyRequest);
+		verify(chain, never()).doFilter(request, null);
+
+		assertEquals("Requester has no management permission", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAuthorizationAuthorized() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setAttribute("arrowhead.authenticated.system", "RequesterSystem");
+		request.setAttribute("arrowhead.sysop.request", false);
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8445);
+		request.setMethod(HttpMethod.POST.name());
+		request.setRequestURI("/consumerauthorization/authorization/mgmt/grant");
+
+		final InterfaceModel serviceInterfaceModel = new HttpInterfaceModel.Builder("generic_http", "localhost", 8445)
+				.basePath("/consumerauthorization/authorization/mgmt")
+				.operation("grant-policies", new HttpOperationModel.Builder()
+						.method(HttpMethod.POST.name())
+						.path(AuthorizationConstants.HTTP_API_OP_GRANT_PATH)
+						.build())
+				.build();
+
+		final ServiceModel serviceModel = new ServiceModel.Builder()
+				.serviceDefinition("authorizationManagement")
+				.version("1.0.0")
+				.serviceInterface(serviceInterfaceModel)
+				.build();
+
+		final NormalizedVerifyRequest verifyRequest = new NormalizedVerifyRequest(
+				"ConsumerAuthorization",
+				"RequesterSystem",
+				"LOCAL",
+				AuthorizationTargetType.SERVICE_DEF,
+				"authorizationManagement",
+				"grant-policies");
+
+		when(systemNameNormalizer.normalize("RequesterSystem")).thenReturn("RequesterSystem");
+		when(sysInfo.getManagementPolicy()).thenReturn(ManagementPolicy.AUTHORIZATION);
+		when(sysInfo.getManagementWhitelist()).thenReturn(List.of("OtherSystem"));
+		when(sysInfo.isSslEnabled()).thenReturn(false);
+		when(sysInfo.getServices()).thenReturn(List.of(serviceModel));
+		when(sysInfo.getSystemName()).thenReturn("ConsumerAuthorization");
+		when(systemNameNormalizer.normalize("ConsumerAuthorization")).thenReturn("ConsumerAuthorization");
+		when(serviceDefNameNormalizer.normalize("authorizationManagement")).thenReturn("authorizationManagement");
+		when(serviceOpNameNormalizer.normalize("grant-policies")).thenReturn("grant-policies");
+		when(policyEngine.isAccessGranted(verifyRequest)).thenReturn(true);
+
+		assertDoesNotThrow(() -> filter.doFilterInternal(request, null, chain));
+
+		verify(systemNameNormalizer).normalize("RequesterSystem");
+		verify(sysInfo).getManagementPolicy();
+		verify(sysInfo).getManagementWhitelist();
+		verify(sysInfo).isSslEnabled();
+		verify(sysInfo).getServices();
+		verify(sysInfo).getSystemName();
+		verify(systemNameNormalizer).normalize("ConsumerAuthorization");
+		verify(serviceDefNameNormalizer).normalize("authorizationManagement");
+		verify(serviceOpNameNormalizer).normalize("grant-policies");
+		verify(policyEngine).isAccessGranted(verifyRequest);
+		verify(chain).doFilter(request, null);
+	}
 }
