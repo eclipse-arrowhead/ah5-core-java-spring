@@ -82,6 +82,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeRequester(final String requester, final String origin) {
 		logger.debug("validateAndNormalizeRequester started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateRequester(requester, origin);
 		final String normalized = systemNameNormalizer.normalize(requester);
@@ -98,6 +99,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedIdentityListMgmtRequestDTO validateAndNormalizeCreateIdentityList(final IdentityListMgmtCreateRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeCreateIdentityList started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateCreateIdentityList(dto, origin);
 
@@ -122,6 +124,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public List<NormalizedIdentityMgmtRequestDTO> validateAndNormalizeUpdateIdentityListPhase1(final IdentityListMgmtUpdateRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeUpdateIdentityListPhase1 started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateUpdateIdentityListPhase1(dto, origin);
 
@@ -143,6 +146,7 @@ public class ManagementValidation {
 			final List<NormalizedIdentityMgmtRequestDTO> identities,
 			final String origin) {
 		logger.debug("validateAndNormalizeUpdateIdentityListPhase2 started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		try {
 			final List<NormalizedIdentityMgmtRequestDTO> normalized = normalizer.normalizeCredentials(authenticationMethod, identities);
@@ -159,6 +163,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeRemoveIdentities(final List<String> names, final String origin) {
 		logger.debug("validateAndNormalizeRemoveIdentities started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateIdentityNames(names, origin);
 
@@ -176,6 +181,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedIdentityQueryRequestDTO validateAndNormalizeIdentityQueryRequest(final IdentityQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeIdentityQueryRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateIdentityQueryRequest(dto, origin);
 		final NormalizedIdentityQueryRequestDTO normalized = normalizer.normalizeIdentityQueryRequest(dto);
@@ -194,6 +200,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public List<String> validateAndNormalizeCloseSessions(final List<String> names, final String origin) {
 		logger.debug("validateAndNormalizeCloseSessions started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateIdentityNames(names, origin);
 		final List<String> normalized = normalizer.normalizeIdentifiableSystemNames(names);
@@ -210,6 +217,7 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedIdentitySessionQueryRequestDTO validateAndNormalizeSessionQueryRequest(final IdentitySessionQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeSessionQueryRequest started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateSessionQueryRequest(dto, origin);
 
@@ -246,13 +254,13 @@ public class ManagementValidation {
 		final String authMethodName = dto.authenticationMethod().trim().toUpperCase();
 
 		if (!Utilities.isEnumValue(authMethodName, AuthenticationMethod.class)) {
-			throw new InvalidParameterException("Authentication method is invalid: " + authMethodName, origin);
+			throw new InvalidParameterException("Authentication method is invalid: " + dto.authenticationMethod(), origin);
 		}
 
 		final AuthenticationMethod methodType = AuthenticationMethod.valueOf(authMethodName);
 		final IAuthenticationMethod method = methods.method(methodType);
 		if (method == null) {
-			throw new InvalidParameterException("Authentication method is unsupported: " + authMethodName, origin);
+			throw new InvalidParameterException("Authentication method is unsupported: " + dto.authenticationMethod(), origin);
 		}
 
 		final List<IdentityMgmtRequestDTO> list = dto.identities();

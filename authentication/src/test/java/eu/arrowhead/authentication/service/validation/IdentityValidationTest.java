@@ -41,6 +41,7 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.dto.IdentityChangeRequestDTO;
 import eu.arrowhead.dto.IdentityRequestDTO;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
 
@@ -318,5 +319,213 @@ public class IdentityValidationTest {
 		verify(validatorMock).validateCredentials(Map.of("key", "value"));
 	}
 
-	// TODO: continue
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2DTONull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(null, null, null));
+
+		assertEquals("dto is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2AuthenticationMethodNull() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(dto, null, null));
+
+		assertEquals("authentication method is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2OriginNull() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(dto, AuthenticationMethod.PASSWORD, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2OriginEmpty() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(dto, AuthenticationMethod.PASSWORD, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2UnsupportedAuthenticationMethod() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		when(methods.method(AuthenticationMethod.PASSWORD)).thenReturn(null);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(dto, AuthenticationMethod.PASSWORD, "origin"));
+
+		assertEquals("Unsupported authentication method: PASSWORD", ex.getMessage());
+
+		verify(methods).method(AuthenticationMethod.PASSWORD);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2InternalServerError() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final IAuthenticationMethodInputNormalizer normalizerMock = Mockito.mock(IAuthenticationMethodInputNormalizer.class);
+
+		when(methods.method(AuthenticationMethod.PASSWORD)).thenReturn(methodMock);
+		when(methodMock.normalizer()).thenReturn(normalizerMock);
+		when(normalizerMock.normalizeCredentials(Map.of("key", "newValue"))).thenThrow(new InternalServerError("test"));
+
+		final ArrowheadException ex = assertThrows(
+				InternalServerError.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(dto, AuthenticationMethod.PASSWORD, "origin"));
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("origin", ex.getOrigin());
+
+		verify(methods).method(AuthenticationMethod.PASSWORD);
+		verify(methodMock).normalizer();
+		verify(normalizerMock).normalizeCredentials(Map.of("key", "newValue"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2InvalidParameterException() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final IAuthenticationMethodInputNormalizer normalizerMock = Mockito.mock(IAuthenticationMethodInputNormalizer.class);
+		final IAuthenticationMethodInputValidator validatorMock = Mockito.mock(IAuthenticationMethodInputValidator.class);
+
+		when(methods.method(AuthenticationMethod.PASSWORD)).thenReturn(methodMock);
+		when(methodMock.normalizer()).thenReturn(normalizerMock);
+		when(normalizerMock.normalizeCredentials(Map.of("key", "newValue"))).thenReturn(Map.of("key", "newValue"));
+		when(methodMock.validator()).thenReturn(validatorMock);
+		doThrow(new InvalidParameterException("test")).when(validatorMock).validateCredentials(Map.of("key", "newValue"));
+
+		final ArrowheadException ex = assertThrows(
+				InvalidParameterException.class,
+				() -> validator.validateAndNormalizeChangeServicePhase2(dto, AuthenticationMethod.PASSWORD, "origin"));
+
+		assertEquals("test", ex.getMessage());
+		assertEquals("origin", ex.getOrigin());
+
+		verify(methods).method(AuthenticationMethod.PASSWORD);
+		verify(methodMock).normalizer();
+		verify(normalizerMock).normalizeCredentials(Map.of("key", "newValue"));
+		verify(methodMock).validator();
+		verify(validatorMock).validateCredentials(Map.of("key", "newValue"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeChangeServicePhase2Ok() {
+		final IdentityChangeRequestDTO dto = new IdentityChangeRequestDTO(
+				"SystemName",
+				Map.of("key", "value"),
+				Map.of("key", "newValue"));
+
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final IAuthenticationMethodInputNormalizer normalizerMock = Mockito.mock(IAuthenticationMethodInputNormalizer.class);
+		final IAuthenticationMethodInputValidator validatorMock = Mockito.mock(IAuthenticationMethodInputValidator.class);
+
+		when(methods.method(AuthenticationMethod.PASSWORD)).thenReturn(methodMock);
+		when(methodMock.normalizer()).thenReturn(normalizerMock);
+		when(normalizerMock.normalizeCredentials(Map.of("key", "newValue"))).thenReturn(Map.of("key", "newValue"));
+		when(methodMock.validator()).thenReturn(validatorMock);
+		doNothing().when(validatorMock).validateCredentials(Map.of("key", "newValue"));
+
+		final IdentityChangeRequestDTO result = validator.validateAndNormalizeChangeServicePhase2(dto, AuthenticationMethod.PASSWORD, "origin");
+
+		assertEquals(dto, result);
+
+		verify(methods).method(AuthenticationMethod.PASSWORD);
+		verify(methodMock).normalizer();
+		verify(normalizerMock).normalizeCredentials(Map.of("key", "newValue"));
+		verify(methodMock).validator();
+		verify(validatorMock).validateCredentials(Map.of("key", "newValue"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeIdentityTokenOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeIdentityToken(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeIdentityTokenOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> validator.validateAndNormalizeIdentityToken(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeIdentityTokenNullToken() {
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> validator.validateAndNormalizeIdentityToken(null, "origin"));
+
+		assertEquals("Token is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeIdentityTokenEmptyToken() {
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> validator.validateAndNormalizeIdentityToken(" ", "origin"));
+
+		assertEquals("Token is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeIdentityTokenOk() {
+		final String result = validator.validateAndNormalizeIdentityToken(" token characters ", "origin");
+
+		assertEquals("token characters", result);
+	}
 }
