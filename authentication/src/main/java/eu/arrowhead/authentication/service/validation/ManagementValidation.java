@@ -115,7 +115,7 @@ public class ManagementValidation {
 
 			return result;
 		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
+			throw Utilities.isEmpty(ex.getOrigin()) ? new InvalidParameterException(ex.getMessage(), origin) : ex;
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		}
@@ -146,6 +146,9 @@ public class ManagementValidation {
 			final List<NormalizedIdentityMgmtRequestDTO> identities,
 			final String origin) {
 		logger.debug("validateAndNormalizeUpdateIdentityListPhase2 started...");
+		Assert.notNull(authenticationMethod, "Authentication method is missing");
+		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
+		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		try {
@@ -172,7 +175,7 @@ public class ManagementValidation {
 		try {
 			normalized.forEach(n -> systemNameValidator.validateSystemName(n));
 		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), ex);
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
 		return normalized;
@@ -325,9 +328,6 @@ public class ManagementValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateUpdateIdentityListPhase2(final IAuthenticationMethod authenticationMethod, final List<NormalizedIdentityMgmtRequestDTO> identities) {
 		logger.debug("validateUpdateIdentityListPhase2 started...");
-		Assert.notNull(authenticationMethod, "Authentication method is null");
-		Assert.isTrue(!Utilities.isEmpty(identities), "Identities list is missing or empty");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null element");
 
 		for (final NormalizedIdentityMgmtRequestDTO identity : identities) {
 			authenticationMethod.validator().validateCredentials(identity.credentials());
@@ -360,7 +360,7 @@ public class ManagementValidation {
 				try {
 					from = Utilities.parseUTCStringToZonedDateTime(dto.creationFrom());
 				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Minimum creation time has an invalid time format", origin);
+					throw new InvalidParameterException("Minimum creation time has invalid time format", origin);
 				}
 			}
 
@@ -369,7 +369,7 @@ public class ManagementValidation {
 				try {
 					to = Utilities.parseUTCStringToZonedDateTime(dto.creationTo());
 				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Maximum creation time has an invalid time format", origin);
+					throw new InvalidParameterException("Maximum creation time has invalid time format", origin);
 				}
 			}
 
@@ -392,7 +392,7 @@ public class ManagementValidation {
 				try {
 					from = Utilities.parseUTCStringToZonedDateTime(dto.loginFrom());
 				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Minimum login time has an invalid time format", origin);
+					throw new InvalidParameterException("Minimum login time has invalid time format", origin);
 				}
 			}
 
@@ -401,7 +401,7 @@ public class ManagementValidation {
 				try {
 					to = Utilities.parseUTCStringToZonedDateTime(dto.loginTo());
 				} catch (final DateTimeException ex) {
-					throw new InvalidParameterException("Maximum login time has an invalid time format", origin);
+					throw new InvalidParameterException("Maximum login time has invalid time format", origin);
 				}
 			}
 
