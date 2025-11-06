@@ -19,9 +19,11 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +34,7 @@ import org.springframework.util.Assert;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
@@ -41,6 +44,7 @@ import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
+import eu.arrowhead.serviceorchestration.service.dto.NormalizedOrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationStoreManagementServiceNormalization;
 
 @Service
@@ -59,6 +63,9 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	@Autowired
 	private SystemNameValidator systemNameValidator;
+
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
 
 	@Autowired
 	private PageValidator pageValidator;
@@ -90,75 +97,67 @@ public class OrchestrationStoreManagementServiceValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationSimpleStoreQueryRequestDTO validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
+	public NormalizedOrchestrationSimpleStoreQueryRequestDTO validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeQuery started...");
 
-		throw new NotImplementedException();
+		validateQuery(dto, origin);
 
-		/*validateQuery(dto, origin);
-
-		final OrchestrationSimpleStoreQueryRequestDTO normalized = normalizer.normalizeQuery(dto);
+		final NormalizedOrchestrationSimpleStoreQueryRequestDTO normalized = normalizer.normalizeQuery(dto);
 		try {
-			//TODO: replace these with the new implementation
 			if (normalized.consumerNames() != null) {
-				normalized.consumerNames().forEach(c -> nameValidator.validateName(c));
+				normalized.consumerNames().forEach(c -> systemNameValidator.validateSystemName(c));
 			}
 
 			if (normalized.serviceDefinitions() != null) {
-				normalized.serviceDefinitions().forEach(s -> nameValidator.validateName(s));
+				normalized.serviceDefinitions().forEach(s -> serviceDefNameValidator.validateServiceDefinitionName(s));
 			}
 
 			if (normalized.serviceInstanceIds() != null) {
-				normalized.serviceInstanceIds().forEach(s -> nameValidator.validateServiceInstanceId(s));
+				normalized.serviceInstanceIds().forEach(s -> serviceInstanceIdValidator.validateServiceInstanceIdentifier(s));
 			}
 
 			if (normalized.createdBy() != null) {
-				nameValidator.validateName(normalized.createdBy());
+				systemNameValidator.validateSystemName(normalized.createdBy());
 			}
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		return normalized;*/
+		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void validatePriorityMap(final PriorityRequestDTO dto, final String origin) {
+	public Map<UUID, Integer> validateAndNormalizePriorityRequestDTO(final PriorityRequestDTO dto, final String origin) {
 		logger.info("validatePriorityMap started...");
 
-		throw new NotImplementedException();
-
-		/*if (dto == null) {
-			throw new InvalidParameterException("Priority map is null!", origin);
+		if (dto == null) {
+			throw new InvalidParameterException("Priority map is null", origin);
 		}
 
-		if (dto.containsKey(null)) {
-			throw new InvalidParameterException("Priority map conatains null key!", origin);
-		}
+		dto.keySet().forEach(id -> {
+			if (!Utilities.isUUID(id.trim())) {
+				throw new InvalidParameterException("Invalid UUID: " + id.trim());
+			}
+		});
 
 		if (dto.containsValue(null)) {
-			throw new InvalidParameterException("Priority map contains null value!", origin);
+			throw new InvalidParameterException("Priority map contains null value", origin);
 		}
 
-		final Collection<Integer> priorities = dto.values();
-		for (final Integer p : priorities) {
+		Map<UUID, Integer> normalized = Map.of();
+		try {
+			normalized = normalizer.normalizePriorityRequestDTO(dto);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
+
+		for (final Integer p : normalized.values()) {
 			if (p < 0) {
-				throw new InvalidParameterException("Invalid priority: " + p);
+				throw new InvalidParameterException("Invalid priority: " + p + ", should be non-negative");
 			}
-		}*/
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public void validateUUIDList(final List<UUID> uuids, final String origin) {
-		logger.info("validateUUIDList started...");
-
-		/*if (Utilities.isEmpty(uuids)) {
-			throw new InvalidParameterException("UUID list is empty!", origin);
 		}
 
-		if (Utilities.containsNull(uuids)) {
-			throw new InvalidParameterException("UUID list contains null!", origin);
-		}*/
+		return normalized;
 	}
 
 	//=================================================================================================
@@ -201,45 +200,54 @@ public class OrchestrationStoreManagementServiceValidation {
 	private void validateQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		Assert.notNull(dto, "dto is null");
 
-		/*if (dto.pagination() == null) {
-			throw new InvalidParameterException("Page is null!", origin);
-		}
-		else {
+		if (dto.pagination() == null) {
+			throw new InvalidParameterException("Page is null", origin);
+		} else {
 			pageValidator.validatePageParameter(dto.pagination(), OrchestrationStore.SORTABLE_FIELDS_BY, origin);
 		}
 
-		if (Utilities.allEmpty(dto.ids(), dto.consumerNames(), dto.serviceDefinitions(),
-				dto.serviceInstanceIds()) && Utilities.isEmpty(dto.createdBy())) {
+		if (Utilities.isEmpty(dto.ids())
+				&& Utilities.isEmpty(dto.consumerNames())
+				&& Utilities.isEmpty(dto.serviceDefinitions())
+				&& Utilities.isEmpty(dto.serviceInstanceIds())
+				&& Utilities.isEmpty(dto.createdBy())) {
 			throw new InvalidParameterException("At least one of the following fields must be specified: "
-					+ "ids, consumerNames, serviceDefinitions, serviceInstanceIds, createdBy.");
+					+ "ids, consumerNames, serviceDefinitions, serviceInstanceIds, createdBy");
 		}
 
-		if (!Utilities.isEmpty(dto.ids()) && Utilities.containsNull(dto.ids())) {
-			throw new InvalidParameterException("Id list contains null or empty element!", origin);
+		if (!Utilities.isEmpty(dto.ids())) {
+			if (Utilities.containsNullOrEmpty(dto.ids())) {
+				throw new InvalidParameterException("Id list contains null or empty element", origin);
+			}
+			dto.ids().forEach(id -> {
+				if (!Utilities.isUUID(id.trim())) {
+					throw new InvalidParameterException("Invalid UUID: "  + id.trim());
+				}
+			});
 		}
 
 		if (!Utilities.isEmpty(dto.consumerNames()) && Utilities.containsNullOrEmpty(dto.consumerNames())) {
-			throw new InvalidParameterException("Consumer name list contains null or empty element!", origin);
+			throw new InvalidParameterException("Consumer name list contains null or empty element", origin);
 		}
 
 		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
-			throw new InvalidParameterException("Service definition name list contains null or empty element!", origin);
+			throw new InvalidParameterException("Service definition name list contains null or empty element", origin);
 		}
 
 		if (!Utilities.isEmpty(dto.serviceInstanceIds()) && Utilities.containsNullOrEmpty(dto.serviceInstanceIds())) {
-			throw new InvalidParameterException("Service instance id list contains null or empty element!", origin);
+			throw new InvalidParameterException("Service instance id list contains null or empty element", origin);
 		}
 
 		if (dto.minPriority() != null && dto.minPriority() < 0) {
-			throw new InvalidParameterException("Invalid minimum priority: should be a non-negative integer.", origin);
+			throw new InvalidParameterException("Invalid minimum priority: should be a non-negative integer", origin);
 		}
 
 		if (dto.maxPriority() != null && dto.maxPriority() < 0) {
-			throw new InvalidParameterException("Invalid maximum priority: should be a non-negative integer.", origin);
+			throw new InvalidParameterException("Invalid maximum priority: should be a non-negative integer", origin);
 		}
 
 		if (dto.maxPriority() != null && dto.minPriority() != null && dto.minPriority() > dto.maxPriority()) {
-			throw new InvalidParameterException("Minimum priority should not be greater than maxim priority!");
-		}*/
+			throw new InvalidParameterException("Minimum priority should not be greater than maximum priority");
+		}
 	}
 }

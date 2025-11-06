@@ -16,9 +16,11 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.normalization;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +28,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
+import eu.arrowhead.dto.PriorityRequestDTO;
+import eu.arrowhead.serviceorchestration.service.dto.NormalizedOrchestrationSimpleStoreQueryRequestDTO;
 
 @Service
 public class OrchestrationStoreManagementServiceNormalization {
@@ -44,6 +49,9 @@ public class OrchestrationStoreManagementServiceNormalization {
 
 	@Autowired
 	private SystemNameNormalizer systemNameNormalizer;
+
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
 
 	//=================================================================================================
 	// methods
@@ -60,34 +68,40 @@ public class OrchestrationStoreManagementServiceNormalization {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationSimpleStoreQueryRequestDTO normalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto) {
+	public Map<UUID, Integer> normalizePriorityRequestDTO(final PriorityRequestDTO dto) {
+		logger.debug("normalizeUUIDList started...");
+
+		final Map<UUID, Integer> normalized = new HashMap<UUID, Integer>(dto.size());
+		dto.entrySet().forEach(entry -> {
+			normalized.put(UUID.fromString(entry.getKey().trim()), entry.getValue());
+		});
+		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedOrchestrationSimpleStoreQueryRequestDTO normalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto) {
 		logger.debug("normalizeQuery started...");
 
-		throw new NotImplementedException();
-
-		/*return new OrchestrationSimpleStoreQueryRequestDTO(
+		return new NormalizedOrchestrationSimpleStoreQueryRequestDTO(
 				// no need to normalize, because it will happen in the getPageRequest method
 				dto.pagination(),
 
-				dto.ids(),
+				Utilities.isEmpty(dto.ids()) ? null
+						: dto.ids().stream().map(id -> UUID.fromString(id.trim())).collect(Collectors.toList()),
 
-				//TODO: replace with the new implementation
 				Utilities.isEmpty(dto.consumerNames()) ? null
-						: dto.consumerNames().stream().map(c -> nameNormalizer.normalize(c)).collect(Collectors.toList()),
+						: dto.consumerNames().stream().map(c -> systemNameNormalizer.normalize(c)).collect(Collectors.toList()),
 
-				//TODO: replace with the new implementation
 				Utilities.isEmpty(dto.serviceDefinitions()) ? null
-						: dto.serviceDefinitions().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
-						
-				//TODO: replace with the new implementation
+						: dto.serviceDefinitions().stream().map(s -> serviceDefNameNormalizer.normalize(s)).collect(Collectors.toList()),
+
 				Utilities.isEmpty(dto.serviceInstanceIds()) ? null
-						: dto.serviceInstanceIds().stream().map(s -> nameNormalizer.normalize(s)).collect(Collectors.toList()),
+						: dto.serviceInstanceIds().stream().map(s -> serviceInstanceIdNormalizer.normalize(s)).collect(Collectors.toList()),
 
 				dto.minPriority(),
 				dto.maxPriority(),
 
-				//TODO: replace with the new implementation
-				Utilities.isEmpty(dto.createdBy()) ? null :
-					nameNormalizer.normalize(dto.createdBy()));*/
+				Utilities.isEmpty(dto.createdBy()) ? null
+					: systemNameNormalizer.normalize(dto.createdBy()));
 	}
 }

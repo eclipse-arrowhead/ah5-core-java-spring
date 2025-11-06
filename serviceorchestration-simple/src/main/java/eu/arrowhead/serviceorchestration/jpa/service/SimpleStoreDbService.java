@@ -74,7 +74,7 @@ public class SimpleStoreDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@SuppressWarnings("checkstyle:parameternumber")
-	public Page<OrchestrationStore> getPage(
+	public Page<OrchestrationStore> getPageByFilters(
 			final PageRequest pagination,
 			final List<UUID> ids,
 			final List<String> consumerNames,
@@ -103,6 +103,7 @@ public class SimpleStoreDbService {
 			// with filters
 			BaseFilter baseFilter = BaseFilter.NONE;
 			List<OrchestrationStore> toFilter = new ArrayList<>();
+
 			if (!Utilities.isEmpty(ids)) {
 				baseFilter = BaseFilter.ID;
 				toFilter = storeRepo.findAllById(ids);
@@ -181,32 +182,22 @@ public class SimpleStoreDbService {
 
 					final Integer newPriority = priorities.get(entry.getId());
 
-					// check if the requested <consumer, service instance id, priority> does not exist in the DB
+					// check if the same <consumer, service instance id, priority> already exists in the DB
 					final Optional<OrchestrationStore> existing = storeRepo.findByConsumerAndServiceInstanceIdAndPriority(entry.getConsumer(), entry.getServiceInstanceId(), newPriority);
 					if (existing.isPresent()) {
-
-						// there should be max. 1 existing entry in the DB (since these fields are unique)
 						if (!existing.get().getId().equals(entry.getId())) {
-
-							if (modified.contains(existing.get())) {
-								// case 1: duplication in the user input
-								throw new InvalidParameterException("Duplicated fields: consumer name: " + existing.get().getConsumer()
-								+ ", serviceInstanceId: " + existing.get().getServiceInstanceId() + ", priority: " + existing.get().getPriority());
-							} else {
-                            	// case 2: the entry was already existing in the database
-								throw new InvalidParameterException("There is already an existing entity with consumer name: " +  existing.get().getConsumer() + ", service instance id: "
-										+ existing.get().getServiceInstanceId() + ", priority: " + existing.get().getPriority());
+							throw new InvalidParameterException("There is already an existing entity with consumer name: " +  existing.get().getConsumer() + ", service instance id: "
+									+ existing.get().getServiceInstanceId() + ", priority: " + existing.get().getPriority());
 							}
 						} else {
 							// no need to modify this entry, because this priority is already set
 							continue;
-						}
 					}
 
 					entry.setPriority(priorities.get(entry.getId()));
 					entry.setUpdatedBy(requester);
 					modified.add(entry);
-				}
+					}
 
 				return storeRepo.saveAllAndFlush(modified);
 			}
