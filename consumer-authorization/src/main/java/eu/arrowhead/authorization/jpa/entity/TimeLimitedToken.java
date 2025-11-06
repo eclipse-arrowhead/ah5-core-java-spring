@@ -17,6 +17,7 @@
 package eu.arrowhead.authorization.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -96,5 +97,30 @@ public class TimeLimitedToken {
 	//-------------------------------------------------------------------------------------------------
 	public void setExpiresAt(final ZonedDateTime expiresAt) {
 		this.expiresAt = expiresAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (obj == null) {
+			return false;
+		}
+
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final TimeLimitedToken other = (TimeLimitedToken) obj;
+		return id == other.id;
 	}
 }

@@ -101,8 +101,8 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 				sdService.revokeService(sysInfo.getSystemName(), serviceInstanceId, INIT_ORIGIN);
 			}
 
-			registeredServices.clear();
 			logger.info("Core system {} revoked {} service(s).", sysInfo, registeredServices.size());
+			registeredServices.clear();
 		} catch (final Throwable t) {
 			logger.error(t.getMessage());
 			logger.debug(t);
