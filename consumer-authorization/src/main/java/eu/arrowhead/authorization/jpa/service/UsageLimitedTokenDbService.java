@@ -79,7 +79,14 @@ public class UsageLimitedTokenDbService {
 
 		try {
 			boolean override = false;
-			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(consumerCloud, consumer, provider, target, targetType);
+			final String actScope = Utilities.isEmpty(scope) ? null : scope;
+			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
+					consumerCloud,
+					consumer,
+					provider,
+					targetType,
+					target,
+					actScope);
 			if (tokenHeaderOpt.isPresent()) {
 				final Optional<UsageLimitedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
 				if (tokenOpt.isPresent()) {
@@ -89,7 +96,7 @@ public class UsageLimitedTokenDbService {
 				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, actScope));
 			final UsageLimitedToken tokenRecord = tokenRepo.saveAndFlush(new UsageLimitedToken(tokenHeaderRecord, usageLimit));
 
 			return Pair.of(tokenRecord, !override);
@@ -118,6 +125,7 @@ public class UsageLimitedTokenDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public Optional<Pair<Integer, Integer>> decrease(final TokenHeader header) {
 		logger.debug("decrease started...");
+		Assert.notNull(header, "header is null");
 
 		try {
 			final Optional<UsageLimitedToken> optional = tokenRepo.findByHeader(header);
