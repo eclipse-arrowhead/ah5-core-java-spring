@@ -27,6 +27,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -45,10 +48,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
@@ -1870,6 +1869,34 @@ public class ManagementValidationTest {
 		assertEquals("test origin", ex.getOrigin());
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
+	@Test
+	public void testValidateAndNormalizeCreateServiceInstancesNotOfferablePolicy() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "TRANSLATION_BRIDGE_TOKEN_AUTH", Map.of("accessPort", 8080));
+
+		final ServiceInstanceRequestDTO instance = new ServiceInstanceRequestDTO(
+				"TemperatureProvider",
+				"temperatureInfo",
+				"1.0.0",
+				null,
+				Map.of("indoor", true),
+				List.of(intf));
+
+		final ServiceInstanceCreateListRequestDTO dto = new ServiceInstanceCreateListRequestDTO(List.of(instance));
+		final List<ServiceInstanceRequestDTO> expected = List.of(instance);
+		when(systemNameNormalizer.normalize("TemperatureProvider")).thenReturn("TemperatureProvider");
+		when(serviceDefNameNormalizer.normalize("temperatureInfo")).thenReturn("temperatureInfo");
+		when(versionNormalizer.normalize("1.0.0")).thenReturn("1.0.0");
+		utilitiesMock.when(() -> Utilities.isEnumValue("TRANSLATION_BRIDGE_TOKEN_AUTH", ServiceInterfacePolicy.class)).thenReturn(true);
+		when(normalizer.normalizeCreateServiceInstances(dto)).thenReturn(expected);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeCreateServiceInstances(dto, "test origin"));
+		assertEquals("Invalid interface policy: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
 	// update
 
 	//-------------------------------------------------------------------------------------------------
@@ -2166,6 +2193,31 @@ public class ManagementValidationTest {
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
 		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
+	@Test
+	public void testValidateAndNormalizeUpdateServiceInstancesNotOfferablePolicy() {
+
+		final ServiceInstanceInterfaceRequestDTO intf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "TRANSLATION_BRIDGE_TOKEN_AUTH", Map.of("accessPort", 8080));
+
+		final ServiceInstanceUpdateRequestDTO instance = new ServiceInstanceUpdateRequestDTO(
+				"TemperatureProvider|temperatureInfo|1.0.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(intf));
+
+		final ServiceInstanceUpdateListRequestDTO dto = new ServiceInstanceUpdateListRequestDTO(List.of(instance));
+		final List<ServiceInstanceUpdateRequestDTO> expected = List.of(instance);
+		utilitiesMock.when(() -> Utilities.parseUTCStringToZonedDateTime("2030-11-04T01:53:02Z")).thenReturn(ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")));
+		utilitiesMock.when(() -> Utilities.isEnumValue("TRANSLATION_BRIDGE_TOKEN_AUTH", ServiceInterfacePolicy.class)).thenReturn(true);
+		when(serviceInstanceIdentifierNormalizer.normalize("TemperatureProvider|temperatureInfo|1.0.0")).thenReturn("TemperatureProvider|temperatureInfo|1.0.0");
+		when(normalizer.normalizeUpdateServiceInstances(dto)).thenReturn(expected);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeUpdateServiceInstances(dto, "test origin"));
+		assertEquals("Invalid interface policy: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 
@@ -2731,6 +2783,38 @@ public class ManagementValidationTest {
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
 		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:magicnumber")
+	@Test
+	public void validateAndNormalizeQueryServiceInstancesNotOfferablePolicy() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+				new PageDTO(10, 20, "ASC", "id"),
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2029-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("TRANSLATION_BRIDGE_TOKEN_AUTH"));
+
+		when(normalizer.normalizeQueryServiceInstances(dto)).thenReturn(dto);
+		utilitiesMock.when(() -> Utilities.isEnumValue("TRANSLATION_BRIDGE_TOKEN_AUTH", ServiceInterfacePolicy.class)).thenReturn(true);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryServiceInstances(dto, "test origin"));
+		assertEquals("Invalid interface policy: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 
