@@ -18,12 +18,10 @@ package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.util.List;
 
-import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.jpa.UUIDArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -59,15 +57,6 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Override
-	@PrePersist
-	public void onCreate() {
-		this.createdAt = Utilities.utcNow();
-		this.updatedAt = this.createdAt;
-		this.updatedBy = this.createdBy;
-	}
-
-	//-------------------------------------------------------------------------------------------------
 	public OrchestrationStore() {
 
 	}
@@ -79,6 +68,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 		this.serviceInstanceId = serviceInstanceId;
 		this.priority = priority;
 		this.createdBy = createdBy;
+		this.updatedBy = createdBy;
 
 	}
 
@@ -98,7 +88,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setConsumer(String consumer) {
+	public void setConsumer(final String consumer) {
 		this.consumer = consumer;
 	}
 
@@ -108,7 +98,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(String serviceDefinition) {
+	public void setServiceDefinition(final String serviceDefinition) {
 		this.serviceDefinition = serviceDefinition;
 	}
 
@@ -118,7 +108,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setServiceInstanceId(String serviceInstanceId) {
+	public void setServiceInstanceId(final String serviceInstanceId) {
 		this.serviceInstanceId = serviceInstanceId;
 	}
 
@@ -128,7 +118,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setPriority(int priority) {
+	public void setPriority(final int priority) {
 		this.priority = priority;
 	}
 
@@ -138,7 +128,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setCreatedBy(String createdBy) {
+	public void setCreatedBy(final String createdBy) {
 		this.createdBy = createdBy;
 	}
 
@@ -148,7 +138,7 @@ public class OrchestrationStore extends UUIDArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setUpdatedBy(String updatedBy) {
+	public void setUpdatedBy(final String updatedBy) {
 		this.updatedBy = updatedBy;
 	}
 }

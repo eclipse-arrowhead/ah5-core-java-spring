@@ -35,9 +35,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
-import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
-import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierNormalizer;
 import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIdentifierValidator;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
@@ -158,6 +156,18 @@ public class OrchestrationStoreManagementServiceValidation {
 		}
 
 		return normalized;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<UUID> validateAndNormalizeRemove(final List<String> uuids) {
+
+		uuids.forEach(id -> {
+			if (!Utilities.isUUID(id.trim())) {
+				throw new InvalidParameterException("Invalid UUID: " + id.trim());
+			}
+		});
+
+		return normalizer.normalizeRemove(uuids);
 	}
 
 	//=================================================================================================

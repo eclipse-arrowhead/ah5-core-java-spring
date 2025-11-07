@@ -16,7 +16,9 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.normalization;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -103,5 +105,12 @@ public class OrchestrationStoreManagementServiceNormalization {
 
 				Utilities.isEmpty(dto.createdBy()) ? null
 					: systemNameNormalizer.normalize(dto.createdBy()));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public List<UUID> normalizeRemove(final List<String> uuids) {
+		logger.debug("normalizeRemove started...");
+
+		return uuids.stream().map(id -> UUID.fromString(id.trim())).collect(Collectors.toList());
 	}
 }

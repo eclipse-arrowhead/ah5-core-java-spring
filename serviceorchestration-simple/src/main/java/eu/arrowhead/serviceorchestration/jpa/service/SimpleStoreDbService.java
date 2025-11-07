@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,10 +32,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationStoreRepository;
 
@@ -56,15 +59,23 @@ public class SimpleStoreDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
-	public List<OrchestrationStore> createBulk(final List<OrchestrationStore> candidates) {
+	public List<OrchestrationStore> createBulk(final List<OrchestrationSimpleStoreRequestDTO> candidates, final String requesterName) {
 		logger.debug("createBulk started...");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "candidate list is empty");
 		Assert.isTrue(!Utilities.containsNull(candidates), "candidate list contains null element");
 
+		final List<OrchestrationStore> toSave = candidates
+			.stream().map(n -> new OrchestrationStore(
+					n.consumer(),
+					n.serviceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP)[1], // service definition
+					n.serviceInstanceId(),
+					n.priority(),
+					requesterName)).collect(Collectors.toList());
+
 		checkUniqueFields(candidates);
 
 		try {
-			return storeRepo.saveAllAndFlush(candidates);
+			return storeRepo.saveAllAndFlush(toSave);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -213,10 +224,10 @@ public class SimpleStoreDbService {
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public void deleteBulk(final List<UUID> uuids) {
-		Assert.isTrue(!Utilities.isEmpty(uuids), "UUID list is empty!");
+		Assert.isTrue(!Utilities.isEmpty(uuids), "UUID list is empty");
 
 		try {
-			storeRepo.deleteAllByIdInBatch(uuids);
+			storeRepo.deleteAllById(uuids);
 			storeRepo.flush();
 		} catch (Exception ex) {
 			logger.error(ex.getMessage());
@@ -230,17 +241,18 @@ public class SimpleStoreDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	// Throws exception, if there is an existing entity in the DB with the same unique fields.
-	private void checkUniqueFields(final List<OrchestrationStore> candidates) {
+	private void checkUniqueFields(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
 		Assert.isTrue(!Utilities.isEmpty(candidates), "candidate list is empty");
 		Assert.isTrue(!Utilities.containsNull(candidates), "candidate list contains null element");
 
-		for (final OrchestrationStore candidate : candidates) {
+		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
 
 			// check if there is and existing record
-			final Optional<OrchestrationStore> existing = storeRepo.findByConsumerAndServiceInstanceIdAndPriority(candidate.getConsumer(), candidate.getServiceInstanceId(), candidate.getPriority());
-			if (existing.isPresent()) {
-				throw new InvalidParameterException("There is already an existing entity with consumer name: " +  candidate.getConsumer() + ", service instance id: "
-						+ candidate.getServiceInstanceId() + ", priority: " + candidate.getPriority());
+			final Optional<OrchestrationStore> entity = storeRepo.findByConsumerAndServiceInstanceIdAndPriority(candidate.consumer(), candidate.serviceInstanceId(), candidate.priority());
+			if (entity.isPresent()) {
+				final OrchestrationStore existing = entity.get();
+				throw new InvalidParameterException("There is already an existing entity with consumer name: " +  existing.getConsumer() + ", service instance id: "
+						+ existing.getServiceInstanceId() + ", priority: " + existing.getPriority());
 			}
 		}
 	}

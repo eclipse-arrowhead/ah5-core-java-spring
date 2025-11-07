@@ -39,7 +39,6 @@ import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationStoreManagementService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
-import eu.arrowhead.dto.OrchestrationLockListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
@@ -166,7 +165,7 @@ public class OrchestrationStoreManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
 	@DeleteMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH)
-	public void remove(final @RequestParam List<UUID> uuids) {
+	public void remove(final @RequestParam List<String> uuids) {
 		logger.debug("remove started...");
 
 		final String origin = HttpMethod.DELETE.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_REMOVE_PATH;

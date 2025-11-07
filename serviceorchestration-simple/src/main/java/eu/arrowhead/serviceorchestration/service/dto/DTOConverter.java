@@ -25,48 +25,49 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 
 @Service
 public class DTOConverter {
-	
+
 	//=================================================================================================
 	// members
-	
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
-	
+
 	//=================================================================================================
 	// methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityListToResponseListDTO(final List<OrchestrationStore> entities) {
 		logger.debug("convertOrchestrationStoreListToResponseListDTO started...");
 		Assert.notNull(entities, "entities is null");
-		
+
 		return new OrchestrationSimpleStoreListResponseDTO(
-				entities.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()), 
+				entities.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()),
 				entities.size());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityPageToResponseListTO(final Page<OrchestrationStore> results) {
 		logger.debug("convertStoreEntityPageToResponesListTO started...");
 		Assert.notNull(results, "results is null");
-		
+
 		return new OrchestrationSimpleStoreListResponseDTO(
-				results.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()), 
+				results.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()),
 				results.getTotalElements());
 	}
-	
+
 	//=================================================================================================
 	// assistant methods
-	
+
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationSimpleStoreResponseDTO convertOrchestrationStoreEntityToResponseDTO(final OrchestrationStore entity) {
 		Assert.notNull(entity, "entity is null");
-		
+
 		return new OrchestrationSimpleStoreResponseDTO(
 				entity.getId().toString(),
 				entity.getConsumer(),
@@ -75,8 +76,8 @@ public class DTOConverter {
 				entity.getPriority(),
 				entity.getCreatedBy(),
 				entity.getUpdatedBy(),
-				entity.getCreatedAt().toString(),
-				entity.getUpdatedAt().toString());
+				Utilities.convertZonedDateTimeToUTCString(entity.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(entity.getUpdatedAt()));
 	}
 
 }

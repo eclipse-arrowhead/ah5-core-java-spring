@@ -35,6 +35,8 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
@@ -74,14 +76,9 @@ public class OrchestrationStoreManagementService {
 		logger.info("createSimpleStoreEntries started...");
 
 		final List<OrchestrationSimpleStoreRequestDTO> normalized = validator.validateAndNormalizeCreateBulk(dto, origin);
+
 		try {
-			final List<OrchestrationStore> created = dbService.createBulk(normalized
-					.stream().map(n -> new OrchestrationStore(
-							n.consumer(),
-							n.serviceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP)[1], // service definition
-							n.serviceInstanceId(),
-							n.priority(),
-							requesterName)).collect(Collectors.toList()));
+			final List<OrchestrationStore> created = dbService.createBulk(normalized, requesterName);
 			return dtoConverter.convertStoreEntityListToResponseListDTO(created);
 		} catch (InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -132,15 +129,15 @@ public class OrchestrationStoreManagementService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void removeSimpleStoreEntries(final List<UUID> uuids, final String origin) {
+	public void removeSimpleStoreEntries(final List<String> uuids, final String origin) {
 		logger.info("removeSimpleStoreEntries started...");
-		throw new NotImplementedException();
-		/*validator.validateUUIDList(uuids, origin);
+
+		final List<UUID> normalized = validator.validateAndNormalizeRemove(uuids);
 
 		try {
-			dbService.deleteBulk(uuids);
+			dbService.deleteBulk(normalized);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
-		}*/
+		}
 	}
 }
