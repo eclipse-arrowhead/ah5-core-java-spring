@@ -28,6 +28,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -96,6 +97,26 @@ public class SystemDbServiceTest {
 
 	//=================================================================================================
 	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(null));
+
+		assertEquals("system candidate list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(List.of()));
+
+		assertEquals("system candidate list is empty", ex.getMessage());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -249,6 +270,49 @@ public class SystemDbServiceTest {
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of(dto)));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkNoAddress() {
+		final NormalizedSystemRequestDTO dto = new NormalizedSystemRequestDTO("TemperatureConsumer", null, "1.0.0", List.of(), null);
+		final System system = new System("TemperatureConsumer", null, "1.0.0");
+		final System savedSystem = new System("TemperatureConsumer", null, "1.0.0");
+		savedSystem.setId(1);
+
+		when(systemRepo.findAllByNameIn(List.of("TemperatureConsumer"))).thenReturn(List.of());
+		when(deviceRepo.findAllByNameIn(List.of())).thenReturn(List.of());
+		when(systemRepo.saveAllAndFlush(List.of(system))).thenReturn(List.of(savedSystem));
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(List.of(dto)));
+
+		assertEquals("At least one system address is needed for every system", ex.getMessage());
+
+		verify(systemRepo).findAllByNameIn(List.of("TemperatureConsumer"));
+		verify(deviceRepo).findAllByNameIn(List.of());
+		verify(systemRepo).saveAllAndFlush(List.of(system));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateBulk(null));
+
+		assertEquals("The list of systems to update is empty or missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateBulk(List.of()));
+
+		assertEquals("The list of systems to update is empty or missing", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -429,7 +493,27 @@ public class SystemDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testdeleteByNameListOk() {
+	public void testDeleteByNameListInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByNameList(null));
+
+		assertEquals("system name list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByNameList(List.of()));
+
+		assertEquals("system name list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListOk() {
 
 		System system = new System("TemperatureConsumer", "{\r\n  \"indoor\" : false\r\n}", "1.0.0");
 		when(systemRepo.findAllByNameIn(List.of("TemperatureConsumer"))).thenReturn(List.of(system));
@@ -442,12 +526,32 @@ public class SystemDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testdeleteByNameListThrowsInternalServerError() {
+	public void testDeleteByNameListThrowsInternalServerError() {
 
 		when(systemRepo.findAllByNameIn(List.of("TemperatureConsumer"))).thenThrow(new LockedException("error"));
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByNameList(List.of("TemperatureConsumer")));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByName(null));
+
+		assertEquals("system name is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByName(""));
+
+		assertEquals("system name is missing or empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -503,6 +607,49 @@ public class SystemDbServiceTest {
 		when(systemRepo.findByName("TemperatureConsumer")).thenThrow(new LockedException("error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getByName("TemperatureConsumer"));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameListInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByNameList(null));
+
+		assertEquals("system name list is null or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameListInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByNameList(List.of()));
+
+		assertEquals("system name list is null or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameListInputContainsNull() {
+		final List<String> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByNameList(list));
+
+		assertEquals("system name list contains null or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameListInputContainsEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByNameList(List.of("")));
+
+		assertEquals("system name list contains null or empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -595,8 +742,8 @@ public class SystemDbServiceTest {
 		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
 		when(systemAddressRepo.findAllBySystemAndAddressType(any(), any())).thenReturn(List.of(systemAddress));
 
-		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected =
-				new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(List.of(Triple.of(system, List.of(systemAddress), null)), pageRequest, 1);
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), null)),
+				pageRequest, 1);
 
 		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> actual = service.getPageByFilters(pageRequest, null, null, AddressType.IPV4, null, null, null);
 		verify(systemAddressRepo).findAllBySystemAndAddressType(any(), eq(AddressType.IPV4));
@@ -634,8 +781,8 @@ public class SystemDbServiceTest {
 		when(systemAddressRepo.findAllBySystemAndAddressIn(any(), any())).thenReturn(List.of(systemAddress));
 		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of());
 
-		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected =
-				new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(List.of(Triple.of(system, List.of(systemAddress), null)), pageRequest, 1);
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), null)),
+				pageRequest, 1);
 		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> actual = service.getPageByFilters(pageRequest, null, List.of("192.168.8.8"), null, null, null, null);
 		verify(systemAddressRepo).findAllBySystemAndAddressIn(any(), eq(List.of("192.168.8.8")));
 		assertEquals(expected, actual);
@@ -733,11 +880,10 @@ public class SystemDbServiceTest {
 		when(deviceSystemConnectorRepo.findBySystemIn(any())).thenReturn(List.of(connection));
 		when(deviceAddressRepo.findAllByDevice(any())).thenReturn(List.of());
 
-		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected =
-				new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(List.of(Triple.of(system, List.of(), Map.entry(matchingDevice, List.of()))), pageRequest, 1);
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected = new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
+				List.of(Triple.of(system, List.of(), Map.entry(matchingDevice, List.of()))), pageRequest, 1);
 
-		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result =
-				service.getPageByFilters(pageRequest, null, null, null, null, null, List.of("DEVICE"));
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = service.getPageByFilters(pageRequest, null, null, null, null, null, List.of("DEVICE"));
 		verify(deviceSystemConnectorRepo).findBySystem(system);
 		assertEquals(expected, result);
 	}
@@ -788,8 +934,8 @@ public class SystemDbServiceTest {
 		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
 		requirement.put("indoor", false);
 
-		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected =
-				new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))), pageRequest, 1);
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> expected = new PageImpl<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>>(
+				List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))), pageRequest, 1);
 		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = service.getPageByFilters(pageRequest, null, null, null, List.of(requirement), null, null);
 		assertEquals(expected, result);
 	}
@@ -802,6 +948,26 @@ public class SystemDbServiceTest {
 		when(systemRepo.findAll()).thenThrow(new LockedException("error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getPageByFilters(pageRequest, null, null, null, null, null, List.of("DEVICE")));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByName(null));
+
+		assertEquals("system name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByName(""));
+
+		assertEquals("system name is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
