@@ -48,4 +48,9 @@ public interface OrchestrationStoreRepository extends RefreshableRepository<Orch
 	//-------------------------------------------------------------------------------------------------
 	public Page<OrchestrationStore> findAllByIdIn(final List<UUID> matchingIds, final PageRequest pagination);
 
+    //-------------------------------------------------------------------------------------------------
+    public List<OrchestrationStore> findAllByConsumerOrderByPriorityAsc(final String consumer);
+
+    //-------------------------------------------------------------------------------------------------
+    public List<OrchestrationStore> findAllByConsumerAndServiceDefinitionOrderByPriorityAsc(final String consumer, final String serviceDefinition);
 }

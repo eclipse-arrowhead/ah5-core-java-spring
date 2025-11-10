@@ -22,8 +22,8 @@ import java.util.UUID;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import eu.arrowhead.common.jpa.UnmodifiableUUIDArrowheadEntity;
+import eu.arrowhead.common.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

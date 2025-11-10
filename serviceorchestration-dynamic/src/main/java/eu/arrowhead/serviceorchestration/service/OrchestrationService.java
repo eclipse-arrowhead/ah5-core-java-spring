@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
+import eu.arrowhead.common.service.enums.OrchestrationType;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +41,6 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;

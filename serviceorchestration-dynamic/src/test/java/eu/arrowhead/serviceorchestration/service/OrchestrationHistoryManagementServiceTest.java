@@ -50,7 +50,6 @@ import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationHistoryManagementValidation;
 

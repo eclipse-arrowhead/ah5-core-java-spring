@@ -16,6 +16,10 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration;
 
+import eu.arrowhead.dto.enums.OrchestrationFlag;
+
+import java.util.List;
+
 public final class SimpleStoreServiceOrchestrationConstants {
 
 	//=================================================================================================
@@ -43,18 +47,20 @@ public final class SimpleStoreServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 
 	// for ignore related warnings
-	public static final String IGNORED_FIELDS = "ignored fields";
-	public static final String IGNORED_FLAGS = "ignored flags";
+	public static final String ORCH_WARN_IGNORED_FIELDS_KEY = "ignoredFields";
+	public static final String ORCH_WARN_IGNORED_FLAGS_KEY = "ignoredFlags";
 	public static final String FIELD_OPERATIONS = " operations";
-	public static final String FIELD_ALIVES_AT = " alives at";
+	public static final String FIELD_ALIVES_AT = " alivesAt";
 	public static final String FIELD_METADATA_REQ = " metadataRequirements";
 	public static final String FIELD_INTF_TEMPLATE_NAMES = " interfaceTemplateNames";
 	public static final String FIELD_INTF_ADDRESS_TYPES = " interfaceAddressTypes";
 	public static final String FIELD_INTF_PROP_REQ = " interfacePropertyRequirements";
 	public static final String FIELD_SECURITY_POLICIES = " securityPolicies";
-	public static final String FIELD_PREFFERED_PROVIDERS = " preferredProviders";
 	public static final String FIELD_QOS_REQ = " qosRequirements";
-	public static final String FIELD_EXCLUSIVITY_DURATION = " exclusivityDuration";
+    public static final List<String> SUPPORTED_FLAGS = List.of(
+            OrchestrationFlag.MATCHMAKING.toString(),
+            OrchestrationFlag.ONLY_PREFERRED.toString(),
+            OrchestrationFlag.ONLY_EXCLUSIVE.toString());
 
 	//=================================================================================================
 	// assistant methods

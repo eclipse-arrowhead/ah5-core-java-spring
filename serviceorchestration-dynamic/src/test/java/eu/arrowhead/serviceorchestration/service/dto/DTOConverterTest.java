@@ -59,7 +59,6 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 
 @SuppressWarnings("checkstyle:MagicNumberCheck")
 @ExtendWith(MockitoExtension.class)

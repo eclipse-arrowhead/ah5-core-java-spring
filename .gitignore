@@ -6,6 +6,8 @@
 /serviceregistry/*.log
 /serviceorchestration-dynamic/.factorypath
 /serviceorchestration-dynamic/*.log
+/serviceorchestration-simple/.factorypath
+/serviceorchestration-simple/*.log
 .checkstyle
 *.lck
 /authentication/.factorypath

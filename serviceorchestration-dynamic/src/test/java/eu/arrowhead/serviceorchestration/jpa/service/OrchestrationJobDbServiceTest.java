@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import eu.arrowhead.common.service.enums.OrchestrationType;
 import org.hibernate.HibernateException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +55,6 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationJobRepository;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 
 @SuppressWarnings("checkstyle:MagicNumberCheck")

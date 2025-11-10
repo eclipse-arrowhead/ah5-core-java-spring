@@ -76,7 +76,6 @@ import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;

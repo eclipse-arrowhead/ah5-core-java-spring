@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import jakarta.validation.constraints.AssertTrue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,8 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationStoreRepository;
+
+import static org.hibernate.validator.internal.util.Contracts.assertTrue;
 
 @Service
 public class SimpleStoreDbService {
@@ -177,6 +180,35 @@ public class SimpleStoreDbService {
 			throw new InternalServerError("Database operation error");
 		}
 	}
+
+    //-------------------------------------------------------------------------------------------------
+    public List<OrchestrationStore> getByConsumer(final String consumer) {
+        logger.debug("getByConsumer started...");
+        assertTrue(!Utilities.isEmpty(consumer), "consumer is empty");
+
+        try {
+            return storeRepo.findAllByConsumerOrderByPriorityAsc(consumer);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public List<OrchestrationStore> getByConsumerAndServiceDefinition(final String consumer, final String serviceDefinition) {
+        logger.debug("getByConsumerAndServiceDefinition started...");
+        assertTrue(!Utilities.isEmpty(consumer), "consumer is empty");
+        assertTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
+
+        try {
+            return storeRepo.findAllByConsumerAndServiceDefinitionOrderByPriorityAsc(consumer, serviceDefinition);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
 
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)

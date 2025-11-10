@@ -29,7 +29,6 @@ import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationHistoryManagementNormalization;
 
 @Service
