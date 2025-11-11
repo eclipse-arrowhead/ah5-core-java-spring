@@ -20,6 +20,7 @@ package eu.arrowhead.serviceorchestration.service.validation;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
@@ -45,6 +46,9 @@ public class OrchestrationServiceValidation {
     @Autowired
     private ServiceDefinitionNameValidator serviceDefNameValidator;
 
+    @Autowired
+    private SystemNameValidator systemNameValidator;
+
     private final Logger logger = LogManager.getLogger(this.getClass());
 
     //=================================================================================================
@@ -61,8 +65,11 @@ public class OrchestrationServiceValidation {
             if (!Utilities.isEmpty(request.getServiceDefinition())) {
                 serviceDefNameValidator.validateServiceDefinitionName(request.getServiceDefinition());
             }
-            // TODO: versions?
-            // TODO: providers?
+
+            if (!Utilities.isEmpty(request.getPreferredProviders())) {
+                request.getPreferredProviders().forEach(p -> systemNameValidator.validateSystemName(p));
+            }
+
         } catch (final InvalidParameterException ex) {
             throw new InvalidParameterException(ex.getMessage(), origin);
         }
@@ -86,11 +93,9 @@ public class OrchestrationServiceValidation {
 
             // add warnings, if any
             if (!Utilities.isEmpty(ignoredFlags)) {
-                warnings.add(Utilities.toJson(Map.entry(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FLAGS_KEY, ignoredFlags)));
+                warnings.add(Utilities.toPrettyJson(Utilities.toJson(Map.entry(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FLAGS_KEY, ignoredFlags))));
             }
         }
-
-        // TODO: exclusivity?
 
         return request;
     }
@@ -103,7 +108,7 @@ public class OrchestrationServiceValidation {
         logger.debug("validatePull started...");
 
         // instance that does not contain the ignored fields
-        SimpleOrchestrationRequest simpleOrchestrationRequest = new SimpleOrchestrationRequest(null, null);
+        SimpleOrchestrationRequest simpleOrchestrationRequest = new SimpleOrchestrationRequest(null, null, null);
 
         // ignored fields will be added as warnings
         final List<String> ignoredFields = new ArrayList<String>();
@@ -112,50 +117,57 @@ public class OrchestrationServiceValidation {
             throw new InvalidParameterException("Request payload is missing", origin);
         }
 
-        if (dto.serviceRequirement() == null) {
-            throw new InvalidParameterException("Service requirement is missing", origin);
+        if (dto.serviceRequirement() != null) {
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().serviceDefinition())) {
+                simpleOrchestrationRequest.setServiceDefinition(dto.serviceRequirement().serviceDefinition());
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().operations())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_OPERATIONS);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().versions())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_VERSIONS);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().alivesAt())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_ALIVES_AT);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().metadataRequirements())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_METADATA_REQ);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().interfaceTemplateNames())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_INTF_TEMPLATE_NAMES);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().interfaceAddressTypes())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_INTF_ADDRESS_TYPES);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().interfacePropertyRequirements())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_INTF_PROP_REQ);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().securityPolicies())) {
+                ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_SECURITY_POLICIES);
+            }
+
+            if (!Utilities.isEmpty(dto.serviceRequirement().preferredProviders())) {
+                if (Utilities.containsNullOrEmpty(dto.serviceRequirement().preferredProviders())) {
+                    throw new InvalidParameterException("Preferred providers contains null or empty element", origin);
+                }
+
+                simpleOrchestrationRequest.setPreferredProviders(dto.serviceRequirement().preferredProviders());
+            }
         }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().serviceDefinition())) {
-            simpleOrchestrationRequest.setServiceDefinition(dto.serviceRequirement().serviceDefinition());
-        }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().operations())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_OPERATIONS);
-        }
-
-        // TODO: serviceRequirement.versions ?
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().alivesAt())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_ALIVES_AT);
-        }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().metadataRequirements())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_METADATA_REQ);
-        }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().interfaceTemplateNames())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_INTF_TEMPLATE_NAMES);
-        }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().interfaceAddressTypes())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_INTF_ADDRESS_TYPES);
-        }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().interfacePropertyRequirements())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_INTF_PROP_REQ);
-        }
-
-        if (!Utilities.isEmpty(dto.serviceRequirement().securityPolicies())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_SECURITY_POLICIES);
-        }
-
-        // TODO: serviceRequirement.preferred providers?
 
         if (!Utilities.isEmpty(dto.orchestrationFlags())) {
             dto.orchestrationFlags().values().forEach(value -> {
                 if (value == null) {
-                    throw new InvalidParameterException("Orchestration flag map contains null value", origin);
+                throw new InvalidParameterException("Orchestration flag map contains null value", origin);
                 }
             });
 
@@ -164,10 +176,16 @@ public class OrchestrationServiceValidation {
             simpleOrchestrationRequest.setOrchestrationFlags(dto.orchestrationFlags());
         }
 
-        // TODO: exclusivity duration?
+        if (!Utilities.isEmpty(dto.qosRequirements())) {
+            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_QOS_REQ);
+        }
+
+        if (dto.exclusivityDuration() != null) {
+            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_EXCLUSIVITY_DURATION);
+        }
 
         if (!Utilities.isEmpty(ignoredFields)) {
-            warnings.add(Utilities.toJson(Map.entry(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields)));
+            warnings.add(Utilities.toPrettyJson(Utilities.toJson(Map.entry(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields))));
         }
 
         return simpleOrchestrationRequest;

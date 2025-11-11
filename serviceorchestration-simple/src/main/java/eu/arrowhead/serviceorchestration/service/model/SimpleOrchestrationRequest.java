@@ -17,6 +17,7 @@
 
 package eu.arrowhead.serviceorchestration.service.model;
 
+import java.util.List;
 import java.util.Map;
 
 public class SimpleOrchestrationRequest {
@@ -25,10 +26,8 @@ public class SimpleOrchestrationRequest {
     // members
 
     String serviceDefinition;
-    //final List<String> versions;
-    //List<String> preferredProviders;
+    List<String> preferredProviders;
     Map<String, Boolean> orchestrationFlags;
-    //Integer exclusivityDuration;
 
     //=================================================================================================
     // boilerplate
@@ -38,8 +37,9 @@ public class SimpleOrchestrationRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationRequest(final String serviceDefinition, final Map<String, Boolean> orchestrationFlags) {
+    public SimpleOrchestrationRequest(final String serviceDefinition, final List<String> preferredProviders, final Map<String, Boolean> orchestrationFlags) {
         this.serviceDefinition = serviceDefinition;
+        this.preferredProviders = preferredProviders;
         this.orchestrationFlags = orchestrationFlags;
     }
 
@@ -61,5 +61,15 @@ public class SimpleOrchestrationRequest {
     //-------------------------------------------------------------------------------------------------
     public void setOrchestrationFlags(Map<String, Boolean> orchestrationFlags) {
         this.orchestrationFlags = orchestrationFlags;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public List<String> getPreferredProviders() {
+        return preferredProviders;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void setPreferredProviders(List<String> preferredProviders) {
+        this.preferredProviders = preferredProviders;
     }
 }

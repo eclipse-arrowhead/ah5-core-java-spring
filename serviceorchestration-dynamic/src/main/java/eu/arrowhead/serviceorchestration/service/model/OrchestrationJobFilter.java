@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.service.enums.OrchestrationType;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
+import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.enums.BaseFilter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 

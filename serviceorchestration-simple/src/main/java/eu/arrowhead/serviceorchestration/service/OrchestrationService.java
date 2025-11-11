@@ -17,11 +17,9 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.common.service.enums.OrchestrationType;
+import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
@@ -30,7 +28,6 @@ import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationServiceValidation;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +37,6 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
-import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
-import org.springframework.util.Assert;
 
 @Service
 public class OrchestrationService {

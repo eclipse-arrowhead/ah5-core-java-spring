@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import eu.arrowhead.common.service.enums.OrchestrationType;
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.hibernate.HibernateException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

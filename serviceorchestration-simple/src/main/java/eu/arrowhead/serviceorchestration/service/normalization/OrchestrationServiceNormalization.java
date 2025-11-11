@@ -19,6 +19,7 @@ package eu.arrowhead.serviceorchestration.service.normalization;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class OrchestrationServiceNormalization {
@@ -36,6 +38,9 @@ public class OrchestrationServiceNormalization {
 
     @Autowired
     private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+
+    @Autowired
+    private SystemNameNormalizer systemNameNormalizer;
 
     private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -49,9 +54,11 @@ public class OrchestrationServiceNormalization {
         // service definition
         toNormalize.setServiceDefinition(serviceDefNameNormalizer.normalize(toNormalize.getServiceDefinition()));
 
-        // TODO: versions?
 
-        // TODO: providers?
+        // preferred providers
+        if (!Utilities.isEmpty(toNormalize.getPreferredProviders())) {
+            toNormalize.setPreferredProviders(toNormalize.getPreferredProviders().stream().map(p -> systemNameNormalizer.normalize(p)).collect(Collectors.toList()));
+        }
 
         // orchestration flags
         if (!Utilities.isEmpty(toNormalize.getOrchestrationFlags())) {
@@ -59,8 +66,6 @@ public class OrchestrationServiceNormalization {
             toNormalize.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
             toNormalize.setOrchestrationFlags(normalizedFlags);
         }
-
-        // TODO: exclusivity?
     }
 
 }

@@ -20,159 +20,183 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
-import eu.arrowhead.common.jpa.UnmodifiableUUIDArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "ownerSystem", "targetSystem", "serviceDefinition" }) })
-public class Subscription extends UnmodifiableUUIDArrowheadEntity {
+public class Subscription {
 
-	//=================================================================================================
-	// members
+    //=================================================================================================
+    // members
 
-	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "ownerSystem", "targetSystem", "serviceDefinition", "createdAt");
-	public static final String DEFAULT_SORT_FIELD = "id";
+    public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "ownerSystem", "targetSystem", "serviceDefinition", "createdAt");
+    public static final String DEFAULT_SORT_FIELD = "id";
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String ownerSystem;
+    @Id
+    private UUID id;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String targetSystem;
+    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+    private String ownerSystem;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-	private String serviceDefinition;
+    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+    private String targetSystem;
 
-	@Column(nullable = true)
-	private ZonedDateTime expiresAt;
+    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+    private String serviceDefinition;
 
-	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
-	private String notifyProtocol;
+    @Column(nullable = true)
+    private ZonedDateTime expiresAt;
 
-	@Column(nullable = false)
-	private String notifyProperties;
+    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
+    private String notifyProtocol;
 
-	@Column(nullable = false)
-	private String orchestrationRequest;
+    @Column(nullable = false)
+    private String notifyProperties;
 
-	//=================================================================================================
-	// methods
+    @Column(nullable = false)
+    private String orchestrationRequest;
 
-	//-------------------------------------------------------------------------------------------------
-	public Subscription() {
-	}
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private ZonedDateTime createdAt;
 
-	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:ParameterNumberCheck")
-	public Subscription(
-			final UUID id,
-			final String ownerSystem,
-			final String targetSystem,
-			final String serviceDefinition,
-			final ZonedDateTime expiresAt,
-			final String notifyProtocol,
-			final String notifyProperties,
-			final String orchestrationRequest) {
-		this.id = id;
-		this.ownerSystem = ownerSystem;
-		this.targetSystem = targetSystem;
-		this.serviceDefinition = serviceDefinition;
-		this.expiresAt = expiresAt;
-		this.notifyProtocol = notifyProtocol;
-		this.notifyProperties = notifyProperties;
-		this.orchestrationRequest = orchestrationRequest;
-	}
+    //=================================================================================================
+    // methods
 
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public String toString() {
-		return "Subscription [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt + ", notifyProtocol = " + notifyProtocol
-				+ ", notifyProperties = " + notifyProperties + ", orchestrationRequest = " + orchestrationRequest + ", createdAt = " + createdAt + "]";
-	}
+    //-------------------------------------------------------------------------------------------------
+    public Subscription() {
+    }
 
-	//=================================================================================================
-	// boilerplate
+    //-------------------------------------------------------------------------------------------------
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
+    public Subscription(
+            final UUID id,
+            final String ownerSystem,
+            final String targetSystem,
+            final String serviceDefinition,
+            final ZonedDateTime expiresAt,
+            final String notifyProtocol,
+            final String notifyProperties,
+            final String orchestrationRequest) {
+        this.id = id;
+        this.ownerSystem = ownerSystem;
+        this.targetSystem = targetSystem;
+        this.serviceDefinition = serviceDefinition;
+        this.expiresAt = expiresAt;
+        this.notifyProtocol = notifyProtocol;
+        this.notifyProperties = notifyProperties;
+        this.orchestrationRequest = orchestrationRequest;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public String getOwnerSystem() {
-		return ownerSystem;
-	}
+    //-------------------------------------------------------------------------------------------------
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = Utilities.utcNow();
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setOwnerSystem(final String ownerSystem) {
-		this.ownerSystem = ownerSystem;
-	}
+    //-------------------------------------------------------------------------------------------------
+    @Override
+    public String toString() {
+        return "System [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt
+                + ", notifyProtocol = " + notifyProtocol + ", notifyProperties = " + notifyProperties + ", orchestrationRequest = " + orchestrationRequest + ", createdAt = " + createdAt + "]";
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public String getTargetSystem() {
-		return targetSystem;
-	}
+    //=================================================================================================
+    // boilerplate
 
-	//-------------------------------------------------------------------------------------------------
-	public void setTargetSystem(final String targetSystem) {
-		this.targetSystem = targetSystem;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public UUID getId() {
+        return id;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public String getServiceDefinition() {
-		return serviceDefinition;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public void setId(final UUID id) {
+        this.id = id;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setServiceDefinition(final String serviceDefinition) {
-		this.serviceDefinition = serviceDefinition;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public String getOwnerSystem() {
+        return ownerSystem;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public ZonedDateTime getExpiresAt() {
-		return expiresAt;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public void setOwnerSystem(final String ownerSystem) {
+        this.ownerSystem = ownerSystem;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setExpiresAt(final ZonedDateTime expiresAt) {
-		this.expiresAt = expiresAt;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public String getTargetSystem() {
+        return targetSystem;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public String getNotifyProtocol() {
-		return notifyProtocol;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public void setTargetSystem(final String targetSystem) {
+        this.targetSystem = targetSystem;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setNotifyProtocol(final String notifyProtocol) {
-		this.notifyProtocol = notifyProtocol;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public String getServiceDefinition() {
+        return serviceDefinition;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public String getNotifyProperties() {
-		return notifyProperties;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public void setServiceDefinition(final String serviceDefinition) {
+        this.serviceDefinition = serviceDefinition;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setNotifyProperties(final String notifyProperties) {
-		this.notifyProperties = notifyProperties;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public ZonedDateTime getExpiresAt() {
+        return expiresAt;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public String getOrchestrationRequest() {
-		return orchestrationRequest;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public void setExpiresAt(final ZonedDateTime expiresAt) {
+        this.expiresAt = expiresAt;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setOrchestrationRequest(final String orchestrationRequest) {
-		this.orchestrationRequest = orchestrationRequest;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public String getNotifyProtocol() {
+        return notifyProtocol;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public ZonedDateTime getCreatedAt() {
-		return createdAt;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public void setNotifyProtocol(final String notifyProtocol) {
+        this.notifyProtocol = notifyProtocol;
+    }
 
-	//-------------------------------------------------------------------------------------------------
-	public void setCreatedAt(final ZonedDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
+    //-------------------------------------------------------------------------------------------------
+    public String getNotifyProperties() {
+        return notifyProperties;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void setNotifyProperties(final String notifyProperties) {
+        this.notifyProperties = notifyProperties;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public String getOrchestrationRequest() {
+        return orchestrationRequest;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void setOrchestrationRequest(final String orchestrationRequest) {
+        this.orchestrationRequest = orchestrationRequest;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public ZonedDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void setCreatedAt(final ZonedDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

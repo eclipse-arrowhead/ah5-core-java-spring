@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
-import eu.arrowhead.common.service.enums.OrchestrationType;
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -50,6 +50,7 @@ public final class SimpleStoreServiceOrchestrationConstants {
 	public static final String ORCH_WARN_IGNORED_FIELDS_KEY = "ignoredFields";
 	public static final String ORCH_WARN_IGNORED_FLAGS_KEY = "ignoredFlags";
 	public static final String FIELD_OPERATIONS = " operations";
+    public static final String FIELD_VERSIONS = " versions";
 	public static final String FIELD_ALIVES_AT = " alivesAt";
 	public static final String FIELD_METADATA_REQ = " metadataRequirements";
 	public static final String FIELD_INTF_TEMPLATE_NAMES = " interfaceTemplateNames";
@@ -57,10 +58,10 @@ public final class SimpleStoreServiceOrchestrationConstants {
 	public static final String FIELD_INTF_PROP_REQ = " interfacePropertyRequirements";
 	public static final String FIELD_SECURITY_POLICIES = " securityPolicies";
 	public static final String FIELD_QOS_REQ = " qosRequirements";
+    public static final String FIELD_EXCLUSIVITY_DURATION = " exclusivityDuration";
     public static final List<String> SUPPORTED_FLAGS = List.of(
             OrchestrationFlag.MATCHMAKING.toString(),
-            OrchestrationFlag.ONLY_PREFERRED.toString(),
-            OrchestrationFlag.ONLY_EXCLUSIVE.toString());
+            OrchestrationFlag.ONLY_PREFERRED.toString());
 
 	//=================================================================================================
 	// assistant methods

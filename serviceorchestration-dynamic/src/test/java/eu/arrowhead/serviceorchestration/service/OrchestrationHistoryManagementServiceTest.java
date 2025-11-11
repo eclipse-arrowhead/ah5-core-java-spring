@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.UUID;
 
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
