@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,16 +42,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.common.http.ArrowheadHttpService;
 import eu.arrowhead.common.http.filter.authentication.AuthenticationPolicy;
 import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
-import eu.arrowhead.common.mqtt.MqttController;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.dto.AddressDTO;
-import eu.arrowhead.dto.IdentityRequestDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
@@ -87,12 +83,6 @@ public class ServiceRegistryApplicationInitListenerTest {
 
 	@Mock
 	private ServiceRegistrySystemInfo sysInfo;
-
-	@Mock
-	private MqttController mqttController;
-
-	@Mock
-	private ArrowheadHttpService arrowheadHttpService;
 
 	//=================================================================================================
 	// methods
@@ -346,28 +336,16 @@ public class ServiceRegistryApplicationInitListenerTest {
 		registeredServices.add("ServiceRegistry|deviceDiscovery|1.0.0");
 		ReflectionTestUtils.setField(listener, "registeredServices", registeredServices);
 
-		final IdentityRequestDTO request = new IdentityRequestDTO("ServiceRegistry", Map.of("a", "b"));
-
 		when(sysInfo.getSystemName()).thenReturn("ServiceRegistry");
 		when(sdService.revokeService("ServiceRegistry", "ServiceRegistry|deviceDiscovery|1.0.0", "INIT")).thenThrow(InternalServerError.class);
-		when(sysInfo.isMqttApiEnabled()).thenReturn(true);
-		doThrow(RuntimeException.class).when(mqttController).disconnect();
-		when(sysInfo.getAuthenticationPolicy()).thenReturn(AuthenticationPolicy.OUTSOURCED);
-		when(sysInfo.getAuthenticatorCredentials()).thenReturn(Map.of("a", "b"));
-		when(arrowheadHttpService.consumeService("identity", "identity-logout", Void.TYPE, request)).thenThrow(InternalServerError.class);
 
 		assertDoesNotThrow(() -> listener.customDestroy());
 		final Set<String> currentRegisteredServices = (Set<String>) ReflectionTestUtils.getField(listener, "registeredServices");
 		assertEquals(1, currentRegisteredServices.size());
 		assertEquals("ServiceRegistry|deviceDiscovery|1.0.0", currentRegisteredServices.iterator().next());
 
-		verify(sysInfo, times(2)).getSystemName();
+		verify(sysInfo).getSystemName();
 		verify(sdService).revokeService("ServiceRegistry", "ServiceRegistry|deviceDiscovery|1.0.0", "INIT");
-		verify(sysInfo).isMqttApiEnabled();
-		verify(mqttController).disconnect();
-		verify(sysInfo).getAuthenticationPolicy();
-		verify(sysInfo).getAuthenticatorCredentials();
-		verify(arrowheadHttpService).consumeService("identity", "identity-logout", Void.TYPE, request);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -379,42 +357,8 @@ public class ServiceRegistryApplicationInitListenerTest {
 		registeredServices.add("ServiceRegistry|deviceDiscovery|1.0.0");
 		ReflectionTestUtils.setField(listener, "registeredServices", registeredServices);
 
-		final IdentityRequestDTO request = new IdentityRequestDTO("ServiceRegistry", Map.of("a", "b"));
-
 		when(sysInfo.getSystemName()).thenReturn("ServiceRegistry");
 		when(sdService.revokeService("ServiceRegistry", "ServiceRegistry|deviceDiscovery|1.0.0", "INIT")).thenReturn(true);
-		when(sysInfo.isMqttApiEnabled()).thenReturn(true);
-		doNothing().when(mqttController).disconnect();
-		when(sysInfo.getAuthenticationPolicy()).thenReturn(AuthenticationPolicy.OUTSOURCED);
-		when(sysInfo.getAuthenticatorCredentials()).thenReturn(Map.of("a", "b"));
-		when(arrowheadHttpService.consumeService("identity", "identity-logout", Void.TYPE, request)).thenReturn(null);
-
-		assertDoesNotThrow(() -> listener.customDestroy());
-		final Set<String> currentRegisteredServices = (Set<String>) ReflectionTestUtils.getField(listener, "registeredServices");
-		assertEquals(0, currentRegisteredServices.size());
-
-		verify(sysInfo, times(2)).getSystemName();
-		verify(sdService).revokeService("ServiceRegistry", "ServiceRegistry|deviceDiscovery|1.0.0", "INIT");
-		verify(sysInfo).isMqttApiEnabled();
-		verify(mqttController).disconnect();
-		verify(sysInfo).getAuthenticationPolicy();
-		verify(sysInfo).getAuthenticatorCredentials();
-		verify(arrowheadHttpService).consumeService("identity", "identity-logout", Void.TYPE, request);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("unchecked")
-	@Test
-	public void testCustomDestroyOkNoMqttAndNoAuthentication() {
-		ReflectionTestUtils.setField(listener, "standaloneMode", false);
-		final Set<String> registeredServices = new HashSet<>(1);
-		registeredServices.add("ServiceRegistry|deviceDiscovery|1.0.0");
-		ReflectionTestUtils.setField(listener, "registeredServices", registeredServices);
-
-		when(sysInfo.getSystemName()).thenReturn("ServiceRegistry");
-		when(sdService.revokeService("ServiceRegistry", "ServiceRegistry|deviceDiscovery|1.0.0", "INIT")).thenReturn(true);
-		when(sysInfo.isMqttApiEnabled()).thenReturn(false);
-		when(sysInfo.getAuthenticationPolicy()).thenReturn(AuthenticationPolicy.DECLARED);
 
 		assertDoesNotThrow(() -> listener.customDestroy());
 		final Set<String> currentRegisteredServices = (Set<String>) ReflectionTestUtils.getField(listener, "registeredServices");
@@ -422,10 +366,5 @@ public class ServiceRegistryApplicationInitListenerTest {
 
 		verify(sysInfo).getSystemName();
 		verify(sdService).revokeService("ServiceRegistry", "ServiceRegistry|deviceDiscovery|1.0.0", "INIT");
-		verify(sysInfo).isMqttApiEnabled();
-		verify(mqttController, never()).disconnect();
-		verify(sysInfo).getAuthenticationPolicy();
-		verify(sysInfo, never()).getAuthenticatorCredentials();
-		verify(arrowheadHttpService, never()).consumeService(anyString(), anyString(), any(Class.class), any());
 	}
 }
