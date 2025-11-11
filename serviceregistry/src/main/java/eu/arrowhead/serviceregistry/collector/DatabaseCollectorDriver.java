@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -98,6 +99,7 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 	@Override
 	public ServiceModel acquireService(final String serviceDefinitionName, final String interfaceTemplateName, final String providerName) throws ArrowheadException {
 		logger.debug("DatabaseCollectorDriver.acquireService started: service definition: {}, interface template: {}", serviceDefinitionName, interfaceTemplateName);
+		Assert.isTrue(!Utilities.isEmpty(serviceDefinitionName), "service definition is empty");
 
 		if (!supportedInterfaces.contains(interfaceTemplateName)) {
 			throw new InvalidParameterException("This collector only supports the following interfaces: " + String.join(", ", supportedInterfaces));
@@ -116,7 +118,9 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 			instance = instanceEntries.getContent().getFirst().getKey();
 			interfaces = instanceEntries.getContent().getFirst().getValue();
 		} else {
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> matchingProvider = instanceEntries.stream().filter(ie -> ie.getKey().getSystem().getName().equalsIgnoreCase(providerName)).toList();
+			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> matchingProvider = instanceEntries.stream()
+					.filter(ie -> ie.getKey().getSystem().getName().equalsIgnoreCase(providerName))
+					.toList();
 			if (!Utilities.isEmpty(matchingProvider)) {
 				instance = matchingProvider.getFirst().getKey();
 				interfaces = matchingProvider.getFirst().getValue();
@@ -130,7 +134,6 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		// create the list of interface models
 		final List<InterfaceModel> interfaceModelList = new ArrayList<>();
 		for (final ServiceInstanceInterface interf : interfaces) {
-
 			final String templateName = interf.getServiceInterfaceTemplate().getName();
 			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 			});
@@ -141,13 +144,23 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 
 			// HTTP or HTTPS
 			if (templateName.equals(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME) || templateName.equals(Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME)) {
-				interfaceModelList.add(createHttpInterfaceModel(templateName, properties));
+				final HttpInterfaceModel model = createHttpInterfaceModel(templateName, properties);
+				if (model != null) {
+					interfaceModelList.add(model);
+				}
 			}
 
 			// MQTT or MQTTS
 			if (templateName.equals(Constants.GENERIC_MQTT_INTERFACE_TEMPLATE_NAME) || templateName.equals(Constants.GENERIC_MQTTS_INTERFACE_TEMPLATE_NAME)) {
-				interfaceModelList.add(createMqttInterfaceModel(templateName, properties));
+				final MqttInterfaceModel model = createMqttInterfaceModel(templateName, properties);
+				if (model != null) {
+					interfaceModelList.add(model);
+				}
 			}
+		}
+
+		if (interfaceModelList.isEmpty()) {
+			return null;
 		}
 
 		final ServiceModel serviceModel = new ServiceModel.Builder()
@@ -200,9 +213,11 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final String basePath = (String) properties.get(HttpInterfaceModel.PROP_NAME_BASE_PATH);
 
 		// operations
-		final Map<String, HttpOperationModel> operations = properties.containsKey(HttpInterfaceModel.PROP_NAME_OPERATIONS)
-				? (Map<String, HttpOperationModel>) httpOperationsValidator.validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS))
-				: Map.of();
+		if (!properties.containsKey(HttpInterfaceModel.PROP_NAME_OPERATIONS)) {
+			return null;
+		}
+
+		final Map<String, HttpOperationModel> operations = (Map<String, HttpOperationModel>) httpOperationsValidator.validateAndNormalize(properties.get(HttpInterfaceModel.PROP_NAME_OPERATIONS));
 
 		// create the interface model
 		final HttpInterfaceModel model = new HttpInterfaceModel.Builder(templateName)
@@ -229,9 +244,11 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final String baseTopic = (String) properties.get(MqttInterfaceModel.PROP_NAME_BASE_TOPIC);
 
 		// operations
-		final Set<String> operations = properties.containsKey(MqttInterfaceModel.PROP_NAME_OPERATIONS)
-				? new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS))
-				: Set.of();
+		if (!properties.containsKey(MqttInterfaceModel.PROP_NAME_OPERATIONS)) {
+			return null;
+		}
+
+		final Set<String> operations = new HashSet<String>((Collection<? extends String>) properties.get(MqttInterfaceModel.PROP_NAME_OPERATIONS));
 
 		// create the interface model
 		final MqttInterfaceModel model = new MqttInterfaceModel.Builder(templateName)

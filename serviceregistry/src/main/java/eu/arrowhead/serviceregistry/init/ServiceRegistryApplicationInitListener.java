@@ -23,10 +23,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.http.filter.authentication.AuthenticationPolicy;
 import eu.arrowhead.common.init.ApplicationInitListener;
 import eu.arrowhead.common.model.ServiceModel;
 import eu.arrowhead.common.model.SystemModel;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
+import eu.arrowhead.dto.IdentityRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceResponseDTO;
@@ -84,7 +87,7 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 		final ServiceRegistrySystemInfo srSysInfo = (ServiceRegistrySystemInfo) sysInfo;
 		serviceInterfaceAddressPropertyProcessor.setAddressAliasNames(srSysInfo.getServiceAddressAliases());
 
-		logger.info("System {} published {} service(s).", sysInfo.getSystemName(), registeredServices.size());
+		logger.info("System {} published {} service(s)", sysInfo.getSystemName(), registeredServices.size());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -101,8 +104,27 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 				sdService.revokeService(sysInfo.getSystemName(), serviceInstanceId, INIT_ORIGIN);
 			}
 
-			logger.info("Core system {} revoked {} service(s).", sysInfo, registeredServices.size());
+			logger.info("Core system {} revoked {} service(s)", sysInfo, registeredServices.size());
 			registeredServices.clear();
+		} catch (final Throwable t) {
+			logger.error(t.getMessage());
+			logger.debug(t);
+		}
+
+		try {
+			if (sysInfo.isMqttApiEnabled()) {
+				mqttController.disconnect();
+			}
+		} catch (final Throwable t) {
+			logger.error(t.getMessage());
+			logger.debug(t);
+		}
+
+		try {
+			// logout attempt
+			if (AuthenticationPolicy.OUTSOURCED == sysInfo.getAuthenticationPolicy()) {
+				arrowheadHttpService.consumeService(Constants.SERVICE_DEF_IDENTITY, Constants.SERVICE_OP_IDENTITY_LOGOUT, Void.TYPE, getLogoutPayload());
+			}
 		} catch (final Throwable t) {
 			logger.error(t.getMessage());
 			logger.debug(t);
@@ -113,13 +135,23 @@ public class ServiceRegistryApplicationInitListener extends ApplicationInitListe
 	private void registerService(final ServiceModel model) {
 		logger.debug("registerService started...");
 
+		final ServiceInterfacePolicy interfacePolicy = sysInfo.getAuthenticationPolicy() == AuthenticationPolicy.CERTIFICATE ? ServiceInterfacePolicy.CERT_AUTH : ServiceInterfacePolicy.NONE;
 		final List<ServiceInstanceInterfaceRequestDTO> interfaces = model
 				.interfaces()
 				.stream()
-				.map(i -> new ServiceInstanceInterfaceRequestDTO(i.templateName(), i.protocol(), ServiceInterfacePolicy.NONE.name(), i.properties()))
+				.map(i -> new ServiceInstanceInterfaceRequestDTO(i.templateName(), i.protocol(), interfacePolicy.name(), i.properties()))
 				.collect(Collectors.toList());
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(sysInfo.getSystemName(), model.serviceDefinition(), model.version(), null, model.metadata(), interfaces);
 		final ServiceInstanceResponseDTO result = sdService.registerService(dto, INIT_ORIGIN);
 		registeredServices.add(result.instanceId());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private IdentityRequestDTO getLogoutPayload() {
+		logger.debug("getLogoutPayload started...");
+
+		return new IdentityRequestDTO(
+				sysInfo.getSystemName(),
+				sysInfo.getAuthenticatorCredentials());
 	}
 }
