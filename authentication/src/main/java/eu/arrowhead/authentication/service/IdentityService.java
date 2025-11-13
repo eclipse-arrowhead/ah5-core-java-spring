@@ -71,7 +71,13 @@ public class IdentityService {
 
 		// Phase 1: authentication method independent steps
 		IdentityRequestDTO normalized = validator.validateAndNormalizeLoginServicePhase1(dto, origin);
-		final Optional<System> systemOpt = dbService.getSystemByName(normalized.systemName());
+		Optional<System> systemOpt = Optional.empty();
+
+		try {
+			systemOpt = dbService.getSystemByName(normalized.systemName());
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 
 		if (systemOpt.isEmpty()) {
 			// system is not known
