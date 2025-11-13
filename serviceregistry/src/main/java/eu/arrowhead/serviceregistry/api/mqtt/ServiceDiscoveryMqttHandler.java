@@ -76,7 +76,8 @@ public class ServiceDiscoveryMqttHandler extends MqttTopicHandler {
 		case Constants.SERVICE_OP_LOOKUP:
 			final ServiceInstanceLookupRequestDTO lookupDTO = readPayload(request.getPayload(), ServiceInstanceLookupRequestDTO.class);
 			final Boolean verbose = Boolean.valueOf(request.getParams().get("verbose"));
-			final Boolean restricted = Boolean.valueOf(request.getAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP));
+			final String restrictedAttribute = request.getAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP);
+			final Boolean restricted = restrictedAttribute == null || Boolean.valueOf(restrictedAttribute);
 			responsePayload = lookup(
 					lookupDTO,
 					verbose != null

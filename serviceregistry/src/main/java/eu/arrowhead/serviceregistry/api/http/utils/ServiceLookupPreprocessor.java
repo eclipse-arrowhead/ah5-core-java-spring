@@ -43,6 +43,7 @@ public class ServiceLookupPreprocessor {
 		}
 
 		final Object boolObject = request.getAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP);
-		return boolObject != null && Boolean.valueOf(boolObject.toString());
+
+		return boolObject == null || Boolean.valueOf(boolObject.toString());
 	}
 }

@@ -135,12 +135,13 @@ public class DatabaseCollectorDriver implements ICollectorDriver {
 		final List<InterfaceModel> interfaceModelList = new ArrayList<>();
 		for (final ServiceInstanceInterface interf : interfaces) {
 			final String templateName = interf.getServiceInterfaceTemplate().getName();
-			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
-			});
 
 			if (!interfaceTemplateName.equals(templateName)) {
 				continue;
 			}
+
+			final Map<String, Object> properties = Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
+			});
 
 			// HTTP or HTTPS
 			if (templateName.equals(Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME) || templateName.equals(Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME)) {
