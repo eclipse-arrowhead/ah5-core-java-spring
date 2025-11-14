@@ -135,7 +135,6 @@ public class IdentityService {
 
 		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
 		final IAuthenticationMethod method = methods.method(methodType);
-		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
 
 		try {
 			dbService.removeSession(data.normalizedRequest().systemName());
@@ -155,7 +154,6 @@ public class IdentityService {
 
 		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
 		final IAuthenticationMethod method = methods.method(methodType);
-		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
 
 		// further normalization & validation
 		IdentityChangeRequestDTO normalized = new IdentityChangeRequestDTO(data.normalizedRequest().systemName(), data.normalizedRequest().credentials(), dto.newCredentials());

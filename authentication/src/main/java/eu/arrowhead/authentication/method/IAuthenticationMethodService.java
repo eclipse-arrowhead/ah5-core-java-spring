@@ -33,7 +33,7 @@ public interface IAuthenticationMethodService {
 
 	//-------------------------------------------------------------------------------------------------
 	public default void rollbackCredentialsVerification(final System system, final Map<String, String> credentials, final String cause) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -42,6 +42,6 @@ public interface IAuthenticationMethodService {
 
 	//-------------------------------------------------------------------------------------------------
 	public default void logout(final System system, final Map<String, String> credentials) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 }
