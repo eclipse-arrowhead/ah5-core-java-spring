@@ -17,7 +17,9 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
@@ -98,33 +100,46 @@ public class OrchestrationService {
     // assistant methods
 
     //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationStore> orchestrate(final UUID jobId, final String consumer, final SimpleOrchestrationRequest request) {
+    private List<OrchestrationStore> orchestrate(final UUID jobId, final String consumer, final SimpleOrchestrationRequest request) {
         logger.debug("orchestrate started...");
 
-            orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
-            List<OrchestrationStore> matchingEntries = null;
-            if (request.getServiceDefinition() != null) {
-                // TODO: versions?
-                matchingEntries = storeDbService.getByConsumerAndServiceDefinition(consumer, request.getServiceDefinition());
-            } else {
-                matchingEntries = storeDbService.getByConsumer(consumer);
+        orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
+
+        final boolean hasServiceDefinition = request.getServiceDefinition() != null;
+        final boolean onlyPreferred = request.getOrchestrationFlags() != null
+                && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false);
+        final boolean hasPreferredProviders = request.getPreferredProviders() != null;
+        final boolean matchmaking = request.getOrchestrationFlags() != null
+                && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.MATCHMAKING.toString(), false);
+
+        List<OrchestrationStore> sortedMatchingEntries = hasServiceDefinition
+                ? storeDbService.getByConsumerAndServiceDefinition(consumer, request.getServiceDefinition())
+                : storeDbService.getByConsumer(consumer);
+
+        // Dealing with preferences
+        if (hasPreferredProviders || onlyPreferred) {
+            List<OrchestrationStore> preferredEntries = filterOutNonPreferredProviders(hasPreferredProviders ? request.getPreferredProviders() : List.of(), sortedMatchingEntries);
+
+            if (!Utilities.isEmpty(preferredEntries) || onlyPreferred) {
+                sortedMatchingEntries = preferredEntries;
             }
+        }
 
-            if (!Utilities.isEmpty(matchingEntries)) {
+        // Matchmaking
+        if (!Utilities.isEmpty(sortedMatchingEntries) && matchmaking) {
+                sortedMatchingEntries = List.of(sortedMatchingEntries.getFirst());
+        }
 
-                if (request.getOrchestrationFlags() != null) {
-                    // matchmaking
-                    if (request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.MATCHMAKING, false)) {
-                        matchingEntries = List.of(matchingEntries.get(0)); // the results are already sorted by priority
-                    }
+        orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, sortedMatchingEntries.size() + " local result");
 
-                    // TODO: exclusivity, providers?
-                }
-            }
-
-            orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, matchingEntries.size() + " local result");
-
-            return matchingEntries;
+        return sortedMatchingEntries;
     }
 
+    //-------------------------------------------------------------------------------------------------
+    private List<OrchestrationStore> filterOutNonPreferredProviders(final List<String> preferred, final List<OrchestrationStore> candidates) {
+        return candidates
+                .stream()
+                .filter(candidate -> preferred.contains(candidate.getServiceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP)[0])) // provider name
+                .collect(Collectors.toList());
+    }
 }

@@ -93,7 +93,7 @@ public class OrchestrationServiceValidation {
 
             // add warnings, if any
             if (!Utilities.isEmpty(ignoredFlags)) {
-                warnings.add(Utilities.toPrettyJson(Utilities.toJson(Map.entry(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FLAGS_KEY, ignoredFlags))));
+                warnings.add(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FLAGS_KEY, ignoredFlags));
             }
         }
 
@@ -185,9 +185,14 @@ public class OrchestrationServiceValidation {
         }
 
         if (!Utilities.isEmpty(ignoredFields)) {
-            warnings.add(Utilities.toPrettyJson(Utilities.toJson(Map.entry(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields))));
+            warnings.add(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields));
         }
 
         return simpleOrchestrationRequest;
+    }
+
+    //-----------------------------------------------------------------------------------------------
+    private String ignoredFieldsToString(final String fieldKey, final List<String> ignoredFields) {
+        return fieldKey + ": [" + String.join(", ", ignoredFields) + "]";
     }
 }
