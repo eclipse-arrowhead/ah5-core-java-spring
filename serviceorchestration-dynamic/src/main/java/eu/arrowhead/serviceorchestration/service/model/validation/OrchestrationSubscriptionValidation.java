@@ -29,7 +29,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
-import eu.arrowhead.serviceorchestration.service.enums.NotifyProtocol;
+import eu.arrowhead.dto.enums.NotifyProtocol;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationSubscription;
 import io.swagger.v3.oas.models.PathItem.HttpMethod;
 

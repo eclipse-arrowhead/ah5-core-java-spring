@@ -17,16 +17,22 @@
 
 package eu.arrowhead.serviceorchestration.service.validation;
 
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
+import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
+import eu.arrowhead.dto.enums.NotifyProtocol;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
+import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationServiceNormalization;
-import org.apache.commons.lang3.tuple.Pair;
+import io.swagger.v3.oas.models.PathItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,12 +55,19 @@ public class OrchestrationServiceValidation {
     @Autowired
     private SystemNameValidator systemNameValidator;
 
+    @Autowired
+    private SystemNameNormalizer systemNameNormalizer;
+
+    @Autowired
+    private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
+
     private final Logger logger = LogManager.getLogger(this.getClass());
 
     //=================================================================================================
     // methods
 
     //-------------------------------------------------------------------------------------------------
+    // if warnings is null, warnings won't be stored
     public SimpleOrchestrationRequest validateAndNormalizePull(final OrchestrationRequestDTO dto, final Set<String> warnings, final String origin) {
         logger.debug("validateAndNormalizePull started...");
 
@@ -70,34 +83,62 @@ public class OrchestrationServiceValidation {
                 request.getPreferredProviders().forEach(p -> systemNameValidator.validateSystemName(p));
             }
 
+            filterOutNotSupportedFlags(request, warnings);
+
         } catch (final InvalidParameterException ex) {
             throw new InvalidParameterException(ex.getMessage(), origin);
         }
 
-        if (!Utilities.isEmpty(request.getOrchestrationFlags())) {
-            final List<String> ignoredFlags = new ArrayList<>();
-            final Map<String, Boolean> acceptedFlags = new HashMap<>();
-            request.getOrchestrationFlags().forEach((key, value) -> {
-                if (!Utilities.isEnumValue(key, OrchestrationFlag.class)) {
-                    throw new InvalidParameterException("Invalid orchestration flag: " + key, origin);
-                }
+        return request;
+    }
 
-                if (SimpleStoreServiceOrchestrationConstants.SUPPORTED_FLAGS.contains(key)) {
-                    acceptedFlags.put(key, value);
-                } else {
-                    ignoredFlags.add(key);
-                }
-            });
+    //-------------------------------------------------------------------------------------------------
+    public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
+        logger.debug("validateAndNormalizePushSubscribe started...");
 
-            request.setOrchestrationFlags(acceptedFlags);
+        final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, origin);
+        normalizer.normalizeSubscribe(subscriptionRequest);
 
-            // add warnings, if any
-            if (!Utilities.isEmpty(ignoredFlags)) {
-                warnings.add(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FLAGS_KEY, ignoredFlags));
-            }
+        // target system name
+        if (Utilities.isEmpty(subscriptionRequest.getTargetSystemName())) {
+            subscriptionRequest.setTargetSystemName(requesterSystemName);
+        } else if (!subscriptionRequest.getTargetSystemName().equals(requesterSystemName)) {
+            throw new InvalidParameterException("Target system cannot be different than the requester system", origin);
         }
 
-        return request;
+        // orchestration request
+        try {
+            if (!Utilities.isEmpty(subscriptionRequest.getOrchestrationRequest().getServiceDefinition())) {
+                serviceDefNameValidator.validateServiceDefinitionName(subscriptionRequest.getOrchestrationRequest().getServiceDefinition());
+            }
+
+            if (!Utilities.isEmpty(subscriptionRequest.getOrchestrationRequest().getPreferredProviders())) {
+                subscriptionRequest.getOrchestrationRequest().getPreferredProviders().forEach(p -> systemNameValidator.validateSystemName(p));
+            }
+
+            filterOutNotSupportedFlags(subscriptionRequest.getOrchestrationRequest(), null);
+
+        } catch (final InvalidParameterException ex) {
+            throw new InvalidParameterException(ex.getMessage(), origin);
+        }
+
+        // notify interface
+        if (!Utilities.isEnumValue(subscriptionRequest.getNotifyInterface().protocol(), NotifyProtocol.class)) {
+            throw new InvalidParameterException("Unsupported notify protocol: " + subscriptionRequest.getNotifyInterface().protocol(), origin);
+        }
+
+        if (subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.HTTP.name())
+                || subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.HTTPS.name())) {
+            validateNormalizedNotifyPropertiesForHTTP(subscriptionRequest.getNotifyInterface().properties(), origin);
+        } else if (subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.MQTT.name())
+                || subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.MQTTS.name())) {
+            if (!sysInfo.isMqttApiEnabled()) {
+                throw new InvalidParameterException("MQTT notify protocol required, but MQTT is not enabled", origin);
+            }
+            validateNormalizedNotifyPropertiesForMQTT(subscriptionRequest.getNotifyInterface().properties(), origin);
+        }
+
+        return subscriptionRequest;
     }
 
     //=================================================================================================
@@ -184,7 +225,7 @@ public class OrchestrationServiceValidation {
             ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_EXCLUSIVITY_DURATION);
         }
 
-        if (!Utilities.isEmpty(ignoredFields)) {
+        if (!Utilities.isEmpty(ignoredFields) && warnings != null) {
             warnings.add(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields));
         }
 
@@ -192,7 +233,121 @@ public class OrchestrationServiceValidation {
     }
 
     //-----------------------------------------------------------------------------------------------
+    private SimpleOrchestrationSubscriptionRequest validatePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String origin) {
+        logger.debug("validatePushSubscribe started...");
+
+        if (dto == null) {
+            throw new InvalidParameterException("Request payload is missing");
+        }
+
+        // orchestration request
+        if (dto.orchestrationRequest() == null) {
+            throw new InvalidParameterException("Orchestration request is missing", origin);
+        }
+
+        final SimpleOrchestrationRequest validatedOrchestrationRequest = validateOrchestrationRequest(dto.orchestrationRequest(), origin);
+
+        // notify interface
+        if (Utilities.isEmpty(dto.notifyInterface().protocol())) {
+            throw new InvalidParameterException("Notify protocol is missing", origin);
+        }
+
+        if (Utilities.isEmpty(dto.notifyInterface().properties())) {
+            throw new InvalidParameterException("Notify properties are missing", origin);
+        }
+
+        dto.notifyInterface().properties().forEach((k, v) -> {
+            if (Utilities.isEmpty(k)) {
+                throw new InvalidParameterException("Notify properties contains empty key", origin);
+            }
+            if (Utilities.isEmpty(v)) {
+                throw new InvalidParameterException("Notify properties contains empty value", origin);
+            }
+        });
+
+        return new SimpleOrchestrationSubscriptionRequest(dto.targetSystemName(), validatedOrchestrationRequest, dto.notifyInterface());
+    }
+
+    //-----------------------------------------------------------------------------------------------
+    private void filterOutNotSupportedFlags(final SimpleOrchestrationRequest request, final Set<String> warnings) {
+        if (!Utilities.isEmpty(request.getOrchestrationFlags())) {
+            final List<String> ignoredFlags = new ArrayList<>();
+            final Map<String, Boolean> acceptedFlags = new HashMap<>();
+            request.getOrchestrationFlags().forEach((key, value) -> {
+                if (!Utilities.isEnumValue(key, OrchestrationFlag.class)) {
+                    throw new InvalidParameterException("Invalid orchestration flag: " + key);
+                }
+
+                if (SimpleStoreServiceOrchestrationConstants.SUPPORTED_FLAGS.contains(key)) {
+                    acceptedFlags.put(key, value);
+                } else {
+                    ignoredFlags.add(key);
+                }
+            });
+
+            request.setOrchestrationFlags(acceptedFlags);
+
+            // add warnings, if any
+            if (!Utilities.isEmpty(ignoredFlags) && warnings != null) {
+                warnings.add(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FLAGS_KEY, ignoredFlags));
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------------------------------
     private String ignoredFieldsToString(final String fieldKey, final List<String> ignoredFields) {
         return fieldKey + ": [" + String.join(", ", ignoredFields) + "]";
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private SimpleOrchestrationRequest validateOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
+        return validatePull(dto, null, origin);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private void validateNormalizedNotifyPropertiesForHTTP(final Map<String, String> props, final String origin) {
+        logger.debug("validateNormalizedNotifyPropertiesForHTTP started...");
+
+        if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS)) {
+            throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " property", origin);
+        }
+
+        if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PORT)) {
+            throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PORT + " property", origin);
+        }
+
+        try {
+            final int port = Integer.parseInt(props.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+            if (port < Constants.MIN_PORT || port > Constants.MAX_PORT) {
+                throw new InvalidParameterException("Notify port is out of the valid range", origin);
+            }
+        } catch (final NumberFormatException ex) {
+            throw new InvalidParameterException("Notify port is not a number", origin);
+        }
+
+        if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD)) {
+            throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD + " property", origin);
+        }
+
+        if (!(props.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(PathItem.HttpMethod.POST.name())
+                || props.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(PathItem.HttpMethod.PUT.name())
+                || props.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD).equalsIgnoreCase(PathItem.HttpMethod.PATCH.name()))) {
+            throw new InvalidParameterException("Unsupported notify HTTP method: " + props.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD), origin);
+        }
+
+        if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PATH)) {
+            throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PATH + " property", origin);
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private void validateNormalizedNotifyPropertiesForMQTT(final Map<String, String> props, final String origin) {
+        logger.debug("validateNormalizedNotifyPropertiesForMQTT...");
+
+        // Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results, so no address and port is required.
+
+        if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC)) {
+            throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC + " member", origin);
+        }
     }
 }

@@ -38,6 +38,10 @@ public final class SimpleStoreServiceOrchestrationConstants {
 	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
 	public static final String HTTP_API_ORCHESTRATION_MGMT_PREFIX = HTTP_API_ORCHESTRATION_PATH + "/mgmt";
 	public static final String HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/simple-store";
+    public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
+    public static final String HTTP_PATH_PARAM_ID = "{id}";
+    public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/" + HTTP_PATH_PARAM_ID;
+    public static final String PARAM_NAME_TRIGGER = "trigger";
 
 	// operation
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";
@@ -46,7 +50,7 @@ public final class SimpleStoreServiceOrchestrationConstants {
 	public static final String HTTP_API_OP_REMOVE_PATH = "/remove";
 	public static final String HTTP_API_OP_PULL_PATH = "/pull";
 
-	// for ignore related warnings
+	// ignored fields and flags
 	public static final String ORCH_WARN_IGNORED_FIELDS_KEY = "ignoredFields";
 	public static final String ORCH_WARN_IGNORED_FLAGS_KEY = "ignoredFlags";
 	public static final String FIELD_OPERATIONS = "operations";
@@ -63,7 +67,15 @@ public final class SimpleStoreServiceOrchestrationConstants {
             OrchestrationFlag.MATCHMAKING.toString(),
             OrchestrationFlag.ONLY_PREFERRED.toString());
 
-	//=================================================================================================
+    // notify interface
+    public static final String NOTIFY_KEY_ADDRESS = "address";
+    public static final String NOTIFY_KEY_PORT = "port";
+    public static final String NOTIFY_KEY_METHOD = "method";
+    public static final String NOTIFY_KEY_PATH = "path";
+    public static final String NOTIFY_KEY_TOPIC = "topic";
+
+
+    //=================================================================================================
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------

@@ -16,16 +16,17 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.api.http;
 
+import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.dto.ErrorMessageDTO;
@@ -86,7 +87,35 @@ public class OrchestrationAPI {
 		return orchService.pull(requesterSystem, dto, origin);
 	}
 
-	// pushsubscribe
+    //-------------------------------------------------------------------------------------------------
+    @Operation(summary = "Returns a subscription id. Existing subscriptions will be overwritten.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_CREATED, description = Constants.SWAGGER_HTTP_201_MESSAGE, content = {
+                    @Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE, content = {
+                    @Content(mediaType = MediaType.TEXT_PLAIN_VALUE, schema = @Schema(implementation = String.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+    })
+    @PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> pushSubscribe(
+            final HttpServletRequest httpServletRequest,
+            @RequestBody final OrchestrationSubscriptionRequestDTO dto,
+            @Parameter(name = SimpleStoreServiceOrchestrationConstants.PARAM_NAME_TRIGGER, description = "Set to true in order to initiate a push orchestration after the successful subscription") @RequestParam(required = false, defaultValue = "false") final Boolean trigger) {
+        logger.debug("pushSubscribe started...");
+
+        final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
+        final String requesterSystem = preprocessor.process(httpServletRequest, origin);
+        final Pair<Boolean, String> result = orchService.pushSubscribe(requesterSystem, dto, trigger, origin);
+
+        return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
+    }
 
 	// pushunsubscribe
 

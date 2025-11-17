@@ -20,7 +20,9 @@ package eu.arrowhead.serviceorchestration.service.normalization;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
+import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
+import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +68,35 @@ public class OrchestrationServiceNormalization {
             toNormalize.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
             toNormalize.setOrchestrationFlags(normalizedFlags);
         }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void normalizeSubscribe(final SimpleOrchestrationSubscriptionRequest toNormalize) {
+        logger.debug("normalizeSubscribe started...");
+
+        // target system name
+        toNormalize.setTargetSystemName(Utilities.isEmpty(toNormalize.getTargetSystemName()) ? null : systemNameNormalizer.normalize(toNormalize.getTargetSystemName()));
+
+        // orchestration request
+        normalizeOrchestrationRequest(toNormalize.getOrchestrationRequest());
+
+        // notify interface
+        final String normalizedProtocol = toNormalize.getNotifyInterface().protocol().trim().toUpperCase();
+
+        final Map<String, String> normalizedNotifyProps = new HashMap<>();
+        toNormalize.getNotifyInterface().properties().forEach((k, v) -> {
+            normalizedNotifyProps.put(k.trim().toLowerCase(), v.trim());
+        });
+
+        toNormalize.setNotifyInterface(new OrchestrationNotifyInterfaceDTO(normalizedProtocol, normalizedNotifyProps));
+    }
+
+    //=================================================================================================
+    // assistant methods
+
+    //-------------------------------------------------------------------------------------------------
+    private void normalizeOrchestrationRequest(final SimpleOrchestrationRequest toNormalize) {
+        normalizePull(toNormalize);
     }
 
 }
