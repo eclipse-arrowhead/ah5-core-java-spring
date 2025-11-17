@@ -158,6 +158,8 @@ public class ManagementService {
 
 			final IAuthenticationMethod authenticationMethod = getAuthenticationMethod(systems.getFirst());
 			dbService.removeIdentifiableSystemsInBulk(authenticationMethod, normalizedNames);
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
 		} catch (final ExternalServerError ex) {

@@ -27,6 +27,7 @@ import eu.arrowhead.authentication.jpa.service.IdentityDbService;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.AuthException;
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.mqtt.filter.ArrowheadMqttFilter;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
 
@@ -64,7 +65,13 @@ public class InternalAuthenticationMqttFilter implements ArrowheadMqttFilter {
 				throw new AuthException("Missing identity token");
 			}
 
-			final Optional<ActiveSession> sessionOpt = dbService.getSessionByToken(token.trim());
+			Optional<ActiveSession> sessionOpt = Optional.empty();
+			try {
+				sessionOpt = dbService.getSessionByToken(token.trim());
+			} catch (final InternalServerError ex) {
+				throw new AuthException("Session problem", ex);
+			}
+
 			if (sessionOpt.isEmpty()) {
 				throw new AuthException("Invalid identity token");
 			}

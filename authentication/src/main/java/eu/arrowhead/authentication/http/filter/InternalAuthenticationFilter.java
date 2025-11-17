@@ -32,6 +32,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.AuthException;
+import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.http.filter.ArrowheadFilter;
 import eu.arrowhead.common.http.filter.authentication.IAuthenticationPolicyFilter;
 import jakarta.servlet.FilterChain;
@@ -69,7 +70,13 @@ public class InternalAuthenticationFilter extends ArrowheadFilter implements IAu
 					throw new AuthException("Missing identity token");
 				}
 
-				final Optional<ActiveSession> sessionOpt = dbService.getSessionByToken(token.trim());
+				Optional<ActiveSession> sessionOpt = Optional.empty();
+				try {
+					sessionOpt = dbService.getSessionByToken(token.trim());
+				} catch (final InternalServerError ex) {
+					throw new AuthException("Session problem", ex);
+				}
+
 				if (sessionOpt.isEmpty()) {
 					throw new AuthException("Invalid identity token");
 				}

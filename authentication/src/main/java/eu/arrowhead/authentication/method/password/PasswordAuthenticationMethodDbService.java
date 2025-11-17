@@ -122,8 +122,6 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	//-------------------------------------------------------------------------------------------------
 	private List<PasswordAuthentication> createEntities(final List<IdentityData> identities) {
 		logger.debug("PasswordAuthenticationMethodDbService.createEntities started...");
-		Assert.notNull(identities, "Identities list is missing");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null value");
 
 		final List<PasswordAuthentication> result = new ArrayList<>(identities.size());
 		for (final IdentityData identityData : identities) {
