@@ -124,12 +124,14 @@ public class IdentityDbService {
 		try {
 			final Optional<PasswordAuthentication> authOpt = paRepository.findBySystem(system);
 			if (authOpt.isEmpty()) {
-				throw new InvalidParameterException("Entry for system " + system.getName() + " not found");
+				throw new InvalidParameterException("Entry for system " + system.getName() + " is not found");
 			}
 
 			final PasswordAuthentication auth = authOpt.get();
 			auth.setPassword(newPassword);
 			paRepository.saveAndFlush(auth);
+		} catch (final InvalidParameterException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -157,7 +159,7 @@ public class IdentityDbService {
 				identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
 				systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
 				identityList = updateSystemEntitiesInIdentityList(identityList, systems);
-			} catch (final InvalidParameterException ex) {
+			} catch (final IllegalArgumentException | InvalidParameterException ex) {
 				throw ex;
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
@@ -446,6 +448,7 @@ public class IdentityDbService {
 
 		final List<String> candidateNames = candidates
 				.stream()
+				.filter(c -> c.systemName() != null)
 				.map(c -> c.systemName())
 				.collect(Collectors.toList());
 
@@ -477,7 +480,7 @@ public class IdentityDbService {
 	// expects the same order in the two list
 	private List<IdentityData> updateSystemEntitiesInIdentityList(final List<IdentityData> identityList, final List<System> systems) {
 		logger.debug("updateSystemEntitiesInIdentityList started");
-		Assert.isTrue(identityList.size() == systems.size(), "The two list has different size");
+		Assert.isTrue(identityList.size() == systems.size(), "The two lists have different sizes");
 
 		final List<IdentityData> result = new ArrayList<>(identityList.size());
 		for (int i = 0; i < identityList.size(); ++i) {

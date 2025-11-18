@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 
 import eu.arrowhead.authentication.method.IAuthenticationMethodInputNormalizer;
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.exception.InternalServerError;
 
 @Service
 public class PasswordAuthenticationMethodInputNormalizer implements IAuthenticationMethodInputNormalizer {
@@ -39,7 +38,7 @@ public class PasswordAuthenticationMethodInputNormalizer implements IAuthenticat
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public Map<String, String> normalizeCredentials(final Map<String, String> credentials) throws InternalServerError {
+	public Map<String, String> normalizeCredentials(final Map<String, String> credentials) {
 		logger.debug("PasswordAuthenticationMethodInputNormalizer.normalizeCredentials started...");
 
 		if (credentials == null

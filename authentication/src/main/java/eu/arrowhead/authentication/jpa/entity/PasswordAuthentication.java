@@ -16,6 +16,8 @@
  *******************************************************************************/
 package eu.arrowhead.authentication.jpa.entity;
 
+import java.util.Objects;
+
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -94,4 +96,30 @@ public class PasswordAuthentication {
 	public void setPassword(final String password) {
 		this.password = password;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (obj == null) {
+			return false;
+		}
+
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final PasswordAuthentication other = (PasswordAuthentication) obj;
+		return id == other.id;
+	}
+
 }
