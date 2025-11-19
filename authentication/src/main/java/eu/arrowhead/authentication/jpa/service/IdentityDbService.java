@@ -159,7 +159,7 @@ public class IdentityDbService {
 				identityList = createSystemEntitiesAndIdentityList(requester, dto.authenticationMethod(), dto.identities());
 				systems = systemRepository.saveAllAndFlush(identityList.stream().map(id -> id.system()).toList());
 				identityList = updateSystemEntitiesInIdentityList(identityList, systems);
-			} catch (final IllegalArgumentException | InvalidParameterException ex) {
+			} catch (final InvalidParameterException ex) {
 				throw ex;
 			} catch (final Exception ex) {
 				logger.error(ex.getMessage());
@@ -205,16 +205,9 @@ public class IdentityDbService {
 
 		synchronized (SYSTEM_LOCK) {
 			final List<IdentityData> identityList;
-			try {
-				// collect the system entities from the database
-				identityList = getSystemEntitiesForUpdate(authenticationMethod, identities);
-			} catch (final InvalidParameterException ex) {
-				throw ex;
-			} catch (final Exception ex) {
-				logger.error(ex.getMessage());
-				logger.debug(ex);
-				throw new InternalServerError("Database operation error");
-			}
+
+			// collect the system entities from the database
+			identityList = getSystemEntitiesForUpdate(authenticationMethod, identities);
 
 			// updating authentication method specific credentials
 			final List<String> extras = authenticationMethod.dbService().updateIdentifiableSystemsInBulk(identityList);
@@ -262,13 +255,14 @@ public class IdentityDbService {
 		logger.debug("removeIdentifiableSystemsInBulk started...");
 		Assert.notNull(authenticationMethod, "Authentication method is missing");
 		Assert.isTrue(!Utilities.isEmpty(names), "Names is missing or empty");
-		Assert.isTrue(!Utilities.containsNull(names), "Names contains null");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "Names contains null or empty value");
 
 		final List<System> systems = getSystemsByNames(names, false);
 
 		// all authentication methods have to be the same in related systems (check again in a transaction)
-		if (systems.stream().map(s -> s.getAuthenticationMethod()).collect(Collectors.toSet()).size() > 1) {
-			throw new InvalidParameterException("Bulk removing systems with different authentication method is not supported");
+		final Optional<System> problematicSystem = systems.stream().filter(s -> s.getAuthenticationMethod() != authenticationMethod.type()).findFirst();
+		if (problematicSystem.isPresent()) {
+			throw new InvalidParameterException("Bulk removing systems with different authentication methods is not supported");
 		}
 
 		authenticationMethod.dbService().removeIdentifiableSystemsInBulk(systems);
@@ -288,7 +282,8 @@ public class IdentityDbService {
 	//-------------------------------------------------------------------------------------------------
 	public Page<System> queryIdentifiableSystems(final NormalizedIdentityQueryRequestDTO dto) {
 		logger.debug("queryIdentifiableSystems started...");
-		Assert.notNull(dto, "DTO is missing");
+		Assert.notNull(dto, "Payload is missing");
+		Assert.notNull(dto.pageRequest(), "Page request is missing");
 
 		try {
 			if (!dto.hasFilters()) {
@@ -320,7 +315,8 @@ public class IdentityDbService {
 	//-------------------------------------------------------------------------------------------------
 	public Page<ActiveSession> querySessions(final NormalizedIdentitySessionQueryRequestDTO dto) {
 		logger.debug("querySessions started...");
-		Assert.notNull(dto, "DTO is missing");
+		Assert.notNull(dto, "Payload is missing");
+		Assert.notNull(dto.pageRequest(), "Page request is missing");
 
 		try {
 			if (!dto.hasFilters()) {
@@ -480,7 +476,6 @@ public class IdentityDbService {
 	// expects the same order in the two list
 	private List<IdentityData> updateSystemEntitiesInIdentityList(final List<IdentityData> identityList, final List<System> systems) {
 		logger.debug("updateSystemEntitiesInIdentityList started");
-		Assert.isTrue(identityList.size() == systems.size(), "The two lists have different sizes");
 
 		final List<IdentityData> result = new ArrayList<>(identityList.size());
 		for (int i = 0; i < identityList.size(); ++i) {
@@ -494,7 +489,6 @@ public class IdentityDbService {
 	// expects the same order in the two list
 	private List<System> updateSystemListWithExtras(final List<System> systems, final List<String> extras) {
 		logger.debug("updateSystemListWithExtras started");
-		Assert.isTrue(extras.size() == systems.size(), "The two list has different size");
 
 		final List<System> result = new ArrayList<>(systems.size());
 		for (int i = 0; i < systems.size(); ++i) {
@@ -516,15 +510,15 @@ public class IdentityDbService {
 		// check again that authentication method is still match
 		final Optional<System> problematicSystem = systems.stream().filter(s -> s.getAuthenticationMethod() != method.type()).findFirst();
 		if (problematicSystem.isPresent()) {
-			throw new InvalidParameterException("Bulk updating systems with different authentication method is not supported");
+			throw new InvalidParameterException("Bulk updating systems with different authentication methods is not supported");
 		}
 
 		return identities
 				.stream()
-				.map(c -> new IdentityData(
-						findSystemInList(systems, c.systemName()),
-						c.credentials(),
-						c.sysop()))
+				.map(id -> new IdentityData(
+						findSystemInList(systems, id.systemName()),
+						id.credentials(),
+						id.sysop()))
 				.collect(Collectors.toList());
 	}
 

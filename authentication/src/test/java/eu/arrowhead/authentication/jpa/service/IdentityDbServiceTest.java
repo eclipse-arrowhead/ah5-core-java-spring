@@ -18,10 +18,21 @@ package eu.arrowhead.authentication.jpa.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,15 +44,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import eu.arrowhead.authentication.jpa.entity.ActiveSession;
 import eu.arrowhead.authentication.jpa.entity.PasswordAuthentication;
 import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.repository.ActiveSessionRepository;
 import eu.arrowhead.authentication.jpa.repository.PasswordAuthenticationRepository;
 import eu.arrowhead.authentication.jpa.repository.SystemRepository;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
+import eu.arrowhead.authentication.method.IAuthenticationMethodDbService;
+import eu.arrowhead.authentication.service.dto.IdentityData;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityListMgmtRequestDTO;
 import eu.arrowhead.authentication.service.dto.NormalizedIdentityMgmtRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentityQueryRequestDTO;
+import eu.arrowhead.authentication.service.dto.NormalizedIdentitySessionQueryRequestDTO;
+import eu.arrowhead.common.Constants;
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.enums.AuthenticationMethod;
@@ -426,5 +447,982 @@ public class IdentityDbServiceTest {
 		assertEquals("Identifiable systems with names already exist: TestSystem", ex.getMessage());
 
 		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateIdentifiableSystemsInBulkOkNoExtras() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO identityDto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), false);
+		final NormalizedIdentityListMgmtRequestDTO dto = new NormalizedIdentityListMgmtRequestDTO(methodMock, List.of(identityDto));
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final List<IdentityData> identityList = List.of(new IdentityData(sys, Map.of("password", "123456"), false));
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of());
+		when(systemRepository.saveAllAndFlush(List.of(sys))).thenReturn(List.of(sys));
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.createIdentifiableSystemsInBulk(identityList)).thenReturn(null);
+
+		final List<System> result = dbService.createIdentifiableSystemsInBulk("AdminSystem", dto);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertEquals(sys, result.get(0));
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(systemRepository).saveAllAndFlush(List.of(sys));
+		verify(methodMock).dbService();
+		verify(dbServiceMock).createIdentifiableSystemsInBulk(identityList);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateIdentifiableSystemsInBulkInternalServerError2() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO identityDto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), false);
+		final NormalizedIdentityListMgmtRequestDTO dto = new NormalizedIdentityListMgmtRequestDTO(methodMock, List.of(identityDto));
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final List<IdentityData> identityList = List.of(new IdentityData(sys, Map.of("password", "123456"), false));
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of());
+		when(systemRepository.saveAllAndFlush(List.of(sys))).thenReturn(List.of(sys));
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.createIdentifiableSystemsInBulk(identityList)).thenReturn(List.of("extra1", "extra2"));
+		doNothing().when(dbServiceMock).rollbackCreateIdentifiableSystemsInBulk(identityList);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.createIdentifiableSystemsInBulk("AdminSystem", dto));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(systemRepository).saveAllAndFlush(List.of(sys));
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).createIdentifiableSystemsInBulk(identityList);
+		verify(dbServiceMock).rollbackCreateIdentifiableSystemsInBulk(identityList);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateIdentifiableSystemsInBulkInternalServerError3() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO identityDto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), false);
+		final NormalizedIdentityListMgmtRequestDTO dto = new NormalizedIdentityListMgmtRequestDTO(methodMock, List.of(identityDto));
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final List<IdentityData> identityList = List.of(new IdentityData(sys, Map.of("password", "123456"), false));
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of());
+		when(systemRepository.saveAllAndFlush(List.of(sys))).thenReturn(List.of(sys)).thenThrow(RuntimeException.class);
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.createIdentifiableSystemsInBulk(identityList)).thenReturn(List.of("extra"));
+		doNothing().when(dbServiceMock).rollbackCreateIdentifiableSystemsInBulk(identityList);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.createIdentifiableSystemsInBulk("AdminSystem", dto));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(systemRepository, times(2)).saveAllAndFlush(List.of(sys));
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).createIdentifiableSystemsInBulk(identityList);
+		verify(dbServiceMock).rollbackCreateIdentifiableSystemsInBulk(identityList);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateIdentifiableSystemsInBulkOkWithExtras() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO identityDto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), false);
+		final NormalizedIdentityListMgmtRequestDTO dto = new NormalizedIdentityListMgmtRequestDTO(methodMock, List.of(identityDto));
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final List<IdentityData> identityList = List.of(new IdentityData(sys, Map.of("password", "123456"), false));
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of());
+		when(systemRepository.saveAllAndFlush(List.of(sys))).thenReturn(List.of(sys));
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.createIdentifiableSystemsInBulk(identityList)).thenReturn(List.of("extra"));
+
+		final List<System> result = dbService.createIdentifiableSystemsInBulk("AdminSystem", dto);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertEquals(sys, result.get(0));
+		assertEquals("extra", result.get(0).getExtra());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(systemRepository, times(2)).saveAllAndFlush(List.of(sys));
+		verify(methodMock).dbService();
+		verify(dbServiceMock).createIdentifiableSystemsInBulk(identityList);
+		verify(dbServiceMock, never()).rollbackCreateIdentifiableSystemsInBulk(anyList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindSystemInListNotFound() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final Object result = ReflectionTestUtils.invokeMethod(dbService, "findSystemInList", List.of(sys), "OtherSystem");
+
+		assertNull(result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testFindSystemInListFound() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final Object result = ReflectionTestUtils.invokeMethod(dbService, "findSystemInList", List.of(sys), "TestSystem");
+
+		assertEquals(sys, result);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkAuthenticationMethodNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(null, null, null));
+
+		assertEquals("Authentication method is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkRequesterNull() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, null, null));
+
+		assertEquals("Requester is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkRequesterEmpty() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "", null));
+
+		assertEquals("Requester is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesListNull() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem", null));
+
+		assertEquals("Identities is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesListEmpty() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem", List.of()));
+
+		assertEquals("Identities is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesListContainsNull() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final List<NormalizedIdentityMgmtRequestDTO> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem", list));
+
+		assertEquals("Identities contains null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesAuthenticationMethodMismatch() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO dto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), true);
+		final System sys = new System("TestSystem", null, false, "AdminSystem");
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem", List.of(dto)));
+
+		assertEquals("Bulk updating systems with different authentication methods is not supported", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesNoExtrasInternalServerError() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO dto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), true);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final IdentityData identity = new IdentityData(sys, Map.of("password", "123456"), true);
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.updateIdentifiableSystemsInBulk(List.of(identity))).thenReturn(null);
+		when(systemRepository.saveAllAndFlush(List.of(sys))).thenThrow(RuntimeException.class);
+		doNothing().when(dbServiceMock).rollbackUpdateIdentifiableSystemsInBulk(List.of(identity));
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem", List.of(dto)));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).updateIdentifiableSystemsInBulk(List.of(identity));
+		verify(systemRepository).saveAllAndFlush(List.of(sys));
+		verify(dbServiceMock).rollbackUpdateIdentifiableSystemsInBulk(List.of(identity));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesWithExtrasInternalServerError() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO dto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), true);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final IdentityData identity = new IdentityData(sys, Map.of("password", "123456"), true);
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.updateIdentifiableSystemsInBulk(List.of(identity))).thenReturn(List.of("extra1", "extra2"));
+		doNothing().when(dbServiceMock).rollbackUpdateIdentifiableSystemsInBulk(List.of(identity));
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem", List.of(dto)));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).updateIdentifiableSystemsInBulk(List.of(identity));
+		verify(dbServiceMock).rollbackUpdateIdentifiableSystemsInBulk(List.of(identity));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateIdentifiableSystemsInBulkIdentitiesWithExtrasOk() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final NormalizedIdentityMgmtRequestDTO dto = new NormalizedIdentityMgmtRequestDTO("TestSystem", Map.of("password", "123456"), true);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+		final IdentityData identity = new IdentityData(sys, Map.of("password", "123456"), true);
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		when(dbServiceMock.updateIdentifiableSystemsInBulk(List.of(identity))).thenReturn(List.of("extra"));
+		when(systemRepository.saveAllAndFlush(List.of(sys))).thenReturn(List.of(sys));
+		doNothing().when(dbServiceMock).commitUpdateIdentifiableSystemsInBulk(List.of(identity));
+
+		final List<System> result = dbService.updateIdentifiableSystemsInBulk(methodMock, "AdminSystem2", List.of(dto));
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+		assertEquals(sys, result.get(0));
+		assertEquals("extra", result.get(0).getExtra());
+		assertTrue(result.get(0).isSysop());
+		assertEquals("AdminSystem2", result.get(0).getUpdatedBy());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).updateIdentifiableSystemsInBulk(List.of(identity));
+		verify(systemRepository).saveAllAndFlush(List.of(sys));
+		verify(dbServiceMock).commitUpdateIdentifiableSystemsInBulk(List.of(identity));
+		verify(dbServiceMock, never()).rollbackUpdateIdentifiableSystemsInBulk(anyList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkAuthenticationMethodNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(null, null));
+
+		assertEquals("Authentication method is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkNamesListNull() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(methodMock, null));
+
+		assertEquals("Names is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkNamesListEmpty() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(methodMock, List.of()));
+
+		assertEquals("Names is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkNamesListContainsNull() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final List<String> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(methodMock, list));
+
+		assertEquals("Names contains null or empty value", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkNamesListContainsEmpty() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(methodMock, List.of("")));
+
+		assertEquals("Names contains null or empty value", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkAuthenticationMethodMismatch() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final System sys = new System("TestSystem", null, false, "AdminSystem");
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+
+		final Throwable ex = assertThrows(
+				InvalidParameterException.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(methodMock, List.of("TestSystem")));
+
+		assertEquals("Bulk removing systems with different authentication methods is not supported", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkInternalServerError() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		doNothing().when(dbServiceMock).removeIdentifiableSystemsInBulk(List.of(sys));
+		doThrow(RuntimeException.class).when(systemRepository).deleteAllInBatch(List.of(sys));
+		doNothing().when(dbServiceMock).rollbackRemoveIdentifiableSystemsInBulk(List.of(sys));
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.removeIdentifiableSystemsInBulk(methodMock, List.of("TestSystem")));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).removeIdentifiableSystemsInBulk(List.of(sys));
+		verify(systemRepository).deleteAllInBatch(List.of(sys));
+		verify(dbServiceMock).rollbackRemoveIdentifiableSystemsInBulk(List.of(sys));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveIdentifiableSystemsInBulkOk() {
+		final IAuthenticationMethod methodMock = Mockito.mock(IAuthenticationMethod.class);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final IAuthenticationMethodDbService dbServiceMock = Mockito.mock(IAuthenticationMethodDbService.class);
+
+		when(systemRepository.findAllByNameIn(List.of("TestSystem"))).thenReturn(List.of(sys));
+		when(methodMock.type()).thenReturn(AuthenticationMethod.PASSWORD);
+		when(methodMock.dbService()).thenReturn(dbServiceMock);
+		doNothing().when(dbServiceMock).removeIdentifiableSystemsInBulk(List.of(sys));
+		doNothing().when(systemRepository).deleteAllInBatch(List.of(sys));
+		doNothing().when(dbServiceMock).commitRemoveIdentifiableSystemsInBulk(List.of(sys));
+
+		assertDoesNotThrow(() -> dbService.removeIdentifiableSystemsInBulk(methodMock, List.of("TestSystem")));
+
+		verify(systemRepository).findAllByNameIn(List.of("TestSystem"));
+		verify(methodMock).type();
+		verify(methodMock, times(2)).dbService();
+		verify(dbServiceMock).removeIdentifiableSystemsInBulk(List.of(sys));
+		verify(systemRepository).deleteAllInBatch(List.of(sys));
+		verify(dbServiceMock).commitRemoveIdentifiableSystemsInBulk(List.of(sys));
+		verify(dbServiceMock, never()).rollbackRemoveIdentifiableSystemsInBulk(anyList());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsDTONull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.queryIdentifiableSystems(null));
+
+		assertEquals("Payload is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsPageRequestNull() {
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(null, null, null, null, null, null, null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.queryIdentifiableSystems(dto));
+
+		assertEquals("Page request is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsInternalServerError() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(pageRequest, null, null, null, null, null, null);
+
+		when(systemRepository.findAll(pageRequest)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.queryIdentifiableSystems(dto));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(systemRepository).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsOkNoFilters() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(pageRequest, null, null, null, null, null, null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+
+		when(systemRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(sys)));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsOkNameFilterOnly() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				"System",
+				null,
+				null,
+				null,
+				null,
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+
+		when(systemRepository.findAllByNameContainsIgnoreCase("System")).thenReturn(List.of(sys));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of(1L))).thenReturn(new PageImpl<>(List.of(sys)));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository, never()).findAll();
+		verify(systemRepository).findAllByNameContainsIgnoreCase("System");
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of(1L));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsOkSysopFilterOnly() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				true,
+				null,
+				null,
+				null,
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsOkMultipleFilters1() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				false,
+				"OtherSystem",
+				null,
+				null,
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testQueryIdentifiableSystemsOkMultipleFilters2() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				null,
+				"AdminSystem",
+				ZonedDateTime.of(2025, 11, 19, 6, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				null,
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		sys.setCreatedAt(ZonedDateTime.of(2025, 11, 19, 5, 10, 11, 0, ZoneId.of(Constants.UTC)));
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testQueryIdentifiableSystemsOkMultipleFilters3() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				null,
+				null,
+				ZonedDateTime.of(2025, 11, 19, 6, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				ZonedDateTime.of(2025, 11, 18, 6, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		sys.setCreatedAt(ZonedDateTime.of(2025, 11, 19, 7, 10, 11, 0, ZoneId.of(Constants.UTC)));
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testQueryIdentifiableSystemsOkMultipleFilters4() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				null,
+				null,
+				null,
+				ZonedDateTime.of(2025, 11, 20, 6, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				true);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		sys.setCreatedAt(ZonedDateTime.of(2025, 11, 19, 7, 10, 11, 0, ZoneId.of(Constants.UTC)));
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(asRepository.findBySystem(sys)).thenReturn(Optional.empty());
+		when(systemRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(asRepository).findBySystem(sys);
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsOkSessionFilterSessionExpired() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				null,
+				null,
+				null,
+				null,
+				false);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(sys, "TOKEN", Utilities.utcNow().minusHours(1), Utilities.utcNow().minusMinutes(1));
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(asRepository.findBySystem(sys)).thenReturn(Optional.of(session));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of(1L))).thenReturn(new PageImpl<>(List.of(sys)));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(asRepository).findBySystem(sys);
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of(1L));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryIdentifiableSystemsOkSessionFilterSessionNotExpired() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentityQueryRequestDTO dto = new NormalizedIdentityQueryRequestDTO(
+				pageRequest,
+				null,
+				null,
+				null,
+				null,
+				null,
+				true);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(sys, "TOKEN", Utilities.utcNow(), Utilities.utcNow().plusHours(1));
+
+		when(systemRepository.findAll()).thenReturn(List.of(sys));
+		when(asRepository.findBySystem(sys)).thenReturn(Optional.of(session));
+		when(systemRepository.findAllByIdIn(pageRequest, List.of(1L))).thenReturn(new PageImpl<>(List.of(sys)));
+
+		assertDoesNotThrow(() -> dbService.queryIdentifiableSystems(dto));
+
+		verify(systemRepository).findAll();
+		verify(systemRepository, never()).findAllByNameContainsIgnoreCase(anyString());
+		verify(asRepository).findBySystem(sys);
+		verify(systemRepository).findAllByIdIn(pageRequest, List.of(1L));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetSessionByTokenNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getSessionByToken(null));
+
+		assertEquals("Token is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetSessionByTokenEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getSessionByToken(""));
+
+		assertEquals("Token is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetSessionByTokenInternalServerError() {
+		when(asRepository.findByToken("token")).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.getSessionByToken("token"));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(asRepository).findByToken("token");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetSessionByTokenOk() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(sys, "TOKEN", Utilities.utcNow(), Utilities.utcNow().plusHours(1));
+
+		when(asRepository.findByToken("token")).thenReturn(Optional.of(session));
+
+		assertDoesNotThrow(() -> dbService.getSessionByToken("token"));
+
+		verify(asRepository).findByToken("token");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsDTONull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.querySessions(null));
+
+		assertEquals("Payload is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsPageRequestNull() {
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(null, null, null, null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.querySessions(dto));
+
+		assertEquals("Page request is missing", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsInternalServerError() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(pageRequest, null, null, null);
+
+		when(asRepository.findAll(pageRequest)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.querySessions(dto));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(asRepository).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsOkNoFilters() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(pageRequest, null, null, null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(sys, "TOKEN", Utilities.utcNow(), Utilities.utcNow().plusHours(1));
+		session.setId(1);
+
+		when(asRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(session)));
+
+		assertDoesNotThrow(() -> dbService.querySessions(dto));
+
+		verify(asRepository).findAll(pageRequest);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsOkNameFilterOnly() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(
+				pageRequest,
+				"System",
+				null,
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(sys, "TOKEN", Utilities.utcNow(), Utilities.utcNow().plusHours(1));
+		session.setId(1);
+
+		when(asRepository.findAllBySystem_NameContainsIgnoreCase("System")).thenReturn(List.of(session));
+		when(asRepository.findAllByIdIn(pageRequest, List.of(1L))).thenReturn(new PageImpl<>(List.of(session)));
+
+		assertDoesNotThrow(() -> dbService.querySessions(dto));
+
+		verify(asRepository).findAllBySystem_NameContainsIgnoreCase("System");
+		verify(asRepository, never()).findAll();
+		verify(asRepository).findAllByIdIn(pageRequest, List.of(1L));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsOkLoginFromFilterOnly() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(
+				pageRequest,
+				null,
+				ZonedDateTime.of(2025, 11, 19, 7, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				null);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(
+				sys,
+				"TOKEN",
+				ZonedDateTime.of(2025, 11, 19, 6, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				ZonedDateTime.of(2025, 11, 19, 6, 40, 11, 0, ZoneId.of(Constants.UTC)));
+		session.setId(1);
+
+		when(asRepository.findAll()).thenReturn(List.of(session));
+		when(asRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.querySessions(dto));
+
+		verify(asRepository).findAll();
+		verify(asRepository, never()).findAllBySystem_NameContainsIgnoreCase(anyString());
+		verify(asRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsOkMultipleFilters() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(
+				pageRequest,
+				null,
+				ZonedDateTime.of(2025, 11, 19, 7, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				ZonedDateTime.of(2025, 11, 18, 7, 10, 11, 0, ZoneId.of(Constants.UTC)));
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(
+				sys,
+				"TOKEN",
+				ZonedDateTime.of(2025, 11, 19, 8, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				ZonedDateTime.of(2025, 11, 19, 8, 40, 11, 0, ZoneId.of(Constants.UTC)));
+		session.setId(1);
+
+		when(asRepository.findAll()).thenReturn(List.of(session));
+		when(asRepository.findAllByIdIn(pageRequest, List.of())).thenReturn(new PageImpl<>(List.of()));
+
+		assertDoesNotThrow(() -> dbService.querySessions(dto));
+
+		verify(asRepository).findAll();
+		verify(asRepository, never()).findAllBySystem_NameContainsIgnoreCase(anyString());
+		verify(asRepository).findAllByIdIn(pageRequest, List.of());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySessionsOkLoginToFilterOnly() {
+		final PageRequest pageRequest = PageRequest.of(0, 1);
+		final NormalizedIdentitySessionQueryRequestDTO dto = new NormalizedIdentitySessionQueryRequestDTO(
+				pageRequest,
+				null,
+				null,
+				ZonedDateTime.of(2025, 11, 20, 7, 10, 11, 0, ZoneId.of(Constants.UTC)));
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		sys.setId(1);
+		final ActiveSession session = new ActiveSession(
+				sys,
+				"TOKEN",
+				ZonedDateTime.of(2025, 11, 19, 8, 10, 11, 0, ZoneId.of(Constants.UTC)),
+				ZonedDateTime.of(2025, 11, 19, 8, 40, 11, 0, ZoneId.of(Constants.UTC)));
+		session.setId(1);
+
+		when(asRepository.findAll()).thenReturn(List.of(session));
+		when(asRepository.findAllByIdIn(pageRequest, List.of(1L))).thenReturn(new PageImpl<>(List.of(session)));
+
+		assertDoesNotThrow(() -> dbService.querySessions(dto));
+
+		verify(asRepository).findAll();
+		verify(asRepository, never()).findAllBySystem_NameContainsIgnoreCase(anyString());
+		verify(asRepository).findAllByIdIn(pageRequest, List.of(1L));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateOrUpdateSessionSystemNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.createOrUpdateSession(null, null));
+
+		assertEquals("system is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateOrUpdateSessionTokenNull() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.createOrUpdateSession(sys, null));
+
+		assertEquals("Token is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateOrUpdateSessionTokenEmpty() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.createOrUpdateSession(sys, ""));
+
+		assertEquals("Token is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateOrUpdateSessionInternalServerError() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+
+		when(asRepository.findBySystem(sys)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.createOrUpdateSession(sys, "token"));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(asRepository).findBySystem(sys);
 	}
 }
