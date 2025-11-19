@@ -74,6 +74,7 @@ public final class SimpleStoreServiceOrchestrationConstants {
     public static final String NOTIFY_KEY_PATH = "path";
     public static final String NOTIFY_KEY_TOPIC = "topic";
 
+    public static final Object SYNC_LOCK_SUBSCRIPTION = new Object();
 
     //=================================================================================================
 	// assistant methods

@@ -21,9 +21,12 @@ import java.util.*;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
+import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
+import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
@@ -50,6 +53,9 @@ public class OrchestrationService {
 
     @Autowired
     private OrchestrationJobDbService orchJobDbService;
+
+    @Autowired
+    private SubscriptionDbService subscriptionDbService;
 
     @Autowired
     private ServiceOrchestration serviceOrchestration;
@@ -102,8 +108,21 @@ public class OrchestrationService {
         final SimpleOrchestrationSubscriptionRequest normalized = validator.validateAndNormalizePushSubscribe(dto, requesterSystem, origin);
 
         // save subscription
+        Pair<Boolean, String> response = null;
+        synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+            final Optional<Subscription> recordOpt = subscriptionDbService.get(
+                    requesterSystem,
+                    normalized.getTargetSystemName(),
+                    normalized.getOrchestrationRequest().getServiceDefinition());
 
-        // do orchestration
-        throw new NotImplementedException();
+            final boolean isOverride = recordOpt.isPresent();
+
+            final List<Subscription> result = subscriptionDbService.create(List.of(normalized), requesterSystem);
+            response = Pair.of(isOverride, result.getFirst().getId().toString());
+        }
+
+        return response;
+
+        // TODO: do orchestration
     }
 }

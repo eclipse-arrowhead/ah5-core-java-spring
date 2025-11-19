@@ -27,14 +27,16 @@ public class SimpleOrchestrationSubscriptionRequest {
     private String targetSystemName;
     private SimpleOrchestrationRequest orchestrationRequest;
     private OrchestrationNotifyInterfaceDTO notifyInterface;
+    private Long duration;
 
     //=================================================================================================
     // boilerplate
 
-    public SimpleOrchestrationSubscriptionRequest(final String targetSystemName, final SimpleOrchestrationRequest orchestrationRequest, final OrchestrationNotifyInterfaceDTO notifyInterface) {
+    public SimpleOrchestrationSubscriptionRequest(final String targetSystemName, final SimpleOrchestrationRequest orchestrationRequest, final OrchestrationNotifyInterfaceDTO notifyInterface, final long duration) {
         this.targetSystemName = targetSystemName;
         this.orchestrationRequest = orchestrationRequest;
         this.notifyInterface = notifyInterface;
+        this.duration = duration;
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -65,6 +67,16 @@ public class SimpleOrchestrationSubscriptionRequest {
     //-------------------------------------------------------------------------------------------------
     public void setNotifyInterface(final OrchestrationNotifyInterfaceDTO notifyInterface) {
         this.notifyInterface = notifyInterface;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public Long getDuration() {
+        return duration;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void setDuration(Long duration) {
+        this.duration = duration;
     }
 
 }

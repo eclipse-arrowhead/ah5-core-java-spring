@@ -76,7 +76,6 @@ public class Subscription {
     //-------------------------------------------------------------------------------------------------
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public Subscription(
-            final UUID id,
             final String ownerSystem,
             final String targetSystem,
             final String serviceDefinition,
@@ -84,7 +83,7 @@ public class Subscription {
             final String notifyProtocol,
             final String notifyProperties,
             final String orchestrationRequest) {
-        this.id = id;
+        this.id = UUID.randomUUID();
         this.ownerSystem = ownerSystem;
         this.targetSystem = targetSystem;
         this.serviceDefinition = serviceDefinition;

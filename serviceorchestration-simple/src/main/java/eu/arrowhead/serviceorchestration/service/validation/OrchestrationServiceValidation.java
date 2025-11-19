@@ -265,7 +265,12 @@ public class OrchestrationServiceValidation {
             }
         });
 
-        return new SimpleOrchestrationSubscriptionRequest(dto.targetSystemName(), validatedOrchestrationRequest, dto.notifyInterface());
+        // duration
+        if (dto.duration() != null && dto.duration() <= 0) {
+            throw new InvalidParameterException("Subscription duration must be greater than 0", origin);
+        }
+
+        return new SimpleOrchestrationSubscriptionRequest(dto.targetSystemName(), validatedOrchestrationRequest, dto.notifyInterface(), dto.duration());
     }
 
     //-----------------------------------------------------------------------------------------------
