@@ -388,7 +388,7 @@ public class IdentityDbService {
 	public void closeSessionsInBulk(final List<String> systemNames) {
 		logger.debug("closeSessionsInBulk started...");
 		Assert.isTrue(!Utilities.isEmpty(systemNames), "System name list is missing or empty");
-		Assert.isTrue(!Utilities.containsNull(systemNames), "System name list contains null");
+		Assert.isTrue(!Utilities.containsNullOrEmpty(systemNames), "System name list contains null or empty value");
 
 		synchronized (SESSION_LOCK) {
 			try {

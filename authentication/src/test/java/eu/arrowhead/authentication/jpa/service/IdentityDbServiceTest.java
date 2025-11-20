@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -1424,5 +1425,283 @@ public class IdentityDbServiceTest {
 		assertEquals("Database operation error", ex.getMessage());
 
 		verify(asRepository).findBySystem(sys);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateOrUpdateSessionNewSessionWithInfiniteToken() {
+		ReflectionTestUtils.setField(dbService, "identityTokenDuration", 0);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final ZonedDateTime now = ZonedDateTime.of(2025, 11, 20, 12, 7, 1, 0, ZoneId.of(Constants.UTC));
+		final ActiveSession session = new ActiveSession(sys, "token", now, now.plusYears(100));
+
+		when(asRepository.findBySystem(sys)).thenReturn(Optional.empty());
+
+		try (MockedStatic<Utilities> staticMock = Mockito.mockStatic(Utilities.class)) {
+			staticMock.when(() -> Utilities.utcNow()).thenReturn(now);
+			when(asRepository.saveAndFlush(session)).thenReturn(session);
+
+			assertDoesNotThrow(() -> dbService.createOrUpdateSession(sys, "token"));
+
+			verify(asRepository).findBySystem(sys);
+			staticMock.verify(() -> Utilities.utcNow());
+			verify(asRepository).saveAndFlush(session);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testCreateOrUpdateSessionExtendSessionWithFiniteToken() {
+		ReflectionTestUtils.setField(dbService, "identityTokenDuration", 300);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final ZonedDateTime now = ZonedDateTime.of(2025, 11, 20, 12, 7, 1, 0, ZoneId.of(Constants.UTC));
+		final ZonedDateTime oldLogin = ZonedDateTime.of(2025, 11, 20, 12, 4, 1, 0, ZoneId.of(Constants.UTC));
+		final ActiveSession session = new ActiveSession(
+				sys,
+				"oldToken",
+				oldLogin,
+				ZonedDateTime.of(2025, 11, 20, 12, 9, 1, 0, ZoneId.of(Constants.UTC)));
+
+		when(asRepository.findBySystem(sys)).thenReturn(Optional.of(session));
+
+		try (MockedStatic<Utilities> staticMock = Mockito.mockStatic(Utilities.class)) {
+			staticMock.when(() -> Utilities.utcNow()).thenReturn(now);
+			when(asRepository.saveAndFlush(session)).thenReturn(session);
+
+			assertDoesNotThrow(() -> dbService.createOrUpdateSession(sys, "token"));
+
+			assertEquals("token", session.getToken());
+			assertEquals(oldLogin, session.getLoginTime());
+			assertEquals(ZonedDateTime.of(2025, 11, 20, 12, 12, 1, 0, ZoneId.of(Constants.UTC)), session.getExpirationTime());
+
+			verify(asRepository).findBySystem(sys);
+			staticMock.verify(() -> Utilities.utcNow());
+			verify(asRepository).saveAndFlush(session);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testCreateOrUpdateSessionReplaceSessionWithFiniteToken() {
+		ReflectionTestUtils.setField(dbService, "identityTokenDuration", 300);
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final ZonedDateTime now = ZonedDateTime.of(2025, 11, 20, 12, 7, 1, 0, ZoneId.of(Constants.UTC));
+		final ZonedDateTime oldLogin = ZonedDateTime.of(2025, 11, 20, 12, 1, 1, 0, ZoneId.of(Constants.UTC));
+		final ActiveSession session = new ActiveSession(
+				sys,
+				"oldToken",
+				oldLogin,
+				ZonedDateTime.of(2025, 11, 20, 12, 6, 1, 0, ZoneId.of(Constants.UTC)));
+
+		when(asRepository.findBySystem(sys)).thenReturn(Optional.of(session));
+
+		try (MockedStatic<Utilities> staticMock = Mockito.mockStatic(Utilities.class)) {
+			staticMock.when(() -> Utilities.utcNow()).thenReturn(now);
+			when(asRepository.saveAndFlush(session)).thenReturn(session);
+
+			assertDoesNotThrow(() -> dbService.createOrUpdateSession(sys, "token"));
+
+			assertEquals("token", session.getToken());
+			assertEquals(now, session.getLoginTime());
+			assertEquals(ZonedDateTime.of(2025, 11, 20, 12, 12, 1, 0, ZoneId.of(Constants.UTC)), session.getExpirationTime());
+
+			verify(asRepository).findBySystem(sys);
+			staticMock.verify(() -> Utilities.utcNow());
+			verify(asRepository).saveAndFlush(session);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSessionSystemNameNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeSession(null));
+
+		assertEquals("System name is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSessionSystemNameEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.removeSession(""));
+
+		assertEquals("System name is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSessionInternalServerError() {
+		doThrow(RuntimeException.class).when(asRepository).deleteBySystem_Name("TestSystem");
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.removeSession("TestSystem"));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(asRepository).deleteBySystem_Name("TestSystem");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSessionOk() {
+		doNothing().when(asRepository).deleteBySystem_Name("TestSystem");
+		doNothing().when(asRepository).flush();
+
+		assertDoesNotThrow(() -> dbService.removeSession("TestSystem"));
+
+		verify(asRepository).deleteBySystem_Name("TestSystem");
+		verify(asRepository).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCloseSessionsInBulkListNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.closeSessionsInBulk(null));
+
+		assertEquals("System name list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCloseSessionsInBulkListEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.closeSessionsInBulk(List.of()));
+
+		assertEquals("System name list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCloseSessionsInBulkListContainsNull() {
+		final List<String> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.closeSessionsInBulk(list));
+
+		assertEquals("System name list contains null or empty value", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCloseSessionsInBulkListContainsEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.closeSessionsInBulk(List.of("")));
+
+		assertEquals("System name list contains null or empty value", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCloseSessionsInBulkInternalServerError() {
+		doThrow(RuntimeException.class).when(asRepository).deleteBySystem_NameIn(List.of("TestSystem"));
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.closeSessionsInBulk(List.of("TestSystem")));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(asRepository).deleteBySystem_NameIn(List.of("TestSystem"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCloseSessionsInBulkOk() {
+		doNothing().when(asRepository).deleteBySystem_NameIn(List.of("TestSystem"));
+		doNothing().when(asRepository).flush();
+
+		assertDoesNotThrow(() -> dbService.closeSessionsInBulk(List.of("TestSystem")));
+
+		verify(asRepository).deleteBySystem_NameIn(List.of("TestSystem"));
+		verify(asRepository).flush();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveExpiredSessionsInternalServerError() {
+		final ZonedDateTime now = ZonedDateTime.of(2025, 11, 20, 12, 7, 1, 0, ZoneId.of(Constants.UTC));
+
+		try (MockedStatic<Utilities> staticMock = Mockito.mockStatic(Utilities.class)) {
+			staticMock.when(() -> Utilities.utcNow()).thenReturn(now);
+			doThrow(RuntimeException.class).when(asRepository).deleteByExpirationTimeLessThan(now);
+
+			final Throwable ex = assertThrows(
+					InternalServerError.class,
+					() -> dbService.removeExpiredSessions());
+
+			assertEquals("Database operation error", ex.getMessage());
+
+			staticMock.verify(() -> Utilities.utcNow());
+			verify(asRepository).deleteByExpirationTimeLessThan(now);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveExpiredSessionsOk() {
+		final ZonedDateTime now = ZonedDateTime.of(2025, 11, 20, 12, 7, 1, 0, ZoneId.of(Constants.UTC));
+
+		try (MockedStatic<Utilities> staticMock = Mockito.mockStatic(Utilities.class)) {
+			staticMock.when(() -> Utilities.utcNow()).thenReturn(now);
+			doNothing().when(asRepository).deleteByExpirationTimeLessThan(now);
+			doNothing().when(asRepository).flush();
+
+			assertDoesNotThrow(() -> dbService.removeExpiredSessions());
+
+			staticMock.verify(() -> Utilities.utcNow());
+			verify(asRepository).deleteByExpirationTimeLessThan(now);
+			verify(asRepository).flush();
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPasswordAuthenticationBySystemNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> dbService.getPasswordAuthenticationBySystem(null));
+
+		assertEquals("system is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPasswordAuthenticationBySystemInternalServerError() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+
+		when(paRepository.findBySystem(sys)).thenThrow(RuntimeException.class);
+
+		final Throwable ex = assertThrows(
+				InternalServerError.class,
+				() -> dbService.getPasswordAuthenticationBySystem(sys));
+
+		assertEquals("Database operation error", ex.getMessage());
+
+		verify(paRepository).findBySystem(sys);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPasswordAuthenticationBySystemOk() {
+		final System sys = new System("TestSystem", AuthenticationMethod.PASSWORD, false, "AdminSystem");
+		final PasswordAuthentication pa = new PasswordAuthentication(sys, "encoded");
+
+		when(paRepository.findBySystem(sys)).thenReturn(Optional.of(pa));
+
+		assertDoesNotThrow(() -> dbService.getPasswordAuthenticationBySystem(sys));
+
+		verify(paRepository).findBySystem(sys);
 	}
 }

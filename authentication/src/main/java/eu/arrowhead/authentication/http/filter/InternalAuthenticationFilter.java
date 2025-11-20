@@ -66,9 +66,6 @@ public class InternalAuthenticationFilter extends ArrowheadFilter implements IAu
 
 			if (needTokenCheck(request.getRequestURL().toString())) {
 				final String token = processAuthHeader(request);
-				if (Utilities.isEmpty(token)) {
-					throw new AuthException("Missing identity token");
-				}
 
 				Optional<ActiveSession> sessionOpt = Optional.empty();
 				try {

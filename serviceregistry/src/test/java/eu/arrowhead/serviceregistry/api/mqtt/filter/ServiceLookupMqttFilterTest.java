@@ -63,54 +63,32 @@ public class ServiceLookupMqttFilterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testDoFilterAttrNotSetBecauseOfPolicyMismatch() {
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.OPEN);
-
-		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
-		final MqttRequestModel request = new MqttRequestModel("test/", "operation", template);
-
-		assertDoesNotThrow(() -> filter.doFilter(null, request));
-		assertNull(request.getAttribute("restricted.service.lookup"));
-
-		verify(sysInfo).getServiceDiscoveryPolicy();
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
 	public void testDoFilterAttrNotSetBecauseOfBaseTopicMismatch() {
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
-
 		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
 		final MqttRequestModel request = new MqttRequestModel("test/", "operation", template);
 
 		assertDoesNotThrow(() -> filter.doFilter(null, request));
 		assertNull(request.getAttribute("restricted.service.lookup"));
-
-		verify(sysInfo).getServiceDiscoveryPolicy();
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoFilterAttrNotSetBecauseOfOperationMismatch() {
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
-
 		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
 		final MqttRequestModel request = new MqttRequestModel("arrowhead/serviceregistry/service-discovery/", "operation", template);
 
 		assertDoesNotThrow(() -> filter.doFilter(null, request));
 		assertNull(request.getAttribute("restricted.service.lookup"));
-
-		verify(sysInfo).getServiceDiscoveryPolicy();
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoFilterAttrFalseBecauseOfSysop() {
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
-
 		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
 		final MqttRequestModel request = new MqttRequestModel("arrowhead/serviceregistry/service-discovery/", "lookup", template);
 		request.setSysOp(true);
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
 
 		assertDoesNotThrow(() -> filter.doFilter(null, request));
 		assertFalse(Boolean.valueOf(request.getAttribute("restricted.service.lookup")));
@@ -122,13 +100,13 @@ public class ServiceLookupMqttFilterTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoFilterAttrFalseBecauseOfHasDirectAccess() {
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
-		when(sysInfo.hasClientDirectAccess("TestConsumer")).thenReturn(true);
-
 		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
 		final MqttRequestModel request = new MqttRequestModel("arrowhead/serviceregistry/service-discovery/", "lookup", template);
 		request.setRequester("TestConsumer");
 		request.setSysOp(false);
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
+		when(sysInfo.hasClientDirectAccess("TestConsumer")).thenReturn(true);
 
 		assertDoesNotThrow(() -> filter.doFilter(null, request));
 		assertFalse(Boolean.valueOf(request.getAttribute("restricted.service.lookup")));
@@ -140,18 +118,46 @@ public class ServiceLookupMqttFilterTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testDoFilterAttrTrue() {
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
-		when(sysInfo.hasClientDirectAccess("TestConsumer")).thenReturn(false);
-
 		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
 		final MqttRequestModel request = new MqttRequestModel("arrowhead/serviceregistry/service-discovery/", "lookup", template);
 		request.setRequester("TestConsumer");
 		request.setSysOp(false);
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
+		when(sysInfo.hasClientDirectAccess("TestConsumer")).thenReturn(false);
 
 		assertDoesNotThrow(() -> filter.doFilter(null, request));
 		assertTrue(Boolean.valueOf(request.getAttribute("restricted.service.lookup")));
 
 		verify(sysInfo).getServiceDiscoveryPolicy();
 		verify(sysInfo).hasClientDirectAccess("TestConsumer");
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAttrFalseBecauseOfPolicyMismatch() {
+		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
+		final MqttRequestModel request = new MqttRequestModel("arrowhead/serviceregistry/service-discovery/", "lookup", template);
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.OPEN);
+
+		assertDoesNotThrow(() -> filter.doFilter(null, request));
+		assertFalse(Boolean.valueOf(request.getAttribute("restricted.service.lookup")));
+
+		verify(sysInfo).getServiceDiscoveryPolicy();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDoFilterAttrNotSetBecauseOfPolicyMismatch() {
+		final MqttRequestTemplate template = new MqttRequestTemplate("1", null, "response", 0, Map.of(), "payload");
+		final MqttRequestModel request = new MqttRequestModel("arrowhead/serviceregistry/service-discovery/", "lookup", template);
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(null);
+
+		assertDoesNotThrow(() -> filter.doFilter(null, request));
+		assertNull(request.getAttribute("restricted.service.lookup"));
+
+		verify(sysInfo).getServiceDiscoveryPolicy();
 	}
 }

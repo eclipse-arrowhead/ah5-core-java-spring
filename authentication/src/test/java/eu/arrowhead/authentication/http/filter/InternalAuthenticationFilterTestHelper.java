@@ -14,23 +14,23 @@
  *  	Arrowhead Consortia - conceptualization
  *
  *******************************************************************************/
-package eu.arrowhead.serviceregistry.api.http.filter;
+package eu.arrowhead.authentication.http.filter;
 
 import java.io.IOException;
 
 import eu.arrowhead.common.exception.ArrowheadException;
 import jakarta.servlet.http.HttpServletResponse;
 
-// we test this derived class instead of the original one
-public class ServiceLookupFilterTestHelper extends ServiceLookupFilter {
+//we test this derived class instead of the original one
+public class InternalAuthenticationFilterTestHelper extends InternalAuthenticationFilter {
 
 	//=================================================================================================
-	// assistant methods
+		// assistant methods
 
-	//-------------------------------------------------------------------------------------------------
-	// this method just re-throws the input exception which is easier to test than intercept the error response somehow
-	@Override
-	protected void handleException(final ArrowheadException ex, final HttpServletResponse response) throws IOException {
-		throw ex;
-	}
+		//-------------------------------------------------------------------------------------------------
+		// this method just re-throws the input exception which is easier to test than intercept the error response somehow
+		@Override
+		protected void handleException(final ArrowheadException ex, final HttpServletResponse response) throws IOException {
+			throw ex;
+		}
 }

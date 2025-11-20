@@ -51,14 +51,17 @@ public class ServiceLookupFilter extends ArrowheadFilter {
 	@Override
 	protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
 		try {
-			if (sysInfo.getServiceDiscoveryPolicy() == ServiceDiscoveryPolicy.RESTRICTED) {
-				final String requestTarget = Utilities.stripEndSlash(request.getRequestURL().toString());
-				if (requestTarget.endsWith(ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH)) {
+			final String requestTarget = Utilities.stripEndSlash(request.getRequestURL().toString());
+			if (requestTarget.endsWith(ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH)) {
+				final ServiceDiscoveryPolicy policy = sysInfo.getServiceDiscoveryPolicy();
+				if (policy == ServiceDiscoveryPolicy.RESTRICTED) {
 					final Boolean isSysop = Boolean.valueOf(request.getAttribute(Constants.HTTP_ATTR_ARROWHEAD_SYSOP_REQUEST).toString());
 					final String systemName = request.getAttribute(Constants.HTTP_ATTR_ARROWHEAD_AUTHENTICATED_SYSTEM).toString();
 
 					final boolean isRestricted = !(isSysop || sysInfo.hasClientDirectAccess(systemName));
 					request.setAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP, isRestricted);
+				} else if (policy == ServiceDiscoveryPolicy.OPEN) {
+					request.setAttribute(ServiceRegistryConstants.REQUEST_ATTR_RESTRICTED_SERVICE_LOOKUP, false);
 				}
 			}
 

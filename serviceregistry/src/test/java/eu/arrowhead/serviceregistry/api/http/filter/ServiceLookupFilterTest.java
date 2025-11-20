@@ -62,9 +62,31 @@ public class ServiceLookupFilterTest {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testDoFilterInternalTargetMismatch() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8443);
+		request.setRequestURI("/serviceregistry/service-discovery/register");
+
+		assertDoesNotThrow(() -> filter.doFilterInternal(request, null, chain));
+
+		assertNull(request.getAttribute("restricted.service.lookup"));
+
+		verify(chain).doFilter(request, null);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
 	@Test
 	public void testDoFilterException() throws IOException, ServletException {
 		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8443);
+		request.setRequestURI("/serviceregistry/service-discovery/lookup");
 
 		when(sysInfo.getServiceDiscoveryPolicy()).thenThrow(new InvalidParameterException("impossible"));
 
@@ -76,41 +98,6 @@ public class ServiceLookupFilterTest {
 
 		verify(sysInfo).getServiceDiscoveryPolicy();
 		verify(chain, never()).doFilter(request, null);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testDoFilterInternalPolicyMismatch() throws IOException, ServletException {
-		final MockHttpServletRequest request = new MockHttpServletRequest();
-
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.OPEN);
-
-		assertDoesNotThrow(() -> filter.doFilterInternal(request, null, chain));
-
-		assertNull(request.getAttribute("restricted.service.lookup"));
-
-		verify(sysInfo).getServiceDiscoveryPolicy();
-		verify(chain).doFilter(request, null);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@SuppressWarnings("checkstyle:MagicNumber")
-	@Test
-	public void testDoFilterInternalTargetMismatch() throws IOException, ServletException {
-		final MockHttpServletRequest request = new MockHttpServletRequest();
-		request.setScheme("http");
-		request.setServerName("localhost");
-		request.setServerPort(8443);
-		request.setRequestURI("/serviceregistry/service-discovery/register");
-
-		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.RESTRICTED);
-
-		assertDoesNotThrow(() -> filter.doFilterInternal(request, null, chain));
-
-		assertNull(request.getAttribute("restricted.service.lookup"));
-
-		verify(sysInfo).getServiceDiscoveryPolicy();
-		verify(chain).doFilter(request, null);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -184,6 +171,46 @@ public class ServiceLookupFilterTest {
 
 		verify(sysInfo).getServiceDiscoveryPolicy();
 		verify(sysInfo).hasClientDirectAccess("TestConsumer");
+		verify(chain).doFilter(request, null);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testDoFilterInternalPolicyOpen() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8443);
+		request.setRequestURI("/serviceregistry/service-discovery/lookup");
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(ServiceDiscoveryPolicy.OPEN);
+
+		assertDoesNotThrow(() -> filter.doFilterInternal(request, null, chain));
+
+		assertFalse(Boolean.valueOf(request.getAttribute("restricted.service.lookup").toString()));
+
+		verify(sysInfo).getServiceDiscoveryPolicy();
+		verify(chain).doFilter(request, null);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	@Test
+	public void testDoFilterInternalPolicyUnknown() throws IOException, ServletException {
+		final MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setScheme("http");
+		request.setServerName("localhost");
+		request.setServerPort(8443);
+		request.setRequestURI("/serviceregistry/service-discovery/lookup");
+
+		when(sysInfo.getServiceDiscoveryPolicy()).thenReturn(null);
+
+		assertDoesNotThrow(() -> filter.doFilterInternal(request, null, chain));
+
+		assertNull(request.getAttribute("restricted.service.lookup"));
+
+		verify(sysInfo).getServiceDiscoveryPolicy();
 		verify(chain).doFilter(request, null);
 	}
 }
