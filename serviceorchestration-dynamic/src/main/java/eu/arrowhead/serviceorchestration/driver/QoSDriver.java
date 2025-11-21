@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.LogManager;
@@ -54,6 +56,9 @@ import eu.arrowhead.dto.enums.QoSOperation;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
+import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
+import eu.arrowhead.serviceorchestration.jpa.service.QosEvalResultDbService;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationCandidate;
 
 @Service
@@ -74,18 +79,23 @@ public class QoSDriver {
 	@Autowired
 	private PropertyValidators validators;
 
+	@Autowired
+	private OrchestrationJobDbService orchestrationJobDbService;
+
+	@Autowired
+	private QosEvalResultDbService qosEvalResultDbService;
+
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
 	//=================================================================================================
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public List<OrchestrationCandidate> doQoSCompliance(final List<OrchestrationCandidate> candidates, final List<QoSRequirementDTO> qosRequirements, final Set<String> warnings) {
+	public List<OrchestrationCandidate> doQoSCompliance(final UUID jobId, final List<OrchestrationCandidate> candidates, final List<QoSRequirementDTO> qosRequirements, final Set<String> warnings) {
 		logger.debug("doQoSCompliance started...");
 
-		// TODO implement when QoS Evaluator is ready
 		final List<String> systemNames = candidates.stream().map(c -> c.getServiceInstance().provider().name()).toList();
-		List<OrchestrationCandidate> compliedSystem = new ArrayList<>(candidates);
+		List<OrchestrationCandidate> compliedSystems = new ArrayList<>(candidates);
 
 		for (final QoSRequirementDTO qosReq : qosRequirements) {
 			final ServiceInstanceResponseDTO evaluator = findQoSEvaluator(qosReq.type());
@@ -95,19 +105,20 @@ public class QoSDriver {
 			}
 
 			List<String> evaluationResult = null;
+			String rawResult = "";
 			if (qosReq.operation().equalsIgnoreCase(QoSOperation.SORT.name())) {
 				final QoSEvaluationSortResponseDTO result = consumeQosEvaluationService(evaluator, qosReq.operation().toLowerCase(),
 						new QoSEvaluationRequestDTO(systemNames, qosReq.requirements()), QoSEvaluationSortResponseDTO.class);
 				if (result != null) {
-					// TODO save qosResults into DB to orch job
 					evaluationResult = result.sortedProviders();
+					rawResult = Utilities.toJson(result);
 				}
 			} else {
 				final QoSEvaluationFilterResponseDTO result = consumeQosEvaluationService(evaluator, qosReq.operation().toLowerCase(),
 						new QoSEvaluationRequestDTO(systemNames, qosReq.requirements()), QoSEvaluationFilterResponseDTO.class);
 				if (result != null) {
-					// TODO save qosResults into DB to orch job
 					evaluationResult = result.passedProviders();
+					rawResult = Utilities.toJson(result);
 				}
 			}
 
@@ -116,9 +127,16 @@ public class QoSDriver {
 				continue;
 			}
 
+			final Optional<OrchestrationJob> jobOpt = orchestrationJobDbService.getById(jobId);
+			if (jobOpt.isPresent()) {
+				qosEvalResultDbService.save(jobOpt.get(), qosReq.type(), qosReq.operation(), rawResult);
+			} else {
+				logger.error("Could not save QoS result, because orchestration job not exists: " + jobId);
+			}
+
 			final List<OrchestrationCandidate> tempList = new ArrayList<>(evaluationResult.size());
 			for (final String sysName : evaluationResult) {
-				for (final OrchestrationCandidate candidate : compliedSystem) {
+				for (final OrchestrationCandidate candidate : compliedSystems) {
 					if (sysName.equalsIgnoreCase(candidate.getServiceInstance().provider().name())) {
 						tempList.add(candidate);
 						break;
@@ -126,11 +144,14 @@ public class QoSDriver {
 				}
 			}
 
-			compliedSystem = tempList;
+			compliedSystems = tempList;
 		}
 
-		return candidates;
+		return compliedSystems;
 	}
+
+	//=================================================================================================
+	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
 	private ServiceInstanceResponseDTO findQoSEvaluator(final String qosEvaluationType) {

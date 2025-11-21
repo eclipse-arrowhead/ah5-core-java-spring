@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -44,11 +43,6 @@ import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.http.ArrowheadHttpService;
-import eu.arrowhead.common.http.HttpService;
-import eu.arrowhead.common.http.HttpUtilities;
-import eu.arrowhead.common.http.model.HttpInterfaceModel;
-import eu.arrowhead.common.http.model.HttpOperationModel;
-import eu.arrowhead.common.intf.properties.PropertyValidatorType;
 import eu.arrowhead.common.service.util.ServiceInterfaceAddressPropertyProcessor;
 import eu.arrowhead.common.service.validation.MetadataRequirementsMatcher;
 import eu.arrowhead.common.service.validation.meta.MetaOps;
@@ -120,7 +114,7 @@ public class LocalServiceOrchestration {
 
 	@Autowired
 	private ArrowheadHttpService ahHttpService;
-	
+
 	@Autowired
 	private QoSDriver qosDriver;
 
@@ -263,7 +257,7 @@ public class LocalServiceOrchestration {
 				if (!sysInfo.isQoSEnabled()) {
 					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
 				} else {
-					candidates = qosDriver.doQoSCompliance(candidates, form.getQualityRequirements(), warnings);
+					candidates = qosDriver.doQoSCompliance(jobId, candidates, form.getQualityRequirements(), warnings);
 				}
 			}
 
