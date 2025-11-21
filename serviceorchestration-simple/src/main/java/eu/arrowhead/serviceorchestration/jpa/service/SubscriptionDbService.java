@@ -125,4 +125,26 @@ public class SubscriptionDbService {
         }
     }
 
+    //-------------------------------------------------------------------------------------------------
+    @Transactional(rollbackFor = ArrowheadException.class)
+    public boolean deleteById(final UUID id) {
+        logger.debug("deleteById started..");
+        Assert.notNull(id, "subscription id is null");
+
+        try {
+            if (subscriptionRepo.existsById(id)) {
+                subscriptionRepo.deleteById(id);
+                subscriptionRepo.flush();
+
+                return true;
+            }
+
+            return false;
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
 }

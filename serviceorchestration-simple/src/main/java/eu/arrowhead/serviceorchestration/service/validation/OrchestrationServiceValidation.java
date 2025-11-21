@@ -67,6 +67,27 @@ public class OrchestrationServiceValidation {
     // methods
 
     //-------------------------------------------------------------------------------------------------
+    public String validateAndNormalizeRequester(final String requesterSystemName, final String origin) {
+        logger.debug("validateAndNormalizeRequester started...");
+
+        final String normalized = systemNameNormalizer.normalize(requesterSystemName);
+        try {
+            systemNameValidator.validateSystemName(normalized);
+        } catch (final InvalidParameterException ex) {
+            throw new InvalidParameterException(ex.getMessage(), origin);
+        }
+        return normalized;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public UUID validateAndNormalizeUUID(final String uuid, final String origin) {
+        logger.debug("validateAndNormalizeUUID started...");
+
+        validateSubscriptionId(uuid, origin);
+        return normalizer.normalizeSubscriptionId(uuid);
+    }
+
+    //-------------------------------------------------------------------------------------------------
     public SimpleOrchestrationRequest validateAndNormalizePull(final OrchestrationRequestDTO dto, final Set<String> warnings, final String origin) {
         logger.debug("validateAndNormalizePull started...");
 
@@ -99,9 +120,11 @@ public class OrchestrationServiceValidation {
         normalizer.normalizeSubscribe(subscriptionRequest);
 
         // target system name
+        final String normalizedRequesterSystemName = validateAndNormalizeRequester(requesterSystemName, origin);
+
         if (Utilities.isEmpty(subscriptionRequest.getTargetSystemName())) {
-            subscriptionRequest.setTargetSystemName(requesterSystemName);
-        } else if (!subscriptionRequest.getTargetSystemName().equals(requesterSystemName)) {
+            subscriptionRequest.setTargetSystemName(normalizedRequesterSystemName);
+        } else if (!subscriptionRequest.getTargetSystemName().equals(normalizedRequesterSystemName)) {
             throw new InvalidParameterException("Target system cannot be different than the requester system", origin);
         }
 
@@ -352,6 +375,19 @@ public class OrchestrationServiceValidation {
 
         if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC)) {
             throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC + " member", origin);
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private void validateSubscriptionId(final String uuid, final String origin) {
+        logger.debug("validateSubscriptionId started...");
+
+        if (Utilities.isEmpty(uuid)) {
+            throw new InvalidParameterException("UUID is missing", origin);
+        }
+
+        if (!Utilities.isUUID(uuid)) {
+            throw new InvalidParameterException("Invalid subscription id", origin);
         }
     }
 }

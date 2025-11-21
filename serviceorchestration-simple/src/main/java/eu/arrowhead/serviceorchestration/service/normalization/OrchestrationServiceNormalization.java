@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -91,6 +92,12 @@ public class OrchestrationServiceNormalization {
         toNormalize.setNotifyInterface(new OrchestrationNotifyInterfaceDTO(normalizedProtocol, normalizedNotifyProps));
     }
 
+    public UUID normalizeSubscriptionId(String uuid) {
+        logger.debug("normalizeSubscriptionId started...");
+
+        return UUID.fromString(uuid.trim());
+    }
+
     //=================================================================================================
     // assistant methods
 
@@ -98,5 +105,4 @@ public class OrchestrationServiceNormalization {
     private void normalizeOrchestrationRequest(final SimpleOrchestrationRequest toNormalize) {
         normalizePull(toNormalize);
     }
-
 }

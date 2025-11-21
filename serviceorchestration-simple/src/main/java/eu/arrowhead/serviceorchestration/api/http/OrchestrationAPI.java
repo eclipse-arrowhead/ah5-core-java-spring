@@ -117,6 +117,30 @@ public class OrchestrationAPI {
         return new ResponseEntity<String>(result.getRight(), result.getLeft() ? HttpStatus.CREATED : HttpStatus.OK);
     }
 
-	// pushunsubscribe
+    //-------------------------------------------------------------------------------------------------
+    @Operation(summary = "Removes the subscription by the given id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_OK, description = Constants.SWAGGER_HTTP_200_MESSAGE),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_NO_CONTENT, description = Constants.SWAGGER_HTTP_204_MESSAGE),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_BAD_REQUEST, description = Constants.SWAGGER_HTTP_400_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_UNAUTHORIZED, description = Constants.SWAGGER_HTTP_401_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_FORBIDDEN, description = Constants.SWAGGER_HTTP_403_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) }),
+            @ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
+    })
+    @DeleteMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH)
+    public ResponseEntity<Void> pushUnsubscribe(final HttpServletRequest httpServletRequest, @PathVariable final String id) {
+        logger.debug("pushUnsubscribe started...");
+
+        final String origin = HttpMethod.DELETE.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PATH
+                + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH.replace(SimpleStoreServiceOrchestrationConstants.HTTP_PATH_PARAM_ID, id);
+        final String requesterSystem = preprocessor.process(httpServletRequest, origin);
+        final boolean result = orchService.pushUnsubscribe(requesterSystem, id, origin);
+
+        return new ResponseEntity<Void>(result ? HttpStatus.OK : HttpStatus.NO_CONTENT);
+    }
 
 }

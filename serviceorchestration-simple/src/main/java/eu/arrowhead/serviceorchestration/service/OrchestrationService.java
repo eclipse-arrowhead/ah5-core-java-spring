@@ -19,6 +19,7 @@ package eu.arrowhead.serviceorchestration.service;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
@@ -80,6 +81,7 @@ public class OrchestrationService {
         final Set<String> warnings = new HashSet<>();
 
         // validate and normalize
+        final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
         final SimpleOrchestrationRequest normalized = validator.validateAndNormalizePull(dto, warnings, origin);
 
         try {
@@ -88,8 +90,8 @@ public class OrchestrationService {
             final OrchestrationJob job = orchJobDbService.create(List.of(
                             new OrchestrationJob(
                                     OrchestrationType.PULL,
-                                    requesterSystem,
-                                    requesterSystem, // target consumer system is the requester
+                                    normalizedRequester,
+                                    normalizedRequester, // target consumer system is the requester
                                     normalized.getServiceDefinition(),
                                     null)))
                     .getFirst();
@@ -141,5 +143,27 @@ public class OrchestrationService {
         }
 
         return response;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public boolean pushUnsubscribe(final String requesterSystem, final String subscriptionId, final String origin) {
+        logger.debug("pushUnsubscribe started...");
+
+        final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
+        final UUID normalizedSubscriptionId = validator.validateAndNormalizeUUID(subscriptionId, origin);
+
+        synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+            final Optional<Subscription> recordOpt = subscriptionDbService.get(normalizedSubscriptionId);
+            if (recordOpt.isPresent()) {
+                if (!recordOpt.get().getOwnerSystem().equals(normalizedRequester)) {
+                    throw new ForbiddenException(normalizedRequester + " is not the subscription owner", origin);
+                }
+                subscriptionDbService.deleteById(normalizedSubscriptionId);
+
+                return true;
+            }
+
+            return false;
+        }
     }
 }
