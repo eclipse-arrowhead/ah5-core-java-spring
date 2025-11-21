@@ -78,7 +78,7 @@ import eu.arrowhead.dto.TranslationNegotiationResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
-import eu.arrowhead.dto.enums.QoSEvaulationType;
+import eu.arrowhead.dto.enums.QoSOperation;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.dto.enums.TranslationDiscoveryFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
@@ -659,13 +659,13 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private QoSEvaulationType getQoSEvaulationType(final OrchestrationForm form) {
+	private QoSOperation getQoSEvaulationType(final OrchestrationForm form) {
 		logger.debug("getQoSEvaulationType started...");
 
 		// TODO
 
 		logger.warn("QoS support is not implemented yet");
-		return QoSEvaulationType.FILTERING;
+		return QoSOperation.FILTER;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -673,7 +673,6 @@ public class LocalServiceOrchestration {
 		logger.debug("doQoSCompliance started...");
 
 		// TODO implement when QoS Evaluator is ready
-		// TODO let QoS evaluator know that translation is necessary or not
 
 		logger.warn("QoS crosschek is not implemented yet");
 		return candidates;
@@ -799,7 +798,7 @@ public class LocalServiceOrchestration {
 	private OrchestrationCandidate matchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("matchmaking started...");
 
-		if (form.hasQoSRequirements() && getQoSEvaulationType(form) == QoSEvaulationType.RANKING) {
+		if (form.hasQoSRequirements() && getQoSEvaulationType(form) == QoSOperation.SORT) {
 			return candidates.getFirst();
 		}
 

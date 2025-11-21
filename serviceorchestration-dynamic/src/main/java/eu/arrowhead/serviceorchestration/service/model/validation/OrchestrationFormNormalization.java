@@ -31,6 +31,7 @@ import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormaliz
 import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.version.VersionNormalizer;
+import eu.arrowhead.dto.QoSPreferencesDTO;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
 @Service
@@ -98,10 +99,8 @@ public class OrchestrationFormNormalization {
 			form.setPreferredProviders(form.getPreferredProviders().stream().map(pp -> systemNameNormalizer.normalize(pp)).toList());
 		}
 
-		if (!Utilities.isEmpty(form.getQosRequirements())) {
-			final Map<String, String> normalizedQoSReq = new HashMap<>();
-			form.getQosRequirements().forEach((k, v) -> normalizedQoSReq.put(k.trim(), v.trim()));
-			form.setQosRequirements(normalizedQoSReq);
+		if (form.getQosPreferences() != null) {
+			form.setQosRequirements(new QoSPreferencesDTO(form.getQosPreferences().type().trim(), form.getQosPreferences().operation().trim().toUpperCase(), form.getQosPreferences().requirements()));
 		}
 	}
 }

@@ -55,6 +55,7 @@ import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionResponseDTO;
+import eu.arrowhead.dto.QoSPreferencesDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
@@ -311,7 +312,7 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationRequestDTO orchestrationRequestDTO() {
-		return new OrchestrationRequestDTO(orchestrationServiceRequirementDTO(), Map.of("MATCHMAKING", true), Map.of("def", "hijk"), 1000);
+		return new OrchestrationRequestDTO(orchestrationServiceRequirementDTO(), Map.of("MATCHMAKING", true), new QoSPreferencesDTO("test-qos", "FILTER", Map.of("k", "v")), 1000);
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ import eu.arrowhead.common.service.validation.version.VersionNormalizer;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
+import eu.arrowhead.dto.QoSPreferencesDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
@@ -106,7 +107,7 @@ public class OrchestrationFormNormalizationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO(serviceDef, List.of(serviceOp), List.of(version),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of(interfaceName), List.of(addressType), List.of(interfacePropsReq),
 				List.of(securityPolicy), List.of(preferredProvider));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(" matchmaking ", true), Map.of(" something", " xyz "), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(" matchmaking ", true), new QoSPreferencesDTO(" test-qos ", " filter ", Map.of("something", "xyz")), 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm(requester, target, orchestrationRequestDTO);
 
 		when(systemNameNormalizer.normalize(eq(requester))).thenReturn(requester.trim());
@@ -131,11 +132,7 @@ public class OrchestrationFormNormalizationTest {
 		orchestrationForm.getOrchestrationFlags().keySet().forEach((flag) -> {
 			assertEquals(OrchestrationFlag.MATCHMAKING.name(), flag);
 		});
-		orchestrationForm.getQosRequirements().keySet().forEach((key) -> {
-			assertEquals("something", key);
-		});
-		orchestrationForm.getQosRequirements().values().forEach((value) -> {
-			assertEquals("xyz", value);
-		});
+		assertEquals("test-qos", orchestrationForm.getQosPreferences().type());
+		assertEquals("FILTER", orchestrationForm.getQosPreferences().operation());
 	}
 }

@@ -33,6 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
+import eu.arrowhead.dto.QoSPreferencesDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
@@ -257,7 +258,7 @@ public class OrchestrationFormContextValidationTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateHasQoSRequirementsButNotEnabled() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosRequirement("foo", "bar").build();
+		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosPreferences(new QoSPreferencesDTO("tes-qos", "FILTER", null)).build();
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
 		when(sysInfo.isQoSEnabled()).thenReturn(false);
 
@@ -272,7 +273,7 @@ public class OrchestrationFormContextValidationTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateHasQoSRequirementsAndIsEnabled() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosRequirement("foo", "bar").build();
+		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosPreferences(new QoSPreferencesDTO("tes-qos", "FILTER", null)).build();
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
 		when(sysInfo.isQoSEnabled()).thenReturn(true);
 
