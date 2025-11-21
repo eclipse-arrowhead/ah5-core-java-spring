@@ -413,7 +413,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final QoSPreferencesDTO qosPref = new QoSPreferencesDTO("  ", "FILTER", null);
+		final List<QoSPreferencesDTO> qosPref = List.of(new QoSPreferencesDTO("  ", "FILTER", null));
 
 		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosPref, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
@@ -435,7 +435,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final QoSPreferencesDTO qosPref = new QoSPreferencesDTO("test-qos", "  ", null);
+		final List<QoSPreferencesDTO> qosPref = List.of(new QoSPreferencesDTO("test-qos", "  ", null));
 
 		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosPref, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
@@ -457,7 +457,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final QoSPreferencesDTO qosPref = new QoSPreferencesDTO("test-qos", "fhfdh", null);
+		final List<QoSPreferencesDTO> qosPref = List.of(new QoSPreferencesDTO("test-qos", "fhfdh", null));
 
 		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosPref, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
@@ -499,7 +499,8 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), new QoSPreferencesDTO("test-qos", "FILTER", Map.of("something", "xyz")), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true),
+				List.of(new QoSPreferencesDTO("test-qos", "FILTER", Map.of("something", "xyz"))), 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		assertDoesNotThrow(() -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, false, origin));

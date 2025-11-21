@@ -207,22 +207,6 @@ public class LocalServiceOrchestration {
 				return doInterCloudOrReturn(jobId, form);
 			}
 
-			// QoS cross-check
-			if (form.hasQoSRequirements()) {
-				if (!sysInfo.isQoSEnabled()) {
-					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
-					releaseTemporaryLockIfItWasLocked(jobId, candidates);
-					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found");
-
-					return convertToOrchestrationResponse(List.of(), warnings);
-				}
-				candidates = doQoSCompliance(candidates);
-
-				if (Utilities.isEmpty(candidates)) {
-					return doInterCloudOrReturn(jobId, form);
-				}
-			}
-
 			// Deal with translations
 			String translationBirdgeId = null;
 			if (translationAllowed) {
@@ -261,6 +245,22 @@ public class LocalServiceOrchestration {
 
 			if (Utilities.isEmpty(candidates)) {
 				return doInterCloudOrReturn(jobId, form);
+			}
+
+			// QoS cross-check
+			if (form.hasQoSRequirements()) {
+				if (!sysInfo.isQoSEnabled()) {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
+					releaseTemporaryLockIfItWasLocked(jobId, candidates);
+					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found");
+
+					return convertToOrchestrationResponse(List.of(), warnings);
+				}
+				candidates = doQoSCompliance(candidates);
+
+				if (Utilities.isEmpty(candidates)) {
+					return doInterCloudOrReturn(jobId, form);
+				}
 			}
 
 			// Matchmaking if required
@@ -659,13 +659,11 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private QoSOperation getQoSEvaulationType(final OrchestrationForm form) {
-		logger.debug("getQoSEvaulationType started...");
-
+	private QoSOperation getQoSOperation(final OrchestrationForm form) {
+		logger.debug("getQoSOperation started...");
+		Assert.notNull(form.getQosPreferences(), "Has no QoS preferences but want to check the operation");
 		// TODO
-
-		logger.warn("QoS support is not implemented yet");
-		return QoSOperation.FILTER;
+		return null;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -798,7 +796,7 @@ public class LocalServiceOrchestration {
 	private OrchestrationCandidate matchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("matchmaking started...");
 
-		if (form.hasQoSRequirements() && getQoSEvaulationType(form) == QoSOperation.SORT) {
+		if (form.hasQoSRequirements() && getQoSOperation(form) == QoSOperation.SORT) {
 			return candidates.getFirst();
 		}
 

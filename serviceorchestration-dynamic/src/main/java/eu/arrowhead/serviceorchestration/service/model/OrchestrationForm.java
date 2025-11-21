@@ -35,7 +35,7 @@ public class OrchestrationForm {
 	private String requesterSystemName;
 	private String targetSystemName; // consumer
 	private Map<String, Boolean> orchestrationFlags = new HashMap<>();
-	private QoSPreferencesDTO qosPreferences;
+	private List<QoSPreferencesDTO> qosPreferences;
 	private Integer exclusivityDuration;
 
 	// Service related
@@ -121,7 +121,7 @@ public class OrchestrationForm {
 
 	//-------------------------------------------------------------------------------------------------
 	public boolean hasQoSRequirements() {
-		return qosPreferences != null;
+		return !Utilities.isEmpty(qosPreferences);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public QoSPreferencesDTO getQosPreferences() {
+	public List<QoSPreferencesDTO> getQosPreferences() {
 		return qosPreferences;
 	}
 
@@ -230,7 +230,7 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setQosRequirements(final QoSPreferencesDTO qosPreferences) {
+	public void setQosRequirements(final List<QoSPreferencesDTO> qosPreferences) {
 		this.qosPreferences = qosPreferences;
 	}
 

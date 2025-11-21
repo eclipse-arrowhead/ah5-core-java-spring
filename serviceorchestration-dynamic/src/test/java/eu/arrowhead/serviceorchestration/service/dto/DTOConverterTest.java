@@ -312,7 +312,7 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationRequestDTO orchestrationRequestDTO() {
-		return new OrchestrationRequestDTO(orchestrationServiceRequirementDTO(), Map.of("MATCHMAKING", true), new QoSPreferencesDTO("test-qos", "FILTER", Map.of("k", "v")), 1000);
+		return new OrchestrationRequestDTO(orchestrationServiceRequirementDTO(), Map.of("MATCHMAKING", true), List.of(new QoSPreferencesDTO("test-qos", "FILTER", Map.of("k", "v"))), 1000);
 	}
 
 	//-------------------------------------------------------------------------------------------------

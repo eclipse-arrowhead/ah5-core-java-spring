@@ -1204,7 +1204,7 @@ public class LocalServiceOrchestrationTest {
 	public void testDoLocalServiceOrchestrationOnlyExclusiveWithQoSRequirementsButNotEnabled() {
 		final UUID jobId = UUID.randomUUID();
 		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
-		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true), new QoSPreferencesDTO("test-qos", " filter ", Map.of("something", "xyz")), 100);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true), List.of(new QoSPreferencesDTO("test-qos", " filter ", Map.of("something", "xyz"))), 100);
 		final String requester = "RequesterSystem";
 		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
 

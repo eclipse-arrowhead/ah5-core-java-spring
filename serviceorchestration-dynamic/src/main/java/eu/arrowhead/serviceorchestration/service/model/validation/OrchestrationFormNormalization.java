@@ -99,8 +99,9 @@ public class OrchestrationFormNormalization {
 			form.setPreferredProviders(form.getPreferredProviders().stream().map(pp -> systemNameNormalizer.normalize(pp)).toList());
 		}
 
-		if (form.getQosPreferences() != null) {
-			form.setQosRequirements(new QoSPreferencesDTO(form.getQosPreferences().type().trim(), form.getQosPreferences().operation().trim().toUpperCase(), form.getQosPreferences().requirements()));
+		if (!Utilities.isEmpty(form.getQosPreferences())) {
+			form.setQosRequirements(
+					form.getQosPreferences().stream().map(qosPref -> new QoSPreferencesDTO(qosPref.type().trim(), qosPref.operation().trim().toUpperCase(), qosPref.requirements())).toList());
 		}
 	}
 }

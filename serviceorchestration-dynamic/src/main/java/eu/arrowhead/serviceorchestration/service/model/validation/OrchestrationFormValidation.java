@@ -132,16 +132,18 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Preferred provider list contains empty element", origin);
 		}
 
-		if (form.getQosPreferences() != null) {
-			if (Utilities.isEmpty(form.getQosPreferences().type())) {
-				throw new InvalidParameterException("QoS type is empty", origin);
-			}
-			if (Utilities.isEmpty(form.getQosPreferences().operation())) {
-				throw new InvalidParameterException("QoS operation is empty", origin);
-			}
-			if (!Utilities.isEnumValue(form.getQosPreferences().operation().trim().toUpperCase(), QoSOperation.class)) {
-				throw new InvalidParameterException("Invalid QoS operation", origin);
-			}
+		if (!Utilities.isEmpty(form.getQosPreferences())) {
+			form.getQosPreferences().forEach(qosPref -> {
+				if (Utilities.isEmpty(qosPref.type())) {
+					throw new InvalidParameterException("QoS type is empty", origin);
+				}
+				if (Utilities.isEmpty(qosPref.operation())) {
+					throw new InvalidParameterException("QoS operation is empty", origin);
+				}
+				if (!Utilities.isEnumValue(qosPref.operation().trim().toUpperCase(), QoSOperation.class)) {
+					throw new InvalidParameterException("Invalid QoS operation", origin);
+				}
+			});
 		}
 	}
 
