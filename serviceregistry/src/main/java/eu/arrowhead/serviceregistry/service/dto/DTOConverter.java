@@ -92,8 +92,7 @@ public class DTOConverter {
 
 		return new DeviceResponseDTO(
 				deviceEntity.getName(),
-				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>()
-				{
+				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>()	{
 				}),
 				addressEntities
 						.stream()
@@ -177,8 +176,7 @@ public class DTOConverter {
 
 		return new SystemResponseDTO(
 				system.getName(),
-				Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>()
-				{
+				Utilities.fromJson(system.getMetadata(), new TypeReference<Map<String, Object>>() {
 				}),
 				system.getVersion(),
 				systemAddressList
@@ -188,8 +186,7 @@ public class DTOConverter {
 				device == null ? null
 						: new DeviceResponseDTO(
 								device.getName(),
-								Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>()
-								{
+								Utilities.fromJson(device.getMetadata(), new TypeReference<Map<String, Object>>() {
 								}),
 								deviceAddresses.stream().map(a -> new AddressDTO(a.getAddressType().toString(), a.getAddress())).collect(Collectors.toList()),
 								Utilities.convertZonedDateTimeToUTCString(device.getCreatedAt()),
@@ -241,8 +238,7 @@ public class DTOConverter {
 				systemTriplet != null ? convertSystemTripletToDTO(systemTriplet)
 						: new SystemResponseDTO(
 								instance.getSystem().getName(),
-								Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>()
-								{
+								Utilities.fromJson(instance.getSystem().getMetadata(), new TypeReference<Map<String, Object>>() {
 								}),
 								instance.getSystem().getVersion(),
 								null,
@@ -252,15 +248,13 @@ public class DTOConverter {
 				convertServiceDefinitionEntityToDTO(instance.getServiceDefinition()),
 				instance.getVersion(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getExpiresAt()),
-				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>()
-				{
+				Utilities.fromJson(instance.getMetadata(), new TypeReference<Map<String, Object>>() {
 				}),
 				interfaceList.stream().map(interf -> new ServiceInstanceInterfaceResponseDTO(
 						interf.getServiceInterfaceTemplate().getName(),
 						interf.getServiceInterfaceTemplate().getProtocol(),
 						interf.getPolicy().toString(),
-						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>()
-						{
+						Utilities.fromJson(interf.getProperties(), new TypeReference<Map<String, Object>>() {
 						}))).toList(),
 				Utilities.convertZonedDateTimeToUTCString(instance.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(instance.getUpdatedAt()));
