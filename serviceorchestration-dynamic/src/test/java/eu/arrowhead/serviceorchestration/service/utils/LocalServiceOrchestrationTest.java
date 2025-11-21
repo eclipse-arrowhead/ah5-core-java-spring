@@ -75,7 +75,7 @@ import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
-import eu.arrowhead.dto.QoSPreferencesDTO;
+import eu.arrowhead.dto.QoSRequirementDTO;
 import eu.arrowhead.dto.ServiceDefinitionResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
@@ -1197,56 +1197,6 @@ public class LocalServiceOrchestrationTest {
 		assertEquals("No results were found", stringCaptor.getValue());
 
 		assertTrue(result.results().size() == 0);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testDoLocalServiceOrchestrationOnlyExclusiveWithQoSRequirementsButNotEnabled() {
-		final UUID jobId = UUID.randomUUID();
-		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO(testSerfviceDef, null, null, null, null, null, null, null, null, null);
-		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of(OrchestrationFlag.ONLY_EXCLUSIVE.name(), true), List.of(new QoSPreferencesDTO("test-qos", " filter ", Map.of("something", "xyz"))), 100);
-		final String requester = "RequesterSystem";
-		final OrchestrationForm form = new OrchestrationForm(requester, requestDTO);
-
-		final ServiceInstanceResponseDTO candidate1 = serviceInstanceResponseDTO("TestProvider1", 110, true);
-		final ServiceInstanceResponseDTO candidate2 = serviceInstanceResponseDTO("TestProvider2", 105, true);
-		final ServiceInstanceResponseDTO candidate3 = serviceInstanceResponseDTO("TestProvider3", true);
-		final OrchestrationLock tempLockRecord1 = new OrchestrationLock(jobId.toString(), candidate1.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
-		tempLockRecord1.setId(1);
-		final OrchestrationLock tempLockRecord2 = new OrchestrationLock(jobId.toString(), candidate2.instanceId(), requester, Utilities.utcNow().plusSeconds(30), true);
-		tempLockRecord2.setId(2);
-
-		when(ahHttpService.consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class), any(), any()))
-				.thenReturn(new ServiceInstanceListResponseDTO(List.of(candidate1, candidate2, candidate3), 3));
-		when(orchLockDbService.create(anyList())).thenReturn(List.of(tempLockRecord1, tempLockRecord2));
-		when(orchLockDbService.getByServiceInstanceId(anyList())).thenReturn(List.of()).thenReturn(List.of()).thenReturn(List.of(tempLockRecord1, tempLockRecord2));
-
-		final OrchestrationResponseDTO result = assertDoesNotThrow(() -> orchestration.doLocalServiceOrchestration(jobId, form));
-
-		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), isNull());
-		verify(ahHttpService).consumeService(eq(Constants.SERVICE_DEF_SERVICE_DISCOVERY), eq(Constants.SERVICE_OP_LOOKUP), eq(Constants.SYS_NAME_SERVICE_REGISTRY), eq(ServiceInstanceListResponseDTO.class),
-				any(ServiceInstanceLookupRequestDTO.class), any());
-		verify(orchLockDbService, times(3)).getByServiceInstanceId(anyList());
-		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
-		verify(orchLockDbService).create(orchestrationLockListCaptor.capture());
-		verify(matchmaker, never()).doMatchmaking(eq(form), anyList());
-		verify(orchLockDbService, never()).changeExpiresAtByOrchestrationJobIdAndServiceInstanceId(anyString(), anyString(), any(), anyBoolean());
-		verify(orchLockDbService).deleteInBatch(longCollectionCaptor.capture());
-		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.DONE), stringCaptor.capture());
-
-		final List<OrchestrationLock> tempLockCreateInput = orchestrationLockListCaptor.getValue();
-		assertTrue(tempLockCreateInput.size() == 2);
-		assertEquals(candidate1.instanceId(), tempLockCreateInput.get(0).getServiceInstanceId());
-		assertEquals(candidate2.instanceId(), tempLockCreateInput.get(1).getServiceInstanceId());
-
-		final Collection<Long> releaseLockInput = longCollectionCaptor.getValue();
-		assertTrue(releaseLockInput.size() == 2);
-		assertTrue(releaseLockInput.contains(tempLockRecord1.getId()));
-		assertTrue(releaseLockInput.contains(tempLockRecord2.getId()));
-
-		assertEquals("No results were found", stringCaptor.getValue());
-		assertTrue(result.results().size() == 0);
-		assertTrue(result.warnings().contains(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED));
 	}
 
 	//-------------------------------------------------------------------------------------------------

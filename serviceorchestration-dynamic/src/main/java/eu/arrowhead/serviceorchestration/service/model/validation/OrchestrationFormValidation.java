@@ -132,8 +132,8 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Preferred provider list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getQosPreferences())) {
-			form.getQosPreferences().forEach(qosPref -> {
+		if (!Utilities.isEmpty(form.getQualityRequirements())) {
+			form.getQualityRequirements().forEach(qosPref -> {
 				if (Utilities.isEmpty(qosPref.type())) {
 					throw new InvalidParameterException("QoS type is empty", origin);
 				}
