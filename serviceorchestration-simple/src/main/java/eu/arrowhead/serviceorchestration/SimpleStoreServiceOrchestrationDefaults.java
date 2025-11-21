@@ -23,6 +23,7 @@ public final class SimpleStoreServiceOrchestrationDefaults extends Defaults {
 	//=================================================================================================
 	// members
 
+    public static final String PUSH_ORCHESTRATION_MAX_THREAD_DEFAULT = "5";
 
 	//=================================================================================================
 	// assistant methods

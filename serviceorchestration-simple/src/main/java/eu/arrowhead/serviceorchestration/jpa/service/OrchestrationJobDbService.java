@@ -65,6 +65,20 @@ public class OrchestrationJobDbService {
     }
 
     //-------------------------------------------------------------------------------------------------
+    public Optional<OrchestrationJob> getById(final UUID id) {
+        logger.debug("getById started...");
+        Assert.notNull(id, "id is null");
+
+        try {
+            return jobRepo.findById(id);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
     @Transactional(rollbackFor = ArrowheadException.class)
     public OrchestrationJob setStatus(final UUID jobId, final OrchestrationJobStatus status, final String message) {
         logger.debug("setStatus started...");

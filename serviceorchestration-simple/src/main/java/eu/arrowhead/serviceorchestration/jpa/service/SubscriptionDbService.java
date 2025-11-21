@@ -111,4 +111,18 @@ public class SubscriptionDbService {
         }
     }
 
+    //-------------------------------------------------------------------------------------------------
+    public Optional<Subscription> get(final UUID id) {
+        logger.debug("get started..");
+        Assert.notNull(id, "subscription id is null");
+
+        try {
+            return subscriptionRepo.findById(id);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
 }

@@ -19,6 +19,7 @@ package eu.arrowhead.serviceorchestration;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import eu.arrowhead.common.Constants;
@@ -34,6 +35,9 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
 	// members
 
 	private SystemModel systemModel;
+
+    @Value(SimpleStoreServiceOrchestrationConstants.$PUSH_ORCHESTRATION_MAX_THREAD_WD)
+    private int pushOrchestrationMaxThread;
 
 	//=================================================================================================
 	// methods
@@ -68,6 +72,11 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
 		//TODO
 		return null;
 	}
+
+    //-------------------------------------------------------------------------------------------------
+    public int getPushOrchestrationMaxThread() {
+        return pushOrchestrationMaxThread;
+    }
 
 	//=================================================================================================
 	// assistant methods

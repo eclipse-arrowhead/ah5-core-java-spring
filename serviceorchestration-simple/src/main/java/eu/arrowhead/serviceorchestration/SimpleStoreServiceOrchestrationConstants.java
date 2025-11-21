@@ -29,15 +29,15 @@ public final class SimpleStoreServiceOrchestrationConstants {
 
 	// DB
 	public static final String DATABASE_ENTITY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.entity";
-	public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
+    public static final String DATABASE_REPOSITORY_PACKAGE = "eu.arrowhead.serviceorchestration.jpa.repository";
 
-	// HTTP API
-	public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
-	public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
-	public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
-	public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
-	public static final String HTTP_API_ORCHESTRATION_MGMT_PREFIX = HTTP_API_ORCHESTRATION_PATH + "/mgmt";
-	public static final String HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/simple-store";
+    // HTTP API
+    public static final String HTTP_API_BASE_PATH = "/serviceorchestration";
+    public static final String HTTP_API_MONITOR_PATH = HTTP_API_BASE_PATH + "/monitor";
+    public static final String HTTP_API_GENERAL_MANAGEMENT_PATH = HTTP_API_BASE_PATH + "/general/mgmt";
+    public static final String HTTP_API_ORCHESTRATION_PATH = HTTP_API_BASE_PATH + "/orchestration";
+    public static final String HTTP_API_ORCHESTRATION_MGMT_PREFIX = HTTP_API_ORCHESTRATION_PATH + "/mgmt";
+    public static final String HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/simple-store";
     public static final String HTTP_API_OP_PUSH_SUBSCRIBE_PATH = "/subscribe";
     public static final String HTTP_PATH_PARAM_ID = "{id}";
     public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/" + HTTP_PATH_PARAM_ID;
@@ -75,6 +75,11 @@ public final class SimpleStoreServiceOrchestrationConstants {
     public static final String NOTIFY_KEY_TOPIC = "topic";
 
     public static final Object SYNC_LOCK_SUBSCRIPTION = new Object();
+    public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
+
+    public static final String PUSH_ORCHESTRATION_MAX_THREAD = "push.orchestration.max.thread";
+    public static final String $PUSH_ORCHESTRATION_MAX_THREAD_WD = "${" + PUSH_ORCHESTRATION_MAX_THREAD + ":" + SimpleStoreServiceOrchestrationDefaults.PUSH_ORCHESTRATION_MAX_THREAD_DEFAULT + "}";
+
 
     //=================================================================================================
 	// assistant methods

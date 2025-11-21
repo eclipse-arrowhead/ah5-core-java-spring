@@ -17,6 +17,7 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
@@ -32,7 +33,8 @@ import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationReques
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationServiceValidation;
-import org.apache.commons.lang3.NotImplementedException;
+import eu.arrowhead.serviceorchestration.thread.model.PushOrchestrationJobDetails;
+import jakarta.annotation.Resource;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,6 +61,9 @@ public class OrchestrationService {
 
     @Autowired
     private ServiceOrchestration serviceOrchestration;
+
+    @Resource(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
+    private BlockingQueue<PushOrchestrationJobDetails> pushOrchJobQueue;
 
     @Autowired
     private DTOConverter dtoConverter;
@@ -104,8 +109,10 @@ public class OrchestrationService {
     public Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final Boolean trigger, final String origin) {
         logger.debug("pushSubscribe started...");
 
+        final Set<String> warnings = new HashSet<>();
+
         // validate and normalize
-        final SimpleOrchestrationSubscriptionRequest normalized = validator.validateAndNormalizePushSubscribe(dto, requesterSystem, origin);
+        final SimpleOrchestrationSubscriptionRequest normalized = validator.validateAndNormalizePushSubscribe(dto, requesterSystem, warnings, origin);
 
         // save subscription
         Pair<Boolean, String> response = null;
@@ -121,8 +128,18 @@ public class OrchestrationService {
             response = Pair.of(isOverride, result.getFirst().getId().toString());
         }
 
-        return response;
+        // orchestrate if needed
+        if (trigger) {
+            final OrchestrationJob orchestrationJob = new OrchestrationJob(
+                    OrchestrationType.PUSH,
+                    requesterSystem,
+                    requesterSystem,
+                    dto.orchestrationRequest().serviceRequirement().serviceDefinition(),
+                    response.getValue());
+            orchJobDbService.create(List.of(orchestrationJob));
+            pushOrchJobQueue.add(new PushOrchestrationJobDetails(orchestrationJob.getId(), warnings));
+        }
 
-        // TODO: do orchestration
+        return response;
     }
 }

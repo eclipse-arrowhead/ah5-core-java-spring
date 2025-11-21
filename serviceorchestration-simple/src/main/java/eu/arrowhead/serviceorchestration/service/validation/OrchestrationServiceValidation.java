@@ -67,7 +67,6 @@ public class OrchestrationServiceValidation {
     // methods
 
     //-------------------------------------------------------------------------------------------------
-    // if warnings is null, warnings won't be stored
     public SimpleOrchestrationRequest validateAndNormalizePull(final OrchestrationRequestDTO dto, final Set<String> warnings, final String origin) {
         logger.debug("validateAndNormalizePull started...");
 
@@ -93,10 +92,10 @@ public class OrchestrationServiceValidation {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
+    public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final Set<String> warnings, final String origin) {
         logger.debug("validateAndNormalizePushSubscribe started...");
 
-        final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, origin);
+        final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, warnings, origin);
         normalizer.normalizeSubscribe(subscriptionRequest);
 
         // target system name
@@ -116,7 +115,7 @@ public class OrchestrationServiceValidation {
                 subscriptionRequest.getOrchestrationRequest().getPreferredProviders().forEach(p -> systemNameValidator.validateSystemName(p));
             }
 
-            filterOutNotSupportedFlags(subscriptionRequest.getOrchestrationRequest(), null);
+            filterOutNotSupportedFlags(subscriptionRequest.getOrchestrationRequest(), warnings);
 
         } catch (final InvalidParameterException ex) {
             throw new InvalidParameterException(ex.getMessage(), origin);
@@ -233,7 +232,7 @@ public class OrchestrationServiceValidation {
     }
 
     //-----------------------------------------------------------------------------------------------
-    private SimpleOrchestrationSubscriptionRequest validatePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String origin) {
+    private SimpleOrchestrationSubscriptionRequest validatePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final Set<String> warnings, final String origin) {
         logger.debug("validatePushSubscribe started...");
 
         if (dto == null) {
@@ -245,7 +244,7 @@ public class OrchestrationServiceValidation {
             throw new InvalidParameterException("Orchestration request is missing", origin);
         }
 
-        final SimpleOrchestrationRequest validatedOrchestrationRequest = validateOrchestrationRequest(dto.orchestrationRequest(), origin);
+        final SimpleOrchestrationRequest validatedOrchestrationRequest = validateOrchestrationRequest(dto.orchestrationRequest(), warnings, origin);
 
         // notify interface
         if (Utilities.isEmpty(dto.notifyInterface().protocol())) {
@@ -305,8 +304,8 @@ public class OrchestrationServiceValidation {
     }
 
     //-------------------------------------------------------------------------------------------------
-    private SimpleOrchestrationRequest validateOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
-        return validatePull(dto, null, origin);
+    private SimpleOrchestrationRequest validateOrchestrationRequest(final OrchestrationRequestDTO dto, final Set<String> warnings, final String origin) {
+        return validatePull(dto, warnings, origin);
     }
 
     //-------------------------------------------------------------------------------------------------
