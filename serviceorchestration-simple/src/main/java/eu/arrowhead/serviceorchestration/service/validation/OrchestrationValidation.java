@@ -23,7 +23,9 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
+import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.dto.enums.NotifyProtocol;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
@@ -31,8 +33,9 @@ import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstant
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
-import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationServiceNormalization;
+import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationNormalization;
 import io.swagger.v3.oas.models.PathItem;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,14 +43,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+import static org.hibernate.validator.internal.util.Contracts.assertTrue;
+
 @Service
-public class OrchestrationServiceValidation {
+public class OrchestrationValidation {
 
     //=================================================================================================
     // members
 
     @Autowired
-    private OrchestrationServiceNormalization normalizer;
+    private OrchestrationNormalization normalizer;
 
     @Autowired
     private ServiceDefinitionNameValidator serviceDefNameValidator;
@@ -109,6 +114,10 @@ public class OrchestrationServiceValidation {
             throw new InvalidParameterException(ex.getMessage(), origin);
         }
 
+        if (request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
+            throw new InvalidParameterException(OrchestrationFlag.ONLY_PREFERRED.toString() + " flag is present, but no preferred provider is defined", origin);
+        }
+
         return request;
     }
 
@@ -129,38 +138,41 @@ public class OrchestrationServiceValidation {
         }
 
         // orchestration request
-        try {
-            if (!Utilities.isEmpty(subscriptionRequest.getOrchestrationRequest().getServiceDefinition())) {
-                serviceDefNameValidator.validateServiceDefinitionName(subscriptionRequest.getOrchestrationRequest().getServiceDefinition());
-            }
-
-            if (!Utilities.isEmpty(subscriptionRequest.getOrchestrationRequest().getPreferredProviders())) {
-                subscriptionRequest.getOrchestrationRequest().getPreferredProviders().forEach(p -> systemNameValidator.validateSystemName(p));
-            }
-
-            filterOutNotSupportedFlags(subscriptionRequest.getOrchestrationRequest(), warnings);
-
-        } catch (final InvalidParameterException ex) {
-            throw new InvalidParameterException(ex.getMessage(), origin);
-        }
+        validateOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), warnings, origin);
 
         // notify interface
-        if (!Utilities.isEnumValue(subscriptionRequest.getNotifyInterface().protocol(), NotifyProtocol.class)) {
-            throw new InvalidParameterException("Unsupported notify protocol: " + subscriptionRequest.getNotifyInterface().protocol(), origin);
-        }
-
-        if (subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.HTTP.name())
-                || subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.HTTPS.name())) {
-            validateNormalizedNotifyPropertiesForHTTP(subscriptionRequest.getNotifyInterface().properties(), origin);
-        } else if (subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.MQTT.name())
-                || subscriptionRequest.getNotifyInterface().protocol().equals(NotifyProtocol.MQTTS.name())) {
-            if (!sysInfo.isMqttApiEnabled()) {
-                throw new InvalidParameterException("MQTT notify protocol required, but MQTT is not enabled", origin);
-            }
-            validateNormalizedNotifyPropertiesForMQTT(subscriptionRequest.getNotifyInterface().properties(), origin);
-        }
+        validateNotifyInterface(subscriptionRequest.getNotifyInterface(), origin);
 
         return subscriptionRequest;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final List<Set<String>> warningsList, final String origin) {
+        logger.debug("validateAndNormalizePushSubscribeBulk started...");
+        assertTrue(warningsList != null, "warnings list is null");
+        assertTrue(dto.subscriptions().size() == warningsList.size(), "warnings list size is different than the subscription list size");
+
+        final List<SimpleOrchestrationSubscriptionRequest> normalized = new ArrayList<>(dto.subscriptions().size());
+
+        for (int i = 0; i < dto.subscriptions().size(); ++i) {
+            final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto.subscriptions().get(i), warningsList.get(i), origin);
+            normalizer.normalizeSubscribe(subscriptionRequest);
+            validateOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), warningsList.get(i), origin);
+            validateNotifyInterface(subscriptionRequest.getNotifyInterface(), origin);
+            normalized.add(subscriptionRequest);
+        }
+
+        // check for duplications
+        final List<Pair<String, String>> existing = new ArrayList<>(dto.subscriptions().size());
+        dto.subscriptions().forEach(sub -> {
+            final Pair<String, String> current = (Pair.of(sub.targetSystemName(), sub.orchestrationRequest().serviceRequirement().serviceDefinition()));
+            if (existing.contains(current)) {
+                throw new InvalidParameterException("Duplicated subscription request for system " + current.getLeft() + " and service definition " + current.getRight());
+            }
+            existing.add(current);
+        });
+
+        return normalized;
     }
 
     //=================================================================================================
@@ -293,6 +305,47 @@ public class OrchestrationServiceValidation {
         }
 
         return new SimpleOrchestrationSubscriptionRequest(dto.targetSystemName(), validatedOrchestrationRequest, dto.notifyInterface(), dto.duration());
+    }
+
+    //-----------------------------------------------------------------------------------------------
+    private void validateOrchestrationRequest(final SimpleOrchestrationRequest request, final Set<String> warnings, final String origin) {
+        try {
+            if (!Utilities.isEmpty(request.getServiceDefinition())) {
+                serviceDefNameValidator.validateServiceDefinitionName(request.getServiceDefinition());
+            }
+
+            if (!Utilities.isEmpty(request.getPreferredProviders())) {
+                request.getPreferredProviders().forEach(p -> systemNameValidator.validateSystemName(p));
+            }
+
+            filterOutNotSupportedFlags(request, warnings);
+
+        } catch (final InvalidParameterException ex) {
+            throw new InvalidParameterException(ex.getMessage(), origin);
+        }
+
+        if (request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
+            throw new InvalidParameterException(OrchestrationFlag.ONLY_PREFERRED.toString() + " flag is present, but no preferred provider is defined", origin);
+        }
+    }
+
+    //-----------------------------------------------------------------------------------------------
+    private void validateNotifyInterface(final OrchestrationNotifyInterfaceDTO intf, final String origin) {
+
+        if (!Utilities.isEnumValue(intf.protocol(), NotifyProtocol.class)) {
+            throw new InvalidParameterException("Unsupported notify protocol: " + intf.protocol(), origin);
+        }
+
+        if (intf.protocol().equals(NotifyProtocol.HTTP.name())
+                || intf.protocol().equals(NotifyProtocol.HTTPS.name())) {
+            validateNormalizedNotifyPropertiesForHTTP(intf.properties(), origin);
+        } else if (intf.protocol().equals(NotifyProtocol.MQTT.name())
+                || intf.protocol().equals(NotifyProtocol.MQTTS.name())) {
+            if (!sysInfo.isMqttApiEnabled()) {
+                throw new InvalidParameterException("MQTT notify protocol required, but MQTT is not enabled", origin);
+            }
+            validateNormalizedNotifyPropertiesForMQTT(intf.properties(), origin);
+        }
     }
 
     //-----------------------------------------------------------------------------------------------

@@ -34,7 +34,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class OrchestrationServiceNormalization {
+public class OrchestrationNormalization {
 
     //=================================================================================================
     // members

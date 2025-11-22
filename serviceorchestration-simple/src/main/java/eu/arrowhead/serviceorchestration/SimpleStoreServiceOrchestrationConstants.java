@@ -42,6 +42,10 @@ public final class SimpleStoreServiceOrchestrationConstants {
     public static final String HTTP_PATH_PARAM_ID = "{id}";
     public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_PATH = "/unsubscribe/" + HTTP_PATH_PARAM_ID;
     public static final String PARAM_NAME_TRIGGER = "trigger";
+    public static final String HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/push";
+    public static final String HTTP_API_ORCHESTRATION_HISTORY_MANAGEMENT_PATH = HTTP_API_ORCHESTRATION_MGMT_PREFIX + "/history";
+    public static final String HTTP_API_OP_PUSH_TRIGGER_PATH = "/trigger";
+    public static final String HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH = "/unsubscribe";
 
 	// operation
 	public static final String HTTP_API_OP_CREATE_PATH = "/create";

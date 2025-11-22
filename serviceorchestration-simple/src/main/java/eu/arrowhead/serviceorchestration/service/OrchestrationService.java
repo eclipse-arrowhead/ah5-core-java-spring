@@ -33,7 +33,7 @@ import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
-import eu.arrowhead.serviceorchestration.service.validation.OrchestrationServiceValidation;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
 import eu.arrowhead.serviceorchestration.thread.model.PushOrchestrationJobDetails;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,7 +52,7 @@ public class OrchestrationService {
 	// members
 
     @Autowired
-    private OrchestrationServiceValidation validator;
+    private OrchestrationValidation validator;
 
     @Autowired
     private OrchestrationJobDbService orchJobDbService;
