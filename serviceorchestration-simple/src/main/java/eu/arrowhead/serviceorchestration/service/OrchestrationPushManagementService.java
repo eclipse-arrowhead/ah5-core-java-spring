@@ -18,6 +18,7 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.*;
@@ -152,6 +153,29 @@ public class OrchestrationPushManagementService {
             existingJobs.addAll(saved);
 
             return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
+        } catch (final InternalServerError ex) {
+            throw new InternalServerError(ex.getMessage(), origin);
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void pushUnsubscribe(final String requesterSystem, final List<String> ids, final String origin) {
+        logger.debug("pushUnsubscribe started...");
+
+        final String normalizedRequesterSystem = validator.validateAndNormalizeRequester(requesterSystem, origin);
+        final List<UUID> normalizedIds = validator.validateAndNormalizePushUnsubscribe(ids, origin);
+
+        try {
+            synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+                final List<Subscription> subscriptions = subscriptionDbService.get(normalizedIds);
+                for (final Subscription subscription : subscriptions) {
+                    if (!subscription.getOwnerSystem().equals(normalizedRequesterSystem)) {
+                        throw new ForbiddenException(subscription.getId().toString() + " is not owned by the requester", origin);
+                    }
+                }
+
+                subscriptionDbService.deleteInBatch(normalizedIds);
+            }
         } catch (final InternalServerError ex) {
             throw new InternalServerError(ex.getMessage(), origin);
         }

@@ -131,8 +131,7 @@ public class OrchestrationPushManagementAPI {
                 + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_UNSUBSCRIBE_BULK_PATH;
         final String requesterSystem = preprocessor.process(httpServletRequest, origin);
 
-        throw new NotImplementedException();
-        //pushService.pushUnsubscribe(requesterSystem, ids, origin);
+        pushService.pushUnsubscribe(requesterSystem, ids, origin);
     }
 
     //-------------------------------------------------------------------------------------------------

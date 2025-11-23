@@ -210,4 +210,21 @@ public class SubscriptionDbService {
         }
     }
 
+    //-------------------------------------------------------------------------------------------------
+    @Transactional(rollbackFor = ArrowheadException.class)
+    public void deleteInBatch(final Collection<UUID> ids) {
+        logger.debug("deleteInBatch started..");
+        Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+        Assert.isTrue(!Utilities.containsNull(ids), "subscription id list contains null element");
+
+        try {
+            subscriptionRepo.deleteAllByIdInBatch(ids);
+            subscriptionRepo.flush();
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
 }

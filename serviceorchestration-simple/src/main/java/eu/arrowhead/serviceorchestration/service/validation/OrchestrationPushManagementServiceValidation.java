@@ -168,6 +168,14 @@ public class OrchestrationPushManagementServiceValidation {
         return normalized;
     }
 
+    //-------------------------------------------------------------------------------------------------
+    public List<UUID> validateAndNormalizePushUnsubscribe(final List<String> ids, final String origin) {
+        logger.debug("validateAndNormalizePushUnsubscribe started...");
+
+        validatePushUnsubscribe(ids, origin);
+        return ids.stream().map(id -> orchValidator.validateAndNormalizeUUID(id, origin)).toList();
+    }
+
     //=================================================================================================
     // assistant methods
 
@@ -191,6 +199,15 @@ public class OrchestrationPushManagementServiceValidation {
 
         if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
             throw new InvalidParameterException("Service definition list contains empty element", origin);
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void validatePushUnsubscribe(final List<String> ids, final String origin) {
+        logger.debug("validatePushUnsubscribe started...");
+
+        if (Utilities.isEmpty(ids)) {
+            throw new InvalidParameterException("Request payload is missing", origin);
         }
     }
 }
