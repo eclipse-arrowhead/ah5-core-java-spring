@@ -18,14 +18,11 @@
 package eu.arrowhead.serviceorchestration;
 
 import eu.arrowhead.serviceorchestration.thread.PushOrchestrationWorker;
-import eu.arrowhead.serviceorchestration.thread.model.PushOrchestrationJobDetails;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -39,20 +36,20 @@ public class BeanConfig {
 
     //-------------------------------------------------------------------------------------------------
     @Bean(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
-    BlockingQueue<PushOrchestrationJobDetails> initPushOrchestrationJobQueue() {
+    BlockingQueue<UUID> initPushOrchestrationJobQueue() {
         return new LinkedBlockingQueue<>();
     }
 
     //-------------------------------------------------------------------------------------------------
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    PushOrchestrationWorker createPushOrchestrationWorker(final PushOrchestrationJobDetails jobDetails) {
-        return new PushOrchestrationWorker(jobDetails);
+    PushOrchestrationWorker createPushOrchestrationWorker(final UUID jobID) {
+        return new PushOrchestrationWorker(jobID);
     }
 
     //-------------------------------------------------------------------------------------------------
     @Bean
-    Function<PushOrchestrationJobDetails, PushOrchestrationWorker> pushOrchestrationWorkerFactory() {
-        return jobDetails -> createPushOrchestrationWorker(jobDetails);
+    Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory() {
+        return jobID -> createPushOrchestrationWorker(jobID);
     }
 }

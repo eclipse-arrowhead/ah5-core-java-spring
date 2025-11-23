@@ -40,7 +40,7 @@ import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
-import eu.arrowhead.serviceorchestration.thread.model.PushOrchestrationJobDetails;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,17 +80,14 @@ public class PushOrchestrationWorker implements Runnable {
 
     private UUID jobId;
 
-    private Set<String> warnings;
-
     private final Logger logger = LogManager.getLogger(this.getClass());
 
     //=================================================================================================
     // methods
 
     //-------------------------------------------------------------------------------------------------
-    public PushOrchestrationWorker(final PushOrchestrationJobDetails jobDetails) {
-        this.jobId = jobDetails.getJobId();
-        this.warnings = jobDetails.getWarnings();
+    public PushOrchestrationWorker(final UUID jobId) {
+        this.jobId = jobId;
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -135,7 +132,7 @@ public class PushOrchestrationWorker implements Runnable {
             final SimpleOrchestrationRequest orchestrationRequest = mapper.readValue(subscription.getOrchestrationRequest(), SimpleOrchestrationRequest.class);
 
             final List<OrchestrationStore> orchResult = serviceOrchestration.orchestrate(jobId, job.getTargetSystem(), orchestrationRequest);
-            final OrchestrationResponseDTO result = dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(orchResult, warnings);
+            final OrchestrationResponseDTO result = dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(orchResult, orchestrationRequest.getWarnings());
 
             if (subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())
                     || subscription.getNotifyProtocol().equals(NotifyProtocol.HTTPS.name())) {

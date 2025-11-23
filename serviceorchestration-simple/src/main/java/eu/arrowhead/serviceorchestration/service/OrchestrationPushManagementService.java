@@ -20,17 +20,23 @@ package eu.arrowhead.serviceorchestration.service;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
+import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
+import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@Service
 public class OrchestrationPushManagementService {
 
     //=================================================================================================
@@ -38,6 +44,12 @@ public class OrchestrationPushManagementService {
 
     @Autowired
     private OrchestrationValidation validator;
+
+    @Autowired
+    private SubscriptionDbService subscriptionDbService;
+
+    @Autowired
+    private DTOConverter dtoConverter;
 
     private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -49,21 +61,23 @@ public class OrchestrationPushManagementService {
         logger.debug("pushSubscribeBulk started...");
 
         final List<Set<String>> warnings = new ArrayList<Set<String>>();
+        for (int i = 0; i < dto.subscriptions().size(); ++i) {
+            warnings.add(new HashSet<>());
+        }
 
-        // validate and normalize
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
-        final List<SimpleOrchestrationSubscriptionRequest> normalized = validator.validateAndNormalizePushSubscribeBulk(dto, warnings, origin);
+        final List<SimpleOrchestrationSubscriptionRequest> normalized = validator.validateAndNormalizePushSubscribeBulk(dto, origin);
 
-        /*try {
+        try {
             final List<Subscription> result;
-            synchronized (DynamicServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
-                result = subscriptionDbService.create(subscriptions);
+            synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+                result = subscriptionDbService.create(normalized, normalizedRequester);
             }
 
             return dtoConverter.convertSubscriptionListToDTO(result, result.size());
         } catch (final InternalServerError ex) {
             throw new InternalServerError(ex.getMessage(), origin);
-        }*/
+        }
     }
 
 }

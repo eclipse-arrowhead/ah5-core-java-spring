@@ -16,26 +16,31 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.dto;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
-import eu.arrowhead.dto.OrchestrationResponseDTO;
-import eu.arrowhead.dto.OrchestrationResultDTO;
+import eu.arrowhead.dto.*;
+import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
+import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
-import eu.arrowhead.dto.OrchestrationSimpleStoreResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
-
 import static org.hibernate.validator.internal.util.Contracts.assertTrue;
 
 @Service
@@ -43,6 +48,9 @@ public class DTOConverter {
 
 	//=================================================================================================
 	// members
+
+    @Autowired
+    private ObjectMapper mapper;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -61,7 +69,7 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityPageToResponseListTO(final Page<OrchestrationStore> results) {
-		logger.debug("convertStoreEntityPageToResponesListTO started...");
+		logger.debug("convertStoreEntityPageToResponseListTO started...");
 		Assert.notNull(results, "results is null");
 
 		return new OrchestrationSimpleStoreListResponseDTO(
@@ -97,6 +105,19 @@ public class DTOConverter {
         return new OrchestrationResponseDTO(responseDTOS, Utilities.isEmpty(warnings) ? null : warnings.stream().toList());
     }
 
+    //-------------------------------------------------------------------------------------------------
+    public OrchestrationSubscriptionListResponseDTO convertSubscriptionListToDTO(final List<Subscription> subscriptions, final long count) {
+        logger.debug("convertSubscriptionListToDTO started...");
+        Assert.notNull(subscriptions, "subscriptions list is null");
+
+        final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions
+                .stream()
+                .map(subscription -> convertSubscriptionToDTO(subscription))
+                .toList();
+
+        return new OrchestrationSubscriptionListResponseDTO(entries, count);
+    }
+
 	//=================================================================================================
 	// assistant methods
 
@@ -115,5 +136,61 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(entity.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(entity.getUpdatedAt()));
 	}
+
+    //-------------------------------------------------------------------------------------------------
+    private OrchestrationSubscriptionResponseDTO convertSubscriptionToDTO(final Subscription subscription) {
+        logger.debug("convertSubscriptionToDTO started...");
+        Assert.notNull(subscription, "subscription is null");
+
+        return new OrchestrationSubscriptionResponseDTO(
+                subscription.getId().toString(),
+                subscription.getOwnerSystem(),
+                subscription.getTargetSystem(),
+                createOrchestrationRequestDTO(subscription.getOrchestrationRequest()),
+                createOrchestrationNotifyInterfaceDTO(subscription.getNotifyProtocol(), subscription.getNotifyProperties()),
+                Utilities.convertZonedDateTimeToUTCString(subscription.getExpiresAt()),
+                Utilities.convertZonedDateTimeToUTCString(subscription.getCreatedAt()));
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private OrchestrationRequestDTO createOrchestrationRequestDTO(final String orchestrationRequestStr) {
+        logger.debug("createOrchestrationRequestDTO started...");
+
+        SimpleOrchestrationRequest simpleOrchestrationRequest = null;
+        try {
+              simpleOrchestrationRequest = mapper.readValue(orchestrationRequestStr, new TypeReference<Pair<SimpleOrchestrationRequest, Set<String>>>() {
+              }).getLeft();
+        } catch (final JsonProcessingException ex) {
+            logger.debug(ex);
+            throw new IllegalArgumentException("DTOconverter.createOrchestrationRequestDTO failed. Error: " + ex.getMessage());
+        }
+        OrchestrationServiceRequirementDTO serviceRequirementDTO = null;
+        if (simpleOrchestrationRequest.getServiceDefinition() != null || simpleOrchestrationRequest.getPreferredProviders() != null) {
+            serviceRequirementDTO = new OrchestrationServiceRequirementDTO(
+                    simpleOrchestrationRequest.getServiceDefinition(),null,null,null,null,null, null, null, null, simpleOrchestrationRequest.getPreferredProviders()
+            );
+        }
+        return new OrchestrationRequestDTO(
+                serviceRequirementDTO,
+                simpleOrchestrationRequest.getOrchestrationFlags(),
+                null,
+                null
+        );
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private OrchestrationNotifyInterfaceDTO createOrchestrationNotifyInterfaceDTO(final String protocol, final String propertiesStr) {
+        logger.debug("createOrchestrationNotifyInterfaceDTO started...");
+
+        final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
+        };
+
+        try {
+            return new OrchestrationNotifyInterfaceDTO(protocol, mapper.readValue(propertiesStr, typeReference));
+        } catch (final JsonProcessingException ex) {
+            logger.debug(ex);
+            throw new IllegalArgumentException("DTOconverter.createOrchestrationNotifyInterfaceDTO failed. Error: " + ex.getMessage());
+        }
+    }
 
 }

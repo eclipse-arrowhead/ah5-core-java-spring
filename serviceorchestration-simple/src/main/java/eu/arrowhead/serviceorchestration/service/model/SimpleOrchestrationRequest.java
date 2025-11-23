@@ -19,6 +19,7 @@ package eu.arrowhead.serviceorchestration.service.model;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SimpleOrchestrationRequest {
 
@@ -28,6 +29,7 @@ public class SimpleOrchestrationRequest {
     String serviceDefinition;
     List<String> preferredProviders;
     Map<String, Boolean> orchestrationFlags;
+    Set<String> warnings;
 
     //=================================================================================================
     // boilerplate
@@ -37,10 +39,11 @@ public class SimpleOrchestrationRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationRequest(final String serviceDefinition, final List<String> preferredProviders, final Map<String, Boolean> orchestrationFlags) {
+    public SimpleOrchestrationRequest(final String serviceDefinition, final List<String> preferredProviders, final Map<String, Boolean> orchestrationFlags, final Set<String> warnings) {
         this.serviceDefinition = serviceDefinition;
         this.preferredProviders = preferredProviders;
         this.orchestrationFlags = orchestrationFlags;
+        this.warnings = warnings;
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -49,7 +52,7 @@ public class SimpleOrchestrationRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public void setServiceDefinition(String serviceDefinition) {
+    public void setServiceDefinition(final String serviceDefinition) {
         this.serviceDefinition = serviceDefinition;
     }
 
@@ -59,7 +62,7 @@ public class SimpleOrchestrationRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public void setOrchestrationFlags(Map<String, Boolean> orchestrationFlags) {
+    public void setOrchestrationFlags(final Map<String, Boolean> orchestrationFlags) {
         this.orchestrationFlags = orchestrationFlags;
     }
 
@@ -69,7 +72,25 @@ public class SimpleOrchestrationRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public void setPreferredProviders(List<String> preferredProviders) {
+    public void setPreferredProviders(final List<String> preferredProviders) {
         this.preferredProviders = preferredProviders;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public Set<String> getWarnings() {
+        return warnings;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void setWarnings(final Set<String> warnings) {
+        this.warnings = warnings;
+    }
+
+    public void addWarning(final String warning) {
+        if (this.warnings == null) {
+            this.warnings = Set.of(warning);
+        } else {
+            this.warnings.add(warning);
+        }
     }
 }

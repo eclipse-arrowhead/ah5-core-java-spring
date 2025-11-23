@@ -31,10 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class SubscriptionDbService {
@@ -79,7 +76,7 @@ public class SubscriptionDbService {
                         expiresAt,
                         candidate.getNotifyInterface().protocol(),
                         Utilities.toJson(candidate.getNotifyInterface().properties()),
-                        Utilities.toJson(candidate.getOrchestrationRequest())));
+                        Utilities.toJson((candidate.getOrchestrationRequest()))));
             }
 
             if (!Utilities.isEmpty(toRemove)) {

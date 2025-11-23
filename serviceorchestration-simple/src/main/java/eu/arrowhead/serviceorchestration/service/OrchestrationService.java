@@ -34,7 +34,6 @@ import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationReques
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
-import eu.arrowhead.serviceorchestration.thread.model.PushOrchestrationJobDetails;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -64,7 +63,7 @@ public class OrchestrationService {
     private ServiceOrchestration serviceOrchestration;
 
     @Resource(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
-    private BlockingQueue<PushOrchestrationJobDetails> pushOrchJobQueue;
+    private BlockingQueue<UUID> pushOrchJobQueue;
 
     @Autowired
     private DTOConverter dtoConverter;
@@ -139,7 +138,7 @@ public class OrchestrationService {
                     dto.orchestrationRequest().serviceRequirement().serviceDefinition(),
                     response.getValue());
             orchJobDbService.create(List.of(orchestrationJob));
-            pushOrchJobQueue.add(new PushOrchestrationJobDetails(orchestrationJob.getId(), warnings));
+            pushOrchJobQueue.add(orchestrationJob.getId());
         }
 
         return response;

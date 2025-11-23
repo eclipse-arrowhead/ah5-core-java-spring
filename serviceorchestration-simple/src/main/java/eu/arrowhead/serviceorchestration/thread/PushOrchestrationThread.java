@@ -20,7 +20,6 @@ package eu.arrowhead.serviceorchestration.thread;
 import eu.arrowhead.serviceorchestration.BeanConfig;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
-import eu.arrowhead.serviceorchestration.thread.model.PushOrchestrationJobDetails;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.apache.logging.log4j.LogManager;
@@ -41,13 +40,13 @@ public class PushOrchestrationThread extends Thread {
     // members
 
     @Resource(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
-    private BlockingQueue<PushOrchestrationJobDetails> pushOrchJobQueue;
+    private BlockingQueue<UUID> pushOrchJobQueue;
 
     @Autowired
     private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
 
     @Autowired
-    private Function<PushOrchestrationJobDetails, PushOrchestrationWorker> pushOrchestrationWorkerFactory;
+    private Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory;
 
     private boolean doWork = false;
 
@@ -66,8 +65,8 @@ public class PushOrchestrationThread extends Thread {
         doWork = true;
         while (doWork) {
             try {
-                final PushOrchestrationJobDetails jobDetails = pushOrchJobQueue.take();
-                threadpool.execute(pushOrchestrationWorkerFactory.apply(jobDetails));
+                final UUID jobID = pushOrchJobQueue.take();
+                threadpool.execute(pushOrchestrationWorkerFactory.apply(jobID));
 
             } catch (final InterruptedException ex) {
                 logger.debug(ex);
