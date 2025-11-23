@@ -170,8 +170,7 @@ public class DTOConverter {
 
         SimpleOrchestrationRequest simpleOrchestrationRequest = null;
         try {
-              simpleOrchestrationRequest = mapper.readValue(orchestrationRequestStr, new TypeReference<Pair<SimpleOrchestrationRequest, Set<String>>>() {
-              }).getLeft();
+              simpleOrchestrationRequest = mapper.readValue(orchestrationRequestStr, SimpleOrchestrationRequest.class);
         } catch (final JsonProcessingException ex) {
             logger.debug(ex);
             throw new IllegalArgumentException("DTOconverter.createOrchestrationRequestDTO failed. Error: " + ex.getMessage());

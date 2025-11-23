@@ -19,10 +19,8 @@ package eu.arrowhead.serviceorchestration.service;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
-import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
-import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
-import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.common.service.PageService;
+import eu.arrowhead.dto.*;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
@@ -38,6 +36,7 @@ import jakarta.annotation.Resource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -61,6 +60,9 @@ public class OrchestrationPushManagementService {
 
     @Autowired
     private OrchestrationJobDbService orchJobDbService;
+
+    @Autowired
+    private PageService pageService;
 
     @Autowired
     private DTOConverter dtoConverter;
@@ -93,7 +95,7 @@ public class OrchestrationPushManagementService {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public OrchestrationPushJobListResponseDTO pushTrigger(String requesterSystem, OrchestrationPushTriggerDTO dto, String origin) {
+    public OrchestrationPushJobListResponseDTO pushTrigger(final String requesterSystem, OrchestrationPushTriggerDTO dto, final String origin) {
         logger.debug("pushTrigger started...");
 
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
@@ -150,6 +152,22 @@ public class OrchestrationPushManagementService {
             existingJobs.addAll(saved);
 
             return dtoConverter.convertOrchestrationJobListToDTO(existingJobs);
+        } catch (final InternalServerError ex) {
+            throw new InternalServerError(ex.getMessage(), origin);
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public OrchestrationSubscriptionListResponseDTO queryPushSubscriptions(final OrchestrationSubscriptionQueryRequestDTO dto, final String origin) {
+        logger.debug("queryPushSubscriptions started...");
+
+        final OrchestrationSubscriptionQueryRequestDTO normalized = validator.validateAndNormalizeQueryPushSubscriptionsService(dto, origin);
+        final PageRequest pageRequest = pageService.getPageRequest(normalized.pagination(), Sort.Direction.DESC, Subscription.SORTABLE_FIELDS_BY, Subscription.DEFAULT_SORT_FIELD, origin);
+
+        try {
+            final Page<Subscription> results = subscriptionDbService.query(normalized.ownerSystems(), normalized.targetSystems(), normalized.serviceDefinitions(), pageRequest);
+
+            return dtoConverter.convertSubscriptionListToDTO(results.getContent(), results.getTotalElements());
         } catch (final InternalServerError ex) {
             throw new InternalServerError(ex.getMessage(), origin);
         }

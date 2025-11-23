@@ -156,8 +156,7 @@ public class OrchestrationPushManagementAPI {
         final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH
                 + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH;
 
-        throw new NotImplementedException();
-        //return pushService.queryPushSubscriptions(dto, origin);
+        return pushService.queryPushSubscriptions(dto, origin);
     }
 
 }
