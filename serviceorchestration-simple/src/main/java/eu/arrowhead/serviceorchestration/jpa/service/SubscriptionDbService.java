@@ -22,10 +22,13 @@ import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.repository.SubscriptionRepository;
+import eu.arrowhead.serviceorchestration.service.enums.BaseFilter;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -110,11 +113,26 @@ public class SubscriptionDbService {
 
     //-------------------------------------------------------------------------------------------------
     public Optional<Subscription> get(final UUID id) {
-        logger.debug("get started..");
+        logger.debug("get started...");
         Assert.notNull(id, "subscription id is null");
 
         try {
             return subscriptionRepo.findById(id);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public List<Subscription> get(final List<UUID> ids) {
+        logger.debug("get started...");
+        Assert.isTrue(!Utilities.isEmpty(ids), "subscription id list is empty");
+        Assert.isTrue(!Utilities.containsNull(ids), "subscription id list contains null element");
+
+        try {
+            return subscriptionRepo.findAllById(ids);
         } catch (final Exception ex) {
             logger.error(ex.getMessage());
             logger.debug(ex);
@@ -137,6 +155,54 @@ public class SubscriptionDbService {
             }
 
             return false;
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public Page<Subscription> query(final List<String> ownerSystems, final List<String> targetSystems, final List<String> serviceDefinitions, final PageRequest pagination) {
+        logger.debug("query started..");
+        Assert.notNull(pagination, "pagination is null");
+
+        try {
+            BaseFilter baseFilter = BaseFilter.NONE;
+            List<Subscription> toFilter;
+
+            if (!Utilities.isEmpty(ownerSystems)) {
+                toFilter = subscriptionRepo.findAllByOwnerSystemIn(ownerSystems);
+                baseFilter = BaseFilter.OWNER;
+            } else if (!Utilities.isEmpty(targetSystems)) {
+                toFilter = subscriptionRepo.findAllByTargetSystemIn(targetSystems);
+                baseFilter = BaseFilter.TARGET;
+            } else if (!Utilities.isEmpty(serviceDefinitions)) {
+                toFilter = subscriptionRepo.findAllByServiceDefinitionIn(serviceDefinitions);
+                baseFilter = BaseFilter.SERVICE;
+            } else {
+                return subscriptionRepo.findAll(pagination);
+            }
+
+            final List<UUID> matchingIds = new ArrayList<>();
+            for (final Subscription subscription : toFilter) {
+                boolean matching = true;
+
+                // No need to check owners, because it is the base filter if not empty
+
+                if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(subscription.getTargetSystem())) {
+                    matching = false;
+
+                } else if (baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(serviceDefinitions) && !serviceDefinitions.contains(subscription.getServiceDefinition())) {
+                    matching = false;
+                }
+
+                if (matching) {
+                    matchingIds.add(subscription.getId());
+                }
+            }
+
+            return subscriptionRepo.findAllByIdIn(matchingIds, pagination);
         } catch (final Exception ex) {
             logger.error(ex.getMessage());
             logger.debug(ex);

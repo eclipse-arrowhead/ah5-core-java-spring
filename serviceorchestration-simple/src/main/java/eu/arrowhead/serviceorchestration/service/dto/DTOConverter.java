@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.dto.*;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import org.apache.commons.lang3.tuple.Pair;
@@ -118,6 +119,17 @@ public class DTOConverter {
         return new OrchestrationSubscriptionListResponseDTO(entries, count);
     }
 
+    //-------------------------------------------------------------------------------------------------
+    public OrchestrationPushJobListResponseDTO convertOrchestrationJobListToDTO(final List<OrchestrationJob> jobs) {
+        logger.debug("convertOrchestrationJobListToDTO started...");
+        Assert.notNull(jobs, "job list is null");
+
+        return new OrchestrationPushJobListResponseDTO(jobs
+                .stream()
+                .map(j -> convertOrchestrationJobToDTO(j))
+                .toList());
+    }
+
 	//=================================================================================================
 	// assistant methods
 
@@ -191,6 +203,25 @@ public class DTOConverter {
             logger.debug(ex);
             throw new IllegalArgumentException("DTOconverter.createOrchestrationNotifyInterfaceDTO failed. Error: " + ex.getMessage());
         }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private OrchestrationJobDTO convertOrchestrationJobToDTO(final OrchestrationJob job) {
+        logger.debug("convertOrchestrationJobToDTO started...");
+        Assert.notNull(job, "job is null");
+
+        return new OrchestrationJobDTO(
+                job.getId().toString(),
+                job.getStatus().name(),
+                job.getType().name(),
+                job.getRequesterSystem(),
+                job.getTargetSystem(),
+                job.getServiceDefinition(),
+                job.getSubscriptionId(),
+                job.getMessage(),
+                Utilities.convertZonedDateTimeToUTCString(job.getCreatedAt()),
+                Utilities.convertZonedDateTimeToUTCString(job.getStartedAt()),
+                Utilities.convertZonedDateTimeToUTCString(job.getFinishedAt()));
     }
 
 }

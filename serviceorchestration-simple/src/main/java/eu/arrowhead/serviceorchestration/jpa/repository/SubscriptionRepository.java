@@ -16,9 +16,12 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.jpa.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import eu.arrowhead.common.jpa.RefreshableRepository;
@@ -33,5 +36,15 @@ public interface SubscriptionRepository extends RefreshableRepository<Subscripti
     //-------------------------------------------------------------------------------------------------
     public Optional<Subscription> findByOwnerSystemAndTargetSystemAndServiceDefinition(final String ownerSystem, final String targetSystem, final String serviceDefinition);
 
+    //-------------------------------------------------------------------------------------------------
+    public List<Subscription> findAllByOwnerSystemIn(final List<String> ownerSystems);
 
+    //-------------------------------------------------------------------------------------------------
+    public List<Subscription> findAllByTargetSystemIn(final List<String> targetSystems);
+
+    //-------------------------------------------------------------------------------------------------
+    public List<Subscription> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
+
+    //-------------------------------------------------------------------------------------------------
+    public Page<Subscription> findAllByIdIn(final List<UUID> ids, final Pageable pagination);
 }
