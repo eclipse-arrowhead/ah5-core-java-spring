@@ -15,7 +15,7 @@
  *
  *******************************************************************************/
 
-package eu.arrowhead.serviceorchestration.service.normalization;
+package eu.arrowhead.serviceorchestration.service.normalization.utils;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;

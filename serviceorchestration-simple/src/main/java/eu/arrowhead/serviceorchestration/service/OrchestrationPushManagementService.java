@@ -18,23 +18,23 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
+import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationPushTrigger;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
-import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationPushManagementServiceValidation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class OrchestrationPushManagementService {
@@ -43,7 +43,7 @@ public class OrchestrationPushManagementService {
     // members
 
     @Autowired
-    private OrchestrationValidation validator;
+    private OrchestrationPushManagementServiceValidation validator;
 
     @Autowired
     private SubscriptionDbService subscriptionDbService;
@@ -60,11 +60,6 @@ public class OrchestrationPushManagementService {
     public OrchestrationSubscriptionListResponseDTO pushSubscribeBulk(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
         logger.debug("pushSubscribeBulk started...");
 
-        final List<Set<String>> warnings = new ArrayList<Set<String>>();
-        for (int i = 0; i < dto.subscriptions().size(); ++i) {
-            warnings.add(new HashSet<>());
-        }
-
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
         final List<SimpleOrchestrationSubscriptionRequest> normalized = validator.validateAndNormalizePushSubscribeBulk(dto, origin);
 
@@ -80,4 +75,11 @@ public class OrchestrationPushManagementService {
         }
     }
 
+    //-------------------------------------------------------------------------------------------------
+    public OrchestrationPushJobListResponseDTO pushTrigger(String requesterSystem, OrchestrationPushTriggerDTO dto, String origin) {
+        logger.debug("pushTrigger started...");
+
+        final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
+        final NormalizedOrchestrationPushTrigger normalizedTrigger = validator.validateAndNormalizePushTrigger(dto, origin);
+    }
 }

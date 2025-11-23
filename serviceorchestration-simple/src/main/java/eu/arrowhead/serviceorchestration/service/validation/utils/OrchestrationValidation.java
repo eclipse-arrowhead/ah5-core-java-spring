@@ -15,7 +15,7 @@
  *
  *******************************************************************************/
 
-package eu.arrowhead.serviceorchestration.service.validation;
+package eu.arrowhead.serviceorchestration.service.validation.utils;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
@@ -33,7 +33,7 @@ import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstant
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
-import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationNormalization;
+import eu.arrowhead.serviceorchestration.service.normalization.utils.OrchestrationNormalization;
 import io.swagger.v3.oas.models.PathItem;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -70,10 +70,8 @@ public class OrchestrationValidation {
     // methods
 
     //-------------------------------------------------------------------------------------------------
-    public String validateAndNormalizeRequester(final String requesterSystemName, final String origin) {
-        logger.debug("validateAndNormalizeRequester started...");
-
-        final String normalized = systemNameNormalizer.normalize(requesterSystemName);
+    public String validateAndNormalizeSystemName(final String systemName, final String origin) {
+        final String normalized = systemNameNormalizer.normalize(systemName);
         try {
             systemNameValidator.validateSystemName(normalized);
         } catch (final InvalidParameterException ex) {
@@ -84,17 +82,15 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public UUID validateAndNormalizeUUID(final String uuid, final String origin) {
-        logger.debug("validateAndNormalizeUUID started...");
 
         validateSubscriptionId(uuid, origin);
         return normalizer.normalizeSubscriptionId(uuid);
     }
 
     //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationRequest validateAndNormalizePull(final OrchestrationRequestDTO dto, final Set<String> warnings, final String origin) {
-        logger.debug("validateAndNormalizePull started...");
+    public SimpleOrchestrationRequest validateAndNormalizeOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
 
-        final SimpleOrchestrationRequest request = validatePull(dto, origin);
+        final SimpleOrchestrationRequest request = validateSimpleOrchestrationRequest(dto, origin);
         normalizer.normalizePull(request);
 
         try {
@@ -120,14 +116,13 @@ public class OrchestrationValidation {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final Set<String> warnings, final String origin) {
-        logger.debug("validateAndNormalizePushSubscribe started...");
+    public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
 
         final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, origin);
         normalizer.normalizeSubscribe(subscriptionRequest);
 
         // target system name
-        final String normalizedRequesterSystemName = validateAndNormalizeRequester(requesterSystemName, origin);
+        final String normalizedRequesterSystemName = validateAndNormalizeSystemName(requesterSystemName, origin);
 
         if (Utilities.isEmpty(subscriptionRequest.getTargetSystemName())) {
             subscriptionRequest.setTargetSystemName(normalizedRequesterSystemName);
@@ -137,7 +132,7 @@ public class OrchestrationValidation {
         systemNameValidator.validateSystemName(subscriptionRequest.getTargetSystemName());
 
         // orchestration request
-        validateOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), origin);
+        validateSimpleOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), origin);
 
         // notify interface
         validateNotifyInterface(subscriptionRequest.getNotifyInterface(), origin);
@@ -147,7 +142,6 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
-        logger.debug("validateAndNormalizePushSubscribeBulk started...");
 
         final List<SimpleOrchestrationSubscriptionRequest> normalized = new ArrayList<>(dto.subscriptions().size());
 
@@ -155,7 +149,7 @@ public class OrchestrationValidation {
             final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribeBulk(dto.subscriptions().get(i), origin);
             normalizer.normalizeSubscribe(subscriptionRequest);
             systemNameValidator.validateSystemName(subscriptionRequest.getTargetSystemName());
-            validateOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), origin);
+            validateSimpleOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), origin);
             validateNotifyInterface(subscriptionRequest.getNotifyInterface(), origin);
             normalized.add(subscriptionRequest);
         }
@@ -177,8 +171,7 @@ public class OrchestrationValidation {
     // assistant methods
 
     //-----------------------------------------------------------------------------------------------
-    private SimpleOrchestrationRequest validatePull(final OrchestrationRequestDTO dto, final String origin) {
-        logger.debug("validatePull started...");
+    private SimpleOrchestrationRequest validateSimpleOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
 
         SimpleOrchestrationRequest simpleOrchestrationRequest = new SimpleOrchestrationRequest(null, null, null, null);
 
@@ -265,7 +258,6 @@ public class OrchestrationValidation {
 
     //-----------------------------------------------------------------------------------------------
     private SimpleOrchestrationSubscriptionRequest validatePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String origin) {
-        logger.debug("validatePushSubscribe started...");
 
         if (dto == null) {
             throw new InvalidParameterException("Request payload is missing");
@@ -276,7 +268,7 @@ public class OrchestrationValidation {
             throw new InvalidParameterException("Orchestration request is missing", origin);
         }
 
-        final SimpleOrchestrationRequest validatedOrchestrationRequest = validateOrchestrationRequest(dto.orchestrationRequest(), origin);
+        final SimpleOrchestrationRequest validatedOrchestrationRequest = validateSimpleOrchestrationRequest(dto.orchestrationRequest(), origin);
 
         // notify interface
         if (Utilities.isEmpty(dto.notifyInterface().protocol())) {
@@ -315,7 +307,7 @@ public class OrchestrationValidation {
 
 
     //-----------------------------------------------------------------------------------------------
-    private void validateOrchestrationRequest(final SimpleOrchestrationRequest request, final String origin) {
+    private void validateSimpleOrchestrationRequest(final SimpleOrchestrationRequest request, final String origin) {
         try {
             if (!Utilities.isEmpty(request.getServiceDefinition())) {
                 serviceDefNameValidator.validateServiceDefinitionName(request.getServiceDefinition());
@@ -387,13 +379,7 @@ public class OrchestrationValidation {
     }
 
     //-------------------------------------------------------------------------------------------------
-    private SimpleOrchestrationRequest validateOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
-        return validatePull(dto, origin);
-    }
-
-    //-------------------------------------------------------------------------------------------------
     private void validateNormalizedNotifyPropertiesForHTTP(final Map<String, String> props, final String origin) {
-        logger.debug("validateNormalizedNotifyPropertiesForHTTP started...");
 
         if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS)) {
             throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS + " property", origin);
@@ -429,7 +415,6 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     private void validateNormalizedNotifyPropertiesForMQTT(final Map<String, String> props, final String origin) {
-        logger.debug("validateNormalizedNotifyPropertiesForMQTT...");
 
         // Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results, so no address and port is required.
 
@@ -440,7 +425,6 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     private void validateSubscriptionId(final String uuid, final String origin) {
-        logger.debug("validateSubscriptionId started...");
 
         if (Utilities.isEmpty(uuid)) {
             throw new InvalidParameterException("UUID is missing", origin);

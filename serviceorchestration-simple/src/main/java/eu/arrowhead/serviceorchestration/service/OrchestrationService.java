@@ -33,7 +33,7 @@ import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
-import eu.arrowhead.serviceorchestration.service.validation.OrchestrationValidation;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationServiceValidation;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +51,7 @@ public class OrchestrationService {
 	// members
 
     @Autowired
-    private OrchestrationValidation validator;
+    private OrchestrationServiceValidation validator;
 
     @Autowired
     private OrchestrationJobDbService orchJobDbService;
@@ -81,7 +81,7 @@ public class OrchestrationService {
 
         // validate and normalize
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
-        final SimpleOrchestrationRequest normalized = validator.validateAndNormalizePull(dto, warnings, origin);
+        final SimpleOrchestrationRequest normalized = validator.validateAndNormalizePull(dto, origin);
 
         try {
 
@@ -110,10 +110,8 @@ public class OrchestrationService {
     public Pair<Boolean, String> pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionRequestDTO dto, final Boolean trigger, final String origin) {
         logger.debug("pushSubscribe started...");
 
-        final Set<String> warnings = new HashSet<>();
-
         // validate and normalize
-        final SimpleOrchestrationSubscriptionRequest normalized = validator.validateAndNormalizePushSubscribe(dto, requesterSystem, warnings, origin);
+        final SimpleOrchestrationSubscriptionRequest normalized = validator.validateAndNormalizePushSubscribe(dto, requesterSystem, origin);
 
         // save subscription
         Pair<Boolean, String> response = null;
@@ -149,7 +147,7 @@ public class OrchestrationService {
         logger.debug("pushUnsubscribe started...");
 
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
-        final UUID normalizedSubscriptionId = validator.validateAndNormalizeUUID(subscriptionId, origin);
+        final UUID normalizedSubscriptionId = validator.validateAndNormalizePushUnsubscribe(subscriptionId, origin);
 
         synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
             final Optional<Subscription> recordOpt = subscriptionDbService.get(normalizedSubscriptionId);

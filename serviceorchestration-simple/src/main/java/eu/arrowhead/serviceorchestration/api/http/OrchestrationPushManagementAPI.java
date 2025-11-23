@@ -107,8 +107,7 @@ public class OrchestrationPushManagementAPI {
                 + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_TRIGGER_PATH;
         final String requesterSystem = preprocessor.process(httpServletRequest, origin);
 
-        throw new NotImplementedException();
-        //return pushService.pushTrigger(requesterSystem, dto, origin);
+        return pushService.pushTrigger(requesterSystem, dto, origin);
     }
 
     //-------------------------------------------------------------------------------------------------
