@@ -227,4 +227,23 @@ public class SubscriptionDbService {
         }
     }
 
+    //-------------------------------------------------------------------------------------------------
+    @Transactional(rollbackFor = ArrowheadException.class)
+    public void deleteInBatchByExpiredBefore(final ZonedDateTime time) {
+        logger.debug("deleteInBatchByExpiredBefore started...");
+        Assert.notNull(time, "time is null");
+
+        try {
+            final List<Subscription> toDelete = subscriptionRepo.findAllByExpiresAtBefore(time);
+            if (!Utilities.isEmpty(toDelete)) {
+                subscriptionRepo.deleteAllInBatch(toDelete);
+                subscriptionRepo.flush();
+            }
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
 }

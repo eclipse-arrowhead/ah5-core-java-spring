@@ -34,10 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class OrchestrationJobDbService {
@@ -76,6 +73,21 @@ public class OrchestrationJobDbService {
 
         try {
             return jobRepo.findById(id);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public List<OrchestrationJob> getAllByStatusIn(final List<OrchestrationJobStatus> statuses) {
+        logger.debug("getAllByStatusIn started...");
+        Assert.isTrue(!Utilities.isEmpty(statuses), "status list is empty");
+        Assert.isTrue(!Utilities.containsNull(statuses), "status list contains null element");
+
+        try {
+            return jobRepo.findAllByStatusIn(statuses);
         } catch (final Exception ex) {
             logger.error(ex.getMessage());
             logger.debug(ex);
@@ -213,6 +225,23 @@ public class OrchestrationJobDbService {
             }
 
             return jobRepo.findAllByIdIn(matchingIds, pagination);
+        } catch (final Exception ex) {
+            logger.error(ex.getMessage());
+            logger.debug(ex);
+            throw new InternalServerError("Database operation error");
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    @Transactional(rollbackFor = ArrowheadException.class)
+    public void deleteInBatch(final Collection<UUID> ids) {
+        logger.debug("deleteInBatch started...");
+        Assert.isTrue(!Utilities.isEmpty(ids), "job id list is empty");
+        Assert.isTrue(!Utilities.containsNull(ids), "job id list contains null element");
+
+        try {
+            jobRepo.deleteAllByIdInBatch(ids);
+            jobRepo.flush();
         } catch (final Exception ex) {
             logger.error(ex.getMessage());
             logger.debug(ex);

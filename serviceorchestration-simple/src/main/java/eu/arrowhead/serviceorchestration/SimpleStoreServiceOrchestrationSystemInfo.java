@@ -39,6 +39,9 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
     @Value(SimpleStoreServiceOrchestrationConstants.$PUSH_ORCHESTRATION_MAX_THREAD_WD)
     private int pushOrchestrationMaxThread;
 
+    @Value(SimpleStoreServiceOrchestrationConstants.$ORCHESTRATION_HISTORY_MAX_AGE_WD)
+    private int orchestrationHistoryMaxAge;
+
 	//=================================================================================================
 	// methods
 
@@ -76,6 +79,11 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
     //-------------------------------------------------------------------------------------------------
     public int getPushOrchestrationMaxThread() {
         return pushOrchestrationMaxThread;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public int getOrchestrationHistoryMaxAge() {
+        return orchestrationHistoryMaxAge;
     }
 
 	//=================================================================================================

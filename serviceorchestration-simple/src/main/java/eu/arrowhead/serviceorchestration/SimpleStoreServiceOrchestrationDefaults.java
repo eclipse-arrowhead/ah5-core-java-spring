@@ -24,6 +24,8 @@ public final class SimpleStoreServiceOrchestrationDefaults extends Defaults {
 	// members
 
     public static final String PUSH_ORCHESTRATION_MAX_THREAD_DEFAULT = "5";
+    public static final String CLEANER_JOB_INTERVAL_DEFAULT = "30000";
+    public static final String ORCHESTRATION_HISTORY_MAX_AGE_DEFAULT = "15";
 
 	//=================================================================================================
 	// assistant methods

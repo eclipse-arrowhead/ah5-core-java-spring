@@ -78,11 +78,19 @@ public final class SimpleStoreServiceOrchestrationConstants {
     public static final String NOTIFY_KEY_PATH = "path";
     public static final String NOTIFY_KEY_TOPIC = "topic";
 
+    // Quartz related
+    public static final String CLEANER_TRIGGER = "dynamicOrchestrationCleanerTrigger";
+    public static final String CLEANER_JOB = "dynamicOrchestrationCleanerJob";
+
     public static final Object SYNC_LOCK_SUBSCRIPTION = new Object();
     public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";
 
     public static final String PUSH_ORCHESTRATION_MAX_THREAD = "push.orchestration.max.thread";
+    public static final String CLEANER_JOB_INTERVAL = "cleaner.job.interval";
+    public static final String $CLEANER_JOB_INTERVAL_WD = "${" + CLEANER_JOB_INTERVAL + ":" + SimpleStoreServiceOrchestrationDefaults.CLEANER_JOB_INTERVAL_DEFAULT + "}";
+    public static final String ORCHESTRATION_HISTORY_MAX_AGE = "orchestration.history.max.age";
     public static final String $PUSH_ORCHESTRATION_MAX_THREAD_WD = "${" + PUSH_ORCHESTRATION_MAX_THREAD + ":" + SimpleStoreServiceOrchestrationDefaults.PUSH_ORCHESTRATION_MAX_THREAD_DEFAULT + "}";
+    public static final String $ORCHESTRATION_HISTORY_MAX_AGE_WD = "${" + ORCHESTRATION_HISTORY_MAX_AGE + ":" + SimpleStoreServiceOrchestrationDefaults.ORCHESTRATION_HISTORY_MAX_AGE_DEFAULT + "}";
 
 
     //=================================================================================================
