@@ -209,5 +209,7 @@ public class OrchestrationPushManagementServiceValidation {
         if (Utilities.isEmpty(ids)) {
             throw new InvalidParameterException("Request payload is missing", origin);
         }
+
+        // null or empty check happens in validateAndNormalizeUUID
     }
 }

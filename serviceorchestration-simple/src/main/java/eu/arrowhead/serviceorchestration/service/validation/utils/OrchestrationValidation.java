@@ -82,9 +82,8 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public UUID validateAndNormalizeUUID(final String uuid, final String origin) {
-
-        validateSubscriptionId(uuid, origin);
-        return normalizer.normalizeSubscriptionId(uuid);
+        validateUUID(uuid, origin);
+        return normalizer.normalizeUUID(uuid);
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -165,6 +164,18 @@ public class OrchestrationValidation {
         });
 
         return normalized;
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    public void validateUUID(final String uuid, final String origin) {
+
+        if (Utilities.isEmpty(uuid)) {
+            throw new InvalidParameterException("UUID is missing", origin);
+        }
+
+        if (!Utilities.isUUID(uuid)) {
+            throw new InvalidParameterException("Invalid UUID id", origin);
+        }
     }
 
     //=================================================================================================
@@ -420,18 +431,6 @@ public class OrchestrationValidation {
 
         if (!props.containsKey(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC)) {
             throw new InvalidParameterException("Notify properties has no " + SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC + " member", origin);
-        }
-    }
-
-    //-------------------------------------------------------------------------------------------------
-    private void validateSubscriptionId(final String uuid, final String origin) {
-
-        if (Utilities.isEmpty(uuid)) {
-            throw new InvalidParameterException("UUID is missing", origin);
-        }
-
-        if (!Utilities.isUUID(uuid)) {
-            throw new InvalidParameterException("Invalid subscription id", origin);
         }
     }
 }

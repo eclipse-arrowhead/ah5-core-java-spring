@@ -136,7 +136,7 @@ public class OrchestrationJobDbService {
             final List<String> requesterSystems,
             final List<String> targetSystems,
             final List<String> serviceDefinitions,
-            final List<String> subscriptionIds,
+            final List<UUID> subscriptionIds,
             final PageRequest pagination) {
         logger.debug("query started...");
         Assert.notNull(pagination, "pagination is null");

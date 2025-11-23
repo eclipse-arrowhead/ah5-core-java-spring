@@ -132,7 +132,7 @@ public class OrchestrationPushManagementService {
                                         List.of(),
                                         List.of(),
                                         null,
-                                        List.of(subscription.getId().toString()),
+                                        List.of(subscription.getId()),
                                 PageRequest.of(0, Integer.MAX_VALUE, Sort.Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD))
                         .toList();
 

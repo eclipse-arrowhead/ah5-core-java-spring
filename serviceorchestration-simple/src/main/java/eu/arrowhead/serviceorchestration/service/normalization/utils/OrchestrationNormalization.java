@@ -92,8 +92,9 @@ public class OrchestrationNormalization {
         toNormalize.setNotifyInterface(new OrchestrationNotifyInterfaceDTO(normalizedProtocol, normalizedNotifyProps));
     }
 
-    public UUID normalizeSubscriptionId(String uuid) {
-        logger.debug("normalizeSubscriptionId started...");
+    //-------------------------------------------------------------------------------------------------
+    public UUID normalizeUUID(String uuid) {
+        logger.debug("normalizeUUID started...");
 
         return UUID.fromString(uuid.trim());
     }
