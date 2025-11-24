@@ -66,13 +66,12 @@ public interface TokenHeaderRepository extends RefreshableRepository<TokenHeader
 	public Optional<TokenHeader> findByProviderAndTokenHash(final String provider, final String tokenHash);
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
+	public Optional<TokenHeader> findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(
 			final String consumerCloud,
-			final String consumer,
+			final String counsumer,
 			final String provider,
-			final AuthorizationTargetType targetType,
 			final String target,
-			final String scope);
+			final AuthorizationTargetType targetType);
 
 	//-------------------------------------------------------------------------------------------------
 	public Page<TokenHeader> findAllByIdIn(final Collection<Long> ids, final Pageable pageble);

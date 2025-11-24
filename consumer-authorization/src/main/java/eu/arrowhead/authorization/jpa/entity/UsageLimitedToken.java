@@ -16,8 +16,6 @@
  *******************************************************************************/
 package eu.arrowhead.authorization.jpa.entity;
 
-import java.util.Objects;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -110,30 +108,5 @@ public class UsageLimitedToken {
 	//-------------------------------------------------------------------------------------------------
 	public void setUsageLeft(final int usageLeft) {
 		this.usageLeft = usageLeft;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public int hashCode() {
-		return Objects.hash(id);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
-			return true;
-		}
-
-		if (obj == null) {
-			return false;
-		}
-
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-
-		final UsageLimitedToken other = (UsageLimitedToken) obj;
-		return id == other.id;
 	}
 }

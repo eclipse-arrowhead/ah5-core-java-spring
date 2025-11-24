@@ -76,20 +76,13 @@ public class SelfContainedTokenDbService {
 		Assert.isTrue(!Utilities.isEmpty(consumer), "consumer is empty");
 		Assert.isTrue(!Utilities.isEmpty(provider), "provider is empty");
 		Assert.notNull(targetType, "targetType is null");
-		Assert.isTrue(!Utilities.isEmpty(target), "target is empty");
+		Assert.isTrue(!Utilities.isEmpty(target), "serviceDefinition is empty");
 		Assert.isTrue(!Utilities.isEmpty(variant), "variant is empty");
 		Assert.notNull(expiresAt, "expiresAt is null");
 
 		try {
 			boolean override = false;
-			final String actScope = Utilities.isEmpty(scope) ? null : scope;
-			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetTypeAndTargetAndScope(
-					consumerCloud,
-					consumer,
-					provider,
-					targetType,
-					target,
-					actScope);
+			final Optional<TokenHeader> tokenHeaderOpt = tokenHeaderRepo.findByConsumerCloudAndConsumerAndProviderAndTargetAndTargetType(consumerCloud, consumer, provider, target, targetType);
 			if (tokenHeaderOpt.isPresent()) {
 				final Optional<SelfContainedToken> tokenOpt = tokenRepo.findByHeader(tokenHeaderOpt.get());
 				if (tokenOpt.isPresent()) {
@@ -99,7 +92,7 @@ public class SelfContainedTokenDbService {
 				tokenHeaderRepo.delete(tokenHeaderOpt.get());
 			}
 
-			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, actScope));
+			final TokenHeader tokenHeaderRecord = tokenHeaderRepo.saveAndFlush(new TokenHeader(tokenType, tokenHash, requester, consumerCloud, consumer, provider, targetType, target, scope));
 			final SelfContainedToken tokenRecord = tokenRepo.saveAndFlush(new SelfContainedToken(tokenHeaderRecord, variant, expiresAt));
 
 			return Pair.of(tokenRecord, !override);
@@ -115,12 +108,6 @@ public class SelfContainedTokenDbService {
 		logger.debug("getByHeader started...");
 		Assert.notNull(header, "header is null");
 
-		try {
-			return tokenRepo.findByHeader(header);
-		} catch (final Exception ex) {
-			logger.error(ex.getMessage());
-			logger.debug(ex);
-			throw new InternalServerError("Database operation error");
-		}
+		return tokenRepo.findByHeader(header);
 	}
 }

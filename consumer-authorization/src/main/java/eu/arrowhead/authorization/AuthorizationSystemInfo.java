@@ -344,7 +344,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 	private InterfaceModel getHttpServiceInterfaceForAuthorizationTokenManagement() {
 		final String templateName = getSslProperties().isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
 
-		final HttpOperationModel generateTokens = new HttpOperationModel.Builder()
+		final HttpOperationModel gereateTokens = new HttpOperationModel.Builder()
 				.method(HttpMethod.POST.name())
 				.path(AuthorizationConstants.HTTP_API_OP_GENERATE_PATH)
 				.build();
@@ -367,7 +367,7 @@ public class AuthorizationSystemInfo extends SystemInfo {
 
 		return new HttpInterfaceModel.Builder(templateName, getDomainAddress(), getServerPort())
 				.basePath(AuthorizationConstants.HTTP_API_MANAGEMENT_PATH + AuthorizationConstants.HTTP_API_TOKEN_SUB_PATH)
-				.operation(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS, generateTokens)
+				.operation(Constants.SERVICE_OP_AUTHORIZATION_GENERATE_TOKENS, gereateTokens)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_QUERY_TOKENS, queryTokens)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_REVOKE_TOKENS, revokeTokens)
 				.operation(Constants.SERVICE_OP_AUTHORIZATION_ADD_ENCRYPTION_KEYS, addEncryptionKeys)

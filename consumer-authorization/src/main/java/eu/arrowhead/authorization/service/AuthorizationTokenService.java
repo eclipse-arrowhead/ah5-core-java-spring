@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
 
 import eu.arrowhead.authorization.AuthorizationSystemInfo;
 import eu.arrowhead.authorization.jpa.service.EncryptionKeyDbService;
@@ -91,7 +90,6 @@ public class AuthorizationTokenService {
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenGenerationResponseDTO generate(final String requesterSystem, final AuthorizationTokenGenerationRequestDTO dto, final String origin) {
 		logger.debug("generate started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final AuthorizationTokenGenerationRequestDTO normalizedDTO = validator.validateAndNormalizeGenerateRequest(dto, origin);
@@ -133,7 +131,6 @@ public class AuthorizationTokenService {
 	//-------------------------------------------------------------------------------------------------
 	public AuthorizationTokenVerifyResponseDTO verify(final String requesterSystem, final String token, final String origin) {
 		logger.debug("verify started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final String normalizedToken = validator.validateAndNormalizeToken(token, origin);
@@ -145,7 +142,6 @@ public class AuthorizationTokenService {
 	//-------------------------------------------------------------------------------------------------
 	public String getPublicKey(final String origin) {
 		logger.debug("registerEncryptionKey started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final Optional<Object> pubKeyOpt = Optional.ofNullable(arrowheadContext.get(Constants.SERVER_PUBLIC_KEY));
 		if (pubKeyOpt.isEmpty()) {
@@ -160,7 +156,6 @@ public class AuthorizationTokenService {
 	//-------------------------------------------------------------------------------------------------
 	public String registerEncryptionKey(final String requesterSystem, final AuthorizationEncryptionKeyRegistrationRequestDTO dto, final String origin) {
 		logger.debug("registerEncryptionKey started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 		final AuthorizationEncryptionKeyRegistrationRequestDTO normalizedDTO = validator.validateAndNormalizeRegisterEncryptionKeyRequest(dto, origin);
@@ -197,7 +192,6 @@ public class AuthorizationTokenService {
 	//-------------------------------------------------------------------------------------------------
 	public boolean unregisterEncryptionKey(final String requesterSystem, final String origin) {
 		logger.debug("unregisterEncryptionKey started...");
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalizedRequester = validator.validateAndNormalizeSystemName(requesterSystem, origin);
 

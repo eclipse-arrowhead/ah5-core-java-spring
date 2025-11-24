@@ -37,7 +37,7 @@ public class AuthorizationApplicationInitListener extends ApplicationInitListene
 		final AuthorizationSystemInfo authSysInfo = (AuthorizationSystemInfo) sysInfo;
 
 		if (Utilities.isEmpty(authSysInfo.getSecretCryptographerKey())) {
-			throw new InvalidParameterException("secret.cryptographer.key property is empty");
+			throw new InvalidParameterException("secret.cryptographer.key property is empty.");
 		}
 
 		final byte[] cryptoKeyBytes = authSysInfo.getSecretCryptographerKey().getBytes();

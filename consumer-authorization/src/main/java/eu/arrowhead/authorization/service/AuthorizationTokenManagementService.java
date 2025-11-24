@@ -135,7 +135,7 @@ public class AuthorizationTokenManagementService {
 		final List<TokenModel> tokenResults = new ArrayList<>(authorizedRequests.size());
 		for (final AuthorizationTokenGenerationMgmtRequestDTO request : authorizedRequests) {
 			tokenResults.add(tokenEngine.produce(
-					normalizedRequester,
+					requester,
 					request.consumer(),
 					request.consumerCloud(),
 					ServiceInterfacePolicy.valueOf(request.tokenVariant()),

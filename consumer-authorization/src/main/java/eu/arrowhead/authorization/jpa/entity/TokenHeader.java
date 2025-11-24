@@ -192,7 +192,7 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setScope(final String scope) {
-		this.scope = scope;
+	public void setScope(final String serviceOperation) {
+		this.scope = serviceOperation;
 	}
 }
