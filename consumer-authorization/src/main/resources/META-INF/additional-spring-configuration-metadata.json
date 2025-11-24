@@ -118,5 +118,15 @@
     "name": "blacklist.check.exclude.list",
     "type": "java.util.List",
     "description": "A description for 'blacklist.check.exclude.list'"
+  },
+  {
+    "name": "service.registry.address",
+    "type": "java.lang.String",
+    "description": "A description for 'service.registry.address'"
+  },
+  {
+    "name": "service.registry.port",
+    "type": "java.lang.Integer",
+    "description": "A description for 'service.registry.port'"
   }
 ]}

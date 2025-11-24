@@ -17,6 +17,7 @@
 package eu.arrowhead.authorization.jpa.entity;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
 import jakarta.persistence.Column;
@@ -112,5 +113,30 @@ public class SelfContainedToken {
 	//-------------------------------------------------------------------------------------------------
 	public void setExpiresAt(final ZonedDateTime expiresAt) {
 		this.expiresAt = expiresAt;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (obj == null) {
+			return false;
+		}
+
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final SelfContainedToken other = (SelfContainedToken) obj;
+		return id == other.id;
 	}
 }
