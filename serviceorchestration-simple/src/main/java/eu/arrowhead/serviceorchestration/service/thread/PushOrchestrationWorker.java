@@ -15,7 +15,7 @@
  *
  *******************************************************************************/
 
-package eu.arrowhead.serviceorchestration.thread;
+package eu.arrowhead.serviceorchestration.service.thread;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,10 +28,8 @@ import eu.arrowhead.common.http.HttpUtilities;
 import eu.arrowhead.common.mqtt.MqttQoS;
 import eu.arrowhead.common.mqtt.MqttService;
 import eu.arrowhead.dto.MqttNotifyTemplate;
-import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.NotifyProtocol;
-import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
@@ -43,7 +41,6 @@ import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -51,7 +48,10 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 public class PushOrchestrationWorker implements Runnable {
 

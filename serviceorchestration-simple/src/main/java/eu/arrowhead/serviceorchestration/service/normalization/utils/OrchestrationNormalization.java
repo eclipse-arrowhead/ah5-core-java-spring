@@ -93,7 +93,7 @@ public class OrchestrationNormalization {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public UUID normalizeUUID(String uuid) {
+    public UUID normalizeUUID(final String uuid) {
         logger.debug("normalizeUUID started...");
 
         return UUID.fromString(uuid.trim());

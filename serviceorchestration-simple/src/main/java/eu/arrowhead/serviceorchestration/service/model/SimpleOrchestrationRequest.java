@@ -26,10 +26,10 @@ public class SimpleOrchestrationRequest {
     //=================================================================================================
     // members
 
-    String serviceDefinition;
-    List<String> preferredProviders;
-    Map<String, Boolean> orchestrationFlags;
-    Set<String> warnings;
+    private String serviceDefinition;
+    private List<String> preferredProviders;
+    private Map<String, Boolean> orchestrationFlags;
+    private Set<String> warnings;
 
     //=================================================================================================
     // boilerplate

@@ -20,9 +20,7 @@ package eu.arrowhead.serviceorchestration.service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,12 +29,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
-import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;

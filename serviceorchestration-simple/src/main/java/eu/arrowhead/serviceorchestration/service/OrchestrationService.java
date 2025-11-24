@@ -16,7 +16,11 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 
 import eu.arrowhead.common.exception.ForbiddenException;

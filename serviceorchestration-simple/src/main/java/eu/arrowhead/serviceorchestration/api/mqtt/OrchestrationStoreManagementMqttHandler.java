@@ -24,7 +24,10 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.mqtt.MqttStatus;
 import eu.arrowhead.common.mqtt.handler.MqttTopicHandler;
 import eu.arrowhead.common.mqtt.model.MqttRequestModel;
-import eu.arrowhead.dto.*;
+import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
+import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.service.OrchestrationStoreManagementService;
 import org.apache.logging.log4j.LogManager;
@@ -101,7 +104,7 @@ public class OrchestrationStoreManagementMqttHandler extends MqttTopicHandler {
 
     //-------------------------------------------------------------------------------------------------
     private OrchestrationSimpleStoreListResponseDTO query(final OrchestrationSimpleStoreQueryRequestDTO dto) {
-        logger.debug("OrchestrationStoreManagementMqttHandler.create started");
+        logger.debug("OrchestrationStoreManagementMqttHandler.query started");
 
         return storeManagementService.querySimpleStoreEntries(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_QUERY);
     }

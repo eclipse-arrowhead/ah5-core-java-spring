@@ -42,6 +42,7 @@ public class NormalizedOrchestrationHistoryQueryRequest {
     // boilerplate
 
     //-------------------------------------------------------------------------------------------------
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public NormalizedOrchestrationHistoryQueryRequest(
             final PageDTO pagination,
             final List<UUID> ids,

@@ -17,10 +17,15 @@
 package eu.arrowhead.serviceorchestration.api.http;
 
 import eu.arrowhead.common.Constants;
-import eu.arrowhead.dto.*;
+import eu.arrowhead.dto.ErrorMessageDTO;
+import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
 import eu.arrowhead.serviceorchestration.service.OrchestrationPushManagementService;
+import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,7 +39,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 

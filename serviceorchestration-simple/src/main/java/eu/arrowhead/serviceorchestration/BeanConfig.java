@@ -17,7 +17,7 @@
 
 package eu.arrowhead.serviceorchestration;
 
-import eu.arrowhead.serviceorchestration.thread.PushOrchestrationWorker;
+import eu.arrowhead.serviceorchestration.service.thread.PushOrchestrationWorker;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

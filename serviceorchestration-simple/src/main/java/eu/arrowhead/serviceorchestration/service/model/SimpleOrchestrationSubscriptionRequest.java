@@ -75,7 +75,7 @@ public class SimpleOrchestrationSubscriptionRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public void setDuration(Long duration) {
+    public void setDuration(final Long duration) {
         this.duration = duration;
     }
 

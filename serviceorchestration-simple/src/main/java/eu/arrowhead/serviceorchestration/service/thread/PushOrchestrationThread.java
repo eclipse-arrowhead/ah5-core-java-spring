@@ -15,9 +15,8 @@
  *
  *******************************************************************************/
 
-package eu.arrowhead.serviceorchestration.thread;
+package eu.arrowhead.serviceorchestration.service.thread;
 
-import eu.arrowhead.serviceorchestration.BeanConfig;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 import jakarta.annotation.PostConstruct;

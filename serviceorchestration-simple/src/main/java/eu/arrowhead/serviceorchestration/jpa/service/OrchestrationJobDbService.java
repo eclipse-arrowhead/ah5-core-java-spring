@@ -34,7 +34,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class OrchestrationJobDbService {
@@ -141,6 +145,7 @@ public class OrchestrationJobDbService {
     }
 
     //-------------------------------------------------------------------------------------------------
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Page<OrchestrationJob> query(
             final List<UUID> ids,
             final List<OrchestrationJobStatus> statuses,

@@ -18,7 +18,7 @@
 package eu.arrowhead.serviceorchestration.init;
 
 import eu.arrowhead.common.init.ApplicationInitListener;
-import eu.arrowhead.serviceorchestration.thread.PushOrchestrationThread;
+import eu.arrowhead.serviceorchestration.service.thread.PushOrchestrationThread;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;

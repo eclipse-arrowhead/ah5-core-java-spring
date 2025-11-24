@@ -58,7 +58,7 @@ public class OrchestrationHistoryManagementService {
     // methods
 
     //-------------------------------------------------------------------------------------------------
-    public OrchestrationHistoryResponseDTO query(OrchestrationHistoryQueryRequestDTO dto, String origin) {
+    public OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
         logger.debug("query started...");
 
         final NormalizedOrchestrationHistoryQueryRequest normalized = validator.validateAndNormalizeQueryService(dto, origin);

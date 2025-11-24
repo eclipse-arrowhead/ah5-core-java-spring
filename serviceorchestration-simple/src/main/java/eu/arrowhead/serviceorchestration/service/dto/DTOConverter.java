@@ -16,7 +16,6 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.dto;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +27,21 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
-import eu.arrowhead.dto.*;
+import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
+import eu.arrowhead.dto.OrchestrationJobDTO;
+import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
+import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
+import eu.arrowhead.dto.OrchestrationRequestDTO;
+import eu.arrowhead.dto.OrchestrationResponseDTO;
+import eu.arrowhead.dto.OrchestrationResultDTO;
+import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +73,7 @@ public class DTOConverter {
 		Assert.notNull(entities, "entities is null");
 
 		return new OrchestrationSimpleStoreListResponseDTO(
-				entities.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()),
+				entities.stream().map(this::convertOrchestrationStoreEntityToResponseDTO).collect(Collectors.toList()),
 				entities.size());
 	}
 
@@ -74,11 +83,12 @@ public class DTOConverter {
 		Assert.notNull(results, "results is null");
 
 		return new OrchestrationSimpleStoreListResponseDTO(
-				results.stream().map(e -> convertOrchestrationStoreEntityToResponseDTO(e)).collect(Collectors.toList()),
+				results.stream().map(this::convertOrchestrationStoreEntityToResponseDTO).collect(Collectors.toList()),
 				results.getTotalElements());
 	}
 
     //-------------------------------------------------------------------------------------------------
+    @SuppressWarnings("checkstyle:MagicNumber")
     public OrchestrationResponseDTO convertStoreEntitiesToOrchestrationResponseDTO(final List<OrchestrationStore> entities, final Set<String> warnings) {
         logger.debug("convertStoreEntitiesToOrchestrationResponseDTO started...");
         Assert.notNull(entities, "entities is null");
@@ -113,7 +123,7 @@ public class DTOConverter {
 
         final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions
                 .stream()
-                .map(subscription -> convertSubscriptionToDTO(subscription))
+                .map(this::convertSubscriptionToDTO)
                 .toList();
 
         return new OrchestrationSubscriptionListResponseDTO(entries, count);
@@ -126,7 +136,7 @@ public class DTOConverter {
 
         return new OrchestrationPushJobListResponseDTO(jobs
                 .stream()
-                .map(j -> convertOrchestrationJobToDTO(j))
+                .map(this::convertOrchestrationJobToDTO)
                 .toList());
     }
 
@@ -178,7 +188,7 @@ public class DTOConverter {
         OrchestrationServiceRequirementDTO serviceRequirementDTO = null;
         if (simpleOrchestrationRequest.getServiceDefinition() != null || simpleOrchestrationRequest.getPreferredProviders() != null) {
             serviceRequirementDTO = new OrchestrationServiceRequirementDTO(
-                    simpleOrchestrationRequest.getServiceDefinition(),null,null,null,null,null, null, null, null, simpleOrchestrationRequest.getPreferredProviders()
+                    simpleOrchestrationRequest.getServiceDefinition(), null, null, null, null, null, null, null, null, simpleOrchestrationRequest.getPreferredProviders()
             );
         }
         return new OrchestrationRequestDTO(

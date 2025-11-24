@@ -21,7 +21,11 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.dto.*;
+import eu.arrowhead.dto.OrchestrationPushJobListResponseDTO;
+import eu.arrowhead.dto.OrchestrationPushTriggerDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionListRequestDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionQueryRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
@@ -96,7 +100,7 @@ public class OrchestrationPushManagementService {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public OrchestrationPushJobListResponseDTO pushTrigger(final String requesterSystem, OrchestrationPushTriggerDTO dto, final String origin) {
+    public OrchestrationPushJobListResponseDTO pushTrigger(final String requesterSystem, final OrchestrationPushTriggerDTO dto, final String origin) {
         logger.debug("pushTrigger started...");
 
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
