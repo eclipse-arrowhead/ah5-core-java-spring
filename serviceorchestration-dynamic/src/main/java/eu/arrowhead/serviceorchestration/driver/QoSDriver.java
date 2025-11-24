@@ -105,33 +105,23 @@ public class QoSDriver {
 			}
 
 			List<String> evaluationResult = null;
-			String rawResult = "";
 			if (qosReq.operation().equalsIgnoreCase(QoSOperation.SORT.name())) {
 				final QoSEvaluationSortResponseDTO result = consumeQosEvaluationService(evaluator, qosReq.operation().toLowerCase(),
-						new QoSEvaluationRequestDTO(systemNames, qosReq.requirements()), QoSEvaluationSortResponseDTO.class);
+						new QoSEvaluationRequestDTO(systemNames, qosReq.requirements()), QoSEvaluationSortResponseDTO.class, jobId, qosReq);
 				if (result != null) {
 					evaluationResult = result.sortedProviders();
-					rawResult = Utilities.toJson(result);
 				}
 			} else {
 				final QoSEvaluationFilterResponseDTO result = consumeQosEvaluationService(evaluator, qosReq.operation().toLowerCase(),
-						new QoSEvaluationRequestDTO(systemNames, qosReq.requirements()), QoSEvaluationFilterResponseDTO.class);
+						new QoSEvaluationRequestDTO(systemNames, qosReq.requirements()), QoSEvaluationFilterResponseDTO.class, jobId, qosReq);
 				if (result != null) {
 					evaluationResult = result.passedProviders();
-					rawResult = Utilities.toJson(result);
 				}
 			}
 
 			if (evaluationResult == null) {
 				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_COMPLIANCE_FAILURE);
 				continue;
-			}
-
-			final Optional<OrchestrationJob> jobOpt = orchestrationJobDbService.getById(jobId);
-			if (jobOpt.isPresent()) {
-				qosEvalResultDbService.save(jobOpt.get(), qosReq.type(), qosReq.operation(), rawResult);
-			} else {
-				logger.error("Could not save QoS result, because orchestration job not exists: " + jobId);
 			}
 
 			final List<OrchestrationCandidate> tempList = new ArrayList<>(evaluationResult.size());
@@ -189,13 +179,14 @@ public class QoSDriver {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private <T> T consumeQosEvaluationService(final ServiceInstanceResponseDTO evaluator, final String qosOperation, final QoSEvaluationRequestDTO qosEvalRequest, final Class<T> responseType) {
+	private <T> T consumeQosEvaluationService(final ServiceInstanceResponseDTO evaluator, final String qosOperation, final QoSEvaluationRequestDTO qosEvalRequest, final Class<T> responseType, final UUID jobId, final QoSRequirementDTO qosReq) {
 		logger.debug("consumeQosEvaluationService started...");
 
 		ServiceInstanceInterfaceResponseDTO interf = evaluator.interfaces().getFirst();
 		for (final ServiceInstanceInterfaceResponseDTO i : evaluator.interfaces()) {
 			if (sysInfo.isSslEnabled() && i.protocol().equalsIgnoreCase(Constants.HTTPS)) {
 				interf = i;
+				break;
 			}
 		}
 		final HttpInterfaceModel interfaceModel = createHttpInterfaceModel(interf.templateName(), interf.properties());
@@ -209,13 +200,25 @@ public class QoSDriver {
 			headers.put(HttpHeaders.AUTHORIZATION, authorizationHeader);
 		}
 
+		T response = null;
+		String toSave = "";
 		try {
-			return httpService.sendRequest(uri, method, responseType, qosEvalRequest, null, headers);
+			response = httpService.sendRequest(uri, method, responseType, qosEvalRequest, null, headers);
+			toSave = Utilities.toJson(response);
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
-			return null;
+			toSave = ex.getMessage();
 		}
+
+		final Optional<OrchestrationJob> jobOpt = orchestrationJobDbService.getById(jobId);
+		if (jobOpt.isPresent()) {
+			qosEvalResultDbService.save(jobOpt.get(), qosReq.type(), qosReq.operation(), toSave);
+		} else {
+			logger.error("Could not save QoS result, because orchestration job not exists: " + jobId);
+		}
+
+		return response;
 	}
 
 	//-------------------------------------------------------------------------------------------------
