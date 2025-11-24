@@ -28,7 +28,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +80,7 @@ public class OrchestrationPushManagementAPI {
                 + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_PUSH_SUBSCRIBE_PATH;
         final String requesterSystem = preprocessor.process(httpServletRequest, origin);
 
-        return pushService.pushSubscribeBulk(requesterSystem, dto, origin);
+        return pushService.pushSubscribe(requesterSystem, dto, origin);
     }
 
     //-------------------------------------------------------------------------------------------------

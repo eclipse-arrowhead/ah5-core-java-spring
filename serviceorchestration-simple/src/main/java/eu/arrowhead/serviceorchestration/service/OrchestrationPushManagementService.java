@@ -77,8 +77,8 @@ public class OrchestrationPushManagementService {
     // methods
 
     //-------------------------------------------------------------------------------------------------
-    public OrchestrationSubscriptionListResponseDTO pushSubscribeBulk(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
-        logger.debug("pushSubscribeBulk started...");
+    public OrchestrationSubscriptionListResponseDTO pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
+        logger.debug("pushSubscribe started...");
 
         final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
         final List<SimpleOrchestrationSubscriptionRequest> normalized = validator.validateAndNormalizePushSubscribeBulk(dto, origin);

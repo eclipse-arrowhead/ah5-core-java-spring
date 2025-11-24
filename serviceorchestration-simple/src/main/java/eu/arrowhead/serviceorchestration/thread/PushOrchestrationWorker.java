@@ -20,11 +20,14 @@ package eu.arrowhead.serviceorchestration.thread;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.http.HttpService;
 import eu.arrowhead.common.http.HttpUtilities;
+import eu.arrowhead.common.mqtt.MqttQoS;
 import eu.arrowhead.common.mqtt.MqttService;
+import eu.arrowhead.dto.MqttNotifyTemplate;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.NotifyProtocol;
@@ -43,6 +46,8 @@ import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
@@ -140,11 +145,11 @@ public class PushOrchestrationWorker implements Runnable {
                 return;
             }
 
-            /*if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
+            if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
                     || subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
                 notifyViaMqtt(subscription.getId(), subscription.getTargetSystem(), subscription.getNotifyProperties(), result);
                 return;
-            }*/
+            }
 
             throw new ArrowheadException("Unsupported protocol: " + subscription.getNotifyProtocol());
         } catch (final Exception ex) {
@@ -184,6 +189,29 @@ public class PushOrchestrationWorker implements Runnable {
         } catch (final JsonProcessingException ex) {
             logger.debug(ex);
             throw new IllegalArgumentException("Unreadable notify properties: " + ex.getMessage());
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    private void notifyViaMqtt(final UUID subscriptionId, final String targetSystem, final String properties, final OrchestrationResponseDTO result) {
+        logger.debug("notifyViaMqtt started...");
+
+        if (!sysInfo.isMqttApiEnabled()) {
+            throw new ArrowheadException("Orchestration push notification via MQTT is required for subscripiton: " + subscriptionId.toString() + ", but MQTT is not enabled");
+        }
+
+        // Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results.
+        final MqttClient mqttClient = mqttService.client(Constants.MQTT_SERVICE_PROVIDING_BROKER_CONNECT_ID);
+        final Map<String, String> propsMap = readNotifyProperties(properties);
+
+        try {
+            final MqttNotifyTemplate template = new MqttNotifyTemplate(targetSystem, sysInfo.getSystemName(), result);
+            final MqttMessage msg = new MqttMessage(mapper.writeValueAsBytes(template));
+            msg.setQos(MqttQoS.EXACTLY_ONCE.value());
+            mqttClient.publish(propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC), msg);
+        } catch (final Exception ex) {
+            logger.debug(ex);
+            throw new ArrowheadException("Error occurred while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
         }
     }
 }
