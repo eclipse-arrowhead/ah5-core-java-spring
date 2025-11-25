@@ -257,8 +257,8 @@ public class OrchestrationValidation {
             simpleOrchestrationRequest.setOrchestrationFlags(dto.orchestrationFlags());
         }
 
-        if (!Utilities.isEmpty(dto.qosRequirements())) {
-            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_QOS_REQ);
+        if (!Utilities.isEmpty(dto.qualityRequirements())) {
+            ignoredFields.add(SimpleStoreServiceOrchestrationConstants.FIELD_QUALITY_REQ);
         }
 
         if (dto.exclusivityDuration() != null) {

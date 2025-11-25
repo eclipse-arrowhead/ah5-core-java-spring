@@ -26,7 +26,7 @@ import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationHistoryQueryRequest;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationJobQueryRequest;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationHistoryManagementNormalization;
 import eu.arrowhead.serviceorchestration.service.validation.utils.OrchestrationValidation;
 import org.apache.logging.log4j.LogManager;
@@ -61,11 +61,11 @@ public class OrchestrationHistoryManagementValidation {
     // methods
 
     //-------------------------------------------------------------------------------------------------
-    public NormalizedOrchestrationHistoryQueryRequest validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
+    public NormalizedOrchestrationJobQueryRequest validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
         logger.debug("validateAndNormalizeQueryService started...");
 
         validateQueryService(dto, origin);
-        final NormalizedOrchestrationHistoryQueryRequest normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto);
+        final NormalizedOrchestrationJobQueryRequest normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto, origin);
 
         try {
             normalized.getRequesterSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));

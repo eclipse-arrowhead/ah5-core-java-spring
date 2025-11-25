@@ -138,8 +138,8 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
 	//=================================================================================================
 	// assistant methods
 
-	@Override
 	//-------------------------------------------------------------------------------------------------
+    @Override
 	protected PublicConfigurationKeysAndDefaults getPublicConfigurationKeysAndDefaults() {
 		return new PublicConfigurationKeysAndDefaults(
 				Set.of(Constants.SERVER_ADDRESS,
@@ -298,7 +298,7 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
                 .path(SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_CREATE_PATH)
                 .build();
         final HttpOperationModel modifyPriorities = new HttpOperationModel.Builder()
-                .method(HttpMethod.POST.name())
+                .method(HttpMethod.PUT.name())
                 .path(SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH)
                 .build();
         final HttpOperationModel remove = new HttpOperationModel.Builder()

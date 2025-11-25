@@ -24,7 +24,7 @@ import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
-import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationHistoryQueryRequest;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationJobQueryRequest;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationHistoryManagementValidation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,19 +61,10 @@ public class OrchestrationHistoryManagementService {
     public OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
         logger.debug("query started...");
 
-        final NormalizedOrchestrationHistoryQueryRequest normalized = validator.validateAndNormalizeQueryService(dto, origin);
-        final PageRequest pageRequest = pageService.getPageRequest(normalized.getPagination(), Sort.Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
+        final NormalizedOrchestrationJobQueryRequest normalized = validator.validateAndNormalizeQueryService(dto, origin);
 
         try {
-            final Page<OrchestrationJob> results = jobDbService.query(
-                    normalized.getIds(),
-                    normalized.getStatuses(),
-                    normalized.getType(),
-                    normalized.getRequesterSystems(),
-                    normalized.getTargetSystems(),
-                    normalized.getServiceDefinitions(),
-                    normalized.getSubscriptionIds(),
-                    pageRequest);
+            final Page<OrchestrationJob> results = jobDbService.query(normalized);
 
             return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
         } catch (final InternalServerError ex) {

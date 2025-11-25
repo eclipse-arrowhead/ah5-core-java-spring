@@ -24,11 +24,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.jpa.RefreshableRepositoryImpl;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @ComponentScan(Constants.BASE_PACKAGE)
 @EntityScan(SimpleStoreServiceOrchestrationConstants.DATABASE_ENTITY_PACKAGE)
 @EnableJpaRepositories(basePackages = SimpleStoreServiceOrchestrationConstants.DATABASE_REPOSITORY_PACKAGE, repositoryBaseClass = RefreshableRepositoryImpl.class)
+@EnableScheduling
 public class SimpleStoreServiceOrchestrationMain {
 
 	//=================================================================================================

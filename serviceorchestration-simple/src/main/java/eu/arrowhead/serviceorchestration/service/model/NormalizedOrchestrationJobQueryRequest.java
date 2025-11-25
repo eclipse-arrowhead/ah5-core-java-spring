@@ -20,16 +20,17 @@ package eu.arrowhead.serviceorchestration.service.model;
 import eu.arrowhead.dto.PageDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.UUID;
 
-public class NormalizedOrchestrationHistoryQueryRequest {
+public class NormalizedOrchestrationJobQueryRequest {
 
     //=================================================================================================
     // members
 
-    private PageDTO pagination;
+    private PageRequest pagination;
     private List<UUID> ids;
     private List<OrchestrationJobStatus> statuses;
     private OrchestrationType type;
@@ -43,8 +44,8 @@ public class NormalizedOrchestrationHistoryQueryRequest {
 
     //-------------------------------------------------------------------------------------------------
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public NormalizedOrchestrationHistoryQueryRequest(
-            final PageDTO pagination,
+    public NormalizedOrchestrationJobQueryRequest(
+            final PageRequest pagination,
             final List<UUID> ids,
             final List<OrchestrationJobStatus> statuses,
             final OrchestrationType type,
@@ -63,12 +64,12 @@ public class NormalizedOrchestrationHistoryQueryRequest {
     }
 
     //-------------------------------------------------------------------------------------------------
-    public PageDTO getPagination() {
+    public PageRequest getPagination() {
         return pagination;
     }
 
     //-------------------------------------------------------------------------------------------------
-    public void setPagination(final PageDTO pagination) {
+    public void setPagination(final PageRequest pagination) {
         this.pagination = pagination;
     }
 

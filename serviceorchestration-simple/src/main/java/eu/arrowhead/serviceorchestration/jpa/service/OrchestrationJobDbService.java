@@ -25,6 +25,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationJobRepository;
 import eu.arrowhead.serviceorchestration.service.enums.BaseFilter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationJobQueryRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,50 +146,29 @@ public class OrchestrationJobDbService {
     }
 
     //-------------------------------------------------------------------------------------------------
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    public Page<OrchestrationJob> query(
-            final List<UUID> ids,
-            final List<OrchestrationJobStatus> statuses,
-            final OrchestrationType type,
-            final List<String> requesterSystems,
-            final List<String> targetSystems,
-            final List<String> serviceDefinitions,
-            final List<UUID> subscriptionIds,
-            final PageRequest pagination) {
+    public Page<OrchestrationJob> query(final NormalizedOrchestrationJobQueryRequest queryRequest) {
         logger.debug("query started...");
-        Assert.notNull(pagination, "pagination is null");
+        Assert.notNull(queryRequest.getPagination(), "pagination is null");
 
         BaseFilter baseFilter = BaseFilter.NONE;
-
-        if (!Utilities.isEmpty(ids)) {
-            baseFilter = BaseFilter.ID;
-        }
-        if (!Utilities.isEmpty(statuses)) {
-            baseFilter = BaseFilter.STATUS;
-        }
-        if (!Utilities.isEmpty(requesterSystems)) {
-            baseFilter = BaseFilter.OWNER;
-        }
-        if (!Utilities.isEmpty(targetSystems)) {
-            baseFilter = BaseFilter.TARGET;
-        }
-        if (!Utilities.isEmpty(serviceDefinitions)) {
-            baseFilter = BaseFilter.SERVICE;
-        }
+        List<OrchestrationJob> toFilter;
 
         try {
-            List<OrchestrationJob> toFilter;
-
-            if (baseFilter == BaseFilter.ID) {
-                toFilter = jobRepo.findAllById(ids);
-            } else if (baseFilter == BaseFilter.STATUS) {
-                toFilter = jobRepo.findAllByStatusIn(statuses);
-            } else if (baseFilter == BaseFilter.OWNER) {
-                toFilter = jobRepo.findAllByRequesterSystemIn(requesterSystems);
-            } else if (baseFilter == BaseFilter.TARGET) {
-                toFilter = jobRepo.findAllByTargetSystemIn(targetSystems);
-            } else if (baseFilter == BaseFilter.SERVICE) {
-                toFilter = jobRepo.findAllByServiceDefinitionIn(serviceDefinitions);
+            if (!Utilities.isEmpty(queryRequest.getIds())) {
+                baseFilter = BaseFilter.ID;
+                toFilter = jobRepo.findAllById(queryRequest.getIds());
+            } else if (!Utilities.isEmpty(queryRequest.getStatuses())) {
+                baseFilter = BaseFilter.STATUS;
+                toFilter = jobRepo.findAllByStatusIn(queryRequest.getStatuses());
+            } else if (!Utilities.isEmpty(queryRequest.getRequesterSystems())) {
+                baseFilter = BaseFilter.OWNER;
+                toFilter = jobRepo.findAllByRequesterSystemIn(queryRequest.getRequesterSystems());
+            } else if (!Utilities.isEmpty(queryRequest.getTargetSystems())) {
+                baseFilter = BaseFilter.TARGET;
+                toFilter = jobRepo.findAllByTargetSystemIn(queryRequest.getTargetSystems());
+            } else if (!Utilities.isEmpty(queryRequest.getServiceDefinitions())) {
+                baseFilter = BaseFilter.SERVICE;
+                toFilter = jobRepo.findAllByServiceDefinitionIn(queryRequest.getServiceDefinitions());
             } else {
                 toFilter = jobRepo.findAll();
             }
@@ -200,27 +180,27 @@ public class OrchestrationJobDbService {
                 // No need to match against the id, because that is the basefilter if not null
 
                 // Match against to job statuses
-                if (baseFilter != BaseFilter.STATUS && !Utilities.isEmpty(statuses) && !statuses.contains(job.getStatus())) {
+                if (baseFilter != BaseFilter.STATUS && !Utilities.isEmpty(queryRequest.getStatuses()) && !queryRequest.getStatuses().contains(job.getStatus())) {
                     matching = false;
 
                 // Match against to job type
-                } else if (type != null && type != job.getType()) {
+                } else if (queryRequest.getType() != null && queryRequest.getType() != job.getType()) {
                     matching = false;
 
                  // Match against to requester systems
-                } else if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(requesterSystems) && !requesterSystems.contains(job.getRequesterSystem())) {
+                } else if (baseFilter != BaseFilter.OWNER && !Utilities.isEmpty(queryRequest.getRequesterSystems()) && !queryRequest.getRequesterSystems().contains(job.getRequesterSystem())) {
                     matching = false;
 
                 // Match against to target systems
-                } else if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(targetSystems) && !targetSystems.contains(job.getTargetSystem())) {
+                } else if (baseFilter != BaseFilter.TARGET && !Utilities.isEmpty(queryRequest.getTargetSystems()) && !queryRequest.getTargetSystems().contains(job.getTargetSystem())) {
                     matching = false;
 
                 // Match against to service definitions
-                } else if (baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(serviceDefinitions) && !serviceDefinitions.contains(job.getServiceDefinition())) {
+                } else if (baseFilter != BaseFilter.SERVICE && !Utilities.isEmpty(queryRequest.getServiceDefinitions()) && !queryRequest.getServiceDefinitions().contains(job.getServiceDefinition())) {
                     matching = false;
 
                 // Match against to subscription ids
-                } else if (!Utilities.isEmpty(subscriptionIds) && !Utilities.isEmpty(job.getSubscriptionId()) && !subscriptionIds.contains(job.getSubscriptionId())) {
+                } else if (!Utilities.isEmpty(queryRequest.getSubscriptionIds()) && !Utilities.isEmpty(job.getSubscriptionId()) && !queryRequest.getSubscriptionIds().contains(UUID.fromString(job.getSubscriptionId()))) {
                     matching = false;
                 }
 
@@ -229,7 +209,7 @@ public class OrchestrationJobDbService {
                 }
             }
 
-            return jobRepo.findAllByIdIn(matchingIds, pagination);
+            return jobRepo.findAllByIdIn(matchingIds, queryRequest.getPagination());
         } catch (final Exception ex) {
             logger.error(ex.getMessage());
             logger.debug(ex);

@@ -87,7 +87,7 @@ public final class SimpleStoreServiceOrchestrationConstants {
 	public static final String FIELD_INTF_ADDRESS_TYPES = "interfaceAddressTypes";
 	public static final String FIELD_INTF_PROP_REQ = "interfacePropertyRequirements";
 	public static final String FIELD_SECURITY_POLICIES = "securityPolicies";
-	public static final String FIELD_QOS_REQ = "qosRequirements";
+	public static final String FIELD_QUALITY_REQ = "qualityRequirements";
     public static final String FIELD_EXCLUSIVITY_DURATION = "exclusivityDuration";
     public static final List<String> SUPPORTED_FLAGS = List.of(
             OrchestrationFlag.MATCHMAKING.toString(),
@@ -101,8 +101,8 @@ public final class SimpleStoreServiceOrchestrationConstants {
     public static final String NOTIFY_KEY_TOPIC = "topic";
 
     // Quartz related
-    public static final String CLEANER_TRIGGER = "dynamicOrchestrationCleanerTrigger";
-    public static final String CLEANER_JOB = "dynamicOrchestrationCleanerJob";
+    public static final String CLEANER_TRIGGER = "simpleStoreOrchestrationCleanerTrigger";
+    public static final String CLEANER_JOB = "simpleStoreOrchestrationCleanerJob";
 
     public static final Object SYNC_LOCK_SUBSCRIPTION = new Object();
     public static final String JOB_QUEUE_PUSH_ORCHESTRATION = "jobQueuePushOrchestration";

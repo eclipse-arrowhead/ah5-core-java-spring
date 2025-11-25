@@ -63,7 +63,7 @@ public class OrchestrationStoreManagementMqttHandler extends MqttTopicHandler {
     //-------------------------------------------------------------------------------------------------
     @Override
     public void handle(final MqttRequestModel request) throws ArrowheadException {
-        logger.debug("OrchestrationPushManagementService.handle started");
+        logger.debug("OrchestrationStoreManagementMqttHandler.handle started");
         Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
         MqttStatus responseStatus = MqttStatus.OK;

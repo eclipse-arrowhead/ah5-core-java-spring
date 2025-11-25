@@ -34,6 +34,7 @@ import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationJobQueryRequest;
 import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationPushTrigger;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationPushManagementServiceValidation;
@@ -130,15 +131,15 @@ public class OrchestrationPushManagementService {
             final List<OrchestrationJob> newJobs = new ArrayList<>();
             for (final Subscription subscription : subscriptions) {
                 final List<OrchestrationJob> possiblySameJob = orchJobDbService.query(
-                                        List.of(),
-                                        List.of(OrchestrationJobStatus.PENDING, OrchestrationJobStatus.IN_PROGRESS),
-                                        OrchestrationType.PUSH,
-                                        List.of(),
-                                        List.of(),
-                                        null,
-                                        List.of(subscription.getId()),
-                                PageRequest.of(0, Integer.MAX_VALUE, Sort.Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD))
-                        .toList();
+                        new NormalizedOrchestrationJobQueryRequest(
+                            PageRequest.of(0, Integer.MAX_VALUE, Sort.Direction.DESC, OrchestrationJob.DEFAULT_SORT_FIELD),
+                            List.of(),
+                            List.of(OrchestrationJobStatus.PENDING, OrchestrationJobStatus.IN_PROGRESS),
+                            OrchestrationType.PUSH,
+                            List.of(),
+                            List.of(),
+                            null,
+                            List.of(subscription.getId()))).toList();
 
                 if (!Utilities.isEmpty(possiblySameJob)) {
                     existingJobs.addAll(possiblySameJob);

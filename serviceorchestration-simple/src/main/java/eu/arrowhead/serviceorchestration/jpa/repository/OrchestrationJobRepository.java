@@ -31,6 +31,9 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 @Repository
 public interface OrchestrationJobRepository extends RefreshableRepository<OrchestrationJob, UUID> {
 
+    //=================================================================================================
+    // methods
+
     //-------------------------------------------------------------------------------------------------
     public Page<OrchestrationJob> findAllByIdIn(final Collection<UUID> ids, final Pageable pageable);
 

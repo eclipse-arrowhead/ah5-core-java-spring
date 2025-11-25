@@ -24,14 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.api.http.utils.SystemNamePreprocessor;
@@ -129,7 +122,7 @@ public class OrchestrationStoreManagementAPI {
 			@ApiResponse(responseCode = Constants.HTTP_STATUS_INTERNAL_SERVER_ERROR, description = Constants.SWAGGER_HTTP_500_MESSAGE, content = {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class)) })
 	})
-	@PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PutMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody OrchestrationSimpleStoreListResponseDTO modifyPriorities(
 			final HttpServletRequest httpServletRequest,
 			@io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -142,10 +135,10 @@ public class OrchestrationStoreManagementAPI {
 							)
 						)
 				)
-			@org.springframework.web.bind.annotation.RequestBody final PriorityRequestDTO dto) {
+			@RequestBody final PriorityRequestDTO dto) {
 		logger.debug("modifyPriorities started...");
 
-		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH;
+		final String origin = HttpMethod.PUT.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_STORE_MANAGEMENT_PATH + SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_MODIFY_PRIORITIES_PATH;
 		final String requesterName = preprocessor.process(httpServletRequest, origin);
 		return mgmtService.modifyPriorities(dto, requesterName, origin);
 	}

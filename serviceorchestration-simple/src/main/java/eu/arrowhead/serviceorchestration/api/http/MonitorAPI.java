@@ -32,7 +32,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
-@RequestMapping(SimpleStoreServiceOrchestrationConstants.HTTP_API_GENERAL_MANAGEMENT_PATH)
+@RequestMapping(SimpleStoreServiceOrchestrationConstants.HTTP_API_MONITOR_PATH)
 @SecurityRequirement(name = Constants.SECURITY_REQ_AUTHORIZATION)
 public class MonitorAPI {
 

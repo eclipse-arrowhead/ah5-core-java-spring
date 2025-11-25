@@ -18,16 +18,19 @@ package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
+import eu.arrowhead.common.jpa.UnmodifiableArrowheadEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import org.hibernate.sql.ast.tree.expression.Summarization;
 
 @Entity
 @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "ownerSystem", "targetSystem", "serviceDefinition" }) })
@@ -104,6 +107,31 @@ public class Subscription {
     public String toString() {
         return "System [id = " + id + ", ownerSystem = " + ownerSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = " + serviceDefinition + ", expiresAt = " + expiresAt
                 + ", notifyProtocol = " + notifyProtocol + ", notifyProperties = " + notifyProperties + ", orchestrationRequest = " + orchestrationRequest + ", createdAt = " + createdAt + "]";
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null) {
+            return false;
+        }
+
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        final Subscription other = (Subscription) obj;
+        return id == other.id;
     }
 
     //=================================================================================================

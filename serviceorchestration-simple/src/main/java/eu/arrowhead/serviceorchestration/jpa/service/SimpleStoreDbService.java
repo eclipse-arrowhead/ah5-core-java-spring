@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,13 +64,14 @@ public class SimpleStoreDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationStore> createBulk(final List<OrchestrationSimpleStoreRequestDTO> candidates, final String requesterName) {
 		logger.debug("createBulk started...");
+        Assert.isTrue(!Utilities.isEmpty(requesterName), "requesterName is empty");
 		Assert.isTrue(!Utilities.isEmpty(candidates), "candidate list is empty");
 		Assert.isTrue(!Utilities.containsNull(candidates), "candidate list contains null element");
 
 		final List<OrchestrationStore> toSave = candidates
 			.stream().map(n -> new OrchestrationStore(
 					n.consumer(),
-					n.serviceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP)[1], // service definition
+                    ServiceInstanceIdUtils.retrieveServiceDefinitionFromInstanceId(n.serviceInstanceId()),
 					n.serviceInstanceId(),
 					n.priority(),
 					requesterName)).collect(Collectors.toList());
@@ -77,8 +79,10 @@ public class SimpleStoreDbService {
 		checkUniqueFields(candidates);
 
 		try {
-			return storeRepo.saveAllAndFlush(toSave);
-		} catch (final Exception ex) {
+            return storeRepo.saveAllAndFlush(toSave);
+        } catch (final InvalidParameterException ex) {
+            throw ex;
+        } catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");
@@ -212,8 +216,9 @@ public class SimpleStoreDbService {
 	//-------------------------------------------------------------------------------------------------
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<OrchestrationStore> setPriorities(final Map<UUID, Integer> priorities, final String requester) {
+        Assert.isTrue(!Utilities.isEmpty(requester), "requester is empty");
 		Assert.notNull(priorities, "priorities is null");
-		logger.info("setPriorities started...");
+		logger.debug("setPriorities started...");
 
 		try {
 			synchronized (LOCK) {
@@ -243,9 +248,9 @@ public class SimpleStoreDbService {
 
 				return storeRepo.saveAllAndFlush(modified);
 			}
-		} catch (InvalidParameterException ex) {
+		} catch (final InvalidParameterException ex) {
 			throw ex;
-		} catch (Exception ex) {
+		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
 			throw new InternalServerError("Database operation error");

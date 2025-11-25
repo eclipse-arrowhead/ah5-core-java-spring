@@ -18,10 +18,12 @@ package eu.arrowhead.serviceorchestration.jpa.entity;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
+import eu.arrowhead.common.jpa.UnmodifiableArrowheadEntity;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import jakarta.persistence.Column;
@@ -102,9 +104,34 @@ public class OrchestrationJob {
     //-------------------------------------------------------------------------------------------------
     @Override
     public String toString() {
-        return "OrchestartionJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
+        return "OrchestrationJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
                 + serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
                 + finishedAt + "]";
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    //-------------------------------------------------------------------------------------------------
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null) {
+            return false;
+        }
+
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        final OrchestrationJob other = (OrchestrationJob) obj;
+        return id == other.id;
     }
 
     //=================================================================================================
