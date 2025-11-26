@@ -4,7 +4,7 @@
         <Property name="LOG_PATTERN">
             %d{yyyy-MM-dd HH:mm:ss.SSS}{GMT} %5p ${hostName} --- [%15.15t] %-40.40c{1.} : %m%n%ex
         </Property>
-		<Property name="SYSTEM_NAME">SERVICEORCHESTRATION-DYNAMIC</Property>
+		<Property name="SYSTEM_NAME">SERVICEORCHESTRATION-SIMPLESTORE</Property>
 		<Property name="JDBC_LEVEL">INFO</Property>
 		<Property name="CONSOLE_FILE_LEVEL">INFO</Property>
 		<Property name="LOG_DIR">.</Property>
@@ -14,7 +14,7 @@
             <PatternLayout pattern="${LOG_PATTERN}"/>
  			<ThresholdFilter level="${CONSOLE_FILE_LEVEL}" onMatch="ACCEPT" onMismatch="DENY"/>
         </Console>
-		<RollingFile name="FileAppender" fileName="${LOG_DIR}/serviceorchestration-dynamic.log" filePattern="${LOG_DIR}/serviceorchestration-dynamic-%d{yyyy-MM-dd}-%i.log">
+		<RollingFile name="FileAppender" fileName="${LOG_DIR}/serviceorchestration-simplestore.log" filePattern="${LOG_DIR}/serviceorchestration-simplestore-%d{yyyy-MM-dd}-%i.log">
 	    	<PatternLayout>
 	        	<Pattern>${LOG_PATTERN}</Pattern>
 	    	</PatternLayout>

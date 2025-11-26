@@ -35,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,7 @@ public class OrchestrationPushManagementServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public String validateAndNormalizeRequester(final String requesterSystemName, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizeRequester started...");
 
         return orchValidator.validateAndNormalizeSystemName(requesterSystemName, origin);
@@ -78,6 +80,7 @@ public class OrchestrationPushManagementServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizePushSubscribeBulk started...");
 
         return orchValidator.validateAndNormalizePushSubscribeBulk(dto, origin);
@@ -85,6 +88,7 @@ public class OrchestrationPushManagementServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public NormalizedOrchestrationPushTrigger validateAndNormalizePushTrigger(final OrchestrationPushTriggerDTO dto, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizePushTrigger started...");
 
         if (dto == null) {
@@ -140,6 +144,7 @@ public class OrchestrationPushManagementServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public OrchestrationSubscriptionQueryRequestDTO validateAndNormalizeQueryPushSubscriptionsService(final OrchestrationSubscriptionQueryRequestDTO dto, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizeQueryPushSubscriptionsService started...");
 
         validateQueryPushSubscriptionsService(dto, origin);
@@ -171,6 +176,7 @@ public class OrchestrationPushManagementServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public List<UUID> validateAndNormalizePushUnsubscribe(final List<String> ids, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizePushUnsubscribe started...");
 
         validatePushUnsubscribe(ids, origin);

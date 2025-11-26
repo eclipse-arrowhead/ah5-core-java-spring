@@ -127,7 +127,7 @@ public class OrchestrationStoreManagementService {
 	public void removeSimpleStoreEntries(final List<String> uuids, final String origin) {
 		logger.debug("removeSimpleStoreEntries started...");
 
-		final List<UUID> normalized = validator.validateAndNormalizeRemove(uuids);
+		final List<UUID> normalized = validator.validateAndNormalizeRemove(uuids, origin);
 
 		try {
 			dbService.deleteBulk(normalized);

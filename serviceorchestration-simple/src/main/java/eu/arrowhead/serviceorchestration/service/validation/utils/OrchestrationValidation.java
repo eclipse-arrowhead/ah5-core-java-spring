@@ -76,6 +76,7 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public String validateAndNormalizeSystemName(final String systemName, final String origin) {
+        logger.debug("validateAndNormalizeSystemName started...");
         final String normalized = systemNameNormalizer.normalize(systemName);
         try {
             systemNameValidator.validateSystemName(normalized);
@@ -87,12 +88,14 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public UUID validateAndNormalizeUUID(final String uuid, final String origin) {
+        logger.debug("validateAndNormalizeUUID started...");
         validateUUID(uuid, origin);
         return normalizer.normalizeUUID(uuid);
     }
 
     //-------------------------------------------------------------------------------------------------
     public SimpleOrchestrationRequest validateAndNormalizeOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
+        logger.debug("validateAndNormalizeOrchestrationRequest started...");
 
         final SimpleOrchestrationRequest request = validateSimpleOrchestrationRequest(dto, origin);
         normalizer.normalizePull(request);
@@ -121,6 +124,7 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
+        logger.debug("validateAndNormalizePushSubscribe started...");
 
         final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, origin);
         normalizer.normalizeSubscribe(subscriptionRequest);
@@ -146,11 +150,12 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
+        logger.debug("validateAndNormalizePushSubscribeBulk started...");
 
         final List<SimpleOrchestrationSubscriptionRequest> normalized = new ArrayList<>(dto.subscriptions().size());
 
-        for (int i = 0; i < dto.subscriptions().size(); ++i) {
-            final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribeBulk(dto.subscriptions().get(i), origin);
+        for (final OrchestrationSubscriptionRequestDTO subscriptionRequestDTO : dto.subscriptions()) {
+            final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribeBulk(subscriptionRequestDTO, origin);
             normalizer.normalizeSubscribe(subscriptionRequest);
             systemNameValidator.validateSystemName(subscriptionRequest.getTargetSystemName());
             validateSimpleOrchestrationRequest(subscriptionRequest.getOrchestrationRequest(), origin);
@@ -173,6 +178,7 @@ public class OrchestrationValidation {
 
     //-------------------------------------------------------------------------------------------------
     public void validateUUID(final String uuid, final String origin) {
+        logger.debug("validateUUID started...");
 
         if (Utilities.isEmpty(uuid)) {
             throw new InvalidParameterException("UUID is missing", origin);

@@ -28,6 +28,6 @@ public class SwaggerConfig extends DefaultSwaggerConfig {
 
 	//-------------------------------------------------------------------------------------------------
 	public SwaggerConfig() {
-		super("Arrowhead Service Orchestration - Simple");
+		super("Arrowhead SimpleStoreServiceOrchestration");
 	}
 }

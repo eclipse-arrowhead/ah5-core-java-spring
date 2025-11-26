@@ -17,6 +17,7 @@
 
 package eu.arrowhead.serviceorchestration.service.validation;
 
+import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationRequest;
@@ -26,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.util.UUID;
 
@@ -45,6 +47,7 @@ public class OrchestrationServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public String validateAndNormalizeRequester(final String requesterSystemName, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizeRequester started...");
 
         return orchValidator.validateAndNormalizeSystemName(requesterSystemName, origin);
@@ -52,6 +55,7 @@ public class OrchestrationServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public SimpleOrchestrationRequest validateAndNormalizePull(final OrchestrationRequestDTO dto, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizePull started...");
 
         return orchValidator.validateAndNormalizeOrchestrationRequest(dto, origin);
@@ -59,6 +63,7 @@ public class OrchestrationServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizePushSubscribe started...");
 
         return orchValidator.validateAndNormalizePushSubscribe(dto, requesterSystemName, origin);
@@ -66,6 +71,7 @@ public class OrchestrationServiceValidation {
 
     //-------------------------------------------------------------------------------------------------
     public UUID validateAndNormalizePushUnsubscribe(final String uuid, final String origin) {
+        Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
         logger.debug("validateAndNormalizePushUnsubscribe started...");
 
         return orchValidator.validateAndNormalizeUUID(uuid, origin);

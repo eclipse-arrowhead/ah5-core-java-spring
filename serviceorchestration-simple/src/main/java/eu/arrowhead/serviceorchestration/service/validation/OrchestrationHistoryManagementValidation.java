@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 @Service
 public class OrchestrationHistoryManagementValidation {
@@ -62,6 +63,7 @@ public class OrchestrationHistoryManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedOrchestrationJobQueryRequest validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeQueryService started...");
 
 		validateQueryService(dto, origin);

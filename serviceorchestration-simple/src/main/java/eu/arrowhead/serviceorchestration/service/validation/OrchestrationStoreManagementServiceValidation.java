@@ -70,6 +70,7 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationSimpleStoreRequestDTO> validateAndNormalizeCreateBulk(final OrchestrationSimpleStoreListRequestDTO dto, final String origin) {
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeCreateBulk started...");
 
 		if (dto == null) {
@@ -79,7 +80,7 @@ public class OrchestrationStoreManagementServiceValidation {
 			throw new InvalidParameterException("Request payload contains null element", origin);
 		}
 
-		final List<OrchestrationSimpleStoreRequestDTO> normalizedDtos = new ArrayList<OrchestrationSimpleStoreRequestDTO>(dto.candidates().size());
+		final List<OrchestrationSimpleStoreRequestDTO> normalizedDtos = new ArrayList<>(dto.candidates().size());
 		try {
 			dto.candidates().forEach(c -> normalizedDtos.add(validateAndNormalizeOrchestrationSimpleStoreRequestDTO(c)));
 			checkDuplicates(normalizedDtos);
@@ -93,6 +94,7 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedOrchestrationSimpleStoreQueryRequest validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeQuery started...");
 
 		validateQuery(dto, origin);
@@ -123,7 +125,8 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public Map<UUID, Integer> validateAndNormalizePriorityRequestDTO(final PriorityRequestDTO dto, final String origin) {
-		logger.info("validatePriorityMap started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		logger.debug("validateAndNormalizePriorityRequestDTO started...");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Priority map is null", origin);
@@ -131,7 +134,7 @@ public class OrchestrationStoreManagementServiceValidation {
 
 		dto.keySet().forEach(id -> {
 			if (!Utilities.isUUID(id.trim())) {
-				throw new InvalidParameterException("Invalid UUID: " + id.trim());
+				throw new InvalidParameterException("Invalid UUID: " + id.trim(), origin);
 			}
 		});
 
@@ -147,8 +150,8 @@ public class OrchestrationStoreManagementServiceValidation {
 		}
 
 		for (final Integer p : normalized.values()) {
-			if (p < 0) {
-				throw new InvalidParameterException("Invalid priority: " + p + ", should be non-negative");
+			if (p <= 0) {
+				throw new InvalidParameterException("Invalid priority: " + p + ", should be positive", origin);
 			}
 		}
 
@@ -156,7 +159,9 @@ public class OrchestrationStoreManagementServiceValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public List<UUID> validateAndNormalizeRemove(final List<String> uuids) {
+	public List<UUID> validateAndNormalizeRemove(final List<String> uuids, final String origin) {
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+		logger.debug("validateAndNormalizeRemove started...");
 
 		uuids.forEach(id -> {
 			if (!Utilities.isUUID(id.trim())) {
@@ -172,13 +177,14 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationSimpleStoreRequestDTO validateAndNormalizeOrchestrationSimpleStoreRequestDTO(final OrchestrationSimpleStoreRequestDTO dto) {
-		Assert.notNull(dto, "DTO is null!");
+		Assert.notNull(dto, "DTO is null");
+		logger.debug("validateAndNormalizeOrchestrationSimpleStoreRequestDTO started...");
 
 		if (dto.priority() == null) {
 			throw new InvalidParameterException("Priority is missing");
 		}
-		if (dto.priority() < 0) {
-			throw new InvalidParameterException("Priority should be non-negative");
+		if (dto.priority() <= 0) {
+			throw new InvalidParameterException("Priority should be positive");
 		}
 
 		final OrchestrationSimpleStoreRequestDTO normalizedDto = normalizer.normalizeCreate(dto);
@@ -191,8 +197,9 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	private void checkDuplicates(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
+		logger.debug("checkDuplicates started...");
 
-		final List<Triple<String, String, Integer>> existing = new ArrayList<Triple<String, String, Integer>>();
+		final List<Triple<String, String, Integer>> existing = new ArrayList<>();
 		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
 			final Triple<String, String, Integer> current = Triple.of(candidate.consumer(), candidate.serviceInstanceId(), candidate.priority());
 			if (existing.contains(current)) {
@@ -206,6 +213,7 @@ public class OrchestrationStoreManagementServiceValidation {
 	//-------------------------------------------------------------------------------------------------
 	private void validateQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		Assert.notNull(dto, "dto is null");
+		logger.debug("validateQuery started...");
 
 		if (dto.pagination() == null) {
 			throw new InvalidParameterException("Page is null", origin);
@@ -245,12 +253,12 @@ public class OrchestrationStoreManagementServiceValidation {
 			throw new InvalidParameterException("Service instance id list contains null or empty element", origin);
 		}
 
-		if (dto.minPriority() != null && dto.minPriority() < 0) {
-			throw new InvalidParameterException("Invalid minimum priority: should be a non-negative integer", origin);
+		if (dto.minPriority() != null && dto.minPriority() <= 0) {
+			throw new InvalidParameterException("Invalid minimum priority: should be a positive integer", origin);
 		}
 
-		if (dto.maxPriority() != null && dto.maxPriority() < 0) {
-			throw new InvalidParameterException("Invalid maximum priority: should be a non-negative integer", origin);
+		if (dto.maxPriority() != null && dto.maxPriority() <= 0) {
+			throw new InvalidParameterException("Invalid maximum priority: should be a positive integer", origin);
 		}
 
 		if (dto.maxPriority() != null && dto.minPriority() != null && dto.minPriority() > dto.maxPriority()) {
