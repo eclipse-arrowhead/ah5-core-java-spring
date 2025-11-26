@@ -44,6 +44,7 @@ import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
+import eu.arrowhead.dto.QoSRequirementDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
@@ -96,7 +97,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		assertDoesNotThrow(() -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -124,7 +125,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -144,7 +145,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -164,7 +165,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -184,7 +185,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write", ""), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -204,7 +205,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0", ""),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -226,7 +227,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, flags, Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, flags, null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -246,7 +247,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 0);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 0);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -266,7 +267,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				"2025-12-15 14:05", List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -289,7 +290,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), metadataReqList, List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -309,7 +310,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http", ""), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -329,7 +330,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4", ""), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -352,7 +353,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), interfacePropsReqList,
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -372,7 +373,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH", ""), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -392,7 +393,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", ""));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
@@ -403,7 +404,7 @@ public class OrchestrationFormValidationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testValidateOrchestrationFormNullQoSReqValue() {
+	public void testValidateOrchestrationFormEmptyQoSPrefernceType() {
 		final String origin = "test.origin";
 		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
 		metadataReq.put("foo", "bar");
@@ -412,14 +413,58 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final Map<String, String> qosReq = new HashMap<>();
-		qosReq.put("something", null);
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosReq, 500);
+		final List<QoSRequirementDTO> qosPref = List.of(new QoSRequirementDTO("  ", "FILTER", null));
+
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosPref, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
 
-		assertEquals("QoS requirement map contains empty value", ex.getMessage());
+		assertEquals("QoS type is empty", ex.getMessage());
+		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateOrchestrationFormEmptyQoSOperation() {
+		final String origin = "test.origin";
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("foo", "bar");
+		final MetadataRequirementDTO interfacePropsReq = new MetadataRequirementDTO();
+		interfacePropsReq.put("method", "put");
+		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
+				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
+				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
+		final List<QoSRequirementDTO> qosPref = List.of(new QoSRequirementDTO("test-qos", "  ", null));
+
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosPref, 500);
+		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
+
+		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
+
+		assertEquals("QoS operation is empty", ex.getMessage());
+		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateOrchestrationFormInvalidQoSOperation() {
+		final String origin = "test.origin";
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("foo", "bar");
+		final MetadataRequirementDTO interfacePropsReq = new MetadataRequirementDTO();
+		interfacePropsReq.put("method", "put");
+		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
+				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
+				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
+		final List<QoSRequirementDTO> qosPref = List.of(new QoSRequirementDTO("test-qos", "fhfdh", null));
+
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), qosPref, 500);
+		final OrchestrationForm orchestrationForm = new OrchestrationForm("RequesterSystem", "TestConsumer", orchestrationRequestDTO);
+
+		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateOrchestrationForm(orchestrationForm, origin));
+
+		assertEquals("Invalid QoS operation", ex.getMessage());
 		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
 	}
 
@@ -454,7 +499,8 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true),
+				List.of(new QoSRequirementDTO("test-qos", "FILTER", Map.of("something", "xyz"))), 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		assertDoesNotThrow(() -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, false, origin));
@@ -481,7 +527,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of("NOTAFLAG", true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of("NOTAFLAG", true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, false, origin));
@@ -511,7 +557,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV10"), List.of(interfacePropsReq),
 				List.of("CERT_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, false, origin));
@@ -541,7 +587,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("INVALID_SECURITY"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, true, origin));
@@ -571,7 +617,7 @@ public class OrchestrationFormValidationTest {
 		final OrchestrationServiceRequirementDTO serviceRequirementDTO = new OrchestrationServiceRequirementDTO("testService", List.of("read", "write"), List.of("1.0.0"),
 				Utilities.convertZonedDateTimeToUTCString(Utilities.utcNow().plusHours(1)), List.of(metadataReq), List.of("generic_http"), List.of("IPV4"), List.of(interfacePropsReq),
 				List.of("TRANSLATION_BRIDGE_TOKEN_AUTH"), List.of("PreferredProvider1", "PreferredProvider2"));
-		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), Map.of("something", "xyz"), 500);
+		final OrchestrationRequestDTO orchestrationRequestDTO = new OrchestrationRequestDTO(serviceRequirementDTO, Map.of(OrchestrationFlag.MATCHMAKING.name(), true), null, 500);
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestManager", "TestConsumer", orchestrationRequestDTO);
 
 		final Throwable ex = assertThrows(Throwable.class, () -> validator.validateAndNormalizeOrchestrationForm(orchestrationForm, true, origin));

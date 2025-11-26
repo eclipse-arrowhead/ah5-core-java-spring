@@ -66,6 +66,7 @@ import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.OrchestrationResultDTO;
 import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.QoSRequirementDTO;
 import eu.arrowhead.dto.ServiceInstanceInterfaceResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceListResponseDTO;
 import eu.arrowhead.dto.ServiceInstanceLookupRequestDTO;
@@ -78,11 +79,12 @@ import eu.arrowhead.dto.TranslationNegotiationResponseDTO;
 import eu.arrowhead.dto.enums.AuthorizationTargetType;
 import eu.arrowhead.dto.enums.AuthorizationTokenType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
-import eu.arrowhead.dto.enums.QoSEvaulationType;
+import eu.arrowhead.dto.enums.QoSOperation;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.dto.enums.TranslationDiscoveryFlag;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.DynamicServiceOrchestrationSystemInfo;
+import eu.arrowhead.serviceorchestration.driver.QoSDriver;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationLockDbService;
@@ -112,6 +114,9 @@ public class LocalServiceOrchestration {
 
 	@Autowired
 	private ArrowheadHttpService ahHttpService;
+
+	@Autowired
+	private QoSDriver qosDriver;
 
 	@Resource(name = DynamicServiceOrchestrationConstants.SERVICE_INSTANCE_MATCHMAKER)
 	private ServiceInstanceMatchmaker matchmaker;
@@ -207,22 +212,6 @@ public class LocalServiceOrchestration {
 				return doInterCloudOrReturn(jobId, form);
 			}
 
-			// QoS cross-check
-			if (form.hasQoSRequirements()) {
-				if (!sysInfo.isQoSEnabled()) {
-					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
-					releaseTemporaryLockIfItWasLocked(jobId, candidates);
-					orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, "No results were found");
-
-					return convertToOrchestrationResponse(List.of(), warnings);
-				}
-				candidates = doQoSCompliance(candidates);
-
-				if (Utilities.isEmpty(candidates)) {
-					return doInterCloudOrReturn(jobId, form);
-				}
-			}
-
 			// Deal with translations
 			String translationBirdgeId = null;
 			if (translationAllowed) {
@@ -261,6 +250,15 @@ public class LocalServiceOrchestration {
 
 			if (Utilities.isEmpty(candidates)) {
 				return doInterCloudOrReturn(jobId, form);
+			}
+
+			// QoS cross-check
+			if (form.hasQualityRequirements()) {
+				if (!sysInfo.isQoSEnabled()) {
+					warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_QOS_NOT_ENABLED);
+				} else {
+					candidates = qosDriver.doQoSCompliance(jobId, candidates, form.getQualityRequirements(), warnings);
+				}
 			}
 
 			// Matchmaking if required
@@ -659,24 +657,16 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private QoSEvaulationType getQoSEvaulationType(final OrchestrationForm form) {
-		logger.debug("getQoSEvaulationType started...");
+	private QoSOperation getLeadingQoSOperationForMatchmaking(final OrchestrationForm form) {
+		logger.debug("getLeadingQoSOperationForMatchmaking started...");
 
-		// TODO
+		for (final QoSRequirementDTO qosPref : form.getQualityRequirements()) {
+			if (qosPref.operation().equalsIgnoreCase(QoSOperation.SORT.name())) {
+				return QoSOperation.SORT;
+			}
+		}
 
-		logger.warn("QoS support is not implemented yet");
-		return QoSEvaulationType.FILTERING;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	private List<OrchestrationCandidate> doQoSCompliance(final List<OrchestrationCandidate> candidates) {
-		logger.debug("doQoSCompliance started...");
-
-		// TODO implement when QoS Evaluator is ready
-		// TODO let QoS evaluator know that translation is necessary or not
-
-		logger.warn("QoS crosschek is not implemented yet");
-		return candidates;
+		return QoSOperation.FILTER;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -799,7 +789,7 @@ public class LocalServiceOrchestration {
 	private OrchestrationCandidate matchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("matchmaking started...");
 
-		if (form.hasQoSRequirements() && getQoSEvaulationType(form) == QoSEvaulationType.RANKING) {
+		if (form.hasQualityRequirements() && getLeadingQoSOperationForMatchmaking(form) == QoSOperation.SORT) {
 			return candidates.getFirst();
 		}
 
