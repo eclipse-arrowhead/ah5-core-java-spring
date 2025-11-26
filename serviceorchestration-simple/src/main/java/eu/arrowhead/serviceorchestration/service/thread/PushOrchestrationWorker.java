@@ -76,7 +76,6 @@ public class PushOrchestrationWorker implements Runnable {
     @Autowired
     private HttpService httpService;
 
-    //TODO
     @Autowired(required = false)
     private MqttService mqttService;
 
@@ -111,7 +110,7 @@ public class PushOrchestrationWorker implements Runnable {
         try {
             final Optional<OrchestrationJob> jobOpt = orchJobDbService.getById(jobId);
             if (jobOpt.isEmpty()) {
-                logger.error("Orchestration push job doesn't exists: " + jobId);
+                logger.error("Orchestration push job doesn't exist: " + jobId);
                 return;
             }
 

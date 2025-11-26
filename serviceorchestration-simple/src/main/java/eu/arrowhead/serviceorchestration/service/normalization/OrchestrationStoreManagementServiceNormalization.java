@@ -35,7 +35,7 @@ import eu.arrowhead.common.service.validation.serviceinstance.ServiceInstanceIde
 import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.dto.PriorityRequestDTO;
-import eu.arrowhead.serviceorchestration.service.dto.NormalizedOrchestrationSimpleStoreQueryRequestDTO;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationSimpleStoreQueryRequest;
 
 @Service
 public class OrchestrationStoreManagementServiceNormalization {
@@ -70,20 +70,18 @@ public class OrchestrationStoreManagementServiceNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	public Map<UUID, Integer> normalizePriorityRequestDTO(final PriorityRequestDTO dto) {
-		logger.debug("normalizeUUIDList started...");
+		logger.debug("normalizePriorityRequestDTO started...");
 
 		final Map<UUID, Integer> normalized = new HashMap<UUID, Integer>(dto.size());
-		dto.entrySet().forEach(entry -> {
-			normalized.put(UUID.fromString(entry.getKey().trim()), entry.getValue());
-		});
+		dto.forEach((idString, priority) -> normalized.put(UUID.fromString(idString.trim()), priority));
 		return normalized;
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public NormalizedOrchestrationSimpleStoreQueryRequestDTO normalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto) {
+	public NormalizedOrchestrationSimpleStoreQueryRequest normalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto) {
 		logger.debug("normalizeQuery started...");
 
-		return new NormalizedOrchestrationSimpleStoreQueryRequestDTO(
+		return new NormalizedOrchestrationSimpleStoreQueryRequest(
 				// no need to normalize, because it will happen in the getPageRequest method
 				dto.pagination(),
 

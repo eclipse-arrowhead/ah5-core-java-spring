@@ -111,7 +111,7 @@ public class PushOrchestrationWorker implements Runnable {
 		try {
 			final Optional<OrchestrationJob> jobOpt = orchJobDbService.getById(jobId);
 			if (jobOpt.isEmpty()) {
-				logger.error("Orchestration push job doesn't exists: " + jobId);
+				logger.error("Orchestration push job doesn't exist: " + jobId);
 				return;
 			}
 

@@ -105,8 +105,6 @@ public class OrchestrationService {
 
         } catch (final InternalServerError ex) {
             throw new InternalServerError(ex.getMessage(), origin);
-        } catch (final Exception ex) {
-            throw ex;
         }
     }
 

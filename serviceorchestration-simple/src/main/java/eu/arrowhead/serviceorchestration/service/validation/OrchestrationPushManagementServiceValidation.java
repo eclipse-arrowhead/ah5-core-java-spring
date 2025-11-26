@@ -129,6 +129,7 @@ public class OrchestrationPushManagementServiceValidation {
                 if (checked.contains(id)) {
                     throw new InvalidParameterException("Duplicated subscription id: " + id.toString(), origin);
                 }
+                checked.add(id);
             }
 
             normalized.setSubscriptionIds(normalizedIds);

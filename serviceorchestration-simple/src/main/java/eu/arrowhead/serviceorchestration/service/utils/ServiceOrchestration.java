@@ -17,9 +17,7 @@
 
 package eu.arrowhead.serviceorchestration.service.utils;
 
-
-import eu.arrowhead.common.Constants;
-import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
@@ -31,9 +29,11 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class ServiceOrchestration {
@@ -58,44 +58,66 @@ public class ServiceOrchestration {
 
         orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
 
-        final boolean hasServiceDefinition = request.getServiceDefinition() != null;
+        // orchestration flags
         final boolean onlyPreferred = request.getOrchestrationFlags() != null
                 && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false);
-        final boolean hasPreferredProviders = request.getPreferredProviders() != null;
         final boolean matchmaking = request.getOrchestrationFlags() != null
                 && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.MATCHMAKING.toString(), false);
 
-        List<OrchestrationStore> sortedMatchingEntries = hasServiceDefinition
+        // matching entries
+        List<OrchestrationStore> sortedMatchingEntries = request.getServiceDefinition() != null
                 ? storeDbService.getByConsumerAndServiceDefinition(consumer, request.getServiceDefinition())
                 : storeDbService.getByConsumer(consumer);
 
-        // Dealing with preferences
-        if (hasPreferredProviders || onlyPreferred) {
-            List<OrchestrationStore> preferredEntries = filterOutNonPreferredProviders(hasPreferredProviders ? request.getPreferredProviders() : List.of(), sortedMatchingEntries);
+        if (request.getPreferredProviders() != null) {
+            sortedMatchingEntries = sortByPreferredProviders(sortedMatchingEntries, request.getPreferredProviders(), onlyPreferred);
+        }
 
-            if (!Utilities.isEmpty(preferredEntries) || onlyPreferred) {
-                sortedMatchingEntries = preferredEntries;
+        if (matchmaking) {
+            // converting list to LinkedHashSet so there will be no duplicates but the order remains
+            final Set<String> serviceDefs = new LinkedHashSet<>(sortedMatchingEntries.stream().map(OrchestrationStore::getServiceDefinition).toList());
+
+            // finding entries with the highest priority for each service definition
+            final List<OrchestrationStore> sortedWithMatchmaking = new ArrayList<>();
+            for (final String serviceDef : serviceDefs) {
+                for (final OrchestrationStore entry : sortedMatchingEntries) {
+                    if (entry.getServiceDefinition().equals(serviceDef)) {
+                        sortedWithMatchmaking.add(entry);
+                        // stopping after the first match since that is the one with the highest priority
+                        break;
+                    }
+                }
             }
+            sortedMatchingEntries = sortedWithMatchmaking;
         }
 
-        // Matchmaking
-        if (!Utilities.isEmpty(sortedMatchingEntries) && matchmaking) {
-            sortedMatchingEntries = List.of(sortedMatchingEntries.getFirst());
-        }
-
-        orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, sortedMatchingEntries.size() + " local result");
+        orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, sortedMatchingEntries.size() + " local result(s)");
 
         return sortedMatchingEntries;
     }
+
 
     //=================================================================================================
     // assistant methods
 
     //-------------------------------------------------------------------------------------------------
-    private List<OrchestrationStore> filterOutNonPreferredProviders(final List<String> preferred, final List<OrchestrationStore> candidates) {
-        return candidates
-                .stream()
-                .filter(candidate -> preferred.contains(candidate.getServiceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP)[0])) // provider name
-                .collect(Collectors.toList());
+    // Sore entries with preferred providers will be prioritized
+    private List<OrchestrationStore> sortByPreferredProviders(final List<OrchestrationStore> entries, final List<String> preferred, final boolean onlyPreferred) {
+
+        List<OrchestrationStore> preferredEntries = new ArrayList<>();
+        List<OrchestrationStore> notPreferredEntries = new ArrayList<>();
+
+        for (final OrchestrationStore entry : entries) {
+            if (preferred.contains(ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(entry.getServiceInstanceId()))) {
+                preferredEntries.add(entry);
+            } else {
+                notPreferredEntries.add(entry);
+            }
+        }
+
+        if (!onlyPreferred) {
+            preferredEntries.addAll(notPreferredEntries);
+        }
+        return preferredEntries;
     }
 }

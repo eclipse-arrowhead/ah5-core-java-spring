@@ -54,21 +54,7 @@ public class OrchestrationNormalization {
     public void normalizePull(final SimpleOrchestrationRequest toNormalize) {
         logger.debug("normalizePull started...");
 
-        // service definition
-        toNormalize.setServiceDefinition(serviceDefNameNormalizer.normalize(toNormalize.getServiceDefinition()));
-
-
-        // preferred providers
-        if (!Utilities.isEmpty(toNormalize.getPreferredProviders())) {
-            toNormalize.setPreferredProviders(toNormalize.getPreferredProviders().stream().map(p -> systemNameNormalizer.normalize(p)).collect(Collectors.toList()));
-        }
-
-        // orchestration flags
-        if (!Utilities.isEmpty(toNormalize.getOrchestrationFlags())) {
-            final Map<String, Boolean> normalizedFlags = new HashMap<>();
-            toNormalize.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
-            toNormalize.setOrchestrationFlags(normalizedFlags);
-        }
+        normalizeOrchestrationRequest(toNormalize);
     }
 
     //-------------------------------------------------------------------------------------------------
@@ -104,6 +90,21 @@ public class OrchestrationNormalization {
 
     //-------------------------------------------------------------------------------------------------
     private void normalizeOrchestrationRequest(final SimpleOrchestrationRequest toNormalize) {
-        normalizePull(toNormalize);
+
+        // service definition
+        toNormalize.setServiceDefinition(serviceDefNameNormalizer.normalize(toNormalize.getServiceDefinition()));
+
+
+        // preferred providers
+        if (!Utilities.isEmpty(toNormalize.getPreferredProviders())) {
+            toNormalize.setPreferredProviders(toNormalize.getPreferredProviders().stream().map(p -> systemNameNormalizer.normalize(p)).collect(Collectors.toList()));
+        }
+
+        // orchestration flags
+        if (!Utilities.isEmpty(toNormalize.getOrchestrationFlags())) {
+            final Map<String, Boolean> normalizedFlags = new HashMap<>();
+            toNormalize.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
+            toNormalize.setOrchestrationFlags(normalizedFlags);
+        }
     }
 }

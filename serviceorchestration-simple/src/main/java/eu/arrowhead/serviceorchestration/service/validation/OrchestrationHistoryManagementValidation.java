@@ -37,101 +37,101 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrchestrationHistoryManagementValidation {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private PageValidator pageValidator;
+	@Autowired
+	private PageValidator pageValidator;
 
-    @Autowired
-    private SystemNameValidator systemNameValidator;
+	@Autowired
+	private SystemNameValidator systemNameValidator;
 
-    @Autowired
-    private ServiceDefinitionNameValidator serviceDefNameValidator;
+	@Autowired
+	private ServiceDefinitionNameValidator serviceDefNameValidator;
 
-    @Autowired
-    private OrchestrationValidation orchestrationValidator;
+	@Autowired
+	private OrchestrationValidation orchestrationValidator;
 
-    @Autowired
-    private OrchestrationHistoryManagementNormalization normalization;
+	@Autowired
+	private OrchestrationHistoryManagementNormalization normalization;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public NormalizedOrchestrationJobQueryRequest validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
-        logger.debug("validateAndNormalizeQueryService started...");
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedOrchestrationJobQueryRequest validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
+		logger.debug("validateAndNormalizeQueryService started...");
 
-        validateQueryService(dto, origin);
-        final NormalizedOrchestrationJobQueryRequest normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto, origin);
+		validateQueryService(dto, origin);
+		final NormalizedOrchestrationJobQueryRequest normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto, origin);
 
-        try {
-            normalized.getRequesterSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
-            normalized.getTargetSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
-            normalized.getServiceDefinitions().forEach(def -> serviceDefNameValidator.validateServiceDefinitionName(def));
-        } catch (final InvalidParameterException ex) {
-            throw new InvalidParameterException(ex.getMessage(), origin);
-        }
+		try {
+			normalized.getRequesterSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
+			normalized.getTargetSystems().forEach(sys -> systemNameValidator.validateSystemName(sys));
+			normalized.getServiceDefinitions().forEach(def -> serviceDefNameValidator.validateServiceDefinitionName(def));
+		} catch (final InvalidParameterException ex) {
+			throw new InvalidParameterException(ex.getMessage(), origin);
+		}
 
-        return normalized;
-    }
+		return normalized;
+	}
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    private void validateQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
-        logger.debug("validateQueryService started...");
+	//-------------------------------------------------------------------------------------------------
+	private void validateQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
+		logger.debug("validateQueryService started...");
 
-        if (dto == null) {
-            return;
-        }
+		if (dto == null) {
+			return;
+		}
 
-        pageValidator.validatePageParameter(dto.pagination(), OrchestrationJob.SORTABLE_FIELDS_BY, origin);
+		pageValidator.validatePageParameter(dto.pagination(), OrchestrationJob.SORTABLE_FIELDS_BY, origin);
 
-        // job ids
-        if (!Utilities.isEmpty(dto.ids())) {
-            dto.ids().forEach(id -> orchestrationValidator.validateUUID(id, origin));
-        }
+		// job ids
+		if (!Utilities.isEmpty(dto.ids())) {
+			dto.ids().forEach(id -> orchestrationValidator.validateUUID(id, origin));
+		}
 
-        // statuses
-        if (!Utilities.isEmpty(dto.statuses())) {
-            if (Utilities.containsNullOrEmpty(dto.statuses())) {
-                throw new InvalidParameterException("Status list contains empty element", origin);
-            }
+		// statuses
+		if (!Utilities.isEmpty(dto.statuses())) {
+			if (Utilities.containsNullOrEmpty(dto.statuses())) {
+				throw new InvalidParameterException("Status list contains empty element", origin);
+			}
 
-            dto.statuses().forEach(status -> {
-                if (!Utilities.isEnumValue(status.trim().toUpperCase(), OrchestrationJobStatus.class)) {
-                    throw new InvalidParameterException("Invalid status: " + status, origin);
-                }
-            });
-        }
+			dto.statuses().forEach(status -> {
+				if (!Utilities.isEnumValue(status.trim().toUpperCase(), OrchestrationJobStatus.class)) {
+					throw new InvalidParameterException("Invalid status: " + status, origin);
+				}
+			});
+		}
 
-        // orchestration type
-        if (dto.type() != null && !Utilities.isEnumValue(dto.type().trim().toUpperCase(), OrchestrationType.class)) {
-            throw new InvalidParameterException("Invalid type: " + dto.type(), origin);
-        }
+		// orchestration type
+		if (dto.type() != null && !Utilities.isEnumValue(dto.type().trim().toUpperCase(), OrchestrationType.class)) {
+			throw new InvalidParameterException("Invalid type: " + dto.type(), origin);
+		}
 
-        // requester systems
-        if (!Utilities.isEmpty(dto.requesterSystems()) && Utilities.containsNullOrEmpty(dto.requesterSystems())) {
-            throw new InvalidParameterException("Requester system list contains empty element", origin);
-        }
+		// requester systems
+		if (!Utilities.isEmpty(dto.requesterSystems()) && Utilities.containsNullOrEmpty(dto.requesterSystems())) {
+			throw new InvalidParameterException("Requester system list contains empty element", origin);
+		}
 
-        // target systems
-        if (!Utilities.isEmpty(dto.targetSystems()) && Utilities.containsNullOrEmpty(dto.targetSystems())) {
-            throw new InvalidParameterException("Target system list contains empty element", origin);
-        }
+		// target systems
+		if (!Utilities.isEmpty(dto.targetSystems()) && Utilities.containsNullOrEmpty(dto.targetSystems())) {
+			throw new InvalidParameterException("Target system list contains empty element", origin);
+		}
 
-        // service definitions
-        if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
-            throw new InvalidParameterException("Service definition list contains empty element", origin);
-        }
+		// service definitions
+		if (!Utilities.isEmpty(dto.serviceDefinitions()) && Utilities.containsNullOrEmpty(dto.serviceDefinitions())) {
+			throw new InvalidParameterException("Service definition list contains empty element", origin);
+		}
 
-        // subscription ids
-        if (!Utilities.isEmpty(dto.subscriptionIds())) {
-            dto.ids().forEach(id -> orchestrationValidator.validateUUID(id, origin));
-        }
-    }
+		// subscription ids
+		if (!Utilities.isEmpty(dto.subscriptionIds())) {
+			dto.ids().forEach(id -> orchestrationValidator.validateUUID(id, origin));
+		}
+	}
 }

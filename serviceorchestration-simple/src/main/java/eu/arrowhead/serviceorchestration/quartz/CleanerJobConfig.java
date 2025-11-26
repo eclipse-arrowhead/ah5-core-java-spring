@@ -51,7 +51,7 @@ public class CleanerJobConfig {
     JobDetailFactoryBean cleanerJobDetail() {
         final JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
         jobDetailFactory.setJobClass(CleanerJob.class);
-        jobDetailFactory.setDescription("Removing expired subscriptions, service locks and old orchestration jobs");
+        jobDetailFactory.setDescription("Removing expired subscriptions and old orchestration jobs");
         jobDetailFactory.setDurability(true);
 
         return jobDetailFactory;

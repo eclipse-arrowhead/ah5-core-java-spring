@@ -17,6 +17,7 @@
 
 package eu.arrowhead.serviceorchestration.service.model;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,11 +87,11 @@ public class SimpleOrchestrationRequest {
         this.warnings = warnings;
     }
 
+    //-------------------------------------------------------------------------------------------------
     public void addWarning(final String warning) {
         if (this.warnings == null) {
-            this.warnings = Set.of(warning);
-        } else {
-            this.warnings.add(warning);
+            this.warnings = new HashSet<>();
         }
+        this.warnings.add(warning);
     }
 }

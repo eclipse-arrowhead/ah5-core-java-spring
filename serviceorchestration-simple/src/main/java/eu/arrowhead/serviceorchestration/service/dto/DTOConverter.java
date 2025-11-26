@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
 import eu.arrowhead.dto.OrchestrationJobDTO;
 import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
@@ -78,13 +79,13 @@ public class DTOConverter {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityPageToResponseListTO(final Page<OrchestrationStore> results) {
+	public OrchestrationSimpleStoreListResponseDTO convertStoreEntityPageToResponseListTO(final Page<OrchestrationStore> entities) {
 		logger.debug("convertStoreEntityPageToResponseListTO started...");
-		Assert.notNull(results, "results is null");
+		Assert.notNull(entities, "entities is null");
 
 		return new OrchestrationSimpleStoreListResponseDTO(
-				results.stream().map(this::convertOrchestrationStoreEntityToResponseDTO).collect(Collectors.toList()),
-				results.getTotalElements());
+				entities.stream().map(this::convertOrchestrationStoreEntityToResponseDTO).collect(Collectors.toList()),
+				entities.getTotalElements());
 	}
 
     //-------------------------------------------------------------------------------------------------
@@ -96,15 +97,13 @@ public class DTOConverter {
 
         final List<OrchestrationResultDTO> responseDTOS = new ArrayList<>(entities.size());
         entities.forEach(entity -> {
-            final String[] instanceIdParts = entity.getServiceInstanceId().split(Constants.COMPOSITE_ID_DELIMITER_REGEXP);
-            assertTrue(instanceIdParts.length == 3, "Invalid service instance identifier");
 
             responseDTOS.add(new OrchestrationResultDTO(
                     entity.getServiceInstanceId(),
                     Defaults.DEFAULT_CLOUD,
-                    instanceIdParts[0], // providerName
+					ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(entity.getServiceInstanceId()),
                     entity.getServiceDefinition(),
-                    instanceIdParts[2], // version
+                    ServiceInstanceIdUtils.retrieveVersionFromInstanceId(entity.getServiceInstanceId()),
                     null,
                     null,
                     null,
@@ -145,6 +144,7 @@ public class DTOConverter {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationSimpleStoreResponseDTO convertOrchestrationStoreEntityToResponseDTO(final OrchestrationStore entity) {
+		logger.debug("convertOrchestrationStoreEntityToResponseDTO started...");
 		Assert.notNull(entity, "entity is null");
 
 		return new OrchestrationSimpleStoreResponseDTO(

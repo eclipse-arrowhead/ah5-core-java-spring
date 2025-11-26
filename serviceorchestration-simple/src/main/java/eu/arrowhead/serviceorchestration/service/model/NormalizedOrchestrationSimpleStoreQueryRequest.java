@@ -14,14 +14,14 @@
  *  	Arrowhead Consortia - conceptualization
  *
  *******************************************************************************/
-package eu.arrowhead.serviceorchestration.service.dto;
+package eu.arrowhead.serviceorchestration.service.model;
 
 import java.util.List;
 import java.util.UUID;
 
 import eu.arrowhead.dto.PageDTO;
 
-public record NormalizedOrchestrationSimpleStoreQueryRequestDTO(
+public record NormalizedOrchestrationSimpleStoreQueryRequest(
 	PageDTO pagination,
 	List<UUID> ids,
 	List<String> consumerNames,

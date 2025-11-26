@@ -58,6 +58,7 @@ public class SubscriptionDbService {
     @Transactional(rollbackFor = ArrowheadException.class)
     public List<Subscription> create(final List<SimpleOrchestrationSubscriptionRequest> candidates, final String requesterSystemName) {
         logger.debug("create started..");
+        Assert.isTrue(!Utilities.isEmpty(requesterSystemName), "requesterSystemName is empty");
         Assert.isTrue(!Utilities.isEmpty(candidates), "subscription candidate list is empty");
         Assert.isTrue(!Utilities.containsNull(candidates), "subscription candidate list contains null element");
 
@@ -88,8 +89,8 @@ public class SubscriptionDbService {
 
             if (!Utilities.isEmpty(toRemove)) {
                 subscriptionRepo.deleteAllById(toRemove);
+                subscriptionRepo.flush();
             }
-            subscriptionRepo.flush();
 
             return subscriptionRepo.saveAllAndFlush(toSave);
         } catch (final Exception ex) {

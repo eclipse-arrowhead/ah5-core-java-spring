@@ -39,7 +39,7 @@ import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
 import eu.arrowhead.dto.PriorityRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
-import eu.arrowhead.serviceorchestration.service.dto.NormalizedOrchestrationSimpleStoreQueryRequestDTO;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationSimpleStoreQueryRequest;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationStoreManagementServiceNormalization;
 
 @Service
@@ -92,12 +92,12 @@ public class OrchestrationStoreManagementServiceValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public NormalizedOrchestrationSimpleStoreQueryRequestDTO validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
+	public NormalizedOrchestrationSimpleStoreQueryRequest validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeQuery started...");
 
 		validateQuery(dto, origin);
 
-		final NormalizedOrchestrationSimpleStoreQueryRequestDTO normalized = normalizer.normalizeQuery(dto);
+		final NormalizedOrchestrationSimpleStoreQueryRequest normalized = normalizer.normalizeQuery(dto);
 		try {
 			if (normalized.consumerNames() != null) {
 				normalized.consumerNames().forEach(c -> systemNameValidator.validateSystemName(c));
