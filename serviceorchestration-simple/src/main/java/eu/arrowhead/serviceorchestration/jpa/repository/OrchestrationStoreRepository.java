@@ -55,5 +55,8 @@ public interface OrchestrationStoreRepository extends RefreshableRepository<Orch
     public List<OrchestrationStore> findAllByConsumerOrderByPriorityAsc(final String consumer);
 
     //-------------------------------------------------------------------------------------------------
+    public List<OrchestrationStore> findAllByConsumerAndServiceDefinition(final String consumer, final String serviceDefinition);
+
+    //-------------------------------------------------------------------------------------------------
     public List<OrchestrationStore> findAllByConsumerAndServiceDefinitionOrderByPriorityAsc(final String consumer, final String serviceDefinition);
 }
