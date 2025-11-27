@@ -22,41 +22,42 @@ import java.util.UUID;
 
 public class NormalizedOrchestrationPushTrigger {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    private List<String> targetSystems;
-    private List<UUID> subscriptionIds;
+	private List<String> targetSystems;
+	private List<UUID> subscriptionIds;
 
-    //=================================================================================================
-    // boilerplate
+	//=================================================================================================
+	// boilerplate
 
-    //-------------------------------------------------------------------------------------------------
-    public NormalizedOrchestrationPushTrigger() { }
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedOrchestrationPushTrigger() {
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public NormalizedOrchestrationPushTrigger(final List<String> targetSystems, final List<UUID> subscriptionIds) {
-        this.targetSystems = targetSystems;
-        this.subscriptionIds = subscriptionIds;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedOrchestrationPushTrigger(final List<String> targetSystems, final List<UUID> subscriptionIds) {
+		this.targetSystems = targetSystems;
+		this.subscriptionIds = subscriptionIds;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public List<String> getTargetSystems() {
-        return targetSystems;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public List<String> getTargetSystems() {
+		return targetSystems;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setTargetSystems(final List<String> targetSystems) {
-        this.targetSystems = targetSystems;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setTargetSystems(final List<String> targetSystems) {
+		this.targetSystems = targetSystems;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public List<UUID> getSubscriptionIds() {
-        return subscriptionIds;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public List<UUID> getSubscriptionIds() {
+		return subscriptionIds;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setSubscriptionIds(final List<UUID> subscriptionIds) {
-        this.subscriptionIds = subscriptionIds;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setSubscriptionIds(final List<UUID> subscriptionIds) {
+		this.subscriptionIds = subscriptionIds;
+	}
 }

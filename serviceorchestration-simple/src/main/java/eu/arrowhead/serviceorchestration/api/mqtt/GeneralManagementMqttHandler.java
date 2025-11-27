@@ -72,19 +72,19 @@ public class GeneralManagementMqttHandler extends MqttTopicHandler {
 		Object responsePayload = null;
 
 		switch (request.getOperation()) {
-		case Constants.SERVICE_OP_GET_LOG:
-			final LogRequestDTO getLogDTO = readPayload(request.getPayload(), LogRequestDTO.class);
-			responsePayload = getLog(getLogDTO);
-			break;
+			case Constants.SERVICE_OP_GET_LOG:
+				final LogRequestDTO getLogDTO = readPayload(request.getPayload(), LogRequestDTO.class);
+				responsePayload = getLog(getLogDTO);
+				break;
 
-		case Constants.SERVICE_OP_GET_CONFIG:
-			final List<String> getConfigDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
-			});
-			responsePayload = getConfig(getConfigDTO);
-			break;
+			case Constants.SERVICE_OP_GET_CONFIG:
+				final List<String> getConfigDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+				});
+				responsePayload = getConfig(getConfigDTO);
+				break;
 
-		default:
-			throw new InvalidParameterException("Unknown operation: " + request.getOperation());
+			default:
+				throw new InvalidParameterException("Unknown operation: " + request.getOperation());
 		}
 
 		successResponse(request, responseStatus, responsePayload);

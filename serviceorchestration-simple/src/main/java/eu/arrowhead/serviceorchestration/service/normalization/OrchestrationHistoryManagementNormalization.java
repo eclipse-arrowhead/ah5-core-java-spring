@@ -39,45 +39,45 @@ import java.util.ArrayList;
 @Service
 public class OrchestrationHistoryManagementNormalization {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private SystemNameNormalizer systemNameNormalizer;
+	@Autowired
+	private SystemNameNormalizer systemNameNormalizer;
 
-    @Autowired
-    private OrchestrationNormalization orchNormalizer;
+	@Autowired
+	private OrchestrationNormalization orchNormalizer;
 
-    @Autowired
-    private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
 
-    @Autowired
-    private PageService pageService;
+	@Autowired
+	private PageService pageService;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public NormalizedOrchestrationJobQueryRequest normalizeOrchestrationHistoryQueryRequestDTO(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
-        logger.debug("normalizeOrchestrationHistoryQueryRequestDTO started...");
+	//-------------------------------------------------------------------------------------------------
+	public NormalizedOrchestrationJobQueryRequest normalizeOrchestrationHistoryQueryRequestDTO(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
+		logger.debug("normalizeOrchestrationHistoryQueryRequestDTO started...");
 
-        if (dto == null) {
-            return new NormalizedOrchestrationJobQueryRequest(null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
-        }
+		if (dto == null) {
+			return new NormalizedOrchestrationJobQueryRequest(null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+		}
 
-        final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Sort.Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
+		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Sort.Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
 
-        return new NormalizedOrchestrationJobQueryRequest(
-                pageRequest, // no need to normalize, because it happened in the getPageRequest method
-                Utilities.isEmpty(dto.ids()) ? new ArrayList<>() : dto.ids().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList(),
-                Utilities.isEmpty(dto.statuses()) ? new ArrayList<>() : dto.statuses().stream().map(status -> OrchestrationJobStatus.valueOf(status.trim().toUpperCase())).toList(),
-                Utilities.isEmpty(dto.type()) ? null : OrchestrationType.valueOf(dto.type().trim().toUpperCase()),
-                Utilities.isEmpty(dto.requesterSystems()) ? new ArrayList<>() : dto.requesterSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
-                Utilities.isEmpty(dto.targetSystems()) ? new ArrayList<>() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
-                Utilities.isEmpty(dto.serviceDefinitions()) ? new ArrayList<>() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList(),
-                Utilities.isEmpty(dto.subscriptionIds()) ? new ArrayList<>() : dto.subscriptionIds().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList());
-    }
+		return new NormalizedOrchestrationJobQueryRequest(
+				pageRequest, // no need to normalize, because it happened in the getPageRequest method
+				Utilities.isEmpty(dto.ids()) ? new ArrayList<>() : dto.ids().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList(),
+				Utilities.isEmpty(dto.statuses()) ? new ArrayList<>() : dto.statuses().stream().map(status -> OrchestrationJobStatus.valueOf(status.trim().toUpperCase())).toList(),
+				Utilities.isEmpty(dto.type()) ? null : OrchestrationType.valueOf(dto.type().trim().toUpperCase()),
+				Utilities.isEmpty(dto.requesterSystems()) ? new ArrayList<>() : dto.requesterSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.targetSystems()) ? new ArrayList<>() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.serviceDefinitions()) ? new ArrayList<>() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList(),
+				Utilities.isEmpty(dto.subscriptionIds()) ? new ArrayList<>() : dto.subscriptionIds().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList());
+	}
 
 }

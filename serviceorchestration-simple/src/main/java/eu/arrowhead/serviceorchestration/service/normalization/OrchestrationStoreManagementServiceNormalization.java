@@ -101,7 +101,7 @@ public class OrchestrationStoreManagementServiceNormalization {
 				dto.maxPriority(),
 
 				Utilities.isEmpty(dto.createdBy()) ? null
-					: systemNameNormalizer.normalize(dto.createdBy()));
+						: systemNameNormalizer.normalize(dto.createdBy()));
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -64,13 +64,13 @@ public class OrchestrationHistoryManagementMqttHandler extends MqttTopicHandler 
 		Object responsePayload = null;
 
 		switch (request.getOperation()) {
-		case Constants.SERVICE_OP_ORCHESTRATION_QUERY:
-			final OrchestrationHistoryQueryRequestDTO queryReqDTO = readPayload(request.getPayload(), OrchestrationHistoryQueryRequestDTO.class);
-			responsePayload = query(queryReqDTO);
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_QUERY:
+				final OrchestrationHistoryQueryRequestDTO queryReqDTO = readPayload(request.getPayload(), OrchestrationHistoryQueryRequestDTO.class);
+				responsePayload = query(queryReqDTO);
+				break;
 
-		default:
-			throw new InvalidParameterException("Unknown operation: " + request.getOperation());
+			default:
+				throw new InvalidParameterException("Unknown operation: " + request.getOperation());
 		}
 
 		successResponse(request, responseStatus, responsePayload);

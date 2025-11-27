@@ -35,62 +35,62 @@ import java.util.function.Function;
 @Component
 public class PushOrchestrationThread extends Thread {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Resource(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
-    private BlockingQueue<UUID> pushOrchJobQueue;
+	@Resource(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
+	private BlockingQueue<UUID> pushOrchJobQueue;
 
-    @Autowired
-    private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
+	@Autowired
+	private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
 
-    @Autowired
-    private Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory;
+	@Autowired
+	private Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory;
 
-    private boolean doWork = false;
+	private boolean doWork = false;
 
-    private ThreadPoolExecutor threadpool;
+	private ThreadPoolExecutor threadpool;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public void run() {
-        logger.debug("run started...");
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public void run() {
+		logger.debug("run started...");
 
-        doWork = true;
-        while (doWork) {
-            try {
-                final UUID jobID = pushOrchJobQueue.take();
-                threadpool.execute(pushOrchestrationWorkerFactory.apply(jobID));
+		doWork = true;
+		while (doWork) {
+			try {
+				final UUID jobID = pushOrchJobQueue.take();
+				threadpool.execute(pushOrchestrationWorkerFactory.apply(jobID));
 
-            } catch (final InterruptedException ex) {
-                logger.debug(ex);
-                logger.error(ex.getMessage());
-                interrupt();
-            }
-        }
-    }
+			} catch (final InterruptedException ex) {
+				logger.debug(ex);
+				logger.error(ex.getMessage());
+				interrupt();
+			}
+		}
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public void interrupt() {
-        logger.debug("interrupt started...");
-        doWork = false;
-        super.interrupt();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public void interrupt() {
+		logger.debug("interrupt started...");
+		doWork = false;
+		super.interrupt();
+	}
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    @PostConstruct
-    private void init() {
-        logger.debug("init started...");
+	//-------------------------------------------------------------------------------------------------
+	@PostConstruct
+	private void init() {
+		logger.debug("init started...");
 
-        threadpool = (ThreadPoolExecutor) Executors.newFixedThreadPool(sysInfo.getPushOrchestrationMaxThread());
-    }
+		threadpool = (ThreadPoolExecutor) Executors.newFixedThreadPool(sysInfo.getPushOrchestrationMaxThread());
+	}
 }

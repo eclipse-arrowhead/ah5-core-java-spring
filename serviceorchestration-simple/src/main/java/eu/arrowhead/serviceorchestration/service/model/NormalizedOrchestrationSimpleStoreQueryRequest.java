@@ -22,13 +22,13 @@ import java.util.UUID;
 import eu.arrowhead.dto.PageDTO;
 
 public record NormalizedOrchestrationSimpleStoreQueryRequest(
-	PageDTO pagination,
-	List<UUID> ids,
-	List<String> consumerNames,
-	List<String> serviceDefinitions,
-	List<String> serviceInstanceIds,
-	Integer minPriority,
-	Integer maxPriority,
-	String createdBy) {
+		PageDTO pagination,
+		List<UUID> ids,
+		List<String> consumerNames,
+		List<String> serviceDefinitions,
+		List<String> serviceInstanceIds,
+		Integer minPriority,
+		Integer maxPriority,
+		String createdBy) {
 
 }

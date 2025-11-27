@@ -30,46 +30,44 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OrchestrationHistoryManagementService {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private OrchestrationHistoryManagementValidation validator;
+	@Autowired
+	private OrchestrationHistoryManagementValidation validator;
 
-    @Autowired
-    private OrchestrationJobDbService jobDbService;
+	@Autowired
+	private OrchestrationJobDbService jobDbService;
 
-    @Autowired
-    private PageService pageService;
+	@Autowired
+	private PageService pageService;
 
-    @Autowired
-    private DTOConverter dtoConverter;
+	@Autowired
+	private DTOConverter dtoConverter;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
-        logger.debug("query started...");
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationHistoryResponseDTO query(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
+		logger.debug("query started...");
 
-        final NormalizedOrchestrationJobQueryRequest normalized = validator.validateAndNormalizeQueryService(dto, origin);
+		final NormalizedOrchestrationJobQueryRequest normalized = validator.validateAndNormalizeQueryService(dto, origin);
 
-        try {
-            final Page<OrchestrationJob> results = jobDbService.query(normalized);
+		try {
+			final Page<OrchestrationJob> results = jobDbService.query(normalized);
 
-            return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
-        } catch (final InternalServerError ex) {
-            throw new InternalServerError(ex.getMessage(), origin);
-        }
-    }
+			return dtoConverter.convertOrchestrationJobPageToHistoryDTO(results);
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
+	}
 
 }

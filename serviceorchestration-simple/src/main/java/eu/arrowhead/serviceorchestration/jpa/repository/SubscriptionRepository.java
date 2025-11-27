@@ -31,24 +31,24 @@ import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 @Repository
 public interface SubscriptionRepository extends RefreshableRepository<Subscription, UUID> {
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public Optional<Subscription> findByOwnerSystemAndTargetSystemAndServiceDefinition(final String ownerSystem, final String targetSystem, final String serviceDefinition);
+	//-------------------------------------------------------------------------------------------------
+	public Optional<Subscription> findByOwnerSystemAndTargetSystemAndServiceDefinition(final String ownerSystem, final String targetSystem, final String serviceDefinition);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<Subscription> findAllByOwnerSystemIn(final List<String> ownerSystems);
+	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> findAllByOwnerSystemIn(final List<String> ownerSystems);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<Subscription> findAllByTargetSystemIn(final List<String> targetSystems);
+	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> findAllByTargetSystemIn(final List<String> targetSystems);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<Subscription> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
+	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
 
-    //-------------------------------------------------------------------------------------------------
-    public Page<Subscription> findAllByIdIn(final List<UUID> ids, final Pageable pagination);
+	//-------------------------------------------------------------------------------------------------
+	public Page<Subscription> findAllByIdIn(final List<UUID> ids, final Pageable pagination);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<Subscription> findAllByExpiresAtBefore(final ZonedDateTime time);
+	//-------------------------------------------------------------------------------------------------
+	public List<Subscription> findAllByExpiresAtBefore(final ZonedDateTime time);
 }

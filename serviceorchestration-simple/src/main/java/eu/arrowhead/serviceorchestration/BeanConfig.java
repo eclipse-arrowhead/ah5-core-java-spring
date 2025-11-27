@@ -31,25 +31,25 @@ import java.util.function.Function;
 @Configuration
 public class BeanConfig {
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    @Bean(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
-    BlockingQueue<UUID> initPushOrchestrationJobQueue() {
-        return new LinkedBlockingQueue<>();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Bean(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
+	BlockingQueue<UUID> initPushOrchestrationJobQueue() {
+		return new LinkedBlockingQueue<>();
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Bean
-    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-    PushOrchestrationWorker createPushOrchestrationWorker(final UUID jobID) {
-        return new PushOrchestrationWorker(jobID);
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Bean
+	@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+	PushOrchestrationWorker createPushOrchestrationWorker(final UUID jobID) {
+		return new PushOrchestrationWorker(jobID);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Bean
-    Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory() {
-        return jobID -> createPushOrchestrationWorker(jobID);
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Bean
+	Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory() {
+		return jobID -> createPushOrchestrationWorker(jobID);
+	}
 }

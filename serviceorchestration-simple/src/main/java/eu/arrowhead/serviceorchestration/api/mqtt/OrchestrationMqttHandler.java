@@ -66,27 +66,27 @@ public class OrchestrationMqttHandler extends MqttTopicHandler {
 		Object responsePayload = null;
 
 		switch (request.getOperation()) {
-		case Constants.SERVICE_OP_ORCHESTRATION_PULL:
-			final OrchestrationRequestDTO pullReqDTO = readPayload(request.getPayload(), OrchestrationRequestDTO.class);
-			responsePayload = pull(request.getRequester(), pullReqDTO);
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_PULL:
+				final OrchestrationRequestDTO pullReqDTO = readPayload(request.getPayload(), OrchestrationRequestDTO.class);
+				responsePayload = pull(request.getRequester(), pullReqDTO);
+				break;
 
-		case Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE:
-			final OrchestrationSubscriptionRequestDTO subscribeReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionRequestDTO.class);
-			final String triggerStr = request.getParams().getOrDefault(SimpleStoreServiceOrchestrationConstants.PARAM_NAME_TRIGGER, Boolean.FALSE.toString());
-			final Pair<Boolean, String> subscribeResult = pushSubscribe(request.getRequester(), subscribeReqDTO, Boolean.valueOf(triggerStr));
-			responseStatus = subscribeResult.getLeft() ? MqttStatus.CREATED : MqttStatus.OK;
-			responsePayload = subscribeResult.getRight();
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE:
+				final OrchestrationSubscriptionRequestDTO subscribeReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionRequestDTO.class);
+				final String triggerStr = request.getParams().getOrDefault(SimpleStoreServiceOrchestrationConstants.PARAM_NAME_TRIGGER, Boolean.FALSE.toString());
+				final Pair<Boolean, String> subscribeResult = pushSubscribe(request.getRequester(), subscribeReqDTO, Boolean.valueOf(triggerStr));
+				responseStatus = subscribeResult.getLeft() ? MqttStatus.CREATED : MqttStatus.OK;
+				responsePayload = subscribeResult.getRight();
+				break;
 
-		case Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE:
-			final String unsubscribeReqId = readPayload(request.getPayload(), String.class);
-			boolean unsubscribeResult = pushUnsubscribe(request.getRequester(), unsubscribeReqId);
-			responseStatus = unsubscribeResult ? MqttStatus.OK : MqttStatus.NO_CONTENT;
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE:
+				final String unsubscribeReqId = readPayload(request.getPayload(), String.class);
+				boolean unsubscribeResult = pushUnsubscribe(request.getRequester(), unsubscribeReqId);
+				responseStatus = unsubscribeResult ? MqttStatus.OK : MqttStatus.NO_CONTENT;
+				break;
 
-		default:
-			throw new InvalidParameterException("Unknown operation: " + request.getOperation());
+			default:
+				throw new InvalidParameterException("Unknown operation: " + request.getOperation());
 		}
 
 		successResponse(request, responseStatus, responsePayload);

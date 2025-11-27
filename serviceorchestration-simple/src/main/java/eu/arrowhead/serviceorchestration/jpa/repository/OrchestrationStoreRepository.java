@@ -29,8 +29,8 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 @Repository
 public interface OrchestrationStoreRepository extends RefreshableRepository<OrchestrationStore, UUID> {
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
 	//-------------------------------------------------------------------------------------------------
 	public Optional<OrchestrationStore> findByConsumerAndServiceInstanceIdAndPriority(
@@ -51,12 +51,12 @@ public interface OrchestrationStoreRepository extends RefreshableRepository<Orch
 	//-------------------------------------------------------------------------------------------------
 	public Page<OrchestrationStore> findAllByIdIn(final List<UUID> matchingIds, final PageRequest pagination);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationStore> findAllByConsumerOrderByPriorityAsc(final String consumer);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByConsumerOrderByPriorityAsc(final String consumer);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationStore> findAllByConsumerAndServiceDefinition(final String consumer, final String serviceDefinition);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByConsumerAndServiceDefinition(final String consumer, final String serviceDefinition);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationStore> findAllByConsumerAndServiceDefinitionOrderByPriorityAsc(final String consumer, final String serviceDefinition);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> findAllByConsumerAndServiceDefinitionOrderByPriorityAsc(final String consumer, final String serviceDefinition);
 }

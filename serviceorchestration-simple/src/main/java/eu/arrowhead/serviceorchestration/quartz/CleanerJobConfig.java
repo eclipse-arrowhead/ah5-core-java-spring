@@ -35,44 +35,44 @@ import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 @EnableAutoConfiguration
 public class CleanerJobConfig {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Value(SimpleStoreServiceOrchestrationConstants.$CLEANER_JOB_INTERVAL_WD)
-    private long interval;
+	@Value(SimpleStoreServiceOrchestrationConstants.$CLEANER_JOB_INTERVAL_WD)
+	private long interval;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    @Bean(SimpleStoreServiceOrchestrationConstants.CLEANER_JOB)
-    JobDetailFactoryBean cleanerJobDetail() {
-        final JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
-        jobDetailFactory.setJobClass(CleanerJob.class);
-        jobDetailFactory.setDescription("Removing expired subscriptions and old orchestration jobs");
-        jobDetailFactory.setDurability(true);
+	//-------------------------------------------------------------------------------------------------
+	@Bean(SimpleStoreServiceOrchestrationConstants.CLEANER_JOB)
+	JobDetailFactoryBean cleanerJobDetail() {
+		final JobDetailFactoryBean jobDetailFactory = new JobDetailFactoryBean();
+		jobDetailFactory.setJobClass(CleanerJob.class);
+		jobDetailFactory.setDescription("Removing expired subscriptions and old orchestration jobs");
+		jobDetailFactory.setDurability(true);
 
-        return jobDetailFactory;
-    }
+		return jobDetailFactory;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Bean(SimpleStoreServiceOrchestrationConstants.CLEANER_TRIGGER)
-    SimpleTriggerFactoryBean cleanerTrigger(@Qualifier(SimpleStoreServiceOrchestrationConstants.CLEANER_JOB) final JobDetail job) {
-        final SimpleTriggerFactoryBean trigger = new SimpleTriggerFactoryBean();
-        trigger.setJobDetail(job);
-        trigger.setRepeatInterval(interval);
-        trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
-        trigger.setStartDelay(interval);
+	//-------------------------------------------------------------------------------------------------
+	@Bean(SimpleStoreServiceOrchestrationConstants.CLEANER_TRIGGER)
+	SimpleTriggerFactoryBean cleanerTrigger(@Qualifier(SimpleStoreServiceOrchestrationConstants.CLEANER_JOB) final JobDetail job) {
+		final SimpleTriggerFactoryBean trigger = new SimpleTriggerFactoryBean();
+		trigger.setJobDetail(job);
+		trigger.setRepeatInterval(interval);
+		trigger.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
+		trigger.setStartDelay(interval);
 
-        return trigger;
-    }
+		return trigger;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @PostConstruct
-    public void init() {
-        logger.info("Cleaner job is initialized.");
-    }
+	//-------------------------------------------------------------------------------------------------
+	@PostConstruct
+	public void init() {
+		logger.info("Cleaner job is initialized.");
+	}
 
 }

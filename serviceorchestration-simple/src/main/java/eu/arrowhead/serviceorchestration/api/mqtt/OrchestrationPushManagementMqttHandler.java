@@ -70,31 +70,31 @@ public class OrchestrationPushManagementMqttHandler extends MqttTopicHandler {
 		Object responsePayload = null;
 
 		switch (request.getOperation()) {
-		case Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE:
-			final OrchestrationSubscriptionListRequestDTO subscribeReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionListRequestDTO.class);
-			responsePayload = pushSubscribe(request.getRequester(), subscribeReqDTO);
-			responseStatus = MqttStatus.CREATED;
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE:
+				final OrchestrationSubscriptionListRequestDTO subscribeReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionListRequestDTO.class);
+				responsePayload = pushSubscribe(request.getRequester(), subscribeReqDTO);
+				responseStatus = MqttStatus.CREATED;
+				break;
 
-		case Constants.SERVICE_OP_ORCHESTRATION_TRIGGER:
-			final OrchestrationPushTriggerDTO triggerReqDTO = readPayload(request.getPayload(), OrchestrationPushTriggerDTO.class);
-			responsePayload = pushTrigger(request.getRequester(), triggerReqDTO);
-			responseStatus = MqttStatus.CREATED;
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_TRIGGER:
+				final OrchestrationPushTriggerDTO triggerReqDTO = readPayload(request.getPayload(), OrchestrationPushTriggerDTO.class);
+				responsePayload = pushTrigger(request.getRequester(), triggerReqDTO);
+				responseStatus = MqttStatus.CREATED;
+				break;
 
-		case Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE:
-			final List<String> unsubscribeReqDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
-			});
-			pushUnsubscribe(request.getRequester(), unsubscribeReqDTO);
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE:
+				final List<String> unsubscribeReqDTO = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+				});
+				pushUnsubscribe(request.getRequester(), unsubscribeReqDTO);
+				break;
 
-		case Constants.SERVICE_OP_ORCHESTRATION_QUERY:
-			final OrchestrationSubscriptionQueryRequestDTO queryReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionQueryRequestDTO.class);
-			responsePayload = pushQuery(queryReqDTO);
-			break;
+			case Constants.SERVICE_OP_ORCHESTRATION_QUERY:
+				final OrchestrationSubscriptionQueryRequestDTO queryReqDTO = readPayload(request.getPayload(), OrchestrationSubscriptionQueryRequestDTO.class);
+				responsePayload = pushQuery(queryReqDTO);
+				break;
 
-		default:
-			throw new InvalidParameterException("Unknown operation: " + request.getOperation());
+			default:
+				throw new InvalidParameterException("Unknown operation: " + request.getOperation());
 		}
 
 		successResponse(request, responseStatus, responsePayload);

@@ -31,21 +31,21 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 @Repository
 public interface OrchestrationJobRepository extends RefreshableRepository<OrchestrationJob, UUID> {
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public Page<OrchestrationJob> findAllByIdIn(final Collection<UUID> ids, final Pageable pageable);
+	//-------------------------------------------------------------------------------------------------
+	public Page<OrchestrationJob> findAllByIdIn(final Collection<UUID> ids, final Pageable pageable);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationJob> findAllByStatusIn(final List<OrchestrationJobStatus> statuses);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationJob> findAllByStatusIn(final List<OrchestrationJobStatus> statuses);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationJob> findAllByRequesterSystemIn(final List<String> requesterSystems);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationJob> findAllByRequesterSystemIn(final List<String> requesterSystems);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationJob> findAllByTargetSystemIn(final List<String> targetSystems);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationJob> findAllByTargetSystemIn(final List<String> targetSystems);
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationJob> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationJob> findAllByServiceDefinitionIn(final List<String> serviceDefinitions);
 }

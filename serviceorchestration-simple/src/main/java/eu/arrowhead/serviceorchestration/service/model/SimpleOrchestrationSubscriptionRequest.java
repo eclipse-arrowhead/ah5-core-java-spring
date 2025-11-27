@@ -21,62 +21,62 @@ import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
 
 public class SimpleOrchestrationSubscriptionRequest {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    private String targetSystemName;
-    private SimpleOrchestrationRequest orchestrationRequest;
-    private OrchestrationNotifyInterfaceDTO notifyInterface;
-    private Long duration;
+	private String targetSystemName;
+	private SimpleOrchestrationRequest orchestrationRequest;
+	private OrchestrationNotifyInterfaceDTO notifyInterface;
+	private Long duration;
 
-    //=================================================================================================
-    // boilerplate
+	//=================================================================================================
+	// boilerplate
 
-    public SimpleOrchestrationSubscriptionRequest(final String targetSystemName, final SimpleOrchestrationRequest orchestrationRequest, final OrchestrationNotifyInterfaceDTO notifyInterface, final long duration) {
-        this.targetSystemName = targetSystemName;
-        this.orchestrationRequest = orchestrationRequest;
-        this.notifyInterface = notifyInterface;
-        this.duration = duration;
-    }
+	public SimpleOrchestrationSubscriptionRequest(final String targetSystemName, final SimpleOrchestrationRequest orchestrationRequest, final OrchestrationNotifyInterfaceDTO notifyInterface, final long duration) {
+		this.targetSystemName = targetSystemName;
+		this.orchestrationRequest = orchestrationRequest;
+		this.notifyInterface = notifyInterface;
+		this.duration = duration;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getTargetSystemName() {
-        return targetSystemName;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getTargetSystemName() {
+		return targetSystemName;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setTargetSystemName(final String targetSystemName) {
-        this.targetSystemName = targetSystemName;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setTargetSystemName(final String targetSystemName) {
+		this.targetSystemName = targetSystemName;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationRequest getOrchestrationRequest() {
-        return orchestrationRequest;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public SimpleOrchestrationRequest getOrchestrationRequest() {
+		return orchestrationRequest;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setOrchestrationRequest(final SimpleOrchestrationRequest orchestrationRequest) {
-        this.orchestrationRequest = orchestrationRequest;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setOrchestrationRequest(final SimpleOrchestrationRequest orchestrationRequest) {
+		this.orchestrationRequest = orchestrationRequest;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationNotifyInterfaceDTO getNotifyInterface() {
-        return notifyInterface;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationNotifyInterfaceDTO getNotifyInterface() {
+		return notifyInterface;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setNotifyInterface(final OrchestrationNotifyInterfaceDTO notifyInterface) {
-        this.notifyInterface = notifyInterface;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setNotifyInterface(final OrchestrationNotifyInterfaceDTO notifyInterface) {
+		this.notifyInterface = notifyInterface;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public Long getDuration() {
-        return duration;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public Long getDuration() {
+		return duration;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setDuration(final Long duration) {
-        this.duration = duration;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setDuration(final Long duration) {
+		this.duration = duration;
+	}
 
 }

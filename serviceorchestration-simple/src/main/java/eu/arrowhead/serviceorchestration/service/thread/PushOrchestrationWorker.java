@@ -55,162 +55,162 @@ import java.util.UUID;
 
 public class PushOrchestrationWorker implements Runnable {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private OrchestrationJobDbService orchJobDbService;
+	@Autowired
+	private OrchestrationJobDbService orchJobDbService;
 
-    @Autowired
-    private SubscriptionDbService subscriptionDbService;
+	@Autowired
+	private SubscriptionDbService subscriptionDbService;
 
-    @Autowired
-    private ObjectMapper mapper;
+	@Autowired
+	private ObjectMapper mapper;
 
-    @Autowired
-    private ServiceOrchestration serviceOrchestration;
+	@Autowired
+	private ServiceOrchestration serviceOrchestration;
 
-    @Autowired
-    private DTOConverter dtoConverter;
+	@Autowired
+	private DTOConverter dtoConverter;
 
-    @Autowired
-    private HttpService httpService;
+	@Autowired
+	private HttpService httpService;
 
-    @Autowired(required = false)
-    private MqttService mqttService;
+	@Autowired(required = false)
+	private MqttService mqttService;
 
-    @Autowired
-    private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
+	@Autowired
+	private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
 
-    private UUID jobId;
+	private UUID jobId;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public PushOrchestrationWorker(final UUID jobId) {
-        this.jobId = jobId;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public PushOrchestrationWorker(final UUID jobId) {
+		this.jobId = jobId;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public void run() {
-        doPushOrchestration();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public void run() {
+		doPushOrchestration();
+	}
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    private void doPushOrchestration() {
-        logger.debug("doPushOrchestration started...");
+	//-------------------------------------------------------------------------------------------------
+	private void doPushOrchestration() {
+		logger.debug("doPushOrchestration started...");
 
-        try {
-            final Optional<OrchestrationJob> jobOpt = orchJobDbService.getById(jobId);
-            if (jobOpt.isEmpty()) {
-                logger.error("Orchestration push job doesn't exist: " + jobId);
-                return;
-            }
+		try {
+			final Optional<OrchestrationJob> jobOpt = orchJobDbService.getById(jobId);
+			if (jobOpt.isEmpty()) {
+				logger.error("Orchestration push job doesn't exist: " + jobId);
+				return;
+			}
 
-            final OrchestrationJob job = orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
+			final OrchestrationJob job = orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
 
-            if (Utilities.isEmpty(job.getSubscriptionId())) {
-                final String errorMsg = "Orchestration job " + jobId + " has no subscription id";
-                logger.error(errorMsg);
-                orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, errorMsg);
-                return;
-            }
+			if (Utilities.isEmpty(job.getSubscriptionId())) {
+				final String errorMsg = "Orchestration job " + jobId + " has no subscription id";
+				logger.error(errorMsg);
+				orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, errorMsg);
+				return;
+			}
 
-            final Optional<Subscription> subscriptionOpt = subscriptionDbService.get(UUID.fromString(job.getSubscriptionId()));
-            if (subscriptionOpt.isEmpty()) {
-                final String errorMsg = "Orchestration job " + jobId + " has no subscription with " + job.getSubscriptionId() + " subscription id";
-                logger.error(errorMsg);
-                orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, errorMsg);
-                return;
-            }
+			final Optional<Subscription> subscriptionOpt = subscriptionDbService.get(UUID.fromString(job.getSubscriptionId()));
+			if (subscriptionOpt.isEmpty()) {
+				final String errorMsg = "Orchestration job " + jobId + " has no subscription with " + job.getSubscriptionId() + " subscription id";
+				logger.error(errorMsg);
+				orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, errorMsg);
+				return;
+			}
 
-            final Subscription subscription = subscriptionOpt.get();
+			final Subscription subscription = subscriptionOpt.get();
 
-            final SimpleOrchestrationRequest orchestrationRequest = mapper.readValue(subscription.getOrchestrationRequest(), SimpleOrchestrationRequest.class);
+			final SimpleOrchestrationRequest orchestrationRequest = mapper.readValue(subscription.getOrchestrationRequest(), SimpleOrchestrationRequest.class);
 
-            final List<OrchestrationStore> orchResult = serviceOrchestration.orchestrate(jobId, job.getTargetSystem(), orchestrationRequest);
-            final OrchestrationResponseDTO result = dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(orchResult, orchestrationRequest.getWarnings());
+			final List<OrchestrationStore> orchResult = serviceOrchestration.orchestrate(jobId, job.getTargetSystem(), orchestrationRequest);
+			final OrchestrationResponseDTO result = dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(orchResult, orchestrationRequest.getWarnings());
 
-            if (subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())
-                    || subscription.getNotifyProtocol().equals(NotifyProtocol.HTTPS.name())) {
-                notifyViaHttp(subscription.getId(), subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
-                return;
-            }
+			if (subscription.getNotifyProtocol().equals(NotifyProtocol.HTTP.name())
+					|| subscription.getNotifyProtocol().equals(NotifyProtocol.HTTPS.name())) {
+				notifyViaHttp(subscription.getId(), subscription.getNotifyProtocol(), subscription.getNotifyProperties(), result);
+				return;
+			}
 
-            if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
-                    || subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
-                notifyViaMqtt(subscription.getId(), subscription.getTargetSystem(), subscription.getNotifyProperties(), result);
-                return;
-            }
+			if (subscription.getNotifyProtocol().equals(NotifyProtocol.MQTT.name())
+					|| subscription.getNotifyProtocol().equals(NotifyProtocol.MQTTS.name())) {
+				notifyViaMqtt(subscription.getId(), subscription.getTargetSystem(), subscription.getNotifyProperties(), result);
+				return;
+			}
 
-            throw new ArrowheadException("Unsupported protocol: " + subscription.getNotifyProtocol());
-        } catch (final Exception ex) {
-            logger.error(ex.getMessage());
-            logger.debug(ex);
-            orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, ex.getMessage());
-        }
-    }
+			throw new ArrowheadException("Unsupported protocol: " + subscription.getNotifyProtocol());
+		} catch (final Exception ex) {
+			logger.error(ex.getMessage());
+			logger.debug(ex);
+			orchJobDbService.setStatus(jobId, OrchestrationJobStatus.ERROR, ex.getMessage());
+		}
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private void notifyViaHttp(final UUID subscriptionId, final String protocol, final String properties, final OrchestrationResponseDTO result) {
-        logger.debug("notifyViaHttp started...");
+	//-------------------------------------------------------------------------------------------------
+	private void notifyViaHttp(final UUID subscriptionId, final String protocol, final String properties, final OrchestrationResponseDTO result) {
+		logger.debug("notifyViaHttp started...");
 
-        final Map<String, String> propsMap = readNotifyProperties(properties);
-        final String address = propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS);
-        final int port = Integer.parseInt(propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PORT));
-        final String method = propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD);
-        final String path = propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PATH);
+		final Map<String, String> propsMap = readNotifyProperties(properties);
+		final String address = propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_ADDRESS);
+		final int port = Integer.parseInt(propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PORT));
+		final String method = propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_METHOD);
+		final String path = propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_PATH);
 
-        try {
-            httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method.toUpperCase()), Void.class, result);
-        } catch (final Exception ex) {
-            logger.debug(ex);
-            throw new ArrowheadException("Error occurred while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
-        }
-    }
+		try {
+			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method.toUpperCase()), Void.class, result);
+		} catch (final Exception ex) {
+			logger.debug(ex);
+			throw new ArrowheadException("Error occurred while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+		}
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private Map<String, String> readNotifyProperties(final String properties) {
-        logger.debug("readNotifyProperties started...");
+	//-------------------------------------------------------------------------------------------------
+	private Map<String, String> readNotifyProperties(final String properties) {
+		logger.debug("readNotifyProperties started...");
 
-        final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
-        };
+		final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
+		};
 
-        try {
-            return mapper.readValue(properties, typeReference);
-        } catch (final JsonProcessingException ex) {
-            logger.debug(ex);
-            throw new IllegalArgumentException("Unreadable notify properties: " + ex.getMessage());
-        }
-    }
+		try {
+			return mapper.readValue(properties, typeReference);
+		} catch (final JsonProcessingException ex) {
+			logger.debug(ex);
+			throw new IllegalArgumentException("Unreadable notify properties: " + ex.getMessage());
+		}
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private void notifyViaMqtt(final UUID subscriptionId, final String targetSystem, final String properties, final OrchestrationResponseDTO result) {
-        logger.debug("notifyViaMqtt started...");
+	//-------------------------------------------------------------------------------------------------
+	private void notifyViaMqtt(final UUID subscriptionId, final String targetSystem, final String properties, final OrchestrationResponseDTO result) {
+		logger.debug("notifyViaMqtt started...");
 
-        if (!sysInfo.isMqttApiEnabled()) {
-            throw new ArrowheadException("Orchestration push notification via MQTT is required for subscripiton: " + subscriptionId.toString() + ", but MQTT is not enabled");
-        }
+		if (!sysInfo.isMqttApiEnabled()) {
+			throw new ArrowheadException("Orchestration push notification via MQTT is required for subscripiton: " + subscriptionId.toString() + ", but MQTT is not enabled");
+		}
 
-        // Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results.
-        final MqttClient mqttClient = mqttService.client(Constants.MQTT_SERVICE_PROVIDING_BROKER_CONNECT_ID);
-        final Map<String, String> propsMap = readNotifyProperties(properties);
+		// Sending MQTT notification is supported only via the main broker. Orchestrator does not connect to unknown brokers to send the orchestration results.
+		final MqttClient mqttClient = mqttService.client(Constants.MQTT_SERVICE_PROVIDING_BROKER_CONNECT_ID);
+		final Map<String, String> propsMap = readNotifyProperties(properties);
 
-        try {
-            final MqttNotifyTemplate template = new MqttNotifyTemplate(targetSystem, sysInfo.getSystemName(), result);
-            final MqttMessage msg = new MqttMessage(mapper.writeValueAsBytes(template));
-            msg.setQos(MqttQoS.EXACTLY_ONCE.value());
-            mqttClient.publish(propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC), msg);
-        } catch (final Exception ex) {
-            logger.debug(ex);
-            throw new ArrowheadException("Error occurred while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
-        }
-    }
+		try {
+			final MqttNotifyTemplate template = new MqttNotifyTemplate(targetSystem, sysInfo.getSystemName(), result);
+			final MqttMessage msg = new MqttMessage(mapper.writeValueAsBytes(template));
+			msg.setQos(MqttQoS.EXACTLY_ONCE.value());
+			mqttClient.publish(propsMap.get(SimpleStoreServiceOrchestrationConstants.NOTIFY_KEY_TOPIC), msg);
+		} catch (final Exception ex) {
+			logger.debug(ex);
+			throw new ArrowheadException("Error occurred while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+		}
+	}
 }

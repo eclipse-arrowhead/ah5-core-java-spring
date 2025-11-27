@@ -26,20 +26,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class SimpleStoreServiceOrchestrationApplicationInitListener extends ApplicationInitListener {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private PushOrchestrationThread pushOrchestrationThread;
+	@Autowired
+	private PushOrchestrationThread pushOrchestrationThread;
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    protected void customInit(final ContextRefreshedEvent event) throws InterruptedException {
-        logger.debug("customInit started...");
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	protected void customInit(final ContextRefreshedEvent event) throws InterruptedException {
+		logger.debug("customInit started...");
 
-        pushOrchestrationThread.start();
-    }
+		pushOrchestrationThread.start();
+	}
 }

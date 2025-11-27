@@ -236,7 +236,7 @@ public class OrchestrationStoreManagementServiceValidation {
 			}
 			dto.ids().forEach(id -> {
 				if (!Utilities.isUUID(id.trim())) {
-					throw new InvalidParameterException("Invalid UUID: "  + id.trim());
+					throw new InvalidParameterException("Invalid UUID: " + id.trim());
 				}
 			});
 		}

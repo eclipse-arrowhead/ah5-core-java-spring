@@ -43,91 +43,91 @@ import java.util.List;
 @ConditionalOnProperty(name = Constants.MQTT_API_ENABLED, matchIfMissing = false)
 public class OrchestrationStoreManagementMqttHandler extends MqttTopicHandler {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private OrchestrationStoreManagementService storeManagementService;
+	@Autowired
+	private OrchestrationStoreManagementService storeManagementService;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public String baseTopic() {
-        return SimpleStoreServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_STORE_MANAGEMENT_BASE_TOPIC;
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String baseTopic() {
+		return SimpleStoreServiceOrchestrationConstants.MQTT_API_ORCHESTRATION_STORE_MANAGEMENT_BASE_TOPIC;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public void handle(final MqttRequestModel request) throws ArrowheadException {
-        logger.debug("OrchestrationStoreManagementMqttHandler.handle started");
-        Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public void handle(final MqttRequestModel request) throws ArrowheadException {
+		logger.debug("OrchestrationStoreManagementMqttHandler.handle started");
+		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
-        MqttStatus responseStatus = MqttStatus.OK;
-        Object responsePayload = null;
+		MqttStatus responseStatus = MqttStatus.OK;
+		Object responsePayload = null;
 
-        switch (request.getOperation()) {
-            case Constants.SERVICE_OP_ORCHESTRATION_QUERY:
-                final OrchestrationSimpleStoreQueryRequestDTO queryReqDTO = readPayload(request.getPayload(), OrchestrationSimpleStoreQueryRequestDTO.class);
-                responsePayload = query(queryReqDTO);
-                break;
+		switch (request.getOperation()) {
+			case Constants.SERVICE_OP_ORCHESTRATION_QUERY:
+				final OrchestrationSimpleStoreQueryRequestDTO queryReqDTO = readPayload(request.getPayload(), OrchestrationSimpleStoreQueryRequestDTO.class);
+				responsePayload = query(queryReqDTO);
+				break;
 
-            case Constants.SERVICE_OP_ORCHESTRATION_CREATE:
-                final OrchestrationSimpleStoreListRequestDTO createReqDTO = readPayload(request.getPayload(), OrchestrationSimpleStoreListRequestDTO.class);
-                responsePayload = create(createReqDTO, request.getRequester());
-                responseStatus = MqttStatus.CREATED;
-                break;
+			case Constants.SERVICE_OP_ORCHESTRATION_CREATE:
+				final OrchestrationSimpleStoreListRequestDTO createReqDTO = readPayload(request.getPayload(), OrchestrationSimpleStoreListRequestDTO.class);
+				responsePayload = create(createReqDTO, request.getRequester());
+				responseStatus = MqttStatus.CREATED;
+				break;
 
-            case Constants.SERVICE_OP_ORCHESTRATION_MODIFY_PRIORITIES:
-                final PriorityRequestDTO priorityReqDTO = readPayload(request.getPayload(), PriorityRequestDTO.class);
-                responsePayload = modifyPriorities(priorityReqDTO, request.getRequester());
-                break;
+			case Constants.SERVICE_OP_ORCHESTRATION_MODIFY_PRIORITIES:
+				final PriorityRequestDTO priorityReqDTO = readPayload(request.getPayload(), PriorityRequestDTO.class);
+				responsePayload = modifyPriorities(priorityReqDTO, request.getRequester());
+				break;
 
-            case Constants.SERVICE_OP_ORCHESTRATION_REMOVE:
-                final List<String> removeReq = readPayload(request.getPayload(), new TypeReference<List<String>>() {
-                });
-                remove(removeReq);
-                break;
+			case Constants.SERVICE_OP_ORCHESTRATION_REMOVE:
+				final List<String> removeReq = readPayload(request.getPayload(), new TypeReference<List<String>>() {
+				});
+				remove(removeReq);
+				break;
 
-            default:
-                throw new InvalidParameterException("Unknown operation: " + request.getOperation());
-        }
+			default:
+				throw new InvalidParameterException("Unknown operation: " + request.getOperation());
+		}
 
-        successResponse(request, responseStatus, responsePayload);
-    }
+		successResponse(request, responseStatus, responsePayload);
+	}
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationSimpleStoreListResponseDTO query(final OrchestrationSimpleStoreQueryRequestDTO dto) {
-        logger.debug("OrchestrationStoreManagementMqttHandler.query started");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationSimpleStoreListResponseDTO query(final OrchestrationSimpleStoreQueryRequestDTO dto) {
+		logger.debug("OrchestrationStoreManagementMqttHandler.query started");
 
-        return storeManagementService.querySimpleStoreEntries(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_QUERY);
-    }
+		return storeManagementService.querySimpleStoreEntries(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_QUERY);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationSimpleStoreListResponseDTO create(final OrchestrationSimpleStoreListRequestDTO dto, final String requesterSystemName) {
-        logger.debug("OrchestrationStoreManagementMqttHandler.create started");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationSimpleStoreListResponseDTO create(final OrchestrationSimpleStoreListRequestDTO dto, final String requesterSystemName) {
+		logger.debug("OrchestrationStoreManagementMqttHandler.create started");
 
-        return storeManagementService.createSimpleStoreEntries(dto, requesterSystemName, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_CREATE);
-    }
+		return storeManagementService.createSimpleStoreEntries(dto, requesterSystemName, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_CREATE);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationSimpleStoreListResponseDTO modifyPriorities(final PriorityRequestDTO dto, final String requesterSystemName) {
-        logger.debug("OrchestrationStoreManagementMqttHandler.modifyPriorities started");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationSimpleStoreListResponseDTO modifyPriorities(final PriorityRequestDTO dto, final String requesterSystemName) {
+		logger.debug("OrchestrationStoreManagementMqttHandler.modifyPriorities started");
 
-        return storeManagementService.modifyPriorities(dto, requesterSystemName, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_MODIFY_PRIORITIES);
-    }
+		return storeManagementService.modifyPriorities(dto, requesterSystemName, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_MODIFY_PRIORITIES);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private void remove(final List<String> uuids) {
-        logger.debug("OrchestrationStoreManagementMqttHandler.remove started");
+	//-------------------------------------------------------------------------------------------------
+	private void remove(final List<String> uuids) {
+		logger.debug("OrchestrationStoreManagementMqttHandler.remove started");
 
-        storeManagementService.removeSimpleStoreEntries(uuids, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_REMOVE);
-    }
+		storeManagementService.removeSimpleStoreEntries(uuids, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_REMOVE);
+	}
 
 }

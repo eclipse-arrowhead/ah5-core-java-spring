@@ -36,75 +36,75 @@ import java.util.stream.Collectors;
 @Service
 public class OrchestrationNormalization {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
+	@Autowired
+	private ServiceDefinitionNameNormalizer serviceDefNameNormalizer;
 
-    @Autowired
-    private SystemNameNormalizer systemNameNormalizer;
+	@Autowired
+	private SystemNameNormalizer systemNameNormalizer;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public void normalizePull(final SimpleOrchestrationRequest toNormalize) {
-        logger.debug("normalizePull started...");
+	//-------------------------------------------------------------------------------------------------
+	public void normalizePull(final SimpleOrchestrationRequest toNormalize) {
+		logger.debug("normalizePull started...");
 
-        normalizeOrchestrationRequest(toNormalize);
-    }
+		normalizeOrchestrationRequest(toNormalize);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void normalizeSubscribe(final SimpleOrchestrationSubscriptionRequest toNormalize) {
-        logger.debug("normalizeSubscribe started...");
+	//-------------------------------------------------------------------------------------------------
+	public void normalizeSubscribe(final SimpleOrchestrationSubscriptionRequest toNormalize) {
+		logger.debug("normalizeSubscribe started...");
 
-        // target system name
-        toNormalize.setTargetSystemName(Utilities.isEmpty(toNormalize.getTargetSystemName()) ? null : systemNameNormalizer.normalize(toNormalize.getTargetSystemName()));
+		// target system name
+		toNormalize.setTargetSystemName(Utilities.isEmpty(toNormalize.getTargetSystemName()) ? null : systemNameNormalizer.normalize(toNormalize.getTargetSystemName()));
 
-        // orchestration request
-        normalizeOrchestrationRequest(toNormalize.getOrchestrationRequest());
+		// orchestration request
+		normalizeOrchestrationRequest(toNormalize.getOrchestrationRequest());
 
-        // notify interface
-        final String normalizedProtocol = toNormalize.getNotifyInterface().protocol().trim().toUpperCase();
+		// notify interface
+		final String normalizedProtocol = toNormalize.getNotifyInterface().protocol().trim().toUpperCase();
 
-        final Map<String, String> normalizedNotifyProps = new HashMap<>();
-        toNormalize.getNotifyInterface().properties().forEach((k, v) -> {
-            normalizedNotifyProps.put(k.trim().toLowerCase(), v.trim());
-        });
+		final Map<String, String> normalizedNotifyProps = new HashMap<>();
+		toNormalize.getNotifyInterface().properties().forEach((k, v) -> {
+			normalizedNotifyProps.put(k.trim().toLowerCase(), v.trim());
+		});
 
-        toNormalize.setNotifyInterface(new OrchestrationNotifyInterfaceDTO(normalizedProtocol, normalizedNotifyProps));
-    }
+		toNormalize.setNotifyInterface(new OrchestrationNotifyInterfaceDTO(normalizedProtocol, normalizedNotifyProps));
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public UUID normalizeUUID(final String uuid) {
-        logger.debug("normalizeUUID started...");
+	//-------------------------------------------------------------------------------------------------
+	public UUID normalizeUUID(final String uuid) {
+		logger.debug("normalizeUUID started...");
 
-        return UUID.fromString(uuid.trim());
-    }
+		return UUID.fromString(uuid.trim());
+	}
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    private void normalizeOrchestrationRequest(final SimpleOrchestrationRequest toNormalize) {
+	//-------------------------------------------------------------------------------------------------
+	private void normalizeOrchestrationRequest(final SimpleOrchestrationRequest toNormalize) {
 
-        // service definition
-        toNormalize.setServiceDefinition(serviceDefNameNormalizer.normalize(toNormalize.getServiceDefinition()));
+		// service definition
+		toNormalize.setServiceDefinition(serviceDefNameNormalizer.normalize(toNormalize.getServiceDefinition()));
 
 
-        // preferred providers
-        if (!Utilities.isEmpty(toNormalize.getPreferredProviders())) {
-            toNormalize.setPreferredProviders(toNormalize.getPreferredProviders().stream().map(p -> systemNameNormalizer.normalize(p)).collect(Collectors.toList()));
-        }
+		// preferred providers
+		if (!Utilities.isEmpty(toNormalize.getPreferredProviders())) {
+			toNormalize.setPreferredProviders(toNormalize.getPreferredProviders().stream().map(p -> systemNameNormalizer.normalize(p)).collect(Collectors.toList()));
+		}
 
-        // orchestration flags
-        if (!Utilities.isEmpty(toNormalize.getOrchestrationFlags())) {
-            final Map<String, Boolean> normalizedFlags = new HashMap<>();
-            toNormalize.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
-            toNormalize.setOrchestrationFlags(normalizedFlags);
-        }
-    }
+		// orchestration flags
+		if (!Utilities.isEmpty(toNormalize.getOrchestrationFlags())) {
+			final Map<String, Boolean> normalizedFlags = new HashMap<>();
+			toNormalize.getOrchestrationFlags().forEach((k, v) -> normalizedFlags.put(k.trim().toUpperCase(), v));
+			toNormalize.setOrchestrationFlags(normalizedFlags);
+		}
+	}
 }

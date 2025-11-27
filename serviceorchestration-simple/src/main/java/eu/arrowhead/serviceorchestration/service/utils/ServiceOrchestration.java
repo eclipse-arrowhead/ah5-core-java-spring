@@ -38,86 +38,86 @@ import java.util.UUID;
 @Service
 public class ServiceOrchestration {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private OrchestrationJobDbService orchJobDbService;
+	@Autowired
+	private OrchestrationJobDbService orchJobDbService;
 
-    @Autowired
-    private SimpleStoreDbService storeDbService;
+	@Autowired
+	private SimpleStoreDbService storeDbService;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    public List<OrchestrationStore> orchestrate(final UUID jobId, final String consumer, final SimpleOrchestrationRequest request) {
-        logger.debug("orchestrate started...");
+	//-------------------------------------------------------------------------------------------------
+	public List<OrchestrationStore> orchestrate(final UUID jobId, final String consumer, final SimpleOrchestrationRequest request) {
+		logger.debug("orchestrate started...");
 
-        orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
+		orchJobDbService.setStatus(jobId, OrchestrationJobStatus.IN_PROGRESS, null);
 
-        // orchestration flags
-        final boolean onlyPreferred = request.getOrchestrationFlags() != null
-                && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false);
-        final boolean matchmaking = request.getOrchestrationFlags() != null
-                && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.MATCHMAKING.toString(), false);
+		// orchestration flags
+		final boolean onlyPreferred = request.getOrchestrationFlags() != null
+				&& request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false);
+		final boolean matchmaking = request.getOrchestrationFlags() != null
+				&& request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.MATCHMAKING.toString(), false);
 
-        // matching entries
-        List<OrchestrationStore> sortedMatchingEntries = request.getServiceDefinition() != null
-                ? storeDbService.getByConsumerAndServiceDefinition(consumer, request.getServiceDefinition())
-                : storeDbService.getByConsumer(consumer);
+		// matching entries
+		List<OrchestrationStore> sortedMatchingEntries = request.getServiceDefinition() != null
+				? storeDbService.getByConsumerAndServiceDefinition(consumer, request.getServiceDefinition())
+				: storeDbService.getByConsumer(consumer);
 
-        if (request.getPreferredProviders() != null) {
-            sortedMatchingEntries = sortByPreferredProviders(sortedMatchingEntries, request.getPreferredProviders(), onlyPreferred);
-        }
+		if (request.getPreferredProviders() != null) {
+			sortedMatchingEntries = sortByPreferredProviders(sortedMatchingEntries, request.getPreferredProviders(), onlyPreferred);
+		}
 
-        if (matchmaking) {
-            // converting list to LinkedHashSet so there will be no duplicates but the order remains
-            final Set<String> serviceDefs = new LinkedHashSet<>(sortedMatchingEntries.stream().map(OrchestrationStore::getServiceDefinition).toList());
+		if (matchmaking) {
+			// converting list to LinkedHashSet so there will be no duplicates but the order remains
+			final Set<String> serviceDefs = new LinkedHashSet<>(sortedMatchingEntries.stream().map(OrchestrationStore::getServiceDefinition).toList());
 
-            // finding entries with the highest priority for each service definition
-            final List<OrchestrationStore> sortedWithMatchmaking = new ArrayList<>();
-            for (final String serviceDef : serviceDefs) {
-                for (final OrchestrationStore entry : sortedMatchingEntries) {
-                    if (entry.getServiceDefinition().equals(serviceDef)) {
-                        sortedWithMatchmaking.add(entry);
-                        // stopping after the first match since that is the one with the highest priority
-                        break;
-                    }
-                }
-            }
-            sortedMatchingEntries = sortedWithMatchmaking;
-        }
+			// finding entries with the highest priority for each service definition
+			final List<OrchestrationStore> sortedWithMatchmaking = new ArrayList<>();
+			for (final String serviceDef : serviceDefs) {
+				for (final OrchestrationStore entry : sortedMatchingEntries) {
+					if (entry.getServiceDefinition().equals(serviceDef)) {
+						sortedWithMatchmaking.add(entry);
+						// stopping after the first match since that is the one with the highest priority
+						break;
+					}
+				}
+			}
+			sortedMatchingEntries = sortedWithMatchmaking;
+		}
 
-        orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, sortedMatchingEntries.size() + " local result(s)");
+		orchJobDbService.setStatus(jobId, OrchestrationJobStatus.DONE, sortedMatchingEntries.size() + " local result(s)");
 
-        return sortedMatchingEntries;
-    }
+		return sortedMatchingEntries;
+	}
 
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    // Sore entries with preferred providers will be prioritized
-    private List<OrchestrationStore> sortByPreferredProviders(final List<OrchestrationStore> entries, final List<String> preferred, final boolean onlyPreferred) {
+	//-------------------------------------------------------------------------------------------------
+	// Sore entries with preferred providers will be prioritized
+	private List<OrchestrationStore> sortByPreferredProviders(final List<OrchestrationStore> entries, final List<String> preferred, final boolean onlyPreferred) {
 
-        List<OrchestrationStore> preferredEntries = new ArrayList<>();
-        List<OrchestrationStore> notPreferredEntries = new ArrayList<>();
+		List<OrchestrationStore> preferredEntries = new ArrayList<>();
+		List<OrchestrationStore> notPreferredEntries = new ArrayList<>();
 
-        for (final OrchestrationStore entry : entries) {
-            if (preferred.contains(ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(entry.getServiceInstanceId()))) {
-                preferredEntries.add(entry);
-            } else {
-                notPreferredEntries.add(entry);
-            }
-        }
+		for (final OrchestrationStore entry : entries) {
+			if (preferred.contains(ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(entry.getServiceInstanceId()))) {
+				preferredEntries.add(entry);
+			} else {
+				notPreferredEntries.add(entry);
+			}
+		}
 
-        if (!onlyPreferred) {
-            preferredEntries.addAll(notPreferredEntries);
-        }
-        return preferredEntries;
-    }
+		if (!onlyPreferred) {
+			preferredEntries.addAll(notPreferredEntries);
+		}
+		return preferredEntries;
+	}
 }

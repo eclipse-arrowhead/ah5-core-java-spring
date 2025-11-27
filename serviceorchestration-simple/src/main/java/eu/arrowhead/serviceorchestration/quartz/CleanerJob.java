@@ -41,65 +41,65 @@ import java.util.UUID;
 @DisallowConcurrentExecution
 public class CleanerJob implements Job {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    @Autowired
-    private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
+	@Autowired
+	private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
 
-    @Autowired
-    private SubscriptionDbService subscriptionDbService;
+	@Autowired
+	private SubscriptionDbService subscriptionDbService;
 
-    @Autowired
-    private OrchestrationJobDbService orchestrationJobDbService;
+	@Autowired
+	private OrchestrationJobDbService orchestrationJobDbService;
 
-    private final Logger logger = LogManager.getLogger(this.getClass());
+	private final Logger logger = LogManager.getLogger(this.getClass());
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public void execute(final JobExecutionContext context) throws JobExecutionException {
-        logger.debug("execute started...");
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public void execute(final JobExecutionContext context) throws JobExecutionException {
+		logger.debug("execute started...");
 
-        final ZonedDateTime now = Utilities.utcNow();
+		final ZonedDateTime now = Utilities.utcNow();
 
-        try {
-            removeExpiredSubscriptions(now);
-            removeOldOrchestrationJobs(now);
-        } catch (final Exception ex) {
-            logger.debug(ex);
-            logger.error("Cleaner job error: " + ex.getMessage());
-        }
-    }
+		try {
+			removeExpiredSubscriptions(now);
+			removeOldOrchestrationJobs(now);
+		} catch (final Exception ex) {
+			logger.debug(ex);
+			logger.error("Cleaner job error: " + ex.getMessage());
+		}
+	}
 
-    //=================================================================================================
-    // assistant methods
+	//=================================================================================================
+	// assistant methods
 
-    //-------------------------------------------------------------------------------------------------
-    private void removeExpiredSubscriptions(final ZonedDateTime now) {
-        logger.debug("removeExpiredSubscriptions started..");
+	//-------------------------------------------------------------------------------------------------
+	private void removeExpiredSubscriptions(final ZonedDateTime now) {
+		logger.debug("removeExpiredSubscriptions started..");
 
-        synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
-            subscriptionDbService.deleteInBatchByExpiredBefore(now);
-        }
-    }
+		synchronized (SimpleStoreServiceOrchestrationConstants.SYNC_LOCK_SUBSCRIPTION) {
+			subscriptionDbService.deleteInBatchByExpiredBefore(now);
+		}
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private void removeOldOrchestrationJobs(final ZonedDateTime now) {
-        logger.debug("removeOldOrchestrationJobs started...");
+	//-------------------------------------------------------------------------------------------------
+	private void removeOldOrchestrationJobs(final ZonedDateTime now) {
+		logger.debug("removeOldOrchestrationJobs started...");
 
-        final List<UUID> toRemove = new ArrayList<>();
-        orchestrationJobDbService.getAllByStatusIn(List.of(OrchestrationJobStatus.DONE, OrchestrationJobStatus.ERROR)).forEach(job -> {
-            final ZonedDateTime expirationTime = job.getFinishedAt().plusDays(sysInfo.getOrchestrationHistoryMaxAge());
-            if (expirationTime.isBefore(now)) {
-                toRemove.add(job.getId());
-            }
-        });
-        if (!Utilities.isEmpty(toRemove)) {
-            orchestrationJobDbService.deleteInBatch(toRemove);
-        }
-    }
+		final List<UUID> toRemove = new ArrayList<>();
+		orchestrationJobDbService.getAllByStatusIn(List.of(OrchestrationJobStatus.DONE, OrchestrationJobStatus.ERROR)).forEach(job -> {
+			final ZonedDateTime expirationTime = job.getFinishedAt().plusDays(sysInfo.getOrchestrationHistoryMaxAge());
+			if (expirationTime.isBefore(now)) {
+				toRemove.add(job.getId());
+			}
+		});
+		if (!Utilities.isEmpty(toRemove)) {
+			orchestrationJobDbService.deleteInBatch(toRemove);
+		}
+	}
 
 }

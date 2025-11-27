@@ -34,7 +34,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "consumer", "serviceDefinition", "priority" }) })
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"consumer", "serviceDefinition", "priority"})})
 public class OrchestrationStore {
 
 	//=================================================================================================
@@ -43,9 +43,9 @@ public class OrchestrationStore {
 	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "consumer", "serviceDefinition", "priority", "serviceInstanceId", "createdAt");
 	public static final String DEFAULT_SORT_FIELD = "id";
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    protected UUID id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	protected UUID id;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String consumer;
@@ -59,14 +59,14 @@ public class OrchestrationStore {
 	@Column(nullable = false)
 	private int priority;
 
-    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    protected ZonedDateTime createdAt;
+	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	protected ZonedDateTime createdAt;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String createdBy;
 
-    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    protected ZonedDateTime updatedAt;
+	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+	protected ZonedDateTime updatedAt;
 
 	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
 	private String updatedBy;
@@ -89,41 +89,42 @@ public class OrchestrationStore {
 		this.updatedBy = createdBy;
 
 	}
-    //-------------------------------------------------------------------------------------------------
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = Utilities.utcNow();
-        this.updatedAt = this.createdAt;
-    }
 
-    //-------------------------------------------------------------------------------------------------
-    @PreUpdate
-    public void onUpdate() {
-        this.updatedAt = Utilities.utcNow();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@PrePersist
+	public void onCreate() {
+		this.createdAt = Utilities.utcNow();
+		this.updatedAt = this.createdAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+	//-------------------------------------------------------------------------------------------------
+	@PreUpdate
+	public void onUpdate() {
+		this.updatedAt = Utilities.utcNow();
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
+	//-------------------------------------------------------------------------------------------------
+	public int hashCode() {
+		return Objects.hash(id);
+	}
 
-        if (obj == null) {
-            return false;
-        }
+	//-------------------------------------------------------------------------------------------------
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
 
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
+		if (obj == null) {
+			return false;
+		}
 
-        final OrchestrationStore other = (OrchestrationStore) obj;
-        return Objects.equals(id, other.id);
-    }
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final OrchestrationStore other = (OrchestrationStore) obj;
+		return Objects.equals(id, other.id);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String toString() {
@@ -134,15 +135,15 @@ public class OrchestrationStore {
 	//=================================================================================================
 	// boilerplate
 
-    //-------------------------------------------------------------------------------------------------
-    public UUID getId() {
-        return id;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public UUID getId() {
+		return id;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setId(final UUID id) {
-        this.id = id;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setId(final UUID id) {
+		this.id = id;
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	public String getConsumer() {
@@ -204,23 +205,23 @@ public class OrchestrationStore {
 		this.updatedBy = updatedBy;
 	}
 
-    //-------------------------------------------------------------------------------------------------
-    public ZonedDateTime getCreatedAt() {
-        return createdAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getCreatedAt() {
+		return createdAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setCreatedAt(final ZonedDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setCreatedAt(final ZonedDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public ZonedDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getUpdatedAt() {
+		return updatedAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setUpdatedAt(final ZonedDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setUpdatedAt(final ZonedDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
 }

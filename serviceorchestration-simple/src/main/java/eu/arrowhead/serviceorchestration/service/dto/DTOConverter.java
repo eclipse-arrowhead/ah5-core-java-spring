@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Defaults;
 import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
@@ -52,7 +51,6 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
-import static org.hibernate.validator.internal.util.Contracts.assertTrue;
 
 @Service
 public class DTOConverter {
@@ -60,8 +58,8 @@ public class DTOConverter {
 	//=================================================================================================
 	// members
 
-    @Autowired
-    private ObjectMapper mapper;
+	@Autowired
+	private ObjectMapper mapper;
 
 	private final Logger logger = LogManager.getLogger(this.getClass());
 
@@ -88,56 +86,56 @@ public class DTOConverter {
 				entities.getTotalElements());
 	}
 
-    //-------------------------------------------------------------------------------------------------
-    @SuppressWarnings("checkstyle:MagicNumber")
-    public OrchestrationResponseDTO convertStoreEntitiesToOrchestrationResponseDTO(final List<OrchestrationStore> entities, final Set<String> warnings) {
-        logger.debug("convertStoreEntitiesToOrchestrationResponseDTO started...");
-        Assert.notNull(entities, "entities is null");
-        Assert.notNull(warnings, "warnings is null");
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("checkstyle:MagicNumber")
+	public OrchestrationResponseDTO convertStoreEntitiesToOrchestrationResponseDTO(final List<OrchestrationStore> entities, final Set<String> warnings) {
+		logger.debug("convertStoreEntitiesToOrchestrationResponseDTO started...");
+		Assert.notNull(entities, "entities is null");
+		Assert.notNull(warnings, "warnings is null");
 
-        final List<OrchestrationResultDTO> responseDTOS = new ArrayList<>(entities.size());
-        entities.forEach(entity -> {
+		final List<OrchestrationResultDTO> responseDTOS = new ArrayList<>(entities.size());
+		entities.forEach(entity -> {
 
-            responseDTOS.add(new OrchestrationResultDTO(
-                    entity.getServiceInstanceId(),
-                    Defaults.DEFAULT_CLOUD,
+			responseDTOS.add(new OrchestrationResultDTO(
+					entity.getServiceInstanceId(),
+					Defaults.DEFAULT_CLOUD,
 					ServiceInstanceIdUtils.retrieveSystemNameFromInstanceId(entity.getServiceInstanceId()),
-                    entity.getServiceDefinition(),
-                    ServiceInstanceIdUtils.retrieveVersionFromInstanceId(entity.getServiceInstanceId()),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null
-            ));
-        });
+					entity.getServiceDefinition(),
+					ServiceInstanceIdUtils.retrieveVersionFromInstanceId(entity.getServiceInstanceId()),
+					null,
+					null,
+					null,
+					null,
+					null
+			));
+		});
 
-        return new OrchestrationResponseDTO(responseDTOS, Utilities.isEmpty(warnings) ? null : warnings.stream().toList());
-    }
+		return new OrchestrationResponseDTO(responseDTOS, Utilities.isEmpty(warnings) ? null : warnings.stream().toList());
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationSubscriptionListResponseDTO convertSubscriptionListToDTO(final List<Subscription> subscriptions, final long count) {
-        logger.debug("convertSubscriptionListToDTO started...");
-        Assert.notNull(subscriptions, "subscriptions list is null");
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationSubscriptionListResponseDTO convertSubscriptionListToDTO(final List<Subscription> subscriptions, final long count) {
+		logger.debug("convertSubscriptionListToDTO started...");
+		Assert.notNull(subscriptions, "subscriptions list is null");
 
-        final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions
-                .stream()
-                .map(this::convertSubscriptionToDTO)
-                .toList();
+		final List<OrchestrationSubscriptionResponseDTO> entries = subscriptions
+				.stream()
+				.map(this::convertSubscriptionToDTO)
+				.toList();
 
-        return new OrchestrationSubscriptionListResponseDTO(entries, count);
-    }
+		return new OrchestrationSubscriptionListResponseDTO(entries, count);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationPushJobListResponseDTO convertOrchestrationJobListToDTO(final List<OrchestrationJob> jobs) {
-        logger.debug("convertOrchestrationJobListToDTO started...");
-        Assert.notNull(jobs, "job list is null");
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationPushJobListResponseDTO convertOrchestrationJobListToDTO(final List<OrchestrationJob> jobs) {
+		logger.debug("convertOrchestrationJobListToDTO started...");
+		Assert.notNull(jobs, "job list is null");
 
-        return new OrchestrationPushJobListResponseDTO(jobs
-                .stream()
-                .map(this::convertOrchestrationJobToDTO)
-                .toList());
-    }
+		return new OrchestrationPushJobListResponseDTO(jobs
+				.stream()
+				.map(this::convertOrchestrationJobToDTO)
+				.toList());
+	}
 
 	//=================================================================================================
 	// assistant methods
@@ -159,91 +157,91 @@ public class DTOConverter {
 				Utilities.convertZonedDateTimeToUTCString(entity.getUpdatedAt()));
 	}
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationSubscriptionResponseDTO convertSubscriptionToDTO(final Subscription subscription) {
-        logger.debug("convertSubscriptionToDTO started...");
-        Assert.notNull(subscription, "subscription is null");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationSubscriptionResponseDTO convertSubscriptionToDTO(final Subscription subscription) {
+		logger.debug("convertSubscriptionToDTO started...");
+		Assert.notNull(subscription, "subscription is null");
 
-        return new OrchestrationSubscriptionResponseDTO(
-                subscription.getId().toString(),
-                subscription.getOwnerSystem(),
-                subscription.getTargetSystem(),
-                createOrchestrationRequestDTO(subscription.getOrchestrationRequest()),
-                createOrchestrationNotifyInterfaceDTO(subscription.getNotifyProtocol(), subscription.getNotifyProperties()),
-                Utilities.convertZonedDateTimeToUTCString(subscription.getExpiresAt()),
-                Utilities.convertZonedDateTimeToUTCString(subscription.getCreatedAt()));
-    }
+		return new OrchestrationSubscriptionResponseDTO(
+				subscription.getId().toString(),
+				subscription.getOwnerSystem(),
+				subscription.getTargetSystem(),
+				createOrchestrationRequestDTO(subscription.getOrchestrationRequest()),
+				createOrchestrationNotifyInterfaceDTO(subscription.getNotifyProtocol(), subscription.getNotifyProperties()),
+				Utilities.convertZonedDateTimeToUTCString(subscription.getExpiresAt()),
+				Utilities.convertZonedDateTimeToUTCString(subscription.getCreatedAt()));
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationRequestDTO createOrchestrationRequestDTO(final String orchestrationRequestStr) {
-        logger.debug("createOrchestrationRequestDTO started...");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationRequestDTO createOrchestrationRequestDTO(final String orchestrationRequestStr) {
+		logger.debug("createOrchestrationRequestDTO started...");
 
-        SimpleOrchestrationRequest simpleOrchestrationRequest = null;
-        try {
-              simpleOrchestrationRequest = mapper.readValue(orchestrationRequestStr, SimpleOrchestrationRequest.class);
-        } catch (final JsonProcessingException ex) {
-            logger.debug(ex);
-            throw new IllegalArgumentException("DTOconverter.createOrchestrationRequestDTO failed. Error: " + ex.getMessage());
-        }
-        OrchestrationServiceRequirementDTO serviceRequirementDTO = null;
-        if (simpleOrchestrationRequest.getServiceDefinition() != null || simpleOrchestrationRequest.getPreferredProviders() != null) {
-            serviceRequirementDTO = new OrchestrationServiceRequirementDTO(
-                    simpleOrchestrationRequest.getServiceDefinition(), null, null, null, null, null, null, null, null, simpleOrchestrationRequest.getPreferredProviders()
-            );
-        }
-        return new OrchestrationRequestDTO(
-                serviceRequirementDTO,
-                simpleOrchestrationRequest.getOrchestrationFlags(),
-                null,
-                null
-        );
-    }
+		SimpleOrchestrationRequest simpleOrchestrationRequest = null;
+		try {
+			simpleOrchestrationRequest = mapper.readValue(orchestrationRequestStr, SimpleOrchestrationRequest.class);
+		} catch (final JsonProcessingException ex) {
+			logger.debug(ex);
+			throw new IllegalArgumentException("DTOconverter.createOrchestrationRequestDTO failed. Error: " + ex.getMessage());
+		}
+		OrchestrationServiceRequirementDTO serviceRequirementDTO = null;
+		if (simpleOrchestrationRequest.getServiceDefinition() != null || simpleOrchestrationRequest.getPreferredProviders() != null) {
+			serviceRequirementDTO = new OrchestrationServiceRequirementDTO(
+					simpleOrchestrationRequest.getServiceDefinition(), null, null, null, null, null, null, null, null, simpleOrchestrationRequest.getPreferredProviders()
+			);
+		}
+		return new OrchestrationRequestDTO(
+				serviceRequirementDTO,
+				simpleOrchestrationRequest.getOrchestrationFlags(),
+				null,
+				null
+		);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationNotifyInterfaceDTO createOrchestrationNotifyInterfaceDTO(final String protocol, final String propertiesStr) {
-        logger.debug("createOrchestrationNotifyInterfaceDTO started...");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationNotifyInterfaceDTO createOrchestrationNotifyInterfaceDTO(final String protocol, final String propertiesStr) {
+		logger.debug("createOrchestrationNotifyInterfaceDTO started...");
 
-        final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
-        };
+		final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
+		};
 
-        try {
-            return new OrchestrationNotifyInterfaceDTO(protocol, mapper.readValue(propertiesStr, typeReference));
-        } catch (final JsonProcessingException ex) {
-            logger.debug(ex);
-            throw new IllegalArgumentException("DTOconverter.createOrchestrationNotifyInterfaceDTO failed. Error: " + ex.getMessage());
-        }
-    }
+		try {
+			return new OrchestrationNotifyInterfaceDTO(protocol, mapper.readValue(propertiesStr, typeReference));
+		} catch (final JsonProcessingException ex) {
+			logger.debug(ex);
+			throw new IllegalArgumentException("DTOconverter.createOrchestrationNotifyInterfaceDTO failed. Error: " + ex.getMessage());
+		}
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    private OrchestrationJobDTO convertOrchestrationJobToDTO(final OrchestrationJob job) {
-        logger.debug("convertOrchestrationJobToDTO started...");
-        Assert.notNull(job, "job is null");
+	//-------------------------------------------------------------------------------------------------
+	private OrchestrationJobDTO convertOrchestrationJobToDTO(final OrchestrationJob job) {
+		logger.debug("convertOrchestrationJobToDTO started...");
+		Assert.notNull(job, "job is null");
 
-        return new OrchestrationJobDTO(
-                job.getId().toString(),
-                job.getStatus().name(),
-                job.getType().name(),
-                job.getRequesterSystem(),
-                job.getTargetSystem(),
-                job.getServiceDefinition(),
-                job.getSubscriptionId(),
-                job.getMessage(),
-                Utilities.convertZonedDateTimeToUTCString(job.getCreatedAt()),
-                Utilities.convertZonedDateTimeToUTCString(job.getStartedAt()),
-                Utilities.convertZonedDateTimeToUTCString(job.getFinishedAt()));
-    }
+		return new OrchestrationJobDTO(
+				job.getId().toString(),
+				job.getStatus().name(),
+				job.getType().name(),
+				job.getRequesterSystem(),
+				job.getTargetSystem(),
+				job.getServiceDefinition(),
+				job.getSubscriptionId(),
+				job.getMessage(),
+				Utilities.convertZonedDateTimeToUTCString(job.getCreatedAt()),
+				Utilities.convertZonedDateTimeToUTCString(job.getStartedAt()),
+				Utilities.convertZonedDateTimeToUTCString(job.getFinishedAt()));
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationHistoryResponseDTO convertOrchestrationJobPageToHistoryDTO(final Page<OrchestrationJob> page) {
-        logger.debug("convertOrchestrationJobPageToHistoryDTO started...");
-        Assert.notNull(page, "page is null");
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationHistoryResponseDTO convertOrchestrationJobPageToHistoryDTO(final Page<OrchestrationJob> page) {
+		logger.debug("convertOrchestrationJobPageToHistoryDTO started...");
+		Assert.notNull(page, "page is null");
 
-        final List<OrchestrationJobDTO> entries = page
-                .stream()
-                .map(job -> convertOrchestrationJobToDTO(job))
-                .toList();
+		final List<OrchestrationJobDTO> entries = page
+				.stream()
+				.map(job -> convertOrchestrationJobToDTO(job))
+				.toList();
 
-        return new OrchestrationHistoryResponseDTO(entries, page.getTotalElements());
-    }
+		return new OrchestrationHistoryResponseDTO(entries, page.getTotalElements());
+	}
 
 }

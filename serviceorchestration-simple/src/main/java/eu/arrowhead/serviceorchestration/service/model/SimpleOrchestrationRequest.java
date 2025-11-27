@@ -24,74 +24,74 @@ import java.util.Set;
 
 public class SimpleOrchestrationRequest {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    private String serviceDefinition;
-    private List<String> preferredProviders;
-    private Map<String, Boolean> orchestrationFlags;
-    private Set<String> warnings;
+	private String serviceDefinition;
+	private List<String> preferredProviders;
+	private Map<String, Boolean> orchestrationFlags;
+	private Set<String> warnings;
 
-    //=================================================================================================
-    // boilerplate
+	//=================================================================================================
+	// boilerplate
 
-    //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationRequest() {
-    }
+	//-------------------------------------------------------------------------------------------------
+	public SimpleOrchestrationRequest() {
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public SimpleOrchestrationRequest(final String serviceDefinition, final List<String> preferredProviders, final Map<String, Boolean> orchestrationFlags, final Set<String> warnings) {
-        this.serviceDefinition = serviceDefinition;
-        this.preferredProviders = preferredProviders;
-        this.orchestrationFlags = orchestrationFlags;
-        this.warnings = warnings;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public SimpleOrchestrationRequest(final String serviceDefinition, final List<String> preferredProviders, final Map<String, Boolean> orchestrationFlags, final Set<String> warnings) {
+		this.serviceDefinition = serviceDefinition;
+		this.preferredProviders = preferredProviders;
+		this.orchestrationFlags = orchestrationFlags;
+		this.warnings = warnings;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getServiceDefinition() {
-        return serviceDefinition;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getServiceDefinition() {
+		return serviceDefinition;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setServiceDefinition(final String serviceDefinition) {
-        this.serviceDefinition = serviceDefinition;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setServiceDefinition(final String serviceDefinition) {
+		this.serviceDefinition = serviceDefinition;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public Map<String, Boolean> getOrchestrationFlags() {
-        return orchestrationFlags;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public Map<String, Boolean> getOrchestrationFlags() {
+		return orchestrationFlags;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setOrchestrationFlags(final Map<String, Boolean> orchestrationFlags) {
-        this.orchestrationFlags = orchestrationFlags;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setOrchestrationFlags(final Map<String, Boolean> orchestrationFlags) {
+		this.orchestrationFlags = orchestrationFlags;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public List<String> getPreferredProviders() {
-        return preferredProviders;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public List<String> getPreferredProviders() {
+		return preferredProviders;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setPreferredProviders(final List<String> preferredProviders) {
-        this.preferredProviders = preferredProviders;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setPreferredProviders(final List<String> preferredProviders) {
+		this.preferredProviders = preferredProviders;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public Set<String> getWarnings() {
-        return warnings;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public Set<String> getWarnings() {
+		return warnings;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setWarnings(final Set<String> warnings) {
-        this.warnings = warnings;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setWarnings(final Set<String> warnings) {
+		this.warnings = warnings;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void addWarning(final String warning) {
-        if (this.warnings == null) {
-            this.warnings = new HashSet<>();
-        }
-        this.warnings.add(warning);
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void addWarning(final String warning) {
+		if (this.warnings == null) {
+			this.warnings = new HashSet<>();
+		}
+		this.warnings.add(warning);
+	}
 }

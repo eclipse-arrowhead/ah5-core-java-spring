@@ -23,7 +23,6 @@ import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.jpa.ArrowheadEntity;
-import eu.arrowhead.common.jpa.UnmodifiableArrowheadEntity;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import jakarta.persistence.Column;
@@ -36,214 +35,214 @@ import jakarta.persistence.PrePersist;
 @Entity
 public class OrchestrationJob {
 
-    //=================================================================================================
-    // members
+	//=================================================================================================
+	// members
 
-    public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "createdAt", "startedAt", "finishedAt");
-    public static final String DEFAULT_SORT_FIELD = "id";
+	public static final List<String> SORTABLE_FIELDS_BY = List.of("id", "createdAt", "startedAt", "finishedAt");
+	public static final String DEFAULT_SORT_FIELD = "id";
 
-    @Id
-    private UUID id;
+	@Id
+	private UUID id;
 
-    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
-    @Enumerated(EnumType.STRING)
-    private OrchestrationJobStatus status;
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
+	@Enumerated(EnumType.STRING)
+	private OrchestrationJobStatus status;
 
-    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
-    @Enumerated(EnumType.STRING)
-    private OrchestrationType type;
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_TINY)
+	@Enumerated(EnumType.STRING)
+	private OrchestrationType type;
 
-    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-    private String requesterSystem;
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	private String requesterSystem;
 
-    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-    private String targetSystem;
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	private String targetSystem;
 
-    @Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
-    private String serviceDefinition;
+	@Column(nullable = false, length = ArrowheadEntity.VARCHAR_SMALL)
+	private String serviceDefinition;
 
-    @Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
-    private String subscriptionId;
+	@Column(nullable = true, length = ArrowheadEntity.VARCHAR_SMALL)
+	private String subscriptionId;
 
-    @Column(nullable = true)
-    private String message;
+	@Column(nullable = true)
+	private String message;
 
-    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private ZonedDateTime createdAt;
+	@Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	private ZonedDateTime createdAt;
 
-    @Column(nullable = true)
-    private ZonedDateTime startedAt;
+	@Column(nullable = true)
+	private ZonedDateTime startedAt;
 
-    @Column(nullable = true)
-    private ZonedDateTime finishedAt;
+	@Column(nullable = true)
+	private ZonedDateTime finishedAt;
 
-    //=================================================================================================
-    // methods
+	//=================================================================================================
+	// methods
 
-    //-------------------------------------------------------------------------------------------------
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = Utilities.utcNow();
-    }
+	//-------------------------------------------------------------------------------------------------
+	@PrePersist
+	public void onCreate() {
+		this.createdAt = Utilities.utcNow();
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationJob() {
-    }
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationJob() {
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationJob(final OrchestrationType type, final String requesterSystem, final String targetSystem, final String serviceDefinition, final String subscriptionId) {
-        this.id = UUID.randomUUID();
-        this.type = type;
-        this.status = OrchestrationJobStatus.PENDING;
-        this.requesterSystem = requesterSystem;
-        this.targetSystem = targetSystem;
-        this.serviceDefinition = serviceDefinition;
-        this.subscriptionId = subscriptionId;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationJob(final OrchestrationType type, final String requesterSystem, final String targetSystem, final String serviceDefinition, final String subscriptionId) {
+		this.id = UUID.randomUUID();
+		this.type = type;
+		this.status = OrchestrationJobStatus.PENDING;
+		this.requesterSystem = requesterSystem;
+		this.targetSystem = targetSystem;
+		this.serviceDefinition = serviceDefinition;
+		this.subscriptionId = subscriptionId;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public String toString() {
-        return "OrchestrationJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
-                + serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
-                + finishedAt + "]";
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "OrchestrationJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
+				+ serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
+				+ finishedAt + "]";
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
 
-        if (obj == null) {
-            return false;
-        }
+		if (obj == null) {
+			return false;
+		}
 
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
 
-        final OrchestrationJob other = (OrchestrationJob) obj;
-        return id == other.id;
-    }
+		final OrchestrationJob other = (OrchestrationJob) obj;
+		return id == other.id;
+	}
 
-    //=================================================================================================
-    // boilerplate
+	//=================================================================================================
+	// boilerplate
 
-    //-------------------------------------------------------------------------------------------------
-    public UUID getId() {
-        return id;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public UUID getId() {
+		return id;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setId(final UUID id) {
-        this.id = id;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setId(final UUID id) {
+		this.id = id;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationJobStatus getStatus() {
-        return status;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationJobStatus getStatus() {
+		return status;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setStatus(final OrchestrationJobStatus status) {
-        this.status = status;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setStatus(final OrchestrationJobStatus status) {
+		this.status = status;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public OrchestrationType getType() {
-        return type;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public OrchestrationType getType() {
+		return type;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setType(final OrchestrationType type) {
-        this.type = type;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setType(final OrchestrationType type) {
+		this.type = type;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getRequesterSystem() {
-        return requesterSystem;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getRequesterSystem() {
+		return requesterSystem;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setRequesterSystem(final String requesterSystem) {
-        this.requesterSystem = requesterSystem;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setRequesterSystem(final String requesterSystem) {
+		this.requesterSystem = requesterSystem;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getTargetSystem() {
-        return targetSystem;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getTargetSystem() {
+		return targetSystem;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setTargetSystem(final String targetSystem) {
-        this.targetSystem = targetSystem;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setTargetSystem(final String targetSystem) {
+		this.targetSystem = targetSystem;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getServiceDefinition() {
-        return serviceDefinition;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getServiceDefinition() {
+		return serviceDefinition;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setServiceDefinition(final String serviceDefinition) {
-        this.serviceDefinition = serviceDefinition;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setServiceDefinition(final String serviceDefinition) {
+		this.serviceDefinition = serviceDefinition;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getSubscriptionId() {
-        return subscriptionId;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getSubscriptionId() {
+		return subscriptionId;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setSubscriptionId(final String subscriptionId) {
-        this.subscriptionId = subscriptionId;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setSubscriptionId(final String subscriptionId) {
+		this.subscriptionId = subscriptionId;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public String getMessage() {
-        return message;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public String getMessage() {
+		return message;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setMessage(final String message) {
-        this.message = message;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setMessage(final String message) {
+		this.message = message;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public ZonedDateTime getCreatedAt() {
-        return createdAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getCreatedAt() {
+		return createdAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setCreatedAt(final ZonedDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setCreatedAt(final ZonedDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public ZonedDateTime getStartedAt() {
-        return startedAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getStartedAt() {
+		return startedAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setStartedAt(final ZonedDateTime startedAt) {
-        this.startedAt = startedAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setStartedAt(final ZonedDateTime startedAt) {
+		this.startedAt = startedAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public ZonedDateTime getFinishedAt() {
-        return finishedAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public ZonedDateTime getFinishedAt() {
+		return finishedAt;
+	}
 
-    //-------------------------------------------------------------------------------------------------
-    public void setFinishedAt(final ZonedDateTime finishedAt) {
-        this.finishedAt = finishedAt;
-    }
+	//-------------------------------------------------------------------------------------------------
+	public void setFinishedAt(final ZonedDateTime finishedAt) {
+		this.finishedAt = finishedAt;
+	}
 }
