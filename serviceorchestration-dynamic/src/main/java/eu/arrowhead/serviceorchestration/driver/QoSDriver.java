@@ -215,7 +215,7 @@ public class QoSDriver {
 		if (jobOpt.isPresent()) {
 			qosEvalResultDbService.save(jobOpt.get(), qosReq.type(), qosReq.operation(), toSave);
 		} else {
-			logger.error("Could not save QoS result, because orchestration job not exists: " + jobId);
+			logger.error("Could not save QoS result, because orchestration job doesn't exist: " + jobId);
 		}
 
 		return response;
