@@ -657,16 +657,20 @@ public class LocalServiceOrchestration {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private QoSOperation getLeadingQoSOperationForMatchmaking(final OrchestrationForm form) {
-		logger.debug("getLeadingQoSOperationForMatchmaking started...");
+	private boolean hasSortingQualityRequirements(final OrchestrationForm form) {
+		logger.debug("hasSortingQualityRequirements started...");
+
+		if (!form.hasQualityRequirements()) {
+			return false;
+		}
 
 		for (final QoSRequirementDTO qosPref : form.getQualityRequirements()) {
 			if (qosPref.operation().equalsIgnoreCase(QoSOperation.SORT.name())) {
-				return QoSOperation.SORT;
+				return true;
 			}
 		}
 
-		return QoSOperation.FILTER;
+		return false;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -789,7 +793,7 @@ public class LocalServiceOrchestration {
 	private OrchestrationCandidate matchmaking(final OrchestrationForm form, final List<OrchestrationCandidate> candidates) {
 		logger.debug("matchmaking started...");
 
-		if (form.hasQualityRequirements() && getLeadingQoSOperationForMatchmaking(form) == QoSOperation.SORT) {
+		if (hasSortingQualityRequirements(form)) {
 			return candidates.getFirst();
 		}
 

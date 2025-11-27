@@ -127,7 +127,7 @@ public class QoSDriver {
 			final List<OrchestrationCandidate> tempList = new ArrayList<>(evaluationResult.size());
 			for (final String sysName : evaluationResult) {
 				for (final OrchestrationCandidate candidate : compliedSystems) {
-					if (sysName.equalsIgnoreCase(candidate.getServiceInstance().provider().name())) {
+					if (sysName.equals(candidate.getServiceInstance().provider().name())) {
 						tempList.add(candidate);
 						break;
 					}
