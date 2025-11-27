@@ -100,7 +100,7 @@ public class SimpleStoreServiceOrchestrationSystemInfo extends SystemInfo {
 				.build();
 
 		final ServiceModel orchestrationStoreManagement = new ServiceModel.Builder()
-				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_STORE_MANAGEMENT)
+				.serviceDefinition(Constants.SERVICE_DEF_SERVICE_ORCHESTRATION_SIMPLE_STORE_MANAGEMENT)
 				.version(SimpleStoreServiceOrchestrationConstants.VERSION_ORCHESTRATION_STORE_MANAGEMENT)
 				.serviceInterface(getHttpServiceInterfaceForOrchestrationStoreManagement())
 				.serviceInterface(getMqttServiceInterfaceForOrchestrationStoreManagement())
