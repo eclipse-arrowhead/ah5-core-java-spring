@@ -20,6 +20,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -161,5 +162,43 @@ public class ServiceLookupFilterModel {
 	//-------------------------------------------------------------------------------------------------
 	public Set<ServiceInterfacePolicy> getPolicies() {
 		return policies;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(
+				addressTypes,
+				alivesAt,
+				instanceIds,
+				interfacePropertyRequirementsList,
+				interfaceTemplateNames,
+				metadataRequirementsList,
+				policies,
+				providerNames,
+				serviceDefinitionNames,
+				versions);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (obj == null) {
+			return false;
+		}
+
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final ServiceLookupFilterModel other = (ServiceLookupFilterModel) obj;
+		return Objects.equals(addressTypes, other.addressTypes) && Objects.equals(alivesAt, other.alivesAt) && Objects.equals(instanceIds, other.instanceIds)
+				&& Objects.equals(interfacePropertyRequirementsList, other.interfacePropertyRequirementsList) && Objects.equals(interfaceTemplateNames, other.interfaceTemplateNames)
+				&& Objects.equals(metadataRequirementsList, other.metadataRequirementsList) && Objects.equals(policies, other.policies) && Objects.equals(providerNames, other.providerNames)
+				&& Objects.equals(serviceDefinitionNames, other.serviceDefinitionNames) && Objects.equals(versions, other.versions);
 	}
 }

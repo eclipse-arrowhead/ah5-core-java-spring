@@ -108,7 +108,6 @@ public class DeviceDbServiceTest {
 		verify(service).getPage(any(), eq(List.of()), eq(List.of("3a:7f:12:b4:9c:e1")), eq(null), eq(List.of()));
 	}
 
-
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageWithoutFilterParameters() {
@@ -317,6 +316,26 @@ public class DeviceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testGetByNameNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByName(null));
+
+		assertEquals("device name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByName(""));
+
+		assertEquals("device name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testGetByNameEmptyResult() {
 
 		when(deviceRepo.findByName(any())).thenReturn(Optional.empty());
@@ -346,6 +365,26 @@ public class DeviceDbServiceTest {
 		when(deviceRepo.findByName(any())).thenThrow(new LockedException("error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getByName("DEVICE"));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(null));
+
+		assertEquals("device candidate list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(List.of()));
+
+		assertEquals("device candidate list is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -399,6 +438,40 @@ public class DeviceDbServiceTest {
 		when(deviceRepo.findAllByNameIn(any())).thenThrow(new LockedException("error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of(dto)));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.create(null));
+
+		assertEquals("device candidate is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateNullName() {
+		final NormalizedDeviceRequestDTO candidate = new NormalizedDeviceRequestDTO(null, null, null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.create(candidate));
+
+		assertEquals("device candidate name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateEmptyName() {
+		final NormalizedDeviceRequestDTO candidate = new NormalizedDeviceRequestDTO("", null, null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.create(candidate));
+
+		assertEquals("device candidate name is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -464,6 +537,26 @@ public class DeviceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testUpdateBulkNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateBulk(null));
+
+		assertEquals("candidate list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateBulk(List.of()));
+
+		assertEquals("candidate list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testUpdateBulkNotExistingDeviceThrowsInvalidParameterException() {
 
 		final NormalizedDeviceRequestDTO dto1 = new NormalizedDeviceRequestDTO("DEVICE1", Map.of("indoor", false), List.of());
@@ -520,10 +613,30 @@ public class DeviceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testDeleteByNameListNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByNameList(null));
+
+		assertEquals("device name list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByNameList(List.of()));
+
+		assertEquals("device name list is missing or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testDeleteByNameListASystemIsAssignedThrowsLockedException() {
 
 		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
-		final System system = new System("SYSTEM1",  "{\r\n  \"indoor\" : false\r\n}", "5.0.0");
+		final System system = new System("SYSTEM1", "{\r\n  \"indoor\" : false\r\n}", "5.0.0");
 		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
 
 		when(deviceRepo.findAllByNameIn(any())).thenReturn(List.of(device));
@@ -558,10 +671,30 @@ public class DeviceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testDeleteByNameNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByName(null));
+
+		assertEquals("device name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByName(""));
+
+		assertEquals("device name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testDeleteByNameASystemIsAssignedThrowsLockedException() {
 
 		final Device device = new Device("DEVICE1", "{\r\n  \"indoor\" : false\r\n}");
-		final System system = new System("SYSTEM1",  "{\r\n  \"indoor\" : false\r\n}", "5.0.0");
+		final System system = new System("SYSTEM1", "{\r\n  \"indoor\" : false\r\n}", "5.0.0");
 		final DeviceSystemConnector connection = new DeviceSystemConnector(device, system);
 
 		when(deviceRepo.findByName(any())).thenReturn(Optional.of(device));

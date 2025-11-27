@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import eu.arrowhead.authentication.AuthenticationConstants;
 import eu.arrowhead.authentication.method.IAuthenticationMethodInputValidator;
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 
 @Service
@@ -41,7 +40,7 @@ public class PasswordAuthenticationMethodInputValidator implements IAuthenticati
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public void validateCredentials(final Map<String, String> credentials) throws InvalidParameterException, InternalServerError {
+	public void validateCredentials(final Map<String, String> credentials) throws InvalidParameterException {
 		logger.debug("PasswordAuthenticationMethodInputValidator.validateCredentials started...");
 
 		if (Utilities.isEmpty(credentials)
@@ -50,7 +49,7 @@ public class PasswordAuthenticationMethodInputValidator implements IAuthenticati
 		}
 
 		if (Utilities.isEmpty(credentials.get(PasswordAuthenticationMethod.KEY_PASSWORD))) {
-			throw new InvalidParameterException("Missing or empty password.");
+			throw new InvalidParameterException("Missing or empty password");
 		}
 
 		if (credentials.get(PasswordAuthenticationMethod.KEY_PASSWORD).length() > AuthenticationConstants.PASSWORD_MAX_LENGTH) {

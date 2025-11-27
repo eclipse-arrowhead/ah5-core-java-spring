@@ -61,6 +61,26 @@ public class ServiceDefinitionDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testCreateBulkNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(null));
+
+		assertEquals("service definition name list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(List.of()));
+
+		assertEquals("service definition name list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testCreateBulkAlreadyExistingEntities() {
 
 		final ServiceDefinition existing1 = new ServiceDefinition("existingDef1");
@@ -71,6 +91,7 @@ public class ServiceDefinitionDbServiceTest {
 		assertEquals("Service definition names already exists: existingDef1, existingDef2", ex.getMessage());
 
 	}
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testCreateBulkNewEntities() {
@@ -88,7 +109,6 @@ public class ServiceDefinitionDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testCreateBulkThrowsInternalServerError() {
-
 		when(repo.findAllByNameIn(any())).thenThrow(new InternalServerError("test error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of("def")));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
@@ -96,8 +116,17 @@ public class ServiceDefinitionDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testGetPageOk() {
+	public void testGetPageNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getPage(null));
 
+		assertEquals("pagination is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPageOk() {
 		final ServiceDefinition existing = new ServiceDefinition("existingDef");
 		final PageRequest pageRequest = PageRequest.of(0, 1, Direction.ASC, "id");
 		when(repo.findAll(eq(pageRequest))).thenReturn(new PageImpl<>(List.of(existing)));

@@ -102,7 +102,7 @@ public class ServiceDiscoveryNormalization {
 	//-------------------------------------------------------------------------------------------------
 	public String normalizeSystemName(final String systemName) {
 		logger.debug("normalizeSystemName started");
-		Assert.isTrue(!Utilities.isEmpty(systemName), "systemName is empty");
+		Assert.isTrue(!Utilities.isEmpty(systemName), "System name is empty");
 
 		return systemNameNormalizer.normalize(systemName);
 	}

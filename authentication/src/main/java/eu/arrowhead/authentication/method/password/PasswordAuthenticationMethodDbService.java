@@ -58,7 +58,7 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
-	public List<String> createIdentifiableSystemsInBulk(final List<IdentityData> identities) {
+	public List<String> createIdentifiableSystemsInBulk(final List<IdentityData> identities) throws InternalServerError {
 		logger.debug("PasswordAuthenticationMethodDbService.createIdentifiableSystemsInBulk started...");
 		Assert.notNull(identities, "Identity list is missing");
 		Assert.isTrue(!Utilities.containsNull(identities), "Identity list contains null value");
@@ -69,6 +69,8 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 
 			// intentionally
 			return null;
+		} catch (final IllegalArgumentException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -79,18 +81,24 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	@Transactional(rollbackFor = ArrowheadException.class, propagation = Propagation.REQUIRED)
-	public List<String> updateIdentifiableSystemsInBulk(final List<IdentityData> identities) throws InternalServerError, ExternalServerError {
+	public List<String> updateIdentifiableSystemsInBulk(final List<IdentityData> identities) throws InternalServerError {
 		logger.debug("PasswordAuthenticationMethodDbService.updateIdentifiableSystemsInBulk started...");
 		Assert.notNull(identities, "Identity list is missing");
 		Assert.isTrue(!Utilities.containsNull(identities), "Identity list contains null value");
 
 		try {
-			final List<PasswordAuthentication> entities = paRepository.findAllBySystemIn(identities.stream().map(id -> id.system()).toList());
+			final List<PasswordAuthentication> entities = paRepository.findAllBySystemIn(
+					identities.stream()
+						.filter(id -> id.system() != null)
+						.map(id -> id.system())
+						.toList());
 			updateEntities(entities, identities);
 			paRepository.saveAllAndFlush(entities);
 
 			// intentionally
 			return null;
+		} catch (final IllegalArgumentException | InternalServerError ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -122,8 +130,6 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 	//-------------------------------------------------------------------------------------------------
 	private List<PasswordAuthentication> createEntities(final List<IdentityData> identities) {
 		logger.debug("PasswordAuthenticationMethodDbService.createEntities started...");
-		Assert.notNull(identities, "Identities list is missing");
-		Assert.isTrue(!Utilities.containsNull(identities), "Identities list contains null value");
 
 		final List<PasswordAuthentication> result = new ArrayList<>(identities.size());
 		for (final IdentityData identityData : identities) {
@@ -150,7 +156,7 @@ public class PasswordAuthenticationMethodDbService implements IAuthenticationMet
 			final PasswordAuthentication relatedEntity = findEntityInList(entities, identityData.system());
 			if (relatedEntity == null) {
 				// should not happen
-				throw new InternalServerError("Credentials for system " + identityData.system().getName() + " not found");
+				throw new InternalServerError("Credentials for system " + identityData.system().getName() + " are not found");
 			}
 
 			final String encodedPassword = encoder.encode(identityData.credentials().get(PasswordAuthenticationMethod.KEY_PASSWORD));

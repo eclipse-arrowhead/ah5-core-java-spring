@@ -71,7 +71,13 @@ public class IdentityService {
 
 		// Phase 1: authentication method independent steps
 		IdentityRequestDTO normalized = validator.validateAndNormalizeLoginServicePhase1(dto, origin);
-		final Optional<System> systemOpt = dbService.getSystemByName(normalized.systemName());
+		Optional<System> systemOpt = Optional.empty();
+
+		try {
+			systemOpt = dbService.getSystemByName(normalized.systemName());
+		} catch (final InternalServerError ex) {
+			throw new InternalServerError(ex.getMessage(), origin);
+		}
 
 		if (systemOpt.isEmpty()) {
 			// system is not known
@@ -129,7 +135,6 @@ public class IdentityService {
 
 		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
 		final IAuthenticationMethod method = methods.method(methodType);
-		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
 
 		try {
 			dbService.removeSession(data.normalizedRequest().systemName());
@@ -149,7 +154,6 @@ public class IdentityService {
 
 		final AuthenticationMethod methodType = data.system().getAuthenticationMethod();
 		final IAuthenticationMethod method = methods.method(methodType);
-		Assert.notNull(method, "Authentication method implementation not found: " + methodType.name());
 
 		// further normalization & validation
 		IdentityChangeRequestDTO normalized = new IdentityChangeRequestDTO(data.normalizedRequest().systemName(), data.normalizedRequest().credentials(), dto.newCredentials());

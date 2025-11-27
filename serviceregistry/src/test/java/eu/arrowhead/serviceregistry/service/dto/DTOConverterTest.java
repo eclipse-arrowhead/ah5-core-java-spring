@@ -18,6 +18,7 @@ package eu.arrowhead.serviceregistry.service.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
@@ -26,12 +27,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.ZonedDateTime;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -91,10 +94,10 @@ public class DTOConverterTest {
 	@Test
 	public void testConvertDeviceAndDeviceAddressEntriesToDTO() {
 
-	    final Device device = new Device("TEST_DEVICE", "{ }");
-	    device.onCreate();
-	    final DeviceAddress address1 = new DeviceAddress(device, AddressType.IPV4, "192.168.2.2");
-	    final DeviceAddress address2 = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:5e");
+		final Device device = new Device("TEST_DEVICE", "{ }");
+		device.onCreate();
+		final DeviceAddress address1 = new DeviceAddress(device, AddressType.IPV4, "192.168.2.2");
+		final DeviceAddress address2 = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:5e");
 
 		final DeviceResponseDTO expectedDTO = new DeviceResponseDTO(
 				"TEST_DEVICE",
@@ -109,12 +112,62 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	void testConvertDeviceAndDeviceAddressEntriesToDTODeviceNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertDeviceEntityToDeviceResponseDTO(null, null));
+
+		assertEquals("device entity is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("rawtypes")
+	@Test
+	void testConvertDeviceAndDeviceAddressEntriesToDTOAddressesNull() {
+		utilitiesMock.when(() -> Utilities.isEmpty((Collection) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertDeviceEntityToDeviceResponseDTO(new Device(), null));
+
+		assertEquals("device address entities is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	void testConvertDeviceAndDeviceAddressEntriesToDTOAddressesEmpty() {
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertDeviceEntityToDeviceResponseDTO(new Device(), List.of()));
+
+		assertEquals("device address entities is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	void testConvertDeviceAndDeviceAddressEntriesToDTOAddressesContainsNull() {
+		final List<DeviceAddress> list = new ArrayList<>(1);
+		list.add(null);
+
+		utilitiesMock.when(() -> Utilities.containsNull(list)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertDeviceEntityToDeviceResponseDTO(new Device(), list));
+
+		assertEquals("device address entities contains null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testConvertDeviceEntityToDeviceResponseDTO() {
 
-	    final Device device = new Device("TEST_DEVICE", "{ }");
-	    device.onCreate();
-	    final DeviceAddress address1 = new DeviceAddress(device, AddressType.IPV4, "192.168.2.2");
-	    final DeviceAddress address2 = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:5e");
+		final Device device = new Device("TEST_DEVICE", "{ }");
+		device.onCreate();
+		final DeviceAddress address1 = new DeviceAddress(device, AddressType.IPV4, "192.168.2.2");
+		final DeviceAddress address2 = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:5e");
 
 		final DeviceResponseDTO expected = new DeviceResponseDTO(
 				"TEST_DEVICE",
@@ -153,6 +206,40 @@ public class DTOConverterTest {
 
 		final ServiceDefinitionListResponseDTO converted = converter.convertServiceDefinitionEntityPageToDTO(new PageImpl<>(List.of(entity), PageRequest.of(0, 1), 10));
 		assertEquals(expected, converted);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceDefinitionEntityToDTONullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceDefinitionEntityToDTO(null));
+
+		assertEquals("entity is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceDefinitionEntityToDTONameNull() {
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceDefinitionEntityToDTO(new ServiceDefinition(null)));
+
+		assertEquals("name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceDefinitionEntityToDTONameEmpty() {
+		utilitiesMock.when(() -> Utilities.isEmpty("")).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceDefinitionEntityToDTO(new ServiceDefinition("")));
+
+		assertEquals("name is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -200,6 +287,98 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testConvertSystemTripletListToDTONullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertSystemTripletToDTO(null));
+
+		assertEquals("entity is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertSystemTripletListToDTOLeftNull() {
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity = ImmutableTriple.of(null, null, null);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertSystemTripletToDTO(entity));
+
+		assertEquals("the System in the triplet is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testConvertSystemTripletListToDTOMiddleNull() {
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity = ImmutableTriple.of(
+				new System(),
+				null,
+				null);
+
+		utilitiesMock.when(() -> Utilities.isEmpty((Collection) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertSystemTripletToDTO(entity));
+
+		assertEquals("the system address list in the triplet is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertSystemTripletListToDTOMiddleEmpty() {
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity = ImmutableTriple.of(
+				new System(),
+				List.of(),
+				null);
+
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertSystemTripletToDTO(entity));
+
+		assertEquals("the system address list in the triplet is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testConvertSystemTripletListToDTORightNullList() {
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity = ImmutableTriple.of(
+				new System(),
+				List.of(new SystemAddress()),
+				new SimpleEntry<>(new Device(), null));
+
+		utilitiesMock.when(() -> Utilities.isEmpty((Collection) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertSystemTripletToDTO(entity));
+
+		assertEquals("the device data list in the triplet is null or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertSystemTripletListToDTORightEmptyList() {
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> entity = ImmutableTriple.of(
+				new System(),
+				List.of(new SystemAddress()),
+				new SimpleEntry<>(new Device(), List.of()));
+
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertSystemTripletToDTO(entity));
+
+		assertEquals("the device data list in the triplet is null or empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testConvertSystemTripletListToDTO() {
 
 		// system with device
@@ -233,7 +412,7 @@ public class DTOConverterTest {
 		// system with device
 
 		final Entry<System, SystemAddress> systemDetails = createSystem1();
-	    final Entry<Device, DeviceAddress> deviceDetails = createDevice1();
+		final Entry<Device, DeviceAddress> deviceDetails = createDevice1();
 
 		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> toConvert = Triple.of(
 				systemDetails.getKey(),
@@ -286,7 +465,6 @@ public class DTOConverterTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testConvertSystemListResponseDtoToTerseDeviceNull() {
-
 		final SystemResponseDTO systemResponse = createResponseSystem1(null, true);
 
 		final SystemListResponseDTO converted = converter.convertSystemListResponseDtoToTerse(new SystemListResponseDTO(List.of(systemResponse), 1));
@@ -295,8 +473,69 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testConvertServiceInstanceEntityToDTOSystemTripletNotNull() {
+	public void testConvertServiceInstanceEntityToDTOInstanceNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceInstanceEntityToDTO(null, null));
 
+		assertEquals("instance is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testConvertServiceInstanceEntityToDTOInterfacesNull() {
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = new SimpleEntry<>(
+				new ServiceInstance(),
+				null);
+
+		utilitiesMock.when(() -> Utilities.isEmpty((Collection) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceInstanceEntityToDTO(instanceEntry, null));
+
+		assertEquals("instance interfaces list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInstanceEntityToDTOInterfacesEmpty() {
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = new SimpleEntry<>(
+				new ServiceInstance(),
+				List.of());
+
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceInstanceEntityToDTO(instanceEntry, null));
+
+		assertEquals("instance interfaces list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInstanceEntityToDTOInterfacesListContainsNull() {
+		final List<ServiceInstanceInterface> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Entry<ServiceInstance, List<ServiceInstanceInterface>> instanceEntry = new SimpleEntry<>(
+				new ServiceInstance(),
+				list);
+
+		utilitiesMock.when(() -> Utilities.containsNull(list)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertServiceInstanceEntityToDTO(instanceEntry, null));
+
+		assertEquals("instance interfaces list contains null element", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertServiceInstanceEntityToDTOSystemTripletNotNull() {
 		final DTOConverter converterSpy = spy(new DTOConverter());
 
 		// entities to convert
@@ -566,8 +805,69 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testConvertInterfaceTemplateEntriesToDTO() {
+	public void testConvertInterfaceTemplateEntriesToDTOEntriesNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertInterfaceTemplateEntriesToDTO(null, 0));
 
+		assertEquals("entry collection is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("rawtypes")
+	@Test
+	public void testConvertInterfaceTemplateEntriesToDTOPropertyListNull() {
+		final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = List.of(new SimpleEntry<>(
+				new ServiceInterfaceTemplate(),
+				null));
+
+		utilitiesMock.when(() -> Utilities.isEmpty((Collection) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertInterfaceTemplateEntriesToDTO(entries, 1));
+
+		assertEquals("ServiceInterfaceTemplateProperty list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertInterfaceTemplateEntriesToDTOPropertyListEmpty() {
+		final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = List.of(new SimpleEntry<>(
+				new ServiceInterfaceTemplate(),
+				List.of()));
+
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertInterfaceTemplateEntriesToDTO(entries, 1));
+
+		assertEquals("ServiceInterfaceTemplateProperty list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertInterfaceTemplateEntriesToDTOPropertyListContainsNull() {
+		final List<ServiceInterfaceTemplateProperty> list = new ArrayList<>(1);
+		list.add(null);
+
+		final Collection<Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>>> entries = List.of(new SimpleEntry<>(
+				new ServiceInterfaceTemplate(),
+				list));
+
+		utilitiesMock.when(() -> Utilities.containsNull(list)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> converter.convertInterfaceTemplateEntriesToDTO(entries, 1));
+
+		assertEquals("ServiceInterfaceTemplateProperty list contains null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testConvertInterfaceTemplateEntriesToDTO() {
 		final DTOConverter converterSpy = spy(new DTOConverter());
 
 		final ServiceInterfaceTemplate interfaceTemplate = new ServiceInterfaceTemplate("generic_http", "http");
@@ -670,8 +970,8 @@ public class DTOConverterTest {
 
 		final ServiceLookupFilterModel converted = converter.convertServiceInstanceQueryRequestDtoToFilterModel(dto);
 		assertThat(converted)
-	    	.usingRecursiveComparison()
-	    	.isEqualTo(expected);
+				.usingRecursiveComparison()
+				.isEqualTo(expected);
 	}
 
 	//=================================================================================================
@@ -703,7 +1003,7 @@ public class DTOConverterTest {
 		system.onCreate();
 		system.setId(0);
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
-	    return Map.entry(system, systemAddress);
+		return Map.entry(system, systemAddress);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -712,14 +1012,15 @@ public class DTOConverterTest {
 		system.onCreate();
 		system.setId(1);
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.2");
-	    return Map.entry(system, systemAddress);
+		return Map.entry(system, systemAddress);
 	}
+
 	//-------------------------------------------------------------------------------------------------
 	private Entry<Device, DeviceAddress> createDevice1() {
-	    final Device device = new Device("TEST_DEVICE1", "{ }");
-	    device.onCreate();
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    return Map.entry(device, deviceAddress);
+		final Device device = new Device("TEST_DEVICE1", "{ }");
+		device.onCreate();
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		return Map.entry(device, deviceAddress);
 	}
 
 	//-------------------------------------------------------------------------------------------------
