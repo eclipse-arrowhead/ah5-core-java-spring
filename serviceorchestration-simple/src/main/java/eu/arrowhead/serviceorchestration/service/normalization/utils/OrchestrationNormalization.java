@@ -90,6 +90,7 @@ public class OrchestrationNormalization {
 
 	//-------------------------------------------------------------------------------------------------
 	private void normalizeOrchestrationRequest(final SimpleOrchestrationRequest toNormalize) {
+		logger.debug("normalizeOrchestrationRequest started...");
 
 		// service definition
 		toNormalize.setServiceDefinition(serviceDefNameNormalizer.normalize(toNormalize.getServiceDefinition()));

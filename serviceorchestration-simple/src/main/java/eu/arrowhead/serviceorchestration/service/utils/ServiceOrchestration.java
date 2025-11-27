@@ -78,7 +78,7 @@ public class ServiceOrchestration {
 			final Set<String> serviceDefs = new LinkedHashSet<>(sortedMatchingEntries.stream().map(OrchestrationStore::getServiceDefinition).toList());
 
 			// finding entries with the highest priority for each service definition
-			final List<OrchestrationStore> sortedWithMatchmaking = new ArrayList<>();
+			final List<OrchestrationStore> sortedWithMatchmaking = new ArrayList<>(serviceDefs.size());
 			for (final String serviceDef : serviceDefs) {
 				for (final OrchestrationStore entry : sortedMatchingEntries) {
 					if (entry.getServiceDefinition().equals(serviceDef)) {
@@ -101,8 +101,9 @@ public class ServiceOrchestration {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	// Sore entries with preferred providers will be prioritized
+	// Store entries with preferred providers will be prioritized
 	private List<OrchestrationStore> sortByPreferredProviders(final List<OrchestrationStore> entries, final List<String> preferred, final boolean onlyPreferred) {
+		logger.debug("sortByPreferredProviders started...");
 
 		List<OrchestrationStore> preferredEntries = new ArrayList<>();
 		List<OrchestrationStore> notPreferredEntries = new ArrayList<>();

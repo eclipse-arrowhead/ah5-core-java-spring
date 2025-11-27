@@ -72,7 +72,7 @@ public class OrchestrationStoreManagementServiceNormalization {
 	public Map<UUID, Integer> normalizePriorityRequestDTO(final PriorityRequestDTO dto) {
 		logger.debug("normalizePriorityRequestDTO started...");
 
-		final Map<UUID, Integer> normalized = new HashMap<UUID, Integer>(dto.size());
+		final Map<UUID, Integer> normalized = new HashMap<>(dto.size());
 		dto.forEach((idString, priority) -> normalized.put(UUID.fromString(idString.trim()), priority));
 		return normalized;
 	}

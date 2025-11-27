@@ -81,7 +81,7 @@ public class OrchestrationMqttHandler extends MqttTopicHandler {
 
 			case Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE:
 				final String unsubscribeReqId = readPayload(request.getPayload(), String.class);
-				boolean unsubscribeResult = pushUnsubscribe(request.getRequester(), unsubscribeReqId);
+				final boolean unsubscribeResult = pushUnsubscribe(request.getRequester(), unsubscribeReqId);
 				responseStatus = unsubscribeResult ? MqttStatus.OK : MqttStatus.NO_CONTENT;
 				break;
 

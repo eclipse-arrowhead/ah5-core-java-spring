@@ -63,8 +63,8 @@ public class OrchestrationHistoryManagementValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedOrchestrationJobQueryRequest validateAndNormalizeQueryService(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeQueryService started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateQueryService(dto, origin);
 		final NormalizedOrchestrationJobQueryRequest normalized = normalization.normalizeOrchestrationHistoryQueryRequestDTO(dto, origin);

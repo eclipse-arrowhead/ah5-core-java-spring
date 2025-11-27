@@ -34,7 +34,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class OrchestrationHistoryManagementNormalization {
@@ -64,20 +64,20 @@ public class OrchestrationHistoryManagementNormalization {
 		logger.debug("normalizeOrchestrationHistoryQueryRequestDTO started...");
 
 		if (dto == null) {
-			return new NormalizedOrchestrationJobQueryRequest(null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+			return new NormalizedOrchestrationJobQueryRequest(null, List.of(), List.of(), null, List.of(), List.of(), List.of(), List.of());
 		}
 
 		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Sort.Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
 
 		return new NormalizedOrchestrationJobQueryRequest(
 				pageRequest, // no need to normalize, because it happened in the getPageRequest method
-				Utilities.isEmpty(dto.ids()) ? new ArrayList<>() : dto.ids().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList(),
-				Utilities.isEmpty(dto.statuses()) ? new ArrayList<>() : dto.statuses().stream().map(status -> OrchestrationJobStatus.valueOf(status.trim().toUpperCase())).toList(),
+				Utilities.isEmpty(dto.ids()) ? List.of() : dto.ids().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList(),
+				Utilities.isEmpty(dto.statuses()) ? List.of() : dto.statuses().stream().map(status -> OrchestrationJobStatus.valueOf(status.trim().toUpperCase())).toList(),
 				Utilities.isEmpty(dto.type()) ? null : OrchestrationType.valueOf(dto.type().trim().toUpperCase()),
-				Utilities.isEmpty(dto.requesterSystems()) ? new ArrayList<>() : dto.requesterSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
-				Utilities.isEmpty(dto.targetSystems()) ? new ArrayList<>() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
-				Utilities.isEmpty(dto.serviceDefinitions()) ? new ArrayList<>() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList(),
-				Utilities.isEmpty(dto.subscriptionIds()) ? new ArrayList<>() : dto.subscriptionIds().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList());
+				Utilities.isEmpty(dto.requesterSystems()) ? List.of() : dto.requesterSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.targetSystems()) ? List.of() : dto.targetSystems().stream().map(sys -> systemNameNormalizer.normalize(sys)).toList(),
+				Utilities.isEmpty(dto.serviceDefinitions()) ? List.of() : dto.serviceDefinitions().stream().map(def -> serviceDefNameNormalizer.normalize(def)).toList(),
+				Utilities.isEmpty(dto.subscriptionIds()) ? List.of() : dto.subscriptionIds().stream().map(id -> orchNormalizer.normalizeUUID(id)).toList());
 	}
 
 }

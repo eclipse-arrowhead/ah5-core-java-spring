@@ -76,11 +76,11 @@ public class SimpleStoreDbService {
 						n.serviceInstanceId(),
 						n.priority(),
 						requesterName)).collect(Collectors.toList());
-
-		checkUniqueFields(candidates);
-
 		try {
+			checkUniqueFields(candidates);
 			return storeRepo.saveAllAndFlush(toSave);
+		} catch (final InvalidParameterException ex) {
+			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
 			logger.debug(ex);
@@ -220,24 +220,24 @@ public class SimpleStoreDbService {
 		logger.debug("setPriorities started...");
 
 
-		List<OrchestrationStore> modified = new ArrayList<OrchestrationStore>();
+		List<OrchestrationStore> modified = new ArrayList<>();
 
 		try {
 			synchronized (LOCK) {
 				final List<OrchestrationStore> existingEntries = storeRepo.findAllById(priorityCandidates.keySet());
 
-				// check is every candidate UUID is valid
+				// check if every candidate UUID is valid
 				verifyCandidatesByUUID(priorityCandidates.keySet(), existingEntries);
 
 				final String consumer = existingEntries.getFirst().getConsumer();
 				final String serviceDefinition = existingEntries.getFirst().getServiceDefinition();
 
-				// check is every candidate belongs to the same rule set
+				// check if every candidate belongs to the same rule set
 				verifyRuleSet(existingEntries, consumer, serviceDefinition);
 
 				final List<OrchestrationStore> ruleSet = storeRepo.findAllByConsumerAndServiceDefinition(consumer, serviceDefinition);
 
-				for (OrchestrationStore rule : ruleSet) {
+				for (final OrchestrationStore rule : ruleSet) {
 					if (priorityCandidates.containsKey(rule.getId())) {
 						rule.setPriority(priorityCandidates.get(rule.getId()));
 						modified.add(rule);
@@ -296,7 +296,7 @@ public class SimpleStoreDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	// Throws exception, if there is an existing entity in the DB with the same unique fields.
+	// Throws exception, if there is an existing entity in the DB with the same unique fields
 	private void checkUniqueFields(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
 
 		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
@@ -312,7 +312,7 @@ public class SimpleStoreDbService {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	// Throws exception, if there are multiple entities with the same unique fields.
+	// Throws exception, if there are multiple entities with the same unique fields
 	private void checkDuplicates(final List<OrchestrationStore> entities) {
 
 		final List<Triple<String, String, Integer>> checked = new ArrayList<>(entities.size());
@@ -320,7 +320,7 @@ public class SimpleStoreDbService {
 		for (final OrchestrationStore entity : entities) {
 			final Triple<String, String, Integer> toCheck = Triple.of(entity.getConsumer(), entity.getServiceDefinition(), entity.getPriority());
 			if (checked.contains(toCheck)) {
-				throw new InvalidParameterException("Conflicting rules, the following fields should be unique: " + entity.getConsumer() + ", service instance id: "
+				throw new InvalidParameterException("Conflicting rules, the combination of the following fields should be unique: " + entity.getConsumer() + ", service instance id: "
 						+ entity.getServiceInstanceId() + ", priority: " + entity.getPriority());
 			} else {
 				checked.add(toCheck);

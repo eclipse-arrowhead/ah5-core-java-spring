@@ -72,24 +72,24 @@ public class OrchestrationPushManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeRequester(final String requesterSystemName, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeRequester started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		return orchValidator.validateAndNormalizeSystemName(requesterSystemName, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePushSubscribeBulk started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		return orchValidator.validateAndNormalizePushSubscribeBulk(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedOrchestrationPushTrigger validateAndNormalizePushTrigger(final OrchestrationPushTriggerDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePushTrigger started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
@@ -144,8 +144,8 @@ public class OrchestrationPushManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public OrchestrationSubscriptionQueryRequestDTO validateAndNormalizeQueryPushSubscriptionsService(final OrchestrationSubscriptionQueryRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeQueryPushSubscriptionsService started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateQueryPushSubscriptionsService(dto, origin);
 
@@ -176,8 +176,8 @@ public class OrchestrationPushManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<UUID> validateAndNormalizePushUnsubscribe(final List<String> ids, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePushUnsubscribe started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validatePushUnsubscribe(ids, origin);
 		return ids.stream().map(id -> orchValidator.validateAndNormalizeUUID(id, origin)).toList();

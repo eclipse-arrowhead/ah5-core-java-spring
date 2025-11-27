@@ -70,8 +70,8 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationSimpleStoreRequestDTO> validateAndNormalizeCreateBulk(final OrchestrationSimpleStoreListRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeCreateBulk started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is null", origin);
@@ -94,8 +94,8 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public NormalizedOrchestrationSimpleStoreQueryRequest validateAndNormalizeQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeQuery started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateQuery(dto, origin);
 
@@ -125,8 +125,8 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public Map<UUID, Integer> validateAndNormalizePriorityRequestDTO(final PriorityRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePriorityRequestDTO started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (dto == null) {
 			throw new InvalidParameterException("Priority map is null", origin);
@@ -142,12 +142,7 @@ public class OrchestrationStoreManagementServiceValidation {
 			throw new InvalidParameterException("Priority map contains null value", origin);
 		}
 
-		Map<UUID, Integer> normalized = Map.of();
-		try {
-			normalized = normalizer.normalizePriorityRequestDTO(dto);
-		} catch (final InvalidParameterException ex) {
-			throw new InvalidParameterException(ex.getMessage(), origin);
-		}
+		final Map<UUID, Integer> normalized = normalizer.normalizePriorityRequestDTO(dto);
 
 		for (final Integer p : normalized.values()) {
 			if (p <= 0) {
@@ -160,8 +155,8 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public List<UUID> validateAndNormalizeRemove(final List<String> uuids, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeRemove started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		uuids.forEach(id -> {
 			if (!Utilities.isUUID(id.trim())) {

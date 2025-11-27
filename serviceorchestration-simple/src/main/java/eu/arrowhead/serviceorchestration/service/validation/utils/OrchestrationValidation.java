@@ -48,6 +48,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.hibernate.validator.internal.util.Contracts.assertTrue;
+
 @Service
 public class OrchestrationValidation {
 
@@ -77,6 +79,8 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeSystemName(final String systemName, final String origin) {
 		logger.debug("validateAndNormalizeSystemName started...");
+		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+
 		final String normalized = systemNameNormalizer.normalize(systemName);
 		try {
 			systemNameValidator.validateSystemName(normalized);
@@ -89,6 +93,8 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public UUID validateAndNormalizeUUID(final String uuid, final String origin) {
 		logger.debug("validateAndNormalizeUUID started...");
+		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+
 		validateUUID(uuid, origin);
 		return normalizer.normalizeUUID(uuid);
 	}
@@ -96,6 +102,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public SimpleOrchestrationRequest validateAndNormalizeOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeOrchestrationRequest started...");
+		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SimpleOrchestrationRequest request = validateSimpleOrchestrationRequest(dto, origin);
 		normalizer.normalizePull(request);
@@ -125,6 +132,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
 		logger.debug("validateAndNormalizePushSubscribe started...");
+		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, origin);
 		normalizer.normalizeSubscribe(subscriptionRequest);
@@ -151,6 +159,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizePushSubscribeBulk started...");
+		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final List<SimpleOrchestrationSubscriptionRequest> normalized = new ArrayList<>(dto.subscriptions().size());
 
@@ -179,6 +188,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public void validateUUID(final String uuid, final String origin) {
 		logger.debug("validateUUID started...");
+		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(uuid)) {
 			throw new InvalidParameterException("UUID is missing", origin);

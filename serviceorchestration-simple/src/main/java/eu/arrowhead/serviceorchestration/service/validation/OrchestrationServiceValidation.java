@@ -47,32 +47,32 @@ public class OrchestrationServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeRequester(final String requesterSystemName, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizeRequester started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		return orchValidator.validateAndNormalizeSystemName(requesterSystemName, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public SimpleOrchestrationRequest validateAndNormalizePull(final OrchestrationRequestDTO dto, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePull started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		return orchValidator.validateAndNormalizeOrchestrationRequest(dto, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePushSubscribe started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		return orchValidator.validateAndNormalizePushSubscribe(dto, requesterSystemName, origin);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public UUID validateAndNormalizePushUnsubscribe(final String uuid, final String origin) {
-		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 		logger.debug("validateAndNormalizePushUnsubscribe started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		return orchValidator.validateAndNormalizeUUID(uuid, origin);
 	}

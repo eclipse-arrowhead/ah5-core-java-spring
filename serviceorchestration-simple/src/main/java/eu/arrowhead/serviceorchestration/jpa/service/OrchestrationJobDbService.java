@@ -198,7 +198,8 @@ public class OrchestrationJobDbService {
 					matching = false;
 
 					// Match against to subscription ids
-				} else if (!Utilities.isEmpty(queryRequest.getSubscriptionIds()) && !Utilities.isEmpty(job.getSubscriptionId()) && !queryRequest.getSubscriptionIds().contains(UUID.fromString(job.getSubscriptionId()))) {
+				} else if (!Utilities.isEmpty(queryRequest.getSubscriptionIds())
+						&& (job.getSubscriptionId() == null || !queryRequest.getSubscriptionIds().contains(UUID.fromString(job.getSubscriptionId())))) {
 					matching = false;
 				}
 

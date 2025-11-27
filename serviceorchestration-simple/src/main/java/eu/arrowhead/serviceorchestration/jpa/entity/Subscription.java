@@ -129,7 +129,7 @@ public class Subscription {
 		}
 
 		final Subscription other = (Subscription) obj;
-		return id == other.id;
+		return id.equals(other.id);
 	}
 
 	//=================================================================================================
