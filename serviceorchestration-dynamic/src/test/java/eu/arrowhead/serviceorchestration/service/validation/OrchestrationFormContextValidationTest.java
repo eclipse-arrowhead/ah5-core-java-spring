@@ -238,7 +238,7 @@ public class OrchestrationFormContextValidationTest {
 
 		final Throwable ex = assertThrows(InvalidParameterException.class, () -> validator.validate(orchestrationForm, "test.origin"));
 
-		assertEquals("ONLY_PREFERRED falg is present, but no preferred provider is defined", ex.getMessage());
+		assertEquals("ONLY_PREFERRED flag is present, but no preferred provider is defined", ex.getMessage());
 		assertEquals("test.origin", ((InvalidParameterException) ex).getOrigin());
 	}
 
