@@ -172,7 +172,7 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationSimpleStoreRequestDTO validateAndNormalizeOrchestrationSimpleStoreRequestDTO(final OrchestrationSimpleStoreRequestDTO dto) {
-		Assert.notNull(dto, "DTO is null");
+		Assert.notNull(dto, "dto is null");
 		logger.debug("validateAndNormalizeOrchestrationSimpleStoreRequestDTO started...");
 
 		if (dto.priority() == null) {
@@ -207,8 +207,11 @@ public class OrchestrationStoreManagementServiceValidation {
 
 	//-------------------------------------------------------------------------------------------------
 	private void validateQuery(final OrchestrationSimpleStoreQueryRequestDTO dto, final String origin) {
-		Assert.notNull(dto, "dto is null");
 		logger.debug("validateQuery started...");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing");
+		}
 
 		if (dto.pagination() == null) {
 			throw new InvalidParameterException("Page is null", origin);

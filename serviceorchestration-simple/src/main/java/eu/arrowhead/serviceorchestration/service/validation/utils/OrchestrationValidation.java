@@ -40,6 +40,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import static org.hibernate.validator.internal.util.Contracts.assertTrue;
 
 @Service
 public class OrchestrationValidation {
@@ -79,7 +78,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeSystemName(final String systemName, final String origin) {
 		logger.debug("validateAndNormalizeSystemName started...");
-		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final String normalized = systemNameNormalizer.normalize(systemName);
 		try {
@@ -93,7 +92,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public UUID validateAndNormalizeUUID(final String uuid, final String origin) {
 		logger.debug("validateAndNormalizeUUID started...");
-		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateUUID(uuid, origin);
 		return normalizer.normalizeUUID(uuid);
@@ -102,7 +101,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public SimpleOrchestrationRequest validateAndNormalizeOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeOrchestrationRequest started...");
-		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SimpleOrchestrationRequest request = validateSimpleOrchestrationRequest(dto, origin);
 		normalizer.normalizePull(request);
@@ -132,7 +131,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public SimpleOrchestrationSubscriptionRequest validateAndNormalizePushSubscribe(final OrchestrationSubscriptionRequestDTO dto, final String requesterSystemName, final String origin) {
 		logger.debug("validateAndNormalizePushSubscribe started...");
-		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final SimpleOrchestrationSubscriptionRequest subscriptionRequest = validatePushSubscribe(dto, origin);
 		normalizer.normalizeSubscribe(subscriptionRequest);
@@ -159,7 +158,11 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public List<SimpleOrchestrationSubscriptionRequest> validateAndNormalizePushSubscribeBulk(final OrchestrationSubscriptionListRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizePushSubscribeBulk started...");
-		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (dto == null) {
+			throw new InvalidParameterException("Request payload is missing", origin);
+		}
 
 		final List<SimpleOrchestrationSubscriptionRequest> normalized = new ArrayList<>(dto.subscriptions().size());
 
@@ -188,7 +191,7 @@ public class OrchestrationValidation {
 	//-------------------------------------------------------------------------------------------------
 	public void validateUUID(final String uuid, final String origin) {
 		logger.debug("validateUUID started...");
-		assertTrue(!Utilities.isEmpty(origin), "origin is empty");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(uuid)) {
 			throw new InvalidParameterException("UUID is missing", origin);
@@ -208,7 +211,7 @@ public class OrchestrationValidation {
 		SimpleOrchestrationRequest simpleOrchestrationRequest = new SimpleOrchestrationRequest(null, null, null, null);
 
 		// ignored fields will be added as warnings
-		final List<String> ignoredFields = new ArrayList<String>();
+		final List<String> ignoredFields = new ArrayList<>();
 
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is missing", origin);
