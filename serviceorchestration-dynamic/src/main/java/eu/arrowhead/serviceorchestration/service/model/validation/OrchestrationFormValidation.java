@@ -31,6 +31,7 @@ import eu.arrowhead.common.service.validation.name.ServiceOperationNameValidator
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.enums.AddressType;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
+import eu.arrowhead.dto.enums.QoSOperation;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 
@@ -131,10 +132,16 @@ public class OrchestrationFormValidation {
 			throw new InvalidParameterException("Preferred provider list contains empty element", origin);
 		}
 
-		if (!Utilities.isEmpty(form.getQosRequirements())) {
-			form.getQosRequirements().forEach((k, v) -> {
-				if (Utilities.isEmpty(v)) {
-					throw new InvalidParameterException("QoS requirement map contains empty value", origin);
+		if (!Utilities.isEmpty(form.getQualityRequirements())) {
+			form.getQualityRequirements().forEach(qosPref -> {
+				if (Utilities.isEmpty(qosPref.type())) {
+					throw new InvalidParameterException("QoS type is empty", origin);
+				}
+				if (Utilities.isEmpty(qosPref.operation())) {
+					throw new InvalidParameterException("QoS operation is empty", origin);
+				}
+				if (!Utilities.isEnumValue(qosPref.operation().trim().toUpperCase(), QoSOperation.class)) {
+					throw new InvalidParameterException("Invalid QoS operation", origin);
 				}
 			});
 		}

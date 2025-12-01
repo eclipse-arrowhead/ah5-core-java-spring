@@ -152,7 +152,7 @@ public class OrchestrationJobDbService {
 					matching = false;
 
 					// Match against to subscription ids
-				} else if (!Utilities.isEmpty(filter.getSubscriptionIds()) && !Utilities.isEmpty(job.getSubscriptionId()) && !filter.getSubscriptionIds().contains(job.getSubscriptionId())) {
+				} else if (!Utilities.isEmpty(filter.getSubscriptionIds()) && (Utilities.isEmpty(job.getSubscriptionId()) || !filter.getSubscriptionIds().contains(job.getSubscriptionId()))) {
 					matching = false;
 				}
 

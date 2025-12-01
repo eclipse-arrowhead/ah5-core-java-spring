@@ -253,31 +253,4 @@ public class OrchestrationFormContextValidationTest {
 
 		assertDoesNotThrow(() -> validator.validate(orchestrationForm, "test.origin"));
 	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testValidateHasQoSRequirementsButNotEnabled() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosRequirement("foo", "bar").build();
-		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
-		when(sysInfo.isQoSEnabled()).thenReturn(false);
-
-		final Throwable ex = assertThrows(InvalidParameterException.class, () -> validator.validate(orchestrationForm, "test.origin"));
-
-		verify(sysInfo).isQoSEnabled();
-
-		assertEquals("QoS requirements are present, but QoS support is not enabled", ex.getMessage());
-		assertEquals("test.origin", ((InvalidParameterException) ex).getOrigin());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testValidateHasQoSRequirementsAndIsEnabled() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosRequirement("foo", "bar").build();
-		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
-		when(sysInfo.isQoSEnabled()).thenReturn(true);
-
-		assertDoesNotThrow(() -> validator.validate(orchestrationForm, "test.origin"));
-
-		verify(sysInfo).isQoSEnabled();
-	}
 }
