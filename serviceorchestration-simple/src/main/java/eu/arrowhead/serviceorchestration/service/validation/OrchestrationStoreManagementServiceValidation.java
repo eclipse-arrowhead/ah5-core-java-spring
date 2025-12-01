@@ -76,6 +76,11 @@ public class OrchestrationStoreManagementServiceValidation {
 		if (dto == null) {
 			throw new InvalidParameterException("Request payload is null", origin);
 		}
+
+		if (Utilities.isEmpty(dto.candidates())) {
+			throw new InvalidParameterException("Request payload is empty", origin);
+		}
+
 		if (Utilities.containsNull(dto.candidates())) {
 			throw new InvalidParameterException("Request payload contains null element", origin);
 		}
@@ -157,6 +162,10 @@ public class OrchestrationStoreManagementServiceValidation {
 	public List<UUID> validateAndNormalizeRemove(final List<String> uuids, final String origin) {
 		logger.debug("validateAndNormalizeRemove started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
+
+		if (Utilities.isEmpty(uuids)) {
+			throw new InvalidParameterException("UUIDs are missing", origin);
+		}
 
 		uuids.forEach(id -> {
 			if (!Utilities.isUUID(id.trim())) {
