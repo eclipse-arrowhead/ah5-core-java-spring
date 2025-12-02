@@ -63,11 +63,11 @@ public class OrchestrationHistoryManagementNormalization {
 	public NormalizedOrchestrationJobQueryRequest normalizeOrchestrationHistoryQueryRequestDTO(final OrchestrationHistoryQueryRequestDTO dto, final String origin) {
 		logger.debug("normalizeOrchestrationHistoryQueryRequestDTO started...");
 
-		if (dto == null) {
-			return new NormalizedOrchestrationJobQueryRequest(null, List.of(), List.of(), null, List.of(), List.of(), List.of(), List.of());
-		}
+		final PageRequest pageRequest = pageService.getPageRequest(dto == null ? null : dto.pagination(), Sort.Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
 
-		final PageRequest pageRequest = pageService.getPageRequest(dto.pagination(), Sort.Direction.DESC, OrchestrationJob.SORTABLE_FIELDS_BY, OrchestrationJob.DEFAULT_SORT_FIELD, origin);
+		if (dto == null) {
+			return new NormalizedOrchestrationJobQueryRequest(pageRequest, List.of(), List.of(), null, List.of(), List.of(), List.of(), List.of());
+		}
 
 		return new NormalizedOrchestrationJobQueryRequest(
 				pageRequest, // no need to normalize, because it happened in the getPageRequest method

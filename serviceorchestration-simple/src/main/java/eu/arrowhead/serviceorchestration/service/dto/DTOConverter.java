@@ -91,7 +91,6 @@ public class DTOConverter {
 	public OrchestrationResponseDTO convertStoreEntitiesToOrchestrationResponseDTO(final List<OrchestrationStore> entities, final Set<String> warnings) {
 		logger.debug("convertStoreEntitiesToOrchestrationResponseDTO started...");
 		Assert.notNull(entities, "entities is null");
-		Assert.notNull(warnings, "warnings is null");
 
 		final List<OrchestrationResultDTO> responseDTOS = new ArrayList<>(entities.size());
 		entities.forEach(entity -> {

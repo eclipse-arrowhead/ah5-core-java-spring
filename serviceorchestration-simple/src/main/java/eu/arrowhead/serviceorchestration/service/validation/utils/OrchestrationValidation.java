@@ -121,7 +121,7 @@ public class OrchestrationValidation {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		if (request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
+		if (!Utilities.isEmpty(request.getOrchestrationFlags()) && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
 			throw new InvalidParameterException(OrchestrationFlag.ONLY_PREFERRED.toString() + " flag is present, but no preferred provider is defined", origin);
 		}
 
@@ -214,7 +214,7 @@ public class OrchestrationValidation {
 		final List<String> ignoredFields = new ArrayList<>();
 
 		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing", origin);
+			return simpleOrchestrationRequest;
 		}
 
 		if (dto.serviceRequirement() != null) {
@@ -299,10 +299,6 @@ public class OrchestrationValidation {
 		}
 
 		// orchestration request
-		if (dto.orchestrationRequest() == null) {
-			throw new InvalidParameterException("Orchestration request is missing", origin);
-		}
-
 		final SimpleOrchestrationRequest validatedOrchestrationRequest = validateSimpleOrchestrationRequest(dto.orchestrationRequest(), origin);
 
 		// notify interface
@@ -358,7 +354,7 @@ public class OrchestrationValidation {
 			throw new InvalidParameterException(ex.getMessage(), origin);
 		}
 
-		if (request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
+		if (!Utilities.isEmpty(request.getOrchestrationFlags()) && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
 			throw new InvalidParameterException(OrchestrationFlag.ONLY_PREFERRED.toString() + " flag is present, but no preferred provider is defined", origin);
 		}
 	}

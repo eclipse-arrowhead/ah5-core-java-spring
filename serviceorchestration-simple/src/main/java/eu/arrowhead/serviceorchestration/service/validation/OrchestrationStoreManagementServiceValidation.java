@@ -30,6 +30,7 @@ import org.springframework.util.Assert;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.util.ServiceInstanceIdUtils;
 import eu.arrowhead.common.service.validation.PageValidator;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameValidator;
 import eu.arrowhead.common.service.validation.name.SystemNameValidator;
@@ -88,7 +89,7 @@ public class OrchestrationStoreManagementServiceValidation {
 		final List<OrchestrationSimpleStoreRequestDTO> normalizedDtos = new ArrayList<>(dto.candidates().size());
 		try {
 			dto.candidates().forEach(c -> normalizedDtos.add(validateAndNormalizeOrchestrationSimpleStoreRequestDTO(c)));
-			checkDuplicates(normalizedDtos);
+			checkUniqueness(normalizedDtos);
 
 		} catch (final InvalidParameterException ex) {
 			throw new InvalidParameterException(ex.getMessage(), origin);
@@ -200,14 +201,16 @@ public class OrchestrationStoreManagementServiceValidation {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	private void checkDuplicates(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
-		logger.debug("checkDuplicates started...");
+	private void checkUniqueness(final List<OrchestrationSimpleStoreRequestDTO> candidates) {
+		logger.debug("checkUniqueness started...");
 
 		final List<Triple<String, String, Integer>> existing = new ArrayList<>();
 		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
-			final Triple<String, String, Integer> current = Triple.of(candidate.consumer(), candidate.serviceInstanceId(), candidate.priority());
+			final String serviceDefinition = ServiceInstanceIdUtils.retrieveServiceDefinitionFromInstanceId(candidate.serviceInstanceId());
+			final Triple<String, String, Integer> current = Triple.of(candidate.consumer(), serviceDefinition, candidate.priority());
 			if (existing.contains(current)) {
-				throw new InvalidParameterException("Duplicated instance: " + candidate.toString());
+				throw new InvalidParameterException("Conflicting rules, the combination of the following fields should be unique: " + candidate.consumer() + ", service definition: "
+						+ serviceDefinition + ", priority: " + candidate.priority());
 			} else {
 				existing.add(current);
 			}
@@ -222,11 +225,7 @@ public class OrchestrationStoreManagementServiceValidation {
 			throw new InvalidParameterException("Request payload is missing");
 		}
 
-		if (dto.pagination() == null) {
-			throw new InvalidParameterException("Page is null", origin);
-		} else {
-			pageValidator.validatePageParameter(dto.pagination(), OrchestrationStore.SORTABLE_FIELDS_BY, origin);
-		}
+		pageValidator.validatePageParameter(dto.pagination(), OrchestrationStore.SORTABLE_FIELDS_BY, origin);
 
 		if (Utilities.isEmpty(dto.ids())
 				&& Utilities.isEmpty(dto.consumerNames())

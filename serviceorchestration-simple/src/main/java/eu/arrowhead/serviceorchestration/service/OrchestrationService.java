@@ -91,12 +91,12 @@ public class OrchestrationService {
 
 			// create job
 			final OrchestrationJob job = orchJobDbService.create(List.of(
-							new OrchestrationJob(
-									OrchestrationType.PULL,
-									normalizedRequester,
-									normalizedRequester, // target consumer system is the requester
-									normalized.getServiceDefinition(),
-									null)))
+					new OrchestrationJob(
+							OrchestrationType.PULL,
+							normalizedRequester,
+							normalizedRequester, // target consumer system is the requester
+							normalized.getServiceDefinition(),
+							null)))
 					.getFirst();
 
 			// orchestrate
@@ -135,7 +135,7 @@ public class OrchestrationService {
 					OrchestrationType.PUSH,
 					requesterSystem,
 					requesterSystem,
-					dto.orchestrationRequest().serviceRequirement().serviceDefinition(),
+					dto.orchestrationRequest() == null || dto.orchestrationRequest().serviceRequirement() == null ? null : dto.orchestrationRequest().serviceRequirement().serviceDefinition(),
 					response.getValue());
 			orchJobDbService.create(List.of(orchestrationJob));
 			pushOrchJobQueue.add(orchestrationJob.getId());

@@ -105,7 +105,6 @@ public class SubscriptionDbService {
 		logger.debug("get started...");
 		Assert.isTrue(!Utilities.isEmpty(ownerSystem), "ownerSystem is empty");
 		Assert.isTrue(!Utilities.isEmpty(targetSystem), "targetSystem is empty");
-		Assert.isTrue(!Utilities.isEmpty(serviceDefinition), "serviceDefinition is empty");
 
 		try {
 			return subscriptionRepo.findByOwnerSystemAndTargetSystemAndServiceDefinition(ownerSystem, targetSystem, serviceDefinition);

@@ -160,7 +160,7 @@ public class OrchestrationPushManagementAPI {
 					@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorMessageDTO.class))})
 	})
 	@PostMapping(path = SimpleStoreServiceOrchestrationConstants.HTTP_API_OP_QUERY_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public OrchestrationSubscriptionListResponseDTO queryPushSubscriptions(@RequestBody final OrchestrationSubscriptionQueryRequestDTO dto) {
+	public OrchestrationSubscriptionListResponseDTO queryPushSubscriptions(@RequestBody(required = false) final OrchestrationSubscriptionQueryRequestDTO dto) {
 		logger.debug("queryPushSubscriptions started...");
 
 		final String origin = HttpMethod.POST.name() + " " + SimpleStoreServiceOrchestrationConstants.HTTP_API_ORCHESTRATION_PUSH_MANAGEMENT_PATH

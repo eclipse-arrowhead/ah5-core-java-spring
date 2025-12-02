@@ -32,7 +32,8 @@ public class SimpleOrchestrationSubscriptionRequest {
 	//=================================================================================================
 	// boilerplate
 
-	public SimpleOrchestrationSubscriptionRequest(final String targetSystemName, final SimpleOrchestrationRequest orchestrationRequest, final OrchestrationNotifyInterfaceDTO notifyInterface, final long duration) {
+	//-------------------------------------------------------------------------------------------------
+	public SimpleOrchestrationSubscriptionRequest(final String targetSystemName, final SimpleOrchestrationRequest orchestrationRequest, final OrchestrationNotifyInterfaceDTO notifyInterface, final Long duration) {
 		this.targetSystemName = targetSystemName;
 		this.orchestrationRequest = orchestrationRequest;
 		this.notifyInterface = notifyInterface;
