@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -60,7 +61,6 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 
 @SuppressWarnings("checkstyle:MagicNumberCheck")
 @ExtendWith(MockitoExtension.class)

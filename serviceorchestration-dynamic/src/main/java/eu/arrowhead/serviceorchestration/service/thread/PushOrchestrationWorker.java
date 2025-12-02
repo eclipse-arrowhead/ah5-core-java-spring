@@ -48,7 +48,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
-import eu.arrowhead.serviceorchestration.service.enums.NotifyProtocol;
+import eu.arrowhead.dto.enums.NotifyProtocol;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;
@@ -111,7 +111,7 @@ public class PushOrchestrationWorker implements Runnable {
 		try {
 			final Optional<OrchestrationJob> jobOpt = orchJobDbService.getById(jobId);
 			if (jobOpt.isEmpty()) {
-				logger.error("Orchestration push job doesn't exists: " + jobId);
+				logger.error("Orchestration push job doesn't exist: " + jobId);
 				return;
 			}
 
@@ -178,7 +178,7 @@ public class PushOrchestrationWorker implements Runnable {
 			httpService.sendRequest(HttpUtilities.createURI(protocol, address, port, path), HttpMethod.valueOf(method.toUpperCase()), Void.class, result);
 		} catch (final Exception ex) {
 			logger.debug(ex);
-			throw new ArrowheadException("Error occured while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+			throw new ArrowheadException("Error occurred while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
 		}
 	}
 
@@ -201,13 +201,13 @@ public class PushOrchestrationWorker implements Runnable {
 			mqttClient.publish(propsMap.get(DynamicServiceOrchestrationConstants.NOTIFY_KEY_TOPIC), msg);
 		} catch (final Exception ex) {
 			logger.debug(ex);
-			throw new ArrowheadException("Error occured while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
+			throw new ArrowheadException("Error occurred while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: " + ex.getMessage());
 		}
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private Map<String, String> readNotifyProperties(final String properties) {
-		logger.debug("readNotifyProperties starterd...");
+		logger.debug("readNotifyProperties started...");
 
 		final TypeReference<Map<String, String>> typeReference = new TypeReference<Map<String, String>>() {
 		};

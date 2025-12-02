@@ -16,6 +16,6 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.enums;
 
-public enum NotifyProtocol {
-	HTTP, HTTPS, MQTT, MQTTS
+public enum BaseFilter {
+	NONE, ID, STATUS, OWNER, TARGET, SERVICE;
 }

@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.UUID;
 
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -50,7 +51,6 @@ import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationHistoryManagementValidation;
 

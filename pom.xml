@@ -31,6 +31,7 @@
 	<modules>
 		<module>serviceregistry</module>
 		<module>serviceorchestration-dynamic</module>
+		<module>serviceorchestration-simple</module>
 		<module>authentication</module>
 		<module>consumer-authorization</module>
 	</modules>

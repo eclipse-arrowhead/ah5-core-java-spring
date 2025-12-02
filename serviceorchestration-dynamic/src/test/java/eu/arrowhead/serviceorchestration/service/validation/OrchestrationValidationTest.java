@@ -148,7 +148,7 @@ public class OrchestrationValidationTest {
 		verify(normalization, never()).normalizePushUnsubscribe(anyString(), anyString());
 		verify(systemNameValidator, never()).validateSystemName(anyString());
 
-		assertEquals("Subscription id system is missing", ex.getMessage());
+		assertEquals("Subscription id is missing", ex.getMessage());
 		assertEquals(origin, ((InvalidParameterException) ex).getOrigin());
 	}
 

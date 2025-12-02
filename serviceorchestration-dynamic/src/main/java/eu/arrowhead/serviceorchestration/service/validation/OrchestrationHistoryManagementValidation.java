@@ -16,6 +16,7 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.validation;
 
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,6 @@ import eu.arrowhead.common.service.validation.name.SystemNameValidator;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationHistoryManagementNormalization;
 
 @Service
