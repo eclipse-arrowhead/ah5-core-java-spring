@@ -77,11 +77,7 @@ public class OrchestrationFromContextValidation {
 		}
 
 		if (form.getFlag(OrchestrationFlag.ONLY_PREFERRED) && !form.hasPreferredProviders()) {
-			throw new InvalidParameterException("ONLY_PREFERRED falg is present, but no preferred provider is defined", origin);
-		}
-
-		if (form.hasQoSRequirements() && !sysInfo.isQoSEnabled()) {
-			throw new InvalidParameterException("QoS requirements are present, but QoS support is not enabled", origin);
+			throw new InvalidParameterException("ONLY_PREFERRED flag is present, but no preferred provider is defined", origin);
 		}
 	}
 }

@@ -24,6 +24,7 @@ import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.MetadataRequirementDTO;
 import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
+import eu.arrowhead.dto.QoSRequirementDTO;
 import eu.arrowhead.dto.enums.OrchestrationFlag;
 
 public class OrchestrationForm {
@@ -34,7 +35,7 @@ public class OrchestrationForm {
 	private String requesterSystemName;
 	private String targetSystemName; // consumer
 	private Map<String, Boolean> orchestrationFlags = new HashMap<>();
-	private Map<String, String> qosRequirements;
+	private List<QoSRequirementDTO> qualityRequirements;
 	private Integer exclusivityDuration;
 
 	// Service related
@@ -64,7 +65,7 @@ public class OrchestrationForm {
 
 		if (dto != null) {
 			this.orchestrationFlags.putAll(dto.orchestrationFlags() == null ? Map.of() : dto.orchestrationFlags());
-			this.qosRequirements = dto.qosRequirements();
+			this.qualityRequirements = dto.qualityRequirements();
 			this.exclusivityDuration = dto.exclusivityDuration();
 
 			if (dto.serviceRequirement() != null) {
@@ -119,8 +120,8 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public boolean hasQoSRequirements() {
-		return !Utilities.isEmpty(qosRequirements);
+	public boolean hasQualityRequirements() {
+		return !Utilities.isEmpty(qualityRequirements);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -137,7 +138,7 @@ public class OrchestrationForm {
 				securityPolicies,
 				preferredProviders);
 
-		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qosRequirements, exclusivityDuration);
+		return new OrchestrationRequestDTO(serviceReq, orchestrationFlags, qualityRequirements, exclusivityDuration);
 	}
 
 	//=================================================================================================
@@ -159,8 +160,8 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public Map<String, String> getQosRequirements() {
-		return qosRequirements;
+	public List<QoSRequirementDTO> getQualityRequirements() {
+		return qualityRequirements;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -229,8 +230,8 @@ public class OrchestrationForm {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public void setQosRequirements(final Map<String, String> qosRequirements) {
-		this.qosRequirements = qosRequirements;
+	public void setQualityRequirements(final List<QoSRequirementDTO> qualityRequirements) {
+		this.qualityRequirements = qualityRequirements;
 	}
 
 	//-------------------------------------------------------------------------------------------------

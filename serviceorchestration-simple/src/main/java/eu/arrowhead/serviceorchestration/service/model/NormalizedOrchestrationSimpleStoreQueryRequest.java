@@ -14,8 +14,21 @@
  *  	Arrowhead Consortia - conceptualization
  *
  *******************************************************************************/
-package eu.arrowhead.serviceorchestration.service.enums;
+package eu.arrowhead.serviceorchestration.service.model;
 
-public enum OrchestrationType {
-	PULL, PUSH;
+import java.util.List;
+import java.util.UUID;
+
+import eu.arrowhead.dto.PageDTO;
+
+public record NormalizedOrchestrationSimpleStoreQueryRequest(
+		PageDTO pagination,
+		List<UUID> ids,
+		List<String> consumerNames,
+		List<String> serviceDefinitions,
+		List<String> serviceInstanceIds,
+		Integer minPriority,
+		Integer maxPriority,
+		String createdBy) {
+
 }

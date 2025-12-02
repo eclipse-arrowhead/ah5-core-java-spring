@@ -19,6 +19,7 @@ package eu.arrowhead.serviceregistry.service.normalization;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -226,52 +227,84 @@ public class ManagementNormalizationTest {
 
 	// DEVICES
 
-	@SuppressWarnings("unchecked")
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	void testNormalizeDeviceRequestDTOListNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> normalizer.normalizeDeviceRequestDTOList(null));
+
+		assertEquals("DeviceRequestDTO list is null", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	void testNormalizeDeviceRequestDTOListNameNull() {
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> normalizer.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO(null, null, null))));
+
+		assertEquals("Device name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	void testNormalizeDeviceRequestDTOListNameEmpty() {
+		utilitiesMock.when(() -> Utilities.isEmpty("")).thenReturn(true);
+
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> normalizer.normalizeDeviceRequestDTOList(List.of(new DeviceRequestDTO("", null, null))));
+
+		assertEquals("Device name is empty", ex.getMessage());
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testNormalizeDeviceRequestDTOList() {
 
 		assertAll(
 
-			// nothing is empty
-			() -> {
-				final DeviceRequestDTO dto1 = new DeviceRequestDTO("TEST_DEVICE1", Map.of("indoor", false), List.of("3a:7c:91:ef:2d:b6", "56:3e:c9:7a:11:84"));
-				final List<AddressDTO> expectedAddresses = new ArrayList<AddressDTO>(2);
-				expectedAddresses.add(new AddressDTO("MAC", "3a:7c:91:ef:2d:b6"));
-				expectedAddresses.add(new AddressDTO("MAC", "56:3e:c9:7a:11:84"));
-				final NormalizedDeviceRequestDTO expected1 = new NormalizedDeviceRequestDTO("TEST_DEVICE1", Map.of("indoor", false), expectedAddresses);
+				// nothing is empty
+				() -> {
+					final DeviceRequestDTO dto1 = new DeviceRequestDTO("TEST_DEVICE1", Map.of("indoor", false), List.of("3a:7c:91:ef:2d:b6", "56:3e:c9:7a:11:84"));
+					final List<AddressDTO> expectedAddresses = new ArrayList<AddressDTO>(2);
+					expectedAddresses.add(new AddressDTO("MAC", "3a:7c:91:ef:2d:b6"));
+					expectedAddresses.add(new AddressDTO("MAC", "56:3e:c9:7a:11:84"));
+					final NormalizedDeviceRequestDTO expected1 = new NormalizedDeviceRequestDTO("TEST_DEVICE1", Map.of("indoor", false), expectedAddresses);
 
-				final DeviceRequestDTO dto2 = new DeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of("3a:7c:91:ef:2d:b7"));
-				final NormalizedDeviceRequestDTO expected2 = new NormalizedDeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of(new AddressDTO("MAC", "3a:7c:91:ef:2d:b7")));
+					final DeviceRequestDTO dto2 = new DeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of("3a:7c:91:ef:2d:b7"));
+					final NormalizedDeviceRequestDTO expected2 = new NormalizedDeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of(new AddressDTO("MAC", "3a:7c:91:ef:2d:b7")));
 
-				when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-				when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-				when(addressValidator.detectType(anyString())).thenReturn(AddressType.MAC);
+					when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+					when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+					when(addressValidator.detectType(anyString())).thenReturn(AddressType.MAC);
 
-				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceRequestDTOList(List.of(dto1, dto2)));
-				assertEquals(List.of(expected1, expected2), normalized);
-				verify(addressNormalizer, times(3)).normalize(anyString());
-				verify(deviceNameNormalizer, times(2)).normalize(anyString());
-				utilitiesMock.verify(() -> Utilities.isEmpty("TEST_DEVICE1"));
-				utilitiesMock.verify(() -> Utilities.isEmpty("TEST_DEVICE2"));
-				utilitiesMock.verify(() -> Utilities.isEmpty(List.of("3a:7c:91:ef:2d:b6", "56:3e:c9:7a:11:84")));
-				utilitiesMock.verify(() -> Utilities.isEmpty(List.of("3a:7c:91:ef:2d:b7")));
-			},
+					final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceRequestDTOList(List.of(dto1, dto2)));
+					assertEquals(List.of(expected1, expected2), normalized);
+					verify(addressNormalizer, times(3)).normalize(anyString());
+					verify(deviceNameNormalizer, times(2)).normalize(anyString());
+					utilitiesMock.verify(() -> Utilities.isEmpty("TEST_DEVICE1"));
+					utilitiesMock.verify(() -> Utilities.isEmpty("TEST_DEVICE2"));
+					utilitiesMock.verify(() -> Utilities.isEmpty(List.of("3a:7c:91:ef:2d:b6", "56:3e:c9:7a:11:84")));
+					utilitiesMock.verify(() -> Utilities.isEmpty(List.of("3a:7c:91:ef:2d:b7")));
+				},
 
-			// address is empty
-			() -> {
+				// address is empty
+				() -> {
 
-				Mockito.reset(addressNormalizer);
-				final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of());
-				final NormalizedDeviceRequestDTO expected = new NormalizedDeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), new ArrayList<>());
+					Mockito.reset(addressNormalizer);
+					final DeviceRequestDTO dto = new DeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), List.of());
+					final NormalizedDeviceRequestDTO expected = new NormalizedDeviceRequestDTO("TEST_DEVICE2", Map.of("indoor", true), new ArrayList<>());
 
-				when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+					when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
-				final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceRequestDTOList(List.of(dto)));
-				assertEquals(List.of(expected), normalized);
-				verify(addressNormalizer, never()).normalize(anyString());
-			}
-		);
+					final List<NormalizedDeviceRequestDTO> normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceRequestDTOList(List.of(dto)));
+					assertEquals(List.of(expected), normalized);
+					verify(addressNormalizer, never()).normalize(anyString());
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -280,40 +313,39 @@ public class ManagementNormalizationTest {
 
 		assertAll(
 
-			// nothing is null
-			() -> {
-				when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-				when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+				// nothing is null
+				() -> {
+					when(deviceNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+					when(addressNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TEST_DEVICE"), List.of("56:3e:c9:7a:11:84"), "mac ", List.of(requirement));
-				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TEST_DEVICE"), List.of("56:3e:c9:7a:11:84"), "MAC", List.of(requirement));
+					final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TEST_DEVICE"), List.of("56:3e:c9:7a:11:84"), "mac ", List.of(requirement));
+					final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("TEST_DEVICE"), List.of("56:3e:c9:7a:11:84"), "MAC", List.of(requirement));
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(dto));
-				assertEquals(expected, normalized);
-				verify(deviceNameNormalizer, times(1)).normalize("TEST_DEVICE");
-				verify(addressNormalizer, times(1)).normalize("56:3e:c9:7a:11:84");
-			},
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(dto));
+					assertEquals(expected, normalized);
+					verify(deviceNameNormalizer, times(1)).normalize("TEST_DEVICE");
+					verify(addressNormalizer, times(1)).normalize("56:3e:c9:7a:11:84");
+				},
 
-			// everything is null
-			() -> {
-				final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(null, List.of(), List.of(), EMPTY, List.of());
-				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, List.of());
+				// everything is null
+				() -> {
+					final DeviceQueryRequestDTO dto = new DeviceQueryRequestDTO(null, List.of(), List.of(), EMPTY, List.of());
+					final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, List.of());
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(dto));
-				assertEquals(expected, normalized);
-			},
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(dto));
+					assertEquals(expected, normalized);
+				},
 
-			// dto is null
-			() -> {
-				final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, null);
+				// dto is null
+				() -> {
+					final DeviceQueryRequestDTO expected = new DeviceQueryRequestDTO(null, null, null, null, null);
 
-				final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(null));
-				assertEquals(expected, normalized);
-			}
-		);
+					final DeviceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeDeviceQueryRequestDTO(null));
+					assertEquals(expected, normalized);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -371,10 +403,10 @@ public class ManagementNormalizationTest {
 	@Test
 	public void testNormalizeCreateServiceInstances() {
 
-    	when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(serviceDefNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(interfaceNormalizer.normalizeInterfaceDTO(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(serviceDefNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(interfaceNormalizer.normalizeInterfaceDTO(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
 		final ServiceInstanceInterfaceRequestDTO intf1 = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 		final ServiceInstanceInterfaceRequestDTO intf2 = new ServiceInstanceInterfaceRequestDTO("generic_https", "https", "NONE", Map.of("accessPort", 8080));
@@ -399,8 +431,8 @@ public class ManagementNormalizationTest {
 	@Test
 	public void testNormalizeUpdateServiceInstances() {
 
-    	when(serviceInstanceIdentifierNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(interfaceNormalizer.normalizeInterfaceDTO(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(serviceInstanceIdentifierNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(interfaceNormalizer.normalizeInterfaceDTO(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
 		final ServiceInstanceInterfaceRequestDTO intf1 = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
 		final ServiceInstanceInterfaceRequestDTO intf2 = new ServiceInstanceInterfaceRequestDTO("generic_https", "https", "NONE", Map.of("accessPort", 8080));
@@ -437,70 +469,69 @@ public class ManagementNormalizationTest {
 	public void testNormalizeQueryServiceInstances() {
 
 		when(serviceInstanceIdentifierNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(serviceDefNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-    	when(interfaceTemplateNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(systemNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(serviceDefNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(versionNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(interfaceTemplateNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
 		assertAll(
 
-			// nothing is null
-			() -> {
-				final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
-				metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+				// nothing is null
+				() -> {
+					final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+					metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
 
-				final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
-				intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+					final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+					intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
 
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("AlertProvider|alertService|16.4.3"),
-						List.of("AlertProvider"),
-						List.of("alertService"),
-						List.of("16.4.3"),
-						"\t  2025-11-04T01:53:02Z \n",
-						List.of(metadataReq),
-						List.of("IPv4  "),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("none \t"));
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("AlertProvider|alertService|16.4.3"),
+							List.of("AlertProvider"),
+							List.of("alertService"),
+							List.of("16.4.3"),
+							"\t  2025-11-04T01:53:02Z \n",
+							List.of(metadataReq),
+							List.of("IPv4  "),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("none \t"));
 
-				final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
-						new PageDTO(10, 20, "ASC", "id"),
-						List.of("AlertProvider|alertService|16.4.3"),
-						List.of("AlertProvider"),
-						List.of("alertService"),
-						List.of("16.4.3"),
-						"2025-11-04T01:53:02Z",
-						List.of(metadataReq),
-						List.of("IPV4"),
-						List.of("generic_http"),
-						List.of(intfReq),
-						List.of("NONE"));
+					final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
+							new PageDTO(10, 20, "ASC", "id"),
+							List.of("AlertProvider|alertService|16.4.3"),
+							List.of("AlertProvider"),
+							List.of("alertService"),
+							List.of("16.4.3"),
+							"2025-11-04T01:53:02Z",
+							List.of(metadataReq),
+							List.of("IPV4"),
+							List.of("generic_http"),
+							List.of(intfReq),
+							List.of("NONE"));
 
-				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeQueryServiceInstances(dto));
-				assertEquals(expected, normalized);
-				verify(serviceInstanceIdentifierNormalizer, times(1)).normalize("AlertProvider|alertService|16.4.3");
-				verify(systemNameNormalizer, times(1)).normalize("AlertProvider");
-				verify(serviceDefNameNormalizer, times(1)).normalize("alertService");
-				verify(versionNormalizer, times(1)).normalize("16.4.3");
-				verify(interfaceTemplateNameNormalizer, times(1)).normalize("generic_http");
-			},
+					final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeQueryServiceInstances(dto));
+					assertEquals(expected, normalized);
+					verify(serviceInstanceIdentifierNormalizer, times(1)).normalize("AlertProvider|alertService|16.4.3");
+					verify(systemNameNormalizer, times(1)).normalize("AlertProvider");
+					verify(serviceDefNameNormalizer, times(1)).normalize("alertService");
+					verify(versionNormalizer, times(1)).normalize("16.4.3");
+					verify(interfaceTemplateNameNormalizer, times(1)).normalize("generic_http");
+				},
 
-			// everything is null
-			() -> {
-				resetUtilitiesMock();
+				// everything is null
+				() -> {
+					resetUtilitiesMock();
 
-				final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(null, List.of(), List.of(), List.of(), List.of(), EMPTY, List.of(), List.of(), List.of(), List.of(), List.of());
-				final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
-						null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), "", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+					final ServiceInstanceQueryRequestDTO dto = new ServiceInstanceQueryRequestDTO(null, List.of(), List.of(), List.of(), List.of(), EMPTY, List.of(), List.of(), List.of(), List.of(), List.of());
+					final ServiceInstanceQueryRequestDTO expected = new ServiceInstanceQueryRequestDTO(
+							null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), "", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 
-				final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeQueryServiceInstances(dto));
-				assertEquals(expected, normalized);
-				utilitiesMock.verify(() -> Utilities.isEmpty(eq(EMPTY)), times(1));
-				utilitiesMock.verify(() -> Utilities.isEmpty(eq(List.of())), times(9));
-			}
-		);
+					final ServiceInstanceQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeQueryServiceInstances(dto));
+					assertEquals(expected, normalized);
+					utilitiesMock.verify(() -> Utilities.isEmpty(eq(EMPTY)), times(1));
+					utilitiesMock.verify(() -> Utilities.isEmpty(eq(List.of())), times(9));
+				});
 	}
 
 	// INTERFACE TEMPLATES
@@ -528,36 +559,35 @@ public class ManagementNormalizationTest {
 
 		assertAll(
 
-			// nothing is empty
-			() -> {
-				when(interfaceTemplateNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+				// nothing is empty
+				() -> {
+					when(interfaceTemplateNameNormalizer.normalize(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
-				final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_http"), List.of("\tHTTP"));
-				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_http"), List.of("http"));
+					final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_http"), List.of("\tHTTP"));
+					final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(new PageDTO(10, 20, "ASC", "id"), List.of("generic_http"), List.of("http"));
 
-				final ServiceInterfaceTemplateQueryRequestDTO normalized =  assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto));
-				assertEquals(expected, normalized);
-				verify(interfaceTemplateNameNormalizer, times(1)).normalize("generic_http");
-			},
+					final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto));
+					assertEquals(expected, normalized);
+					verify(interfaceTemplateNameNormalizer, times(1)).normalize("generic_http");
+				},
 
-			// everything is empty
-			() -> {
-				resetUtilitiesMock();
-				final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(null, null, null);
-				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+				// everything is empty
+				() -> {
+					resetUtilitiesMock();
+					final ServiceInterfaceTemplateQueryRequestDTO dto = new ServiceInterfaceTemplateQueryRequestDTO(null, null, null);
+					final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
 
-				final ServiceInterfaceTemplateQueryRequestDTO normalized =  assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto));
-				assertEquals(expected, normalized);
-				utilitiesMock.verify(() -> Utilities.isEmpty((List<String>) null), times(2));
-			},
+					final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(dto));
+					assertEquals(expected, normalized);
+					utilitiesMock.verify(() -> Utilities.isEmpty((List<String>) null), times(2));
+				},
 
-			// dto is null
-			() -> {
-				final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
-				final ServiceInterfaceTemplateQueryRequestDTO normalized =  assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(null));
-				assertEquals(expected, normalized);
-			}
-		);
+				// dto is null
+				() -> {
+					final ServiceInterfaceTemplateQueryRequestDTO expected = new ServiceInterfaceTemplateQueryRequestDTO(null, new ArrayList<>(), new ArrayList<>());
+					final ServiceInterfaceTemplateQueryRequestDTO normalized = assertDoesNotThrow(() -> normalizer.normalizeServiceInterfaceTemplateQueryRequestDTO(null));
+					assertEquals(expected, normalized);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -600,12 +630,12 @@ public class ManagementNormalizationTest {
 	private static void createUtilitiesMock() {
 		utilitiesMock = mockStatic(Utilities.class);
 
-    	// mock common cases
-    	utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
-    	utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
-    }
+		// mock common cases
+		utilitiesMock.when(() -> Utilities.isEmpty(EMPTY)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((String) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty((List<String>) null)).thenReturn(true);
+		utilitiesMock.when(() -> Utilities.isEmpty(List.of())).thenReturn(true);
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@AfterAll

@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.hibernate.HibernateException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +55,6 @@ import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.repository.OrchestrationJobRepository;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationJobFilter;
 
 @SuppressWarnings("checkstyle:MagicNumberCheck")
@@ -779,7 +779,7 @@ public class OrchestrationJobDbServiceTest {
 		final PageRequest pageRequest = PageRequest.of(0, 10);
 
 		when(jobRepo.findAllById(eq(ids))).thenReturn(records);
-		when(jobRepo.findAllByIdIn(anyCollection(), eq(pageRequest))).thenReturn(new PageImpl<OrchestrationJob>(records));
+		when(jobRepo.findAllByIdIn(anyCollection(), eq(pageRequest))).thenReturn(new PageImpl<OrchestrationJob>(records.stream().filter(r -> !Utilities.isEmpty(r.getSubscriptionId())).toList()));
 
 		final Page<OrchestrationJob> result = assertDoesNotThrow(() -> dbService.query(filter, pageRequest));
 
@@ -791,12 +791,10 @@ public class OrchestrationJobDbServiceTest {
 		verify(jobRepo, never()).findAll();
 		verify(jobRepo).findAllByIdIn(uuidListCaptor.capture(), eq(pageRequest));
 
-		assertTrue(uuidListCaptor.getValue().size() == 2);
-		assertTrue(uuidListCaptor.getValue().contains(records.getFirst().getId()));
+		assertTrue(uuidListCaptor.getValue().size() == 1);
 		assertTrue(uuidListCaptor.getValue().contains(records.getLast().getId()));
 
-		assertTrue(result.getContent().size() == 2);
-		assertEquals(records.getFirst().getId(), result.getContent().getFirst().getId());
+		assertTrue(result.getContent().size() == 1);
 		assertEquals(records.getLast().getId(), result.getContent().getLast().getId());
 	}
 

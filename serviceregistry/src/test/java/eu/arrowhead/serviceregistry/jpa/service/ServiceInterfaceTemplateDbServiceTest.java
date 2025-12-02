@@ -73,6 +73,26 @@ public class ServiceInterfaceTemplateDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testGetByNameInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByName(null));
+
+		assertEquals("name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByNameInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByName(""));
+
+		assertEquals("name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testGetByNameOk() {
 
 		when(templateRepo.findByName(any())).thenReturn(Optional.empty());
@@ -90,6 +110,26 @@ public class ServiceInterfaceTemplateDbServiceTest {
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getByName("generic_http"));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPropertiesByTemplateNameInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getPropertiesByTemplateName(null));
+
+		assertEquals("name is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetPropertiesByTemplateNameInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getPropertiesByTemplateName(""));
+
+		assertEquals("name is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -249,6 +289,26 @@ public class ServiceInterfaceTemplateDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testCreateBulkInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(null));
+
+		assertEquals("interface template candidate list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(List.of()));
+
+		assertEquals("interface template candidate list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testCreateBulkDuplicatedTemplateThrowsInvalidParameterException() {
 
 		when(templateRepo.existsByName(any())).thenReturn(false);
@@ -303,9 +363,9 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
 		assertEquals(expected, actual);
 		verify(templateRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
+				argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
 		verify(templatePropsRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
+				argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -330,7 +390,7 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		verify(templateRepo).saveAllAndFlush(
 				argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
 		verify(templatePropsRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
+				argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -353,9 +413,9 @@ public class ServiceInterfaceTemplateDbServiceTest {
 		final Map<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> actual = service.createBulk(List.of(dto));
 		assertEquals(expected, actual);
 		verify(templateRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
+				argThat(collection -> collection != null && ((Collection<?>) collection).contains(template) && ((Collection<?>) collection).size() == 1));
 		verify(templatePropsRepo).saveAllAndFlush(
-			    argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
+				argThat(collection -> collection != null && ((Collection<?>) collection).contains(property) && ((Collection<?>) collection).size() == 1));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -371,6 +431,26 @@ public class ServiceInterfaceTemplateDbServiceTest {
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createBulk(List.of(dto)));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByTemplateNameList(null));
+
+		assertEquals("name list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByNameListInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByTemplateNameList(List.of()));
+
+		assertEquals("name list is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------

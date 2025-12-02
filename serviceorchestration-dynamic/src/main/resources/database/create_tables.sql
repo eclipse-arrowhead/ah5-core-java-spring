@@ -56,3 +56,16 @@ CREATE TABLE IF NOT EXISTS `orchestration_lock` (
   `temporary` int(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- QoS evaluation result
+
+CREATE TABLE IF NOT EXISTS `qos_eval_result` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `orchestration_job_id` binary(16) NOT NULL,
+  `evaluation_type` varchar(255) NOT NULL,
+  `operation` varchar(63) NOT NULL,
+  `result` mediumtext NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_job_qos_id` FOREIGN KEY (`orchestration_job_id`) REFERENCES `orchestration_job` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

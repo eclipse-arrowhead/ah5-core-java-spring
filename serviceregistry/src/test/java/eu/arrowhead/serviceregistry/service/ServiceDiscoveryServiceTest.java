@@ -106,6 +106,26 @@ public class ServiceDiscoveryServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testRegisterServiceOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.registerService(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRegisterServiceOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.registerService(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testRegisterServiceOk() {
 
 		// dto
@@ -135,16 +155,16 @@ public class ServiceDiscoveryServiceTest {
 		when(instanceDbService.createBulk(List.of(dto))).thenReturn(List.of(instanceEntry));
 
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
-	    final Device device = new Device("TEST_DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    when(systemDbService.getByName("TemperatureManager")).thenReturn(Optional.of(systemTriplet));
+		final Device device = new Device("TEST_DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		when(systemDbService.getByName("TemperatureManager")).thenReturn(Optional.of(systemTriplet));
 
-	    // responses after conversion
-	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
-	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
-	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
-	    final ServiceInstanceResponseDTO response = new ServiceInstanceResponseDTO(
+		// responses after conversion
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+		final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+		final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceResponseDTO response = new ServiceInstanceResponseDTO(
 				"TemperatureManager|temperatureManagement|5.0.0",
 				systemResponse,
 				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
@@ -154,10 +174,10 @@ public class ServiceDiscoveryServiceTest {
 				List.of(interfaceResponse),
 				null,
 				null);
-	    when(dtoConverter.convertServiceInstanceEntityToDTO(instanceEntry, systemTriplet)).thenReturn(response);
+		when(dtoConverter.convertServiceInstanceEntityToDTO(instanceEntry, systemTriplet)).thenReturn(response);
 
-	    final ServiceInstanceResponseDTO actual = service.registerService(dto, "test origin");
-	    assertEquals(response, actual);
+		final ServiceInstanceResponseDTO actual = service.registerService(dto, "test origin");
+		assertEquals(response, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -198,6 +218,26 @@ public class ServiceDiscoveryServiceTest {
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.registerService(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServicesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.lookupServices(null, false, false, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupServicesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.lookupServices(null, false, false, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -346,7 +386,7 @@ public class ServiceDiscoveryServiceTest {
 		when(sysInfo.isDiscoveryVerbose()).thenReturn(true);
 
 		// entities in the database
-	    final System system = new System("AlertProvider", "{\r\n  \"priority\" : 2\r\n}", "16.4.3");
+		final System system = new System("AlertProvider", "{\r\n  \"priority\" : 2\r\n}", "16.4.3");
 		final ServiceDefinition serviceDefinition = new ServiceDefinition("alertService");
 		final ServiceInstance instance = new ServiceInstance(
 				"AlertProvider|alertService|16.4.3",
@@ -363,14 +403,14 @@ public class ServiceDiscoveryServiceTest {
 
 		// entities for verbose
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
-	    final Device device = new Device("TEST_DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
-	    when(systemDbService.getPageByFilters(any(), any(), any(), any(), any(), any(), any())).thenReturn(systemsWithDevices);
+		final Device device = new Device("TEST_DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		when(systemDbService.getPageByFilters(any(), any(), any(), any(), any(), any(), any())).thenReturn(systemsWithDevices);
 
-	    service.lookupServices(dto, true, false, "test origin");
+		service.lookupServices(dto, true, false, "test origin");
 
-	    // check if the right filter was used
+		// check if the right filter was used
 		ArgumentCaptor<ServiceLookupFilterModel> filterModelCaptor = ArgumentCaptor.forClass(ServiceLookupFilterModel.class);
 		verify(instanceDbService).getPageByFilters(any(), filterModelCaptor.capture());
 		ServiceLookupFilterModel actualFilterModel = filterModelCaptor.getValue();
@@ -410,7 +450,7 @@ public class ServiceDiscoveryServiceTest {
 		when(sysInfo.isDiscoveryVerbose()).thenReturn(true);
 
 		// entities in the database
-	    final System system = new System("AlertProvider", "{\r\n  \"priority\" : 2\r\n}", "16.4.3");
+		final System system = new System("AlertProvider", "{\r\n  \"priority\" : 2\r\n}", "16.4.3");
 		final ServiceDefinition serviceDefinition = new ServiceDefinition("alertService");
 		final ServiceInstance instance = new ServiceInstance(
 				"AlertProvider|alertService|16.4.3",
@@ -462,6 +502,46 @@ public class ServiceDiscoveryServiceTest {
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.lookupServices(dto, true, false, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeServiceNameNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeService(null, null, null));
+
+		assertEquals("identifiedSystemName is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeServiceNameEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeService(null, null, null));
+
+		assertEquals("identifiedSystemName is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeServiceOrigionNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeService("SystemName", null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeServiceOrigionEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeService("SystemName", null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------

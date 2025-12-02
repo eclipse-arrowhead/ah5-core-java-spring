@@ -105,7 +105,7 @@ public class OrchestrationValidation {
 		}
 
 		if (Utilities.isEmpty(subscriptionId)) {
-			throw new InvalidParameterException("Subscription id system is missing", origin);
+			throw new InvalidParameterException("Subscription id is missing", origin);
 		}
 
 		if (!Utilities.isUUID(subscriptionId)) {

@@ -63,18 +63,18 @@ import eu.arrowhead.dto.ServiceInstanceRequestDTO;
 import eu.arrowhead.dto.ServiceInstanceUpdateRequestDTO;
 import eu.arrowhead.dto.enums.ServiceInterfacePolicy;
 import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
-import eu.arrowhead.serviceregistry.jpa.repository.ServiceDefinitionRepository;
-import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceInterfaceRepository;
-import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceRepository;
-import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
-import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepository;
-import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceDefinition;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstance;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInstanceInterface;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplate;
 import eu.arrowhead.serviceregistry.jpa.entity.ServiceInterfaceTemplateProperty;
 import eu.arrowhead.serviceregistry.jpa.entity.System;
+import eu.arrowhead.serviceregistry.jpa.repository.ServiceDefinitionRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceInterfaceRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.ServiceInstanceRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplatePropertyRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.ServiceInterfaceTemplateRepository;
+import eu.arrowhead.serviceregistry.jpa.repository.SystemRepository;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryInterfacePolicy;
 import eu.arrowhead.serviceregistry.service.model.ServiceLookupFilterModel;
 
@@ -119,15 +119,35 @@ public class ServiceInstanceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testCreateBulkNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(null));
+
+		assertEquals("service instance candidate list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateBulkEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createBulk(List.of()));
+
+		assertEquals("service instance candidate list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testCreateBulkRestricedIntfPolicyInvalidInterfaceThrowsInvalidParameterException() {
 
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.RESTRICTED);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_http",
-			"http",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_http",
+				"http",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -155,10 +175,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.RESTRICTED);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -201,10 +221,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -247,10 +267,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -279,10 +299,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -320,10 +340,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -353,10 +373,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -394,10 +414,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -439,10 +459,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO1 = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto1 = new ServiceInstanceRequestDTO(
 				"TemperatureManager1",
@@ -458,13 +478,13 @@ public class ServiceInstanceDbServiceTest {
 				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
 				Map.of());
 
-			final ServiceInstanceRequestDTO dto2 = new ServiceInstanceRequestDTO(
-					"TemperatureManager2",
-					"temperatureManagement",
-					"5.1.0",
-					"2030-11-04T01:53:02Z",
-					Map.of("indoor", true),
-					List.of(requestDTO2));
+		final ServiceInstanceRequestDTO dto2 = new ServiceInstanceRequestDTO(
+				"TemperatureManager2",
+				"temperatureManagement",
+				"5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO2));
 
 		final System system1 = new System("TemperatureManager1", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
 		final System system2 = new System("TemperatureManager2", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
@@ -492,10 +512,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"http",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"http",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -527,10 +547,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO(
 				"TemperatureManager",
@@ -579,6 +599,26 @@ public class ServiceInstanceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testUpdateBulkNullInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateBulk(null));
+
+		assertEquals("service instance list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateBulkEmptyInput() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateBulk(List.of()));
+
+		assertEquals("service instance list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testUpdateBulkNotExistingInstanceThrowsInvalidParameterException() {
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
@@ -602,16 +642,16 @@ public class ServiceInstanceDbServiceTest {
 				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
 				Map.of("accessPort", 4041));
 
-			final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureManager|temperatureManagement|5.1.0",
 				"2030-11-04T01:53:02Z",
 				Map.of("indoor", true),
 				List.of(requestDTO));
 
-			final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
-			final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
 
-			final ServiceInstance existing = new ServiceInstance(
+		final ServiceInstance existing = new ServiceInstance(
 				"TemperatureManager|temperatureManagement|5.1.0",
 				system,
 				serviceDefinition,
@@ -619,29 +659,29 @@ public class ServiceInstanceDbServiceTest {
 				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
 				"{\r\n  \"indoor\" : false\r\n}");
 
-			final ServiceInstance changed = new ServiceInstance(
-					"TemperatureManager|temperatureManagement|5.1.0",
-					system,
-					serviceDefinition,
-					"5.1.0",
-					ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
-					"{\r\n  \"indoor\" : true\r\n}"); // the metadata should be different after update
+		final ServiceInstance changed = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}"); // the metadata should be different after update
 
-			final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
-			final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
-			final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-			when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
-			when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
-			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(eq(template))).thenReturn(List.of(property));
-			when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
-			when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
+		when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(eq(template))).thenReturn(List.of(property));
+		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(changed, List.of(instanceInterface)));
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(changed, List.of(instanceInterface)));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
 
-			assertEquals(expected, actual);
-			verify(serviceInstanceRepo).saveAndFlush(changed);
+		assertEquals(expected, actual);
+		verify(serviceInstanceRepo).saveAndFlush(changed);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -654,16 +694,16 @@ public class ServiceInstanceDbServiceTest {
 				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
 				Map.of("accessPort", 4041));
 
-			final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
+		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureManager|temperatureManagement|5.1.0",
 				"2040-11-04T01:53:02Z",
 				Map.of("indoor", true),
 				List.of(requestDTO));
 
-			final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
-			final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
+		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
+		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
 
-			final ServiceInstance existing = new ServiceInstance(
+		final ServiceInstance existing = new ServiceInstance(
 				"TemperatureManager|temperatureManagement|5.1.0",
 				system,
 				serviceDefinition,
@@ -671,29 +711,29 @@ public class ServiceInstanceDbServiceTest {
 				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
 				"{\r\n  \"indoor\" : true\r\n}");
 
-			final ServiceInstance changed = new ServiceInstance(
-					"TemperatureManager|temperatureManagement|5.1.0",
-					system,
-					serviceDefinition,
-					"5.1.0",
-					ZonedDateTime.of(2040, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")), // expiration should be changed after update
-					"{\r\n  \"indoor\" : true\r\n}");
+		final ServiceInstance changed = new ServiceInstance(
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2040, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")), // expiration should be changed after update
+				"{\r\n  \"indoor\" : true\r\n}");
 
-			final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
-			final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
-			final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
+		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
+		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
+		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-			when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
-			when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
-			when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(eq(template))).thenReturn(List.of(property));
-			when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
-			when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenReturn(Optional.of(existing));
+		when(serviceInterfaceTemplateRepo.findByName(eq("generic_https"))).thenReturn(Optional.of(template));
+		when(serviceInterfaceTemplatePropsRepo.findAllByServiceInterfaceTemplate(eq(template))).thenReturn(List.of(property));
+		when(serviceInstanceInterfaceRepo.saveAll(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(serviceInstanceRepo.saveAndFlush(any())).thenAnswer(Invocation -> Invocation.getArgument(0));
 
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(changed, List.of(instanceInterface)));
-			final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = List.of(Map.entry(changed, List.of(instanceInterface)));
+		final List<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.updateBulk(List.of(dto));
 
-			assertEquals(expected, actual);
-			verify(serviceInstanceRepo).saveAndFlush(changed);
+		assertEquals(expected, actual);
+		verify(serviceInstanceRepo).saveAndFlush(changed);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -703,10 +743,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.RESTRICTED);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_http",
-			"http",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_http",
+				"http",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureManager|temperatureManagement|5.1.0",
@@ -738,10 +778,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.EXTENDABLE);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureManager|temperatureManagement|5.1.0",
@@ -795,10 +835,10 @@ public class ServiceInstanceDbServiceTest {
 		when(sysInfo.getServiceDiscoveryInterfacePolicy()).thenReturn(ServiceDiscoveryInterfacePolicy.OPEN);
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureManager|temperatureManagement|5.1.0",
@@ -846,10 +886,10 @@ public class ServiceInstanceDbServiceTest {
 	public void testUpdateBulkChangeInterfaceExistingTemplateButDifferentProtocolThrowsInvalidParameterException() {
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"http",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"http",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
 				"TemperatureManager|temperatureManagement|5.1.0",
@@ -881,10 +921,10 @@ public class ServiceInstanceDbServiceTest {
 	public void testUpdateBulkChangeInterfaceExistingTemplateButMandatoryPropertyMissingThrowsInvalidParameterException() {
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO1 = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"https",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"https",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO2 = new ServiceInstanceInterfaceRequestDTO(
 				"generic_https",
@@ -893,10 +933,10 @@ public class ServiceInstanceDbServiceTest {
 				Map.of());
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
-			"TemperatureManager1|temperatureManagement|5.1.0",
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(requestDTO1, requestDTO2));
+				"TemperatureManager1|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO1, requestDTO2));
 
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", true, null);
@@ -924,26 +964,26 @@ public class ServiceInstanceDbServiceTest {
 	public void testUpdateBulkChangeInterfaceExistingTemplateOk() {
 
 		final ServiceInstanceInterfaceRequestDTO requestDTO = new ServiceInstanceInterfaceRequestDTO(
-			"generic_https",
-			"",
-			"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
-			Map.of("accessPort", 4041));
+				"generic_https",
+				"",
+				"RSA_SHA512_JSON_WEB_TOKEN_AUTH",
+				Map.of("accessPort", 4041));
 
 		final ServiceInstanceUpdateRequestDTO dto = new ServiceInstanceUpdateRequestDTO(
-			"TemperatureManager|temperatureManagement|5.1.0",
-			"2030-11-04T01:53:02Z",
-			Map.of("indoor", true),
-			List.of(requestDTO));
+				"TemperatureManager|temperatureManagement|5.1.0",
+				"2030-11-04T01:53:02Z",
+				Map.of("indoor", true),
+				List.of(requestDTO));
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
 		final ServiceDefinition serviceDefinition = new ServiceDefinition("temperatureManagement");
 		final ServiceInstance existing = new ServiceInstance(
-			"TemperatureManager|temperatureManagement|5.1.0",
-			system,
-			serviceDefinition,
-			"5.1.0",
-			ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
-			"{\r\n  \"indoor\" : true\r\n}");
+				"TemperatureManager|temperatureManagement|5.1.0",
+				system,
+				serviceDefinition,
+				"5.1.0",
+				ZonedDateTime.of(2030, 11, 4, 1, 53, 2, 0, ZoneId.of("UTC")),
+				"{\r\n  \"indoor\" : true\r\n}");
 
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInterfaceTemplateProperty property = new ServiceInterfaceTemplateProperty(template, "accessPort", false, null);
@@ -983,6 +1023,26 @@ public class ServiceInstanceDbServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testGetByInstanceIdInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByInstanceId(null));
+
+		assertEquals("serviceInstanceId is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetByInstanceIdInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getByInstanceId(""));
+
+		assertEquals("serviceInstanceId is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testGetPageByFiltersWithoutFilters() {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.1.0");
@@ -1003,8 +1063,7 @@ public class ServiceInstanceDbServiceTest {
 		when(serviceInstanceRepo.findAll(eq(pageRequest))).thenReturn(new PageImpl<>(List.of(existing)));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
-				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
 				pageRequest,
@@ -1027,8 +1086,7 @@ public class ServiceInstanceDbServiceTest {
 				pageRequest,
 				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), null, null, null, null, null, null, null, null, null)));
 		verify(serviceInstanceRepo).findAllByServiceInstanceIdIn(
-			argThat(list -> list.contains("TemperatureManager|temperatureManagement|5.1.0"))
-		);
+				argThat(list -> list.contains("TemperatureManager|temperatureManagement|5.1.0")));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1050,21 +1108,18 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
-				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		when(serviceInstanceRepo.findAllBySystem_NameIn(any())).thenReturn(List.of(existing));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
 		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of(existing)));
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual =
-			service.getPageByFilters(
-					pageRequest,
-					new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, List.of("TemperatureManager"), null, null, null, null, null, null, null, null)));
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, List.of("TemperatureManager"), null, null, null, null, null, null, null, null)));
 		assertEquals(expected, actual);
 		verify(serviceInstanceRepo).findAllBySystem_NameIn(
-			argThat(list -> list.contains("TemperatureManager"))
-		);
+				argThat(list -> list.contains("TemperatureManager")));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1086,21 +1141,18 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
-				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		when(serviceInstanceRepo.findAllByServiceDefinition_NameIn(any())).thenReturn(List.of(existing));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
 		when(serviceInstanceRepo.findAllByIdIn(any(), any())).thenReturn(new PageImpl<>(List.of(existing)));
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual =
-			service.getPageByFilters(
-					pageRequest,
-					new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, List.of("temperatureManagement"), null, null, null, null, null, null, null)));
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, List.of("temperatureManagement"), null, null, null, null, null, null, null)));
 		assertEquals(expected, actual);
 		verify(serviceInstanceRepo).findAllByServiceDefinition_NameIn(
-			argThat(list -> list.contains("temperatureManagement"))
-		);
+				argThat(list -> list.contains("temperatureManagement")));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1122,8 +1174,7 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
-				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
 		when(serviceInstanceRepo.findAllByServiceInstanceIdIn(argThat(list -> list.contains("TemperatureManager|temperatureManagement|5.1.0")))).thenReturn(List.of(existing));
@@ -1131,80 +1182,89 @@ public class ServiceInstanceDbServiceTest {
 		when(serviceInstanceRepo.findAllByIdIn(eq(Set.of(existing.getId())), any())).thenReturn(new PageImpl<>(List.of(existing)));
 
 		Assertions.assertAll(
-			// provider names
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(
-								new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), List.of("TemperatureManager"), null, null, null, null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// service definitions
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(
-								new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), null, List.of("temperatureManagement"), null, null, null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// versions
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, List.of("5.1.0"), null, null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// alivesAt
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, "2030-11-04T01:53:02Z", null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// metadata
-			() -> {
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("indoor", true);
+				// provider names
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(
+									new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), List.of("TemperatureManager"), null, null, null, null, null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// service definitions
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(
+									new ServiceInstanceLookupRequestDTO(List.of(
+											"TemperatureManager|temperatureManagement|5.1.0"),
+											null,
+											List.of("temperatureManagement"),
+											null,
+											null,
+											null,
+											null,
+											null,
+											null,
+											null)));
+					assertEquals(expected, actual);
+				},
+				// versions
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, List.of("5.1.0"), null, null, null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// alivesAt
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, "2030-11-04T01:53:02Z", null, null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// metadata
+				() -> {
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("indoor", true);
 
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, List.of(requirement), null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// address types
-			() -> {
-				when(interfaceAddressPropertyProcessor.filterOnAddressTypes(any(), any())).thenReturn(true);
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, List.of(requirement), null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// address types
+				() -> {
+					when(interfaceAddressPropertyProcessor.filterOnAddressTypes(any(), any())).thenReturn(true);
 
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, List.of("IPV4"), null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// interface templates
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, List.of("generic_https"), null, null)));
-				assertEquals(expected, actual);
-			},
-			// interface properties
-			() -> {
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("accessPort", 4041);
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, List.of("IPV4"), null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// interface templates
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, List.of("generic_https"), null, null)));
+					assertEquals(expected, actual);
+				},
+				// interface properties
+				() -> {
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("accessPort", 4041);
 
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, List.of(requirement), null)));
-				assertEquals(expected, actual);
-			},
-			// policies
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, List.of("RSA_SHA512_JSON_WEB_TOKEN_AUTH"))));
-				assertEquals(expected, actual);
-			}
-		);
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, List.of(requirement), null)));
+					assertEquals(expected, actual);
+				},
+				// policies
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, List.of("RSA_SHA512_JSON_WEB_TOKEN_AUTH"))));
+					assertEquals(expected, actual);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1234,80 +1294,89 @@ public class ServiceInstanceDbServiceTest {
 		when(serviceInstanceRepo.findAllByIdIn(eq(new HashSet<>()), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
 
 		Assertions.assertAll(
-			// provider names
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(
-								new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), List.of("TemperatureManager1"), null, null, null, null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// service definitions
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(
-								new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), null, List.of("temperatureManagement1"), null, null, null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// versions
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, List.of("5.2.0"), null, null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// alivesAt
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, "2035-11-04T01:53:02Z", null, null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// metadata
-			() -> {
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("indoor", false);
+				// provider names
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(
+									new ServiceInstanceLookupRequestDTO(List.of("TemperatureManager|temperatureManagement|5.1.0"), List.of("TemperatureManager1"), null, null, null, null, null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// service definitions
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(
+									new ServiceInstanceLookupRequestDTO(List.of(
+											"TemperatureManager|temperatureManagement|5.1.0"),
+											null,
+											List.of("temperatureManagement1"),
+											null,
+											null,
+											null,
+											null,
+											null,
+											null,
+											null)));
+					assertEquals(expected, actual);
+				},
+				// versions
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, List.of("5.2.0"), null, null, null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// alivesAt
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, "2035-11-04T01:53:02Z", null, null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// metadata
+				() -> {
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("indoor", false);
 
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, List.of(requirement), null, null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// address types
-			() -> {
-				when(interfaceAddressPropertyProcessor.filterOnAddressTypes(any(), any())).thenReturn(false);
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, List.of(requirement), null, null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// address types
+				() -> {
+					when(interfaceAddressPropertyProcessor.filterOnAddressTypes(any(), any())).thenReturn(false);
 
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, List.of("IPV6"), null, null, null)));
-				assertEquals(expected, actual);
-			},
-			// interface templates
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, List.of("generic_http"), null, null)));
-				assertEquals(expected, actual);
-			},
-			// interface properties
-			() -> {
-				final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
-				requirement.put("accessPort", 4042);
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, List.of("IPV6"), null, null, null)));
+					assertEquals(expected, actual);
+				},
+				// interface templates
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, List.of("generic_http"), null, null)));
+					assertEquals(expected, actual);
+				},
+				// interface properties
+				() -> {
+					final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
+					requirement.put("accessPort", 4042);
 
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, List.of(requirement), null)));
-				assertEquals(expected, actual);
-			},
-			// policies
-			() -> {
-				final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
-						pageRequest,
-						new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, List.of("NONE"))));
-				assertEquals(expected, actual);
-			}
-		);
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, List.of(requirement), null)));
+					assertEquals(expected, actual);
+				},
+				// policies
+				() -> {
+					final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+							pageRequest,
+							new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, List.of("NONE"))));
+					assertEquals(expected, actual);
+				});
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1329,8 +1398,7 @@ public class ServiceInstanceDbServiceTest {
 		final ServiceInterfaceTemplate template = new ServiceInterfaceTemplate("generic_https", "https");
 		final ServiceInstanceInterface instanceInterface = new ServiceInstanceInterface(existing, template, "{\r\n  \"accessPort\" : 4041\r\n}", ServiceInterfacePolicy.RSA_SHA512_JSON_WEB_TOKEN_AUTH);
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected =
-				new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> expected = new PageImpl<Entry<ServiceInstance, List<ServiceInstanceInterface>>>(List.of(Map.entry(existing, List.of(instanceInterface))), pageRequest, 1);
 
 		when(serviceInstanceRepo.findAll()).thenReturn(List.of(existing));
 		when(serviceInstanceInterfaceRepo.findAllByServiceInstance(eq(existing))).thenReturn(List.of(instanceInterface));
@@ -1361,10 +1429,9 @@ public class ServiceInstanceDbServiceTest {
 		when(serviceInstanceRepo.findAllByServiceDefinition_NameIn(argThat(list -> list.contains("temperatureManagement")))).thenReturn(List.of(existing));
 		when(serviceInstanceRepo.findAllByIdIn(eq(Set.of()), any())).thenReturn(new PageImpl<>(List.of(), pageRequest, 0));
 
-		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual =
-			service.getPageByFilters(
-					pageRequest,
-					new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, List.of("temperatureManagement"), null, null, null, null, null, null, null)));
+		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> actual = service.getPageByFilters(
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, List.of("temperatureManagement"), null, null, null, null, null, null, null)));
 		assertEquals(new PageImpl<>(List.of(), pageRequest, 0), actual);
 
 		final InOrder inOrder = Mockito.inOrder(serviceInstanceRepo);
@@ -1380,10 +1447,30 @@ public class ServiceInstanceDbServiceTest {
 
 		when(serviceInstanceRepo.findAll(eq(pageRequest))).thenThrow(new InternalServerError("test error"));
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getPageByFilters(
-			pageRequest,
-			new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, null))));
+				pageRequest,
+				new ServiceLookupFilterModel(new ServiceInstanceLookupRequestDTO(null, null, null, null, null, null, null, null, null, null))));
 
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByInstanceId(null));
+
+		assertEquals("serviceInstanceId is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByInstanceId(""));
+
+		assertEquals("serviceInstanceId is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1424,8 +1511,28 @@ public class ServiceInstanceDbServiceTest {
 	public void testDeleteByInstanceIdThrowsException() {
 
 		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenThrow(new InternalServerError("test error"));
-		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByInstanceId("TemperatureManager|temperatureManagement|5.1.0"));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdsInputNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByInstanceIds(null));
+
+		assertEquals("serviceInstanceId list is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testDeleteByInstanceIdsInputEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.deleteByInstanceIds(List.of()));
+
+		assertEquals("serviceInstanceId list is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1464,7 +1571,7 @@ public class ServiceInstanceDbServiceTest {
 	public void testDeleteByInstanceIdsThrowsInternalServerError() {
 
 		when(serviceInstanceRepo.findByServiceInstanceId(eq("TemperatureManager|temperatureManagement|5.1.0"))).thenThrow(new InternalServerError("test error"));
-		final InternalServerError ex  = assertThrows(InternalServerError.class, () -> service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0"))));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.deleteByInstanceIds(List.of(("TemperatureManager|temperatureManagement|5.1.0"))));
 		assertEquals(DB_ERROR_MSG, ex.getMessage());
 	}
 }

@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import eu.arrowhead.authentication.method.AuthenticationMethods;
 import eu.arrowhead.authentication.method.IAuthenticationMethod;
@@ -60,6 +61,7 @@ public class IdentityValidation {
 	//-------------------------------------------------------------------------------------------------
 	public IdentityRequestDTO validateAndNormalizeLoginServicePhase1(final IdentityRequestDTO dto, final String origin) {
 		logger.debug("validateAndNormalizeLoginServicePhase1 started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		validateLoginServicePhase1(dto, origin);
 		final String normalized = systemNameNormalizer.normalize(dto.systemName());
@@ -76,6 +78,9 @@ public class IdentityValidation {
 	//-------------------------------------------------------------------------------------------------
 	public IdentityRequestDTO validateAndNormalizeLoginServicePhase2(final IdentityRequestDTO dto, final AuthenticationMethod authenticationMethod, final String origin) {
 		logger.debug("validateAndNormalizeLoginServicePhase2 started...");
+		Assert.notNull(dto, "dto is null");
+		Assert.notNull(authenticationMethod, "authentication method is null");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		final IAuthenticationMethod method = methods.method(authenticationMethod);
 		if (method == null) {
@@ -97,6 +102,9 @@ public class IdentityValidation {
 	//-------------------------------------------------------------------------------------------------
 	public IdentityChangeRequestDTO validateAndNormalizeChangeServicePhase2(final IdentityChangeRequestDTO dto, final AuthenticationMethod authenticationMethod, final String origin) {
 		logger.debug("validateAndNormalizeChangeServicePhase2 started...");
+		Assert.notNull(dto, "dto is null");
+		Assert.notNull(authenticationMethod, "authentication method is null");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		// at this point only new credentials are not validated or normalized
 		final IAuthenticationMethod method = methods.method(authenticationMethod);
@@ -119,6 +127,7 @@ public class IdentityValidation {
 	//-------------------------------------------------------------------------------------------------
 	public String validateAndNormalizeIdentityToken(final String token, final String origin) {
 		logger.debug("validateAndNormalizeIdentityToken started...");
+		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
 		if (Utilities.isEmpty(token)) {
 			throw new InvalidParameterException("Token is missing or empty", origin);

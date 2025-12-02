@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,6 +80,26 @@ public class DeviceDiscoveryServiceTest {
 
 	//=================================================================================================
 	// methods
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRegisterDeviceOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.registerDevice(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRegisterDeviceOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.registerDevice(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -211,6 +231,26 @@ public class DeviceDiscoveryServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testLookupDeviceOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.lookupDevice(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupDeviceOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.lookupDevice(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testLookupDeviceAddressTypeNull() {
 
 		final MetadataRequirementDTO requirement = new MetadataRequirementDTO();
@@ -270,6 +310,26 @@ public class DeviceDiscoveryServiceTest {
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.lookupDevice(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeDeviceOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeDevice(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeDeviceOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeDevice(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------

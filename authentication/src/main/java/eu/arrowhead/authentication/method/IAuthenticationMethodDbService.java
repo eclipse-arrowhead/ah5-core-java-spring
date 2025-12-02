@@ -36,7 +36,7 @@ public interface IAuthenticationMethodDbService {
 
 	//-------------------------------------------------------------------------------------------------
 	public default void rollbackCreateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -50,13 +50,13 @@ public interface IAuthenticationMethodDbService {
 	// This method has to roll back the credentials to the old ones. To do this, the implementation may have to store the old credentials
 	// temporarily.
 	public default void rollbackUpdateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	// In this method the implementation can forget the related temporarily stored old credentials
 	public default void commitUpdateIdentifiableSystemsInBulk(final List<IdentityData> identities) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -66,12 +66,12 @@ public interface IAuthenticationMethodDbService {
 	// This method has to roll back the system removals. To do this, the implementation may have to store the system-related data
 	// temporarily.
 	public default void rollbackRemoveIdentifiableSystemsInBulk(final List<System> systems) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	// In this method the implementation can forget the related temporarily stored data
 	public default void commitRemoveIdentifiableSystemsInBulk(final List<System> systems) {
-		// intentionally do nothing
+		// intentionally does nothing
 	}
 }

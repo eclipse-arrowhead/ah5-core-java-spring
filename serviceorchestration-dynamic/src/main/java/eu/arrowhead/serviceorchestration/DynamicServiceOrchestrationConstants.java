@@ -94,6 +94,7 @@ public final class DynamicServiceOrchestrationConstants {
 
 	public static final String ORCH_WARN_AUTO_MATCHMAKING = "autoMatchmaking";
 	public static final String ORCH_WARN_QOS_NOT_ENABLED = "qosNotEnabled";
+	public static final String ORCH_WARN_QOS_COMPLIANCE_FAILURE = "qosComplianceFailure";
 	public static final String ORCH_WARN_NOT_EXCLUSIVE = "notExclusive";
 	public static final String ORCH_WARN_PART_TIME_EXCLUSIVITY = "partTimeExclusivity";
 	public static final String ORCH_WARN_INTER_CLOUD = "interCloud";

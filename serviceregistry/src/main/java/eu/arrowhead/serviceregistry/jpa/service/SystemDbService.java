@@ -111,7 +111,7 @@ public class SystemDbService {
 			}
 
 			return createTriplets(systemEntities, systemAddressEntities, deviceSystemConnectorEntities);
-		} catch (final InvalidParameterException ex) {
+		} catch (final IllegalArgumentException | InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -124,7 +124,7 @@ public class SystemDbService {
 	@Transactional(rollbackFor = ArrowheadException.class)
 	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> updateBulk(final List<NormalizedSystemRequestDTO> toUpdate) {
 		logger.debug("updateBulk started");
-		Assert.isTrue(!Utilities.isEmpty(toUpdate), "The list of systems to update is empty or missing.");
+		Assert.isTrue(!Utilities.isEmpty(toUpdate), "The list of systems to update is empty or missing");
 
 		try {
 			synchronized (LOCK) {
@@ -192,7 +192,7 @@ public class SystemDbService {
 
 				return createTriplets(systemEntities, systemAddressEntities, connectionsToUpdate);
 			}
-		} catch (final InvalidParameterException ex) {
+		} catch (final IllegalArgumentException | InvalidParameterException ex) {
 			throw ex;
 		} catch (final Exception ex) {
 			logger.error(ex.getMessage());
@@ -256,6 +256,7 @@ public class SystemDbService {
 	//-------------------------------------------------------------------------------------------------
 	public List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> getByNameList(final List<String> names) {
 		logger.debug("getByNameList started");
+		Assert.isTrue(!Utilities.isEmpty(names), "system name list is null or empty");
 		Assert.isTrue(!Utilities.containsNullOrEmpty(names), "system name list contains null or empty");
 
 		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> result = new ArrayList<>(names.size());
