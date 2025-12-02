@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import eu.arrowhead.dto.enums.OrchestrationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -55,11 +56,11 @@ import eu.arrowhead.dto.OrchestrationRequestDTO;
 import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionListResponseDTO;
 import eu.arrowhead.dto.OrchestrationSubscriptionResponseDTO;
+import eu.arrowhead.dto.QoSRequirementDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationLock;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 
 @SuppressWarnings("checkstyle:MagicNumberCheck")
 @ExtendWith(MockitoExtension.class)
@@ -311,7 +312,7 @@ public class DTOConverterTest {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationRequestDTO orchestrationRequestDTO() {
-		return new OrchestrationRequestDTO(orchestrationServiceRequirementDTO(), Map.of("MATCHMAKING", true), Map.of("def", "hijk"), 1000);
+		return new OrchestrationRequestDTO(orchestrationServiceRequirementDTO(), Map.of("MATCHMAKING", true), List.of(new QoSRequirementDTO("test-qos", "FILTER", Map.of("k", "v"))), 1000);
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -69,7 +69,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
-import eu.arrowhead.serviceorchestration.service.enums.NotifyProtocol;
+import eu.arrowhead.dto.enums.NotifyProtocol;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.OrchestrationForm;
 import eu.arrowhead.serviceorchestration.service.utils.InterCloudServiceOrchestration;
@@ -420,7 +420,7 @@ public class PushOrchestrationWorkerTest {
 		verify(interCloudOrch, never()).doInterCloudServiceOrchestration(any(), any());
 		verify(httpService).sendRequest(uriCaptor.capture(), eq(HttpMethod.POST), eq(Void.class), eq(orchestrationResponseDTO));
 		verify(mqttService, never()).client(anyString());
-		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), eq("Error occured while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: test message"));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), eq("Error occurred while sending push orchestration via HTTP to subscription: " + subscriptionId.toString() + ". Reason: test message"));
 
 		assertEquals(orchestrationRequestDTO.serviceRequirement().serviceDefinition(), orchestrationFormCaptor.getValue().getServiceDefinition());
 		assertEquals("127.0.0.1", uriCaptor.getValue().getHost());
@@ -517,7 +517,7 @@ public class PushOrchestrationWorkerTest {
 		verify(httpService, never()).sendRequest(any(), any(), any(Class.class), any());
 		verify(mqttService).client(eq(Constants.MQTT_SERVICE_PROVIDING_BROKER_CONNECT_ID));
 		verify(mqttClient).publish(stringCaptor.capture(), mqttMessageCaptor.capture());
-		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), eq("Error occured while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: MqttException"));
+		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), eq("Error occurred while sending push orchestration via MQTT to subscription: " + subscriptionId.toString() + ". Reason: MqttException"));
 
 		assertEquals(orchestrationRequestDTO.serviceRequirement().serviceDefinition(), orchestrationFormCaptor.getValue().getServiceDefinition());
 		assertEquals("test/notify", stringCaptor.getValue());

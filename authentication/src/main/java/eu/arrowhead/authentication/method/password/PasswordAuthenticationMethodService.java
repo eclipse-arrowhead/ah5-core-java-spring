@@ -31,7 +31,6 @@ import eu.arrowhead.authentication.jpa.entity.System;
 import eu.arrowhead.authentication.jpa.service.IdentityDbService;
 import eu.arrowhead.authentication.method.IAuthenticationMethodService;
 import eu.arrowhead.common.Utilities;
-import eu.arrowhead.common.exception.ExternalServerError;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.exception.InvalidParameterException;
 
@@ -54,7 +53,7 @@ public class PasswordAuthenticationMethodService implements IAuthenticationMetho
 
 	//-------------------------------------------------------------------------------------------------
 	@Override
-	public boolean verifyCredentials(final System system, final Map<String, String> credentials) throws InternalServerError, ExternalServerError {
+	public boolean verifyCredentials(final System system, final Map<String, String> credentials) throws InternalServerError {
 		logger.debug("PasswordAuthenticationMethodService.verifyCredentials started...");
 		Assert.notNull(system, "system is null");
 		Assert.notNull(credentials, "credentials is null");
@@ -74,11 +73,11 @@ public class PasswordAuthenticationMethodService implements IAuthenticationMetho
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public void changeCredentials(final System system, final Map<String, String> oldCredentials, final Map<String, String> newCredentials)
-			throws InvalidParameterException, InternalServerError, ExternalServerError {
+			throws InvalidParameterException, InternalServerError {
 		logger.debug("PasswordAuthenticationMethodService.changeCredentials started...");
 		Assert.notNull(system, "system is null");
 		Assert.notNull(newCredentials, "newCredentials is null");
-		Assert.isTrue(!Utilities.isEmpty(newCredentials.get(PasswordAuthenticationMethod.KEY_PASSWORD)), "password field is missing or empty");
+		Assert.isTrue(!Utilities.isEmpty(newCredentials.get(PasswordAuthenticationMethod.KEY_PASSWORD)), "new password field is missing or empty");
 
 		final String encodedPassword = encoder.encode(newCredentials.get(PasswordAuthenticationMethod.KEY_PASSWORD));
 		identityDbService.changePassword(system, encodedPassword);

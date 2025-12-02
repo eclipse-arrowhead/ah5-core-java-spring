@@ -238,7 +238,7 @@ public class OrchestrationFormContextValidationTest {
 
 		final Throwable ex = assertThrows(InvalidParameterException.class, () -> validator.validate(orchestrationForm, "test.origin"));
 
-		assertEquals("ONLY_PREFERRED falg is present, but no preferred provider is defined", ex.getMessage());
+		assertEquals("ONLY_PREFERRED flag is present, but no preferred provider is defined", ex.getMessage());
 		assertEquals("test.origin", ((InvalidParameterException) ex).getOrigin());
 	}
 
@@ -252,32 +252,5 @@ public class OrchestrationFormContextValidationTest {
 		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
 
 		assertDoesNotThrow(() -> validator.validate(orchestrationForm, "test.origin"));
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testValidateHasQoSRequirementsButNotEnabled() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosRequirement("foo", "bar").build();
-		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
-		when(sysInfo.isQoSEnabled()).thenReturn(false);
-
-		final Throwable ex = assertThrows(InvalidParameterException.class, () -> validator.validate(orchestrationForm, "test.origin"));
-
-		verify(sysInfo).isQoSEnabled();
-
-		assertEquals("QoS requirements are present, but QoS support is not enabled", ex.getMessage());
-		assertEquals("test.origin", ((InvalidParameterException) ex).getOrigin());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testValidateHasQoSRequirementsAndIsEnabled() {
-		final OrchestrationRequestDTO orchestrationRequest = new OrchestrationRequestDTO.Builder().qosRequirement("foo", "bar").build();
-		final OrchestrationForm orchestrationForm = new OrchestrationForm("TestConsumer", orchestrationRequest);
-		when(sysInfo.isQoSEnabled()).thenReturn(true);
-
-		assertDoesNotThrow(() -> validator.validate(orchestrationForm, "test.origin"));
-
-		verify(sysInfo).isQoSEnabled();
 	}
 }

@@ -87,18 +87,17 @@ public class DTOConverter {
 	public DeviceResponseDTO convertDeviceEntityToDeviceResponseDTO(final Device deviceEntity, final List<DeviceAddress> addressEntities) {
 		logger.debug("convertDeviceAddressEntityListToDTO started...");
 		Assert.notNull(deviceEntity, "device entity is null");
-		Assert.notNull(addressEntities, "device address entities is null");
 		Assert.isTrue(!Utilities.isEmpty(addressEntities), "device address entities is empty");
 		Assert.isTrue(!Utilities.containsNull(addressEntities), "device address entities contains null");
 
 		return new DeviceResponseDTO(
 				deviceEntity.getName(),
-				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>() {
+				Utilities.fromJson(deviceEntity.getMetadata(), new TypeReference<Map<String, Object>>()	{
 				}),
 				addressEntities
-					.stream()
-					.map(address -> new AddressDTO(address.getAddressType().name(), address.getAddress()))
-					.collect(Collectors.toList()),
+						.stream()
+						.map(address -> new AddressDTO(address.getAddressType().name(), address.getAddress()))
+						.collect(Collectors.toList()),
 				Utilities.convertZonedDateTimeToUTCString(deviceEntity.getCreatedAt()),
 				Utilities.convertZonedDateTimeToUTCString(deviceEntity.getUpdatedAt()));
 	}
@@ -167,8 +166,8 @@ public class DTOConverter {
 		logger.debug("convertSystemTripletToDTO started...");
 		Assert.notNull(entity, "entity is null");
 		Assert.notNull(entity.getLeft(), "the System in the triplet is null");
-		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the system address list in the triplet is null");
-		Assert.isTrue(entity.getRight() == null || !Utilities.isEmpty(entity.getRight().getValue()), "the device address list in the triplet is null or empty");
+		Assert.isTrue(!Utilities.isEmpty(entity.getMiddle()), "the system address list in the triplet is empty");
+		Assert.isTrue(entity.getRight() == null || !Utilities.isEmpty(entity.getRight().getValue()), "the device data list in the triplet is null or empty");
 
 		final System system = entity.getLeft();
 		final List<SystemAddress> systemAddressList = entity.getMiddle();
@@ -227,9 +226,8 @@ public class DTOConverter {
 			final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet) {
 		logger.debug("convertServiceInstanceEntityToDTO started...");
 		Assert.notNull(instanceEntry, "instance is null");
-		Assert.notNull(instanceEntry.getValue(), "instance interfaces are null");
-		Assert.isTrue(!Utilities.isEmpty(instanceEntry.getValue()), "instance interfaces is empty");
-		Assert.isTrue(!Utilities.containsNull(instanceEntry.getValue()), "instance interfaces contains null element");
+		Assert.isTrue(!Utilities.isEmpty(instanceEntry.getValue()), "instance interfaces list is empty");
+		Assert.isTrue(!Utilities.containsNull(instanceEntry.getValue()), "instance interfaces list contains null element");
 
 		final ServiceInstance instance = instanceEntry.getKey();
 		final List<ServiceInstanceInterface> interfaceList = instanceEntry.getValue();
@@ -319,7 +317,6 @@ public class DTOConverter {
 
 		final List<ServiceInterfaceTemplateResponseDTO> dtos = new ArrayList<>(entries.size());
 		for (final Entry<ServiceInterfaceTemplate, List<ServiceInterfaceTemplateProperty>> entry : entries) {
-			Assert.notNull(entry.getValue(), "ServiceInterfaceTemplateProperty list is null");
 			Assert.isTrue(!Utilities.isEmpty(entry.getValue()), "ServiceInterfaceTemplateProperty list is empty");
 			Assert.isTrue(!Utilities.containsNull(entry.getValue()), "ServiceInterfaceTemplateProperty list contains null");
 			final ServiceInterfaceTemplate template = entry.getKey();

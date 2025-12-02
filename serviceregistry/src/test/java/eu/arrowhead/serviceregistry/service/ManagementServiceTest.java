@@ -144,6 +144,26 @@ public class ManagementServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testCreateDevicesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createDevices(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateDevicesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createDevices(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testCreateDevicesOk() {
 
 		final DeviceListRequestDTO dto = new DeviceListRequestDTO(List.of(new DeviceRequestDTO("ALARM", Map.of("indoor", true), List.of("7c:5a:2e:d1:9b:44"))));
@@ -194,6 +214,26 @@ public class ManagementServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testUpdateDevicesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateDevices(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateDevicesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateDevices(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testUpdateDevicesOk() {
 
 		final DeviceListRequestDTO dto = new DeviceListRequestDTO(List.of(new DeviceRequestDTO("ALARM", Map.of("indoor", true), List.of("7c:5a:2e:d1:9b:44"))));
@@ -240,6 +280,26 @@ public class ManagementServiceTest {
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateDevices(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryDevicesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.queryDevices(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryDevicesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.queryDevices(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -314,6 +374,26 @@ public class ManagementServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testRemoveDevicesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeDevices(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveDevicesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeDevices(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testRemoveDevicesOk() {
 
 		final List<String> names = List.of("ALARM");
@@ -361,7 +441,28 @@ public class ManagementServiceTest {
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
+
 	// SERVICE DEFINITIONS
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetServiceDefinitionsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getServiceDefinitions(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testGetServiceDefinitionsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.getServiceDefinitions(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -396,6 +497,26 @@ public class ManagementServiceTest {
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.getServiceDefinitions(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceDefinitionsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createServiceDefinitions(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceDefinitionsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createServiceDefinitions(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -446,6 +567,26 @@ public class ManagementServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testRemoveServiceDefinitionsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeServiceDefinitions(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveServiceDefinitionsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeServiceDefinitions(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testRemoveServiceDefinitionsOk() {
 
 		final List<String> names = List.of("alertService");
@@ -472,6 +613,26 @@ public class ManagementServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testCreateSystemsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createSystems(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateSystemsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createSystems(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testCreateSystemsOk() {
 
 		final SystemRequestDTO systemRequest = new SystemRequestDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of("192.168.100.100"), "DEVICE1");
@@ -482,18 +643,18 @@ public class ManagementServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 2\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> dbResult = List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress))));
-	    when(systemDbService.createBulk(List.of(normalizedDto))).thenReturn(dbResult);
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> dbResult = List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress))));
+		when(systemDbService.createBulk(List.of(normalizedDto))).thenReturn(dbResult);
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
 		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
-	    final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
-	    when(dtoConverter.convertSystemTripletListToDTO(dbResult)).thenReturn(result);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletListToDTO(dbResult)).thenReturn(result);
 
-	    final SystemListResponseDTO actual = service.createSystems(dto, "test origin");
-	    assertEquals(result, actual);
+		final SystemListResponseDTO actual = service.createSystems(dto, "test origin");
+		assertEquals(result, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -508,7 +669,7 @@ public class ManagementServiceTest {
 
 		when(systemDbService.createBulk(List.of(normalizedDto))).thenThrow(new InvalidParameterException("Invalid parameter"));
 
-	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createSystems(dto, "test origin"));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createSystems(dto, "test origin"));
 		assertEquals("Invalid parameter", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
@@ -525,9 +686,29 @@ public class ManagementServiceTest {
 
 		when(systemDbService.createBulk(List.of(normalizedDto))).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createSystems(dto, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createSystems(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.querySystems(null, false, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQuerySystemsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.querySystems(null, false, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -546,9 +727,9 @@ public class ManagementServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
@@ -556,13 +737,13 @@ public class ManagementServiceTest {
 		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
 		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
 
-	    try (MockedStatic<Utilities> utilitiesMock = mockStatic(Utilities.class)) {
-	    	utilitiesMock.when(() -> Utilities.isEmpty("")).thenReturn(true);
+		try (MockedStatic<Utilities> utilitiesMock = mockStatic(Utilities.class)) {
+			utilitiesMock.when(() -> Utilities.isEmpty("")).thenReturn(true);
 
-	    	service.querySystems(dto, true, "test origin");
-	    	utilitiesMock.verify(() -> Utilities.isEmpty(""));
-	    }
-	    verify(systemDbService).getPageByFilters(pageRequest, List.of("TemperatureManager"), List.of("192.168.100.100"), null, List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+			service.querySystems(dto, true, "test origin");
+			utilitiesMock.verify(() -> Utilities.isEmpty(""));
+		}
+		verify(systemDbService).getPageByFilters(pageRequest, List.of("TemperatureManager"), List.of("192.168.100.100"), null, List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -581,9 +762,9 @@ public class ManagementServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
@@ -591,8 +772,8 @@ public class ManagementServiceTest {
 		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
 		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
 
-	    service.querySystems(dto, true, "test origin");
-	    verify(systemDbService).getPageByFilters(pageRequest, List.of("TemperatureManager"), List.of("192.168.100.100"), AddressType.IPV4, List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
+		service.querySystems(dto, true, "test origin");
+		verify(systemDbService).getPageByFilters(pageRequest, List.of("TemperatureManager"), List.of("192.168.100.100"), AddressType.IPV4, List.of(requirement), List.of("5.0.0"), List.of("DEVICE1"));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -611,9 +792,9 @@ public class ManagementServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
@@ -621,8 +802,8 @@ public class ManagementServiceTest {
 		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
 		when(dtoConverter.convertSystemTripletPageToDTO(systemTripletPage)).thenReturn(result);
 
-	    final SystemListResponseDTO actual = service.querySystems(dto, true, "test origin");
-	    assertEquals(result, actual);
+		final SystemListResponseDTO actual = service.querySystems(dto, true, "test origin");
+		assertEquals(result, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -641,9 +822,9 @@ public class ManagementServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"indoor\" : true\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "7c:5a:2e:d1:9b:44");
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemTripletPage = new PageImpl<>(List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenReturn(systemTripletPage);
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of("indoor", true), List.of(new AddressDTO("MAC", "7c:5a:2e:d1:9b:44")), null, null);
@@ -656,9 +837,9 @@ public class ManagementServiceTest {
 		final SystemListResponseDTO resultTerse = new SystemListResponseDTO(List.of(responseTerse), 1);
 		when(dtoConverter.convertSystemListResponseDtoToTerse(result)).thenReturn(resultTerse);
 
-	    final SystemListResponseDTO actual = service.querySystems(dto, false, "test origin");
-	    assertEquals(resultTerse, actual);
-	    verify(dtoConverter).convertSystemListResponseDtoToTerse(result);
+		final SystemListResponseDTO actual = service.querySystems(dto, false, "test origin");
+		assertEquals(resultTerse, actual);
+		verify(dtoConverter).convertSystemListResponseDtoToTerse(result);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -677,9 +858,29 @@ public class ManagementServiceTest {
 
 		when(systemDbService.getPageByFilters(eq(pageRequest), any(), any(), any(), any(), any(), any())).thenThrow(new InternalServerError("Database error", "test origin"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.querySystems(dto, true, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.querySystems(dto, true, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateSystemsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateSystems(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateSystemsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateSystems(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -694,18 +895,18 @@ public class ManagementServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 2\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> dbResult = List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress))));
-	    when(systemDbService.updateBulk(List.of(normalizedDto))).thenReturn(dbResult);
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final List<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> dbResult = List.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress))));
+		when(systemDbService.updateBulk(List.of(normalizedDto))).thenReturn(dbResult);
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
 		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
-	    final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
-	    when(dtoConverter.convertSystemTripletListToDTO(dbResult)).thenReturn(result);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletListToDTO(dbResult)).thenReturn(result);
 
-	    final SystemListResponseDTO actual = service.updateSystems(dto, "test origin");
-	    assertEquals(result, actual);
+		final SystemListResponseDTO actual = service.updateSystems(dto, "test origin");
+		assertEquals(result, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -720,7 +921,7 @@ public class ManagementServiceTest {
 
 		when(systemDbService.updateBulk(List.of(normalizedDto))).thenThrow(new InvalidParameterException("Invalid parameter"));
 
-	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateSystems(dto, "test origin"));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateSystems(dto, "test origin"));
 		assertEquals("Invalid parameter", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
@@ -737,9 +938,29 @@ public class ManagementServiceTest {
 
 		when(systemDbService.updateBulk(List.of(normalizedDto))).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateSystems(dto, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateSystems(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSystemsOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeSystems(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveSystemsOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeSystems(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -761,12 +982,32 @@ public class ManagementServiceTest {
 		when(validator.validateAndNormalizeRemoveSystems(names, "test origin")).thenReturn(names);
 		doThrow(new InternalServerError("Database error", "test origin")).when(systemDbService).deleteByNameList(names);
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeSystems(names, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeSystems(names, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 
 	// SERVICE INSTANCES
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceInstancesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createServiceInstances(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateServiceInstancesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createServiceInstances(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -800,16 +1041,16 @@ public class ManagementServiceTest {
 		when(instanceDbService.createBulk(List.of(instanceRequest))).thenReturn(List.of(instanceEntry));
 
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
-	    final Device device = new Device("TEST_DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    when(systemDbService.getByNameList(List.of("TemperatureManager"))).thenReturn(List.of(systemTriplet));
+		final Device device = new Device("TEST_DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		when(systemDbService.getByNameList(List.of("TemperatureManager"))).thenReturn(List.of(systemTriplet));
 
-	    // responses after conversion
-	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
-	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
-	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
-	    final ServiceInstanceResponseDTO responseInstance = new ServiceInstanceResponseDTO(
+		// responses after conversion
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+		final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+		final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceResponseDTO responseInstance = new ServiceInstanceResponseDTO(
 				"TemperatureManager|temperatureManagement|5.0.0",
 				systemResponse,
 				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
@@ -819,11 +1060,11 @@ public class ManagementServiceTest {
 				List.of(interfaceResponse),
 				null,
 				null);
-	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(responseInstance), 1);
-	    when(dtoConverter.convertServiceInstanceListToDTO(List.of(instanceEntry), List.of(systemTriplet))).thenReturn(response);
+		final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(responseInstance), 1);
+		when(dtoConverter.convertServiceInstanceListToDTO(List.of(instanceEntry), List.of(systemTriplet))).thenReturn(response);
 
-	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.createServiceInstances(dto, "test origin"));
-	    assertEquals(response, actual);
+		final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.createServiceInstances(dto, "test origin"));
+		assertEquals(response, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -844,7 +1085,7 @@ public class ManagementServiceTest {
 		// entities in the database
 		when(instanceDbService.createBulk(List.of(instanceRequest))).thenThrow(new InvalidParameterException("Invalid parameter"));
 
-	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createServiceInstances(dto, "test origin"));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createServiceInstances(dto, "test origin"));
 		assertEquals("Invalid parameter", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
@@ -867,9 +1108,29 @@ public class ManagementServiceTest {
 		// entities in the database
 		when(instanceDbService.createBulk(List.of(instanceRequest))).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createServiceInstances(dto, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createServiceInstances(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateServiceInstancesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateServiceInstances(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testUpdateServiceInstancesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.updateServiceInstances(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -902,16 +1163,16 @@ public class ManagementServiceTest {
 		when(instanceDbService.updateBulk(List.of(instanceRequest))).thenReturn(List.of(instanceEntry));
 
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
-	    final Device device = new Device("TEST_DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    when(systemDbService.getByNameList(List.of("TemperatureManager"))).thenReturn(List.of(systemTriplet));
+		final Device device = new Device("TEST_DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		when(systemDbService.getByNameList(List.of("TemperatureManager"))).thenReturn(List.of(systemTriplet));
 
-	    // responses after conversion
-	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
-	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
-	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
-	    final ServiceInstanceResponseDTO responseInstance = new ServiceInstanceResponseDTO(
+		// responses after conversion
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+		final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+		final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceResponseDTO responseInstance = new ServiceInstanceResponseDTO(
 				"TemperatureManager|temperatureManagement|5.0.0",
 				systemResponse,
 				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
@@ -921,11 +1182,11 @@ public class ManagementServiceTest {
 				List.of(interfaceResponse),
 				null,
 				null);
-	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(responseInstance), 1);
-	    when(dtoConverter.convertServiceInstanceListToDTO(List.of(instanceEntry), List.of(systemTriplet))).thenReturn(response);
+		final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(responseInstance), 1);
+		when(dtoConverter.convertServiceInstanceListToDTO(List.of(instanceEntry), List.of(systemTriplet))).thenReturn(response);
 
-	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.updateServiceInstances(dto, "test origin"));
-	    assertEquals(response, actual);
+		final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.updateServiceInstances(dto, "test origin"));
+		assertEquals(response, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -944,7 +1205,7 @@ public class ManagementServiceTest {
 		// entities in the database
 		when(instanceDbService.updateBulk(List.of(instanceRequest))).thenThrow(new InvalidParameterException("Invalid parameter"));
 
-	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateServiceInstances(dto, "test origin"));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.updateServiceInstances(dto, "test origin"));
 		assertEquals("Invalid parameter", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
@@ -965,9 +1226,29 @@ public class ManagementServiceTest {
 		// entities in the database
 		when(instanceDbService.updateBulk(List.of(instanceRequest))).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateServiceInstances(dto, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.updateServiceInstances(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveServiceInstancesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeServiceInstances(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveServiceInstancesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeServiceInstances(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -989,9 +1270,29 @@ public class ManagementServiceTest {
 		when(validator.validateAndNormalizeRemoveServiceInstances(ids, "test origin")).thenReturn(ids);
 		doThrow(new InternalServerError("Database error")).when(instanceDbService).deleteByInstanceIds(ids);
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeServiceInstances(ids, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeServiceInstances(ids, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryServiceInstancesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.queryServiceInstances(null, false, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryServiceInstancesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.queryServiceInstances(null, false, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1054,20 +1355,20 @@ public class ManagementServiceTest {
 		when(instanceDbService.getPageByFilters(pageRequest, filterModel)).thenReturn(servicesWithInterfaces);
 
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.1");
-	    final Device device = new Device("TEST_DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = new PageImpl<>(List.of(systemTriplet));
-	    when(systemDbService.getPageByFilters(
-	    		PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
-	    		List.of("TemperatureManager"),
-	    		null, null, null, null, null)).thenReturn(systemsWithDevices);
+		final Device device = new Device("TEST_DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> systemTriplet = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> systemsWithDevices = new PageImpl<>(List.of(systemTriplet));
+		when(systemDbService.getPageByFilters(
+				PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, System.DEFAULT_SORT_FIELD),
+				List.of("TemperatureManager"),
+				null, null, null, null, null)).thenReturn(systemsWithDevices);
 
-	    // responses after conversion
-	    final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
-	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
-	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
-	    final ServiceInstanceResponseDTO instanceResponse = new ServiceInstanceResponseDTO(
+		// responses after conversion
+		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("TEST_DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
+		final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", List.of(new AddressDTO("IPV4", "192.168.100.1")), deviceResponse, null, null);
+		final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceResponseDTO instanceResponse = new ServiceInstanceResponseDTO(
 				"TemperatureManager|temperatureManagement|5.0.0",
 				systemResponse,
 				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
@@ -1077,11 +1378,11 @@ public class ManagementServiceTest {
 				List.of(interfaceResponse),
 				null,
 				null);
-	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(instanceResponse), 1);
-	    when(dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices)).thenReturn(response);
+		final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(instanceResponse), 1);
+		when(dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, systemsWithDevices)).thenReturn(response);
 
-	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.queryServiceInstances(dto, true, "test origin"));
-	    assertEquals(response, actual);
+		final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.queryServiceInstances(dto, true, "test origin"));
+		assertEquals(response, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1143,10 +1444,10 @@ public class ManagementServiceTest {
 		final Page<Entry<ServiceInstance, List<ServiceInstanceInterface>>> servicesWithInterfaces = new PageImpl<>(List.of(instanceEntry));
 		when(instanceDbService.getPageByFilters(pageRequest, filterModel)).thenReturn(servicesWithInterfaces);
 
-	    // responses after conversion
-	    final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", null, null, null, null);
-	    final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
-	    final ServiceInstanceResponseDTO instanceResponse = new ServiceInstanceResponseDTO(
+		// responses after conversion
+		final SystemResponseDTO systemResponse = new SystemResponseDTO("TemperatureManager", Map.of(), "1.0.0", null, null, null, null);
+		final ServiceInstanceInterfaceResponseDTO interfaceResponse = new ServiceInstanceInterfaceResponseDTO("generic_http", "http", "NONE", Map.of("accessPort", 8080));
+		final ServiceInstanceResponseDTO instanceResponse = new ServiceInstanceResponseDTO(
 				"TemperatureManager|temperatureManagement|5.0.0",
 				systemResponse,
 				new ServiceDefinitionResponseDTO("temperatureInfo", null, null),
@@ -1156,11 +1457,11 @@ public class ManagementServiceTest {
 				List.of(interfaceResponse),
 				null,
 				null);
-	    final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(instanceResponse), 1);
-	    when(dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, null)).thenReturn(response);
+		final ServiceInstanceListResponseDTO response = new ServiceInstanceListResponseDTO(List.of(instanceResponse), 1);
+		when(dtoConverter.convertServiceInstancePageToDTO(servicesWithInterfaces, null)).thenReturn(response);
 
-	    final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.queryServiceInstances(dto, false, "test origin"));
-	    assertEquals(response, actual);
+		final ServiceInstanceListResponseDTO actual = assertDoesNotThrow(() -> service.queryServiceInstances(dto, false, "test origin"));
+		assertEquals(response, actual);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1207,12 +1508,32 @@ public class ManagementServiceTest {
 
 		when(instanceDbService.getPageByFilters(pageRequest, filterModel)).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.queryServiceInstances(dto, true, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.queryServiceInstances(dto, true, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 
 	// INTERFACE TEMPLATES
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateInterfaceTemplatesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createInterfaceTemplates(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testCreateInterfaceTemplatesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.createInterfaceTemplates(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -1256,7 +1577,7 @@ public class ManagementServiceTest {
 
 		when(interfaceTemplateDbService.createBulk(List.of(templateRequest))).thenThrow(new InvalidParameterException("Invalid parameter"));
 
-	    final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createInterfaceTemplates(dto, "test origin"));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.createInterfaceTemplates(dto, "test origin"));
 		assertEquals("Invalid parameter", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
@@ -1273,9 +1594,29 @@ public class ManagementServiceTest {
 
 		when(interfaceTemplateDbService.createBulk(List.of(templateRequest))).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createInterfaceTemplates(dto, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.createInterfaceTemplates(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryInterfaceTemplatesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.queryInterfaceTemplates(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testQueryInterfaceTemplatesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.queryInterfaceTemplates(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1318,9 +1659,29 @@ public class ManagementServiceTest {
 
 		when(interfaceTemplateDbService.getPageByFilters(pageRequest, List.of("generic_http"), List.of("http"))).thenThrow(new InternalServerError("Database error"));
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.queryInterfaceTemplates(dto, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.queryInterfaceTemplates(dto, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveInterfaceTemplatesOriginNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeInterfaceTemplates(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRemoveInterfaceTemplatesOriginEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.removeInterfaceTemplates(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -1342,7 +1703,7 @@ public class ManagementServiceTest {
 		when(validator.validateAndNormalizeRemoveInterfaceTemplates(names, "test origin")).thenReturn(names);
 		doThrow(new InternalServerError("Database error")).when(interfaceTemplateDbService).deleteByTemplateNameList(names);
 
-	    final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeInterfaceTemplates(names, "test origin"));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.removeInterfaceTemplates(names, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}

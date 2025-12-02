@@ -18,6 +18,7 @@ package eu.arrowhead.authentication.jpa.entity;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import eu.arrowhead.common.jpa.ArrowheadEntity;
@@ -131,5 +132,30 @@ public class ActiveSession {
 	//-------------------------------------------------------------------------------------------------
 	public void setExpirationTime(final ZonedDateTime expirationTime) {
 		this.expirationTime = expirationTime;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public int hashCode() {
+		return Objects.hash(id);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (obj == null) {
+			return false;
+		}
+
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+
+		final ActiveSession other = (ActiveSession) obj;
+		return id == other.id;
 	}
 }

@@ -50,6 +50,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.service.validation.MetadataValidation;
 import eu.arrowhead.common.service.validation.name.InterfaceTemplateNameValidator;
@@ -307,6 +308,27 @@ public class ServiceDiscoveryValidationTest {
 					metadataValidationMock.verify(() -> MetadataValidation.validateMetadataKey(Map.of("intf.port", 8080)));
 					metadataValidationMock.close();
 				});
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRegisterServiceNotOfferablePolicy() {
+		final ServiceInstanceInterfaceRequestDTO testIntf = new ServiceInstanceInterfaceRequestDTO("generic_http", "http", "TRANSLATION_BRIDGE_TOKEN_AUTH", Map.of("accessPort", 8080));
+		final ServiceInstanceRequestDTO dto = new ServiceInstanceRequestDTO("TemperatureProvider", "temperatureInfo", "1.0.0", testExpirationDate, Map.of("frequency", "400"), List.of(testIntf));
+		when(normalizer.normalizeServiceInstanceRequestDTO(dto)).thenReturn(dto);
+		when(interfaceValidator.validateNormalizedInterfaceInstancesWithPropsNormalization(dto.interfaces())).thenReturn(dto.interfaces());
+		utilitiesMock.when(() -> Utilities.isEnumValue("TRANSLATION_BRIDGE_TOKEN_AUTH", ServiceInterfacePolicy.class)).thenReturn(true);
+
+		final ArrowheadException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeRegisterService(dto, "test origin"));
+
+		assertEquals("Invalid interface policy: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+
+		verify(normalizer).normalizeServiceInstanceRequestDTO(dto);
+		verify(systemNameValidator, times(1)).validateSystemName("TemperatureProvider");
+		verify(serviceDefNameValidator, times(1)).validateServiceDefinitionName("temperatureInfo");
+		verify(versionValidator, times(1)).validateNormalizedVersion("1.0.0");
+		verify(interfaceValidator, times(1)).validateNormalizedInterfaceInstancesWithPropsNormalization(List.of(testIntf));
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -876,6 +898,36 @@ public class ServiceDiscoveryValidationTest {
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
 		assertEquals("Validation error", ex.getMessage());
+		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testValidateAndNormalizeLookupServiceNotOfferablePolicy() {
+
+		final MetadataRequirementDTO metadataReq = new MetadataRequirementDTO();
+		metadataReq.put("priority", Map.of("op", "LESS_THAN", "value", 10));
+
+		final MetadataRequirementDTO intfReq = new MetadataRequirementDTO();
+		intfReq.put("port", Map.of("op", "NOT_EQUALS", "value", 1444));
+
+		final ServiceInstanceLookupRequestDTO dto = new ServiceInstanceLookupRequestDTO(
+				List.of("TemperatureProvider|temperatureInfo|1.0.0"),
+				List.of("-TemperatureProvider"),
+				List.of("temperatureInfo"),
+				List.of("1.0.0"),
+				"2025-11-04T01:53:02Z",
+				List.of(metadataReq),
+				List.of("IPV4"),
+				List.of("generic_http"),
+				List.of(intfReq),
+				List.of("TRANSLATION_BRIDGE_TOKEN_AUTH"));
+
+		when(normalizer.normalizeServiceInstanceLookupRequestDTO(dto)).thenReturn(dto);
+		utilitiesMock.when(() -> Utilities.isEnumValue("TRANSLATION_BRIDGE_TOKEN_AUTH", ServiceInterfacePolicy.class)).thenReturn(true);
+
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeLookupService(dto, "test origin"));
+		assertEquals("Invalid interface policy: TRANSLATION_BRIDGE_TOKEN_AUTH", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 	}
 

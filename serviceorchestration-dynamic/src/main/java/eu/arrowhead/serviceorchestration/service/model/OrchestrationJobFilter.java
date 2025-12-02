@@ -22,9 +22,9 @@ import java.util.UUID;
 
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
+import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.service.enums.BaseFilter;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
-import eu.arrowhead.serviceorchestration.service.enums.OrchestrationType;
 
 public class OrchestrationJobFilter {
 

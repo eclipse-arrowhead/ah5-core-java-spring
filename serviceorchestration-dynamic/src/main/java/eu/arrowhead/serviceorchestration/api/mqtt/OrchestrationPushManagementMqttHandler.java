@@ -65,7 +65,7 @@ public class OrchestrationPushManagementMqttHandler extends MqttTopicHandler {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public void handle(final MqttRequestModel request) throws ArrowheadException {
-		logger.debug("OrchestrationPushManagementService.handle started");
+		logger.debug("OrchestrationPushManagementMqttHandler.handle started");
 		Assert.isTrue(request.getBaseTopic().equals(baseTopic()), "MQTT topic-handler mismatch");
 
 		MqttStatus responseStatus = MqttStatus.OK;
@@ -107,28 +107,28 @@ public class OrchestrationPushManagementMqttHandler extends MqttTopicHandler {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationSubscriptionListResponseDTO pushSubscribe(final String requesterSystem, final OrchestrationSubscriptionListRequestDTO dto) {
-		logger.debug("OrchestrationPushManagementService.pushSubscribe started");
+		logger.debug("OrchestrationPushManagementMqttHandler.pushSubscribe started");
 
 		return pushService.pushSubscribe(requesterSystem, dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_SUBSCRIBE);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationPushJobListResponseDTO pushTrigger(final String requesterSystem, final OrchestrationPushTriggerDTO dto) {
-		logger.debug("OrchestrationPushManagementService.pushTrigger started");
+		logger.debug("OrchestrationPushManagementMqttHandler.pushTrigger started");
 
 		return pushService.pushTrigger(requesterSystem, dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_TRIGGER);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private void pushUnsubscribe(final String requesterSystem, final List<String> ids) {
-		logger.debug("OrchestrationPushManagementService.pushUnsubscribe started");
+		logger.debug("OrchestrationPushManagementMqttHandler.pushUnsubscribe started");
 
 		pushService.pushUnsubscribe(requesterSystem, ids, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_UNSUBSCRIBE);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationSubscriptionListResponseDTO pushQuery(final OrchestrationSubscriptionQueryRequestDTO dto) {
-		logger.debug("OrchestrationPushManagementService.pushQuery started");
+		logger.debug("OrchestrationPushManagementMqttHandler.pushQuery started");
 
 		return pushService.queryPushSubscriptions(dto, baseTopic() + Constants.SERVICE_OP_ORCHESTRATION_QUERY);
 	}

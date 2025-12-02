@@ -96,6 +96,26 @@ public class SystemDiscoveryServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testRegisterSystemOrigionNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.registerSystem(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRegisterSystemOrigionEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.registerSystem(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testRegisterSystemExistingSystemDifferentMetadata() {
 
 		// dtos
@@ -106,8 +126,8 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 2\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
 		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.registerSystem(dto, "test origin"));
@@ -127,8 +147,8 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.1");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
 		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.registerSystem(dto, "test origin"));
@@ -154,8 +174,8 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
 		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.registerSystem(dto, "test origin"));
@@ -176,9 +196,9 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress1 = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final DeviceAddress deviceAddress2 = new DeviceAddress(device, AddressType.HOSTNAME, "greenhouse.com"); // this one is inheritable
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress1 = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final DeviceAddress deviceAddress2 = new DeviceAddress(device, AddressType.HOSTNAME, "greenhouse.com"); // this one is inheritable
 		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress1, deviceAddress2)))));
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> service.registerSystem(dto, "test origin"));
@@ -199,8 +219,8 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), null);
-	    when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(existingTriple));
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), null);
+		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(existingTriple));
 
 		when(addressMatcher.isAddressListMatching(eq(List.of(new AddressDTO("IPV4", "192.168.100.100"))), eq(List.of()))).thenReturn(false);
 
@@ -243,9 +263,9 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 
 		when(addressMatcher.isAddressListMatching(any(), any())).thenReturn(true);
 
@@ -266,9 +286,9 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)))));
 
 		when(addressMatcher.isAddressListMatching(any(), any())).thenReturn(true);
 
@@ -289,10 +309,10 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(existingTriple));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(existingTriple));
 
 		when(addressMatcher.isAddressListMatching(any(), any())).thenReturn(true);
 
@@ -316,8 +336,8 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), null);
-	    when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(existingTriple));
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), null);
+		when(dbService.getByName("TemperatureManager")).thenReturn(Optional.of(existingTriple));
 
 		when(addressMatcher.isAddressListMatching(any(), any())).thenReturn(true);
 
@@ -342,10 +362,10 @@ public class SystemDiscoveryServiceTest {
 
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> createdTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    when(dbService.createBulk(List.of(normalizedDto))).thenReturn(List.of(createdTriple));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> createdTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		when(dbService.createBulk(List.of(normalizedDto))).thenReturn(List.of(createdTriple));
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
 		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
@@ -375,6 +395,26 @@ public class SystemDiscoveryServiceTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	public void testLookupSystemOrigionNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.lookupSystem(null, false, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testLookupSystemOrigionEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.lookupSystem(null, false, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
 	public void testLookupSystemVerboseParamFalse() {
 
 		final Triple<SystemLookupRequestDTO, SystemListResponseDTO, SystemListResponseDTO> setupResult = setupLookup();
@@ -382,9 +422,9 @@ public class SystemDiscoveryServiceTest {
 		final SystemListResponseDTO verbose = setupResult.getMiddle();
 		final SystemListResponseDTO expected = setupResult.getRight();
 
-	    final SystemListResponseDTO actual = service.lookupSystem(dto, false, "test origin");
-	    assertEquals(expected, actual);
-	    verify(dtoConverter).convertSystemListResponseDtoToTerse(verbose);
+		final SystemListResponseDTO actual = service.lookupSystem(dto, false, "test origin");
+		assertEquals(expected, actual);
+		verify(dtoConverter).convertSystemListResponseDtoToTerse(verbose);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -396,11 +436,11 @@ public class SystemDiscoveryServiceTest {
 		final SystemListResponseDTO verbose = setupResult.getMiddle();
 		final SystemListResponseDTO expected = setupResult.getRight();
 
-	    when(sysInfo.isDiscoveryVerbose()).thenReturn(false);
+		when(sysInfo.isDiscoveryVerbose()).thenReturn(false);
 
-	    final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
-	    assertEquals(expected, actual);
-	    verify(dtoConverter).convertSystemListResponseDtoToTerse(verbose);
+		final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
+		assertEquals(expected, actual);
+		verify(dtoConverter).convertSystemListResponseDtoToTerse(verbose);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -411,11 +451,11 @@ public class SystemDiscoveryServiceTest {
 		final SystemLookupRequestDTO dto = setupResult.getLeft();
 		final SystemListResponseDTO verbose = setupResult.getMiddle();
 
-	    when(sysInfo.isDiscoveryVerbose()).thenReturn(true);
+		when(sysInfo.isDiscoveryVerbose()).thenReturn(true);
 
-	    final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
-	    assertEquals(verbose, actual);
-	    verify(dtoConverter, never()).convertSystemListResponseDtoToTerse(verbose);
+		final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
+		assertEquals(verbose, actual);
+		verify(dtoConverter, never()).convertSystemListResponseDtoToTerse(verbose);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -438,14 +478,14 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> pageOfTriple = new PageImpl<>(List.of(existingTriple));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> pageOfTriple = new PageImpl<>(List.of(existingTriple));
 
-	    when(dbService.getPageByFilters(
-	    		any(),
-	    		eq(List.of("TemperatureManager")),
+		when(dbService.getPageByFilters(
+				any(),
+				eq(List.of("TemperatureManager")),
 				eq(List.of("192.168.100.100")),
 				eq(null),
 				eq(List.of(requirement)),
@@ -454,17 +494,17 @@ public class SystemDiscoveryServiceTest {
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
 		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
-	    final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
-	    when(dtoConverter.convertSystemTripletPageToDTO(pageOfTriple)).thenReturn(result);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletPageToDTO(pageOfTriple)).thenReturn(result);
 
-	    when(sysInfo.isDiscoveryVerbose()).thenReturn(true);
+		when(sysInfo.isDiscoveryVerbose()).thenReturn(true);
 
-	    final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
-	    assertEquals(new SystemListResponseDTO(List.of(response), 1), actual);
-	    verify(dtoConverter, never()).convertSystemListResponseDtoToTerse(result);
-	    verify(dbService).getPageByFilters(
-	    		any(),
-	    		eq(List.of("TemperatureManager")),
+		final SystemListResponseDTO actual = service.lookupSystem(dto, true, "test origin");
+		assertEquals(new SystemListResponseDTO(List.of(response), 1), actual);
+		verify(dtoConverter, never()).convertSystemListResponseDtoToTerse(result);
+		verify(dbService).getPageByFilters(
+				any(),
+				eq(List.of("TemperatureManager")),
 				eq(List.of("192.168.100.100")),
 				eq(null),
 				eq(List.of(requirement)),
@@ -489,9 +529,9 @@ public class SystemDiscoveryServiceTest {
 
 		when(validator.validateAndNormalizeLookupSystem(dto, "test origin")).thenReturn(dto);
 
-	    when(dbService.getPageByFilters(
-	    		any(),
-	    		eq(List.of("TemperatureManager")),
+		when(dbService.getPageByFilters(
+				any(),
+				eq(List.of("TemperatureManager")),
 				eq(List.of("192.168.100.100")),
 				eq(AddressType.IPV4),
 				eq(List.of(requirement)),
@@ -501,6 +541,26 @@ public class SystemDiscoveryServiceTest {
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> service.lookupSystem(dto, true, "test origin"));
 		assertEquals("Database error", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeSystemOrigionNull() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeSystem(null, null));
+
+		assertEquals("origin is empty", ex.getMessage());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRevokeSystemOrigionEmpty() {
+		final Throwable ex = assertThrows(
+				IllegalArgumentException.class,
+				() -> service.revokeSystem(null, ""));
+
+		assertEquals("origin is empty", ex.getMessage());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -549,14 +609,14 @@ public class SystemDiscoveryServiceTest {
 		// entities in the database
 		final System system = new System("TemperatureManager", "{\r\n  \"priority\" : 1\r\n}", "5.0.0");
 		final SystemAddress systemAddress = new SystemAddress(system, AddressType.IPV4, "192.168.100.100");
-	    final Device device = new Device("DEVICE1", "{ }");
-	    final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
-	    final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
-	    final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> pageOfTriple = new PageImpl<>(List.of(existingTriple));
+		final Device device = new Device("DEVICE1", "{ }");
+		final DeviceAddress deviceAddress = new DeviceAddress(device, AddressType.MAC, "00:1a:2b:3c:4d:51");
+		final Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>> existingTriple = Triple.of(system, List.of(systemAddress), Map.entry(device, List.of(deviceAddress)));
+		final Page<Triple<System, List<SystemAddress>, Entry<Device, List<DeviceAddress>>>> pageOfTriple = new PageImpl<>(List.of(existingTriple));
 
-	    when(dbService.getPageByFilters(
-	    		any(),
-	    		eq(List.of("TemperatureManager")),
+		when(dbService.getPageByFilters(
+				any(),
+				eq(List.of("TemperatureManager")),
 				eq(List.of("192.168.100.100")),
 				eq(AddressType.IPV4),
 				eq(List.of(requirement)),
@@ -565,15 +625,15 @@ public class SystemDiscoveryServiceTest {
 
 		final DeviceResponseDTO deviceResponse = new DeviceResponseDTO("DEVICE1", Map.of(), List.of(new AddressDTO("MAC", "00:1a:2b:3c:4d:51")), null, null);
 		final SystemResponseDTO response = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponse, null, null);
-	    final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
-	    when(dtoConverter.convertSystemTripletPageToDTO(pageOfTriple)).thenReturn(result);
+		final SystemListResponseDTO result = new SystemListResponseDTO(List.of(response), 1);
+		when(dtoConverter.convertSystemTripletPageToDTO(pageOfTriple)).thenReturn(result);
 
-	    // convert to terse
-	    final DeviceResponseDTO deviceResponseTerse = new DeviceResponseDTO("DEVICE1", null, null, null, null);
-	    final SystemResponseDTO responseTerse = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponseTerse, null, null);
-	    final SystemListResponseDTO resultTerse = new SystemListResponseDTO(List.of(responseTerse), 1);
-	    lenient().when(dtoConverter.convertSystemListResponseDtoToTerse(result)).thenReturn(resultTerse);
+		// convert to terse
+		final DeviceResponseDTO deviceResponseTerse = new DeviceResponseDTO("DEVICE1", null, null, null, null);
+		final SystemResponseDTO responseTerse = new SystemResponseDTO("TemperatureManager", Map.of("priority", 1), "5.0.0", List.of(new AddressDTO("IPV4", "192.168.100.100")), deviceResponseTerse, null, null);
+		final SystemListResponseDTO resultTerse = new SystemListResponseDTO(List.of(responseTerse), 1);
+		lenient().when(dtoConverter.convertSystemListResponseDtoToTerse(result)).thenReturn(resultTerse);
 
-	    return Triple.of(dto, result, resultTerse);
+		return Triple.of(dto, result, resultTerse);
 	}
 }

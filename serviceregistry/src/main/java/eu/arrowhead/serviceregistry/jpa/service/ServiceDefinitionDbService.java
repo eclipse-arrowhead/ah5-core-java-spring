@@ -15,6 +15,7 @@
  *
  *******************************************************************************/
 package eu.arrowhead.serviceregistry.jpa.service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,6 +82,7 @@ public class ServiceDefinitionDbService {
 	//-------------------------------------------------------------------------------------------------
 	public Page<ServiceDefinition> getPage(final PageRequest pagination) {
 		logger.debug("getPage started...");
+		Assert.notNull(pagination, "pagination is null");
 
 		try {
 			return repo.findAll(pagination);
