@@ -302,11 +302,15 @@ public class SimpleStoreDbService {
 		for (final OrchestrationSimpleStoreRequestDTO candidate : candidates) {
 
 			// check if there is an existing record
-			final Optional<OrchestrationStore> entity = storeRepo.findByConsumerAndServiceInstanceIdAndPriority(candidate.consumer(), candidate.serviceInstanceId(), candidate.priority());
+			final String serviceDefinition = ServiceInstanceIdUtils.retrieveServiceDefinitionFromInstanceId(candidate.serviceInstanceId());
+			final Optional<OrchestrationStore> entity = storeRepo.findByConsumerAndServiceDefinitionAndPriority(
+					candidate.consumer(),
+					serviceDefinition,
+					candidate.priority());
 			if (entity.isPresent()) {
 				final OrchestrationStore existing = entity.get();
-				throw new InvalidParameterException("There is already an existing entity with consumer name: " + existing.getConsumer() + ", service instance id: "
-						+ existing.getServiceInstanceId() + ", priority: " + existing.getPriority());
+				throw new InvalidParameterException("There is already an existing entity with consumer name: " + existing.getConsumer() + ", service definition: "
+						+ serviceDefinition + ", priority: " + existing.getPriority());
 			}
 		}
 	}
@@ -320,8 +324,8 @@ public class SimpleStoreDbService {
 		for (final OrchestrationStore entity : entities) {
 			final Triple<String, String, Integer> toCheck = Triple.of(entity.getConsumer(), entity.getServiceDefinition(), entity.getPriority());
 			if (checked.contains(toCheck)) {
-				throw new InvalidParameterException("Conflicting rules, the combination of the following fields should be unique: " + entity.getConsumer() + ", service instance id: "
-						+ entity.getServiceInstanceId() + ", priority: " + entity.getPriority());
+				throw new InvalidParameterException("Conflicting rules, the combination of the following fields should be unique: " + entity.getConsumer() + ", service definition: "
+						+ entity.getServiceDefinition() + ", priority: " + entity.getPriority());
 			} else {
 				checked.add(toCheck);
 			}

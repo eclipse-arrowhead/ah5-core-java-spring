@@ -33,8 +33,8 @@ public interface OrchestrationStoreRepository extends RefreshableRepository<Orch
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	public Optional<OrchestrationStore> findByConsumerAndServiceInstanceIdAndPriority(
-			final String consumer, final String serviceInstanceId, final int priority);
+	public Optional<OrchestrationStore> findByConsumerAndServiceDefinitionAndPriority(
+			final String consumer, final String serviceDefinition, final int priority);
 
 	//-------------------------------------------------------------------------------------------------
 	public List<OrchestrationStore> findAllByConsumerIn(final List<String> consumerNames);

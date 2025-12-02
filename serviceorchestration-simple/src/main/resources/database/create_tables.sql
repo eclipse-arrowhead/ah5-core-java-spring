@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `orchestration_store` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `subscription_uk` (`consumer`, `service_instance_id`, `priority`)
+  UNIQUE KEY `subscription_uk` (`consumer`, `service_definition`, `priority`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Subscription
