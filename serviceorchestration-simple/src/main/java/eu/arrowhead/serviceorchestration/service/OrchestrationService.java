@@ -81,8 +81,6 @@ public class OrchestrationService {
 	public OrchestrationResponseDTO pull(final String requesterSystem, final OrchestrationRequestDTO dto, final String origin) {
 		logger.debug("pull started...");
 
-		final Set<String> warnings = new HashSet<>();
-
 		// validate and normalize
 		final String normalizedRequester = validator.validateAndNormalizeRequester(requesterSystem, origin);
 		final SimpleOrchestrationRequest normalized = validator.validateAndNormalizePull(dto, origin);
@@ -101,7 +99,7 @@ public class OrchestrationService {
 
 			// orchestrate
 			final List<OrchestrationStore> orchResult = serviceOrchestration.orchestrate(job.getId(), requesterSystem, normalized);
-			return dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(orchResult, warnings);
+			return dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(orchResult, normalized.getWarnings());
 
 		} catch (final InternalServerError ex) {
 			throw new InternalServerError(ex.getMessage(), origin);
