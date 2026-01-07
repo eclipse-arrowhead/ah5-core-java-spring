@@ -121,7 +121,9 @@ public class CleanerJob implements Job {
 				hasMore = currentPage < pageOfHeaders.getTotalPages() - 1;
 			} while (hasMore);
 
-			tokenHeaderDbService.deleteById(toDelete);
+			if (!toDelete.isEmpty()) {
+				tokenHeaderDbService.deleteById(toDelete);
+			}
 		} catch (final Exception ex) {
 			logger.debug(ex);
 			logger.error("Cleaner job error: " + ex.getMessage());
