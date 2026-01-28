@@ -18,6 +18,7 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import eu.arrowhead.common.Utilities;
+import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.dto.*;
 import eu.arrowhead.dto.enums.OrchestrationType;
@@ -34,12 +35,16 @@ import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationServiceValidation;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.Invocation;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.awt.event.InvocationEvent;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -47,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -73,7 +79,7 @@ public class OrchestrationServiceTest {
 	@Mock
 	private ServiceOrchestration serviceOrchestration;
 
-	@Mock(name = SimpleStoreServiceOrchestrationConstants.JOB_QUEUE_PUSH_ORCHESTRATION)
+	@Mock
 	private BlockingQueue<UUID> pushOrchJobQueue;
 
 	@Mock
@@ -153,25 +159,210 @@ public class OrchestrationServiceTest {
 				Utilities.toJson(normalizedIntfDTO),
 				Utilities.toJson(normalizedOrchRequest));
 		final Subscription createdSubscription = new Subscription(
-				"Provider1",
+				"Consumer1",
 				"Consumer1",
 				"service1",
 				ZonedDateTime.parse("2026-01-30T01:53:02Z"),
 				"generic_http",
 				Utilities.toJson(normalizedIntfDTO),
 				Utilities.toJson(normalizedOrchRequest));
-		createdSubscription.setId(UUID.fromString("9f3c2a7e-4b61-4f8a-b1f2-6e8a9c4d5b27"));
+		createdSubscription.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
 
 		when(validator.validateAndNormalizePushSubscribe(dto, "Consumer1", "test origin")).thenReturn(simpleOrchRequest);
 		when(subscriptionDbService.get("Consumer1", "Consumer1", "service1")).thenReturn(Optional.of(existingSubscription));
 		when(subscriptionDbService.create(List.of(simpleOrchRequest), "Consumer1")).thenReturn(List.of(createdSubscription));
 
-		final Pair<Boolean, String> expected = Pair.of(true, "9f3c2a7e-4b61-4f8a-b1f2-6e8a9c4d5b27");
+		final Pair<Boolean, String> expected = Pair.of(true, "11111111-1111-1111-1111-111111111111");
 		final Pair<Boolean, String> actual = service.pushSubscribe("Consumer1", dto, false, "test origin");
 		assertEquals(expected, actual);
 
 		verify(subscriptionDbService).get("Consumer1", "Consumer1", "service1");
 		verify(subscriptionDbService).create(List.of(simpleOrchRequest), "Consumer1");
 		verify(orchJobDbService, never()).create(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushSubscribeDoTriggerNotOverrideServiceRequirementNotNull() {
+
+		final OrchestrationServiceRequirementDTO requirementDTO = new OrchestrationServiceRequirementDTO("service1", null, null, null, null, null, null, null, null, null);
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(requirementDTO, Map.of("MATCHMAKING", true), List.of(), null);
+		final OrchestrationNotifyInterfaceDTO intfDTO = new OrchestrationNotifyInterfaceDTO("GENERIC_HTTP", Map.of("port", "4040"));
+		final OrchestrationNotifyInterfaceDTO normalizedIntfDTO = new OrchestrationNotifyInterfaceDTO("generic_http", Map.of("port", "4040"));
+		final OrchestrationSubscriptionRequestDTO dto = new OrchestrationSubscriptionRequestDTO("Consumer1", requestDTO, normalizedIntfDTO, 30L);
+		final SimpleOrchestrationRequest normalizedOrchRequest = new SimpleOrchestrationRequest("service1", List.of(), Map.of("MATCHMAKING", true), Set.of());
+		final SimpleOrchestrationSubscriptionRequest simpleOrchRequest = new SimpleOrchestrationSubscriptionRequest("Consumer1", normalizedOrchRequest, intfDTO, 30L);
+		final Subscription createdSubscription = new Subscription(
+				"Consumer1",
+				"Consumer1",
+				"service1",
+				ZonedDateTime.parse("2026-01-30T01:53:02Z"),
+				"generic_http",
+				Utilities.toJson(normalizedIntfDTO),
+				Utilities.toJson(normalizedOrchRequest));
+		createdSubscription.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+		when(validator.validateAndNormalizePushSubscribe(dto, "Consumer1", "test origin")).thenReturn(simpleOrchRequest);
+		when(subscriptionDbService.get("Consumer1", "Consumer1", "service1")).thenReturn(Optional.empty());
+		when(subscriptionDbService.create(List.of(simpleOrchRequest), "Consumer1")).thenReturn(List.of(createdSubscription));
+		when(orchJobDbService.create(argThat(list -> list.get(0).getType().equals(OrchestrationType.PUSH)
+				&& list.get(0).getRequesterSystem().equals("Consumer1")
+				&& list.get(0).getTargetSystem().equals("Consumer1")
+				&& list.get(0).getServiceDefinition().equals("service1")))).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(pushOrchJobQueue.add(any())).thenReturn(true);
+
+		final Pair<Boolean, String> expected = Pair.of(false, "11111111-1111-1111-1111-111111111111");
+		final Pair<Boolean, String> actual = service.pushSubscribe("Consumer1", dto, true, "test origin");
+		assertEquals(expected, actual);
+
+		verify(subscriptionDbService).get("Consumer1", "Consumer1", "service1");
+		verify(subscriptionDbService).create(List.of(simpleOrchRequest), "Consumer1");
+		@SuppressWarnings("unchecked")
+		final ArgumentCaptor<List<OrchestrationJob>> dbCaptor = ArgumentCaptor.forClass(List.class);
+		verify(orchJobDbService).create(dbCaptor.capture());
+		verify(pushOrchJobQueue).add(dbCaptor.getValue().get(0).getId());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushSubscribeDoTriggerNotOverrideServiceRequirementIsNull() {
+
+		final OrchestrationRequestDTO requestDTO = new OrchestrationRequestDTO(null, Map.of("MATCHMAKING", true), List.of(), null);
+		final OrchestrationNotifyInterfaceDTO intfDTO = new OrchestrationNotifyInterfaceDTO("GENERIC_HTTP", Map.of("port", "4040"));
+		final OrchestrationNotifyInterfaceDTO normalizedIntfDTO = new OrchestrationNotifyInterfaceDTO("generic_http", Map.of("port", "4040"));
+		final OrchestrationSubscriptionRequestDTO dto = new OrchestrationSubscriptionRequestDTO("Consumer1", requestDTO, normalizedIntfDTO, 30L);
+		final SimpleOrchestrationRequest normalizedOrchRequest = new SimpleOrchestrationRequest(null, List.of(), Map.of("MATCHMAKING", true), Set.of());
+		final SimpleOrchestrationSubscriptionRequest simpleOrchRequest = new SimpleOrchestrationSubscriptionRequest("Consumer1", normalizedOrchRequest, intfDTO, 30L);
+		final Subscription createdSubscription = new Subscription(
+				"Consumer1",
+				"Consumer1",
+				null,
+				ZonedDateTime.parse("2026-01-30T01:53:02Z"),
+				"generic_http",
+				Utilities.toJson(normalizedIntfDTO),
+				Utilities.toJson(normalizedOrchRequest));
+		createdSubscription.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+		when(validator.validateAndNormalizePushSubscribe(dto, "Consumer1", "test origin")).thenReturn(simpleOrchRequest);
+		when(subscriptionDbService.get("Consumer1", "Consumer1", null)).thenReturn(Optional.empty());
+		when(subscriptionDbService.create(List.of(simpleOrchRequest), "Consumer1")).thenReturn(List.of(createdSubscription));
+		when(orchJobDbService.create(argThat(list -> list.get(0).getType().equals(OrchestrationType.PUSH)
+				&& list.get(0).getRequesterSystem().equals("Consumer1")
+				&& list.get(0).getTargetSystem().equals("Consumer1")
+				&& list.get(0).getServiceDefinition() == null))).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(pushOrchJobQueue.add(any())).thenReturn(true);
+
+		final Pair<Boolean, String> expected = Pair.of(false, "11111111-1111-1111-1111-111111111111");
+		final Pair<Boolean, String> actual = service.pushSubscribe("Consumer1", dto, true, "test origin");
+		assertEquals(expected, actual);
+
+		verify(subscriptionDbService).get("Consumer1", "Consumer1", null);
+		verify(subscriptionDbService).create(List.of(simpleOrchRequest), "Consumer1");
+		@SuppressWarnings("unchecked")
+		final ArgumentCaptor<List<OrchestrationJob>> dbCaptor = ArgumentCaptor.forClass(List.class);
+		verify(orchJobDbService).create(dbCaptor.capture());
+		verify(pushOrchJobQueue).add(dbCaptor.getValue().get(0).getId());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushSubscribeDoTriggerNotOverrideOrchestrationRequestIsNull() {
+
+		final OrchestrationNotifyInterfaceDTO intfDTO = new OrchestrationNotifyInterfaceDTO("GENERIC_HTTP", Map.of("port", "4040"));
+		final OrchestrationNotifyInterfaceDTO normalizedIntfDTO = new OrchestrationNotifyInterfaceDTO("generic_http", Map.of("port", "4040"));
+		final OrchestrationSubscriptionRequestDTO dto = new OrchestrationSubscriptionRequestDTO("Consumer1", null, normalizedIntfDTO, 30L);
+		final SimpleOrchestrationRequest normalizedOrchRequest = new SimpleOrchestrationRequest(null, null, null, null);
+		final SimpleOrchestrationSubscriptionRequest simpleOrchRequest = new SimpleOrchestrationSubscriptionRequest("Consumer1", normalizedOrchRequest, intfDTO, 30L);
+		final Subscription createdSubscription = new Subscription(
+				"Consumer1",
+				"Consumer1",
+				null,
+				ZonedDateTime.parse("2026-01-30T01:53:02Z"),
+				"generic_http",
+				Utilities.toJson(normalizedIntfDTO),
+				Utilities.toJson(normalizedOrchRequest));
+		createdSubscription.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+		when(validator.validateAndNormalizePushSubscribe(dto, "Consumer1", "test origin")).thenReturn(simpleOrchRequest);
+		when(subscriptionDbService.get("Consumer1", "Consumer1", null)).thenReturn(Optional.empty());
+		when(subscriptionDbService.create(List.of(simpleOrchRequest), "Consumer1")).thenReturn(List.of(createdSubscription));
+		when(orchJobDbService.create(argThat(list -> list.get(0).getType().equals(OrchestrationType.PUSH)
+				&& list.get(0).getRequesterSystem().equals("Consumer1")
+				&& list.get(0).getTargetSystem().equals("Consumer1")
+				&& list.get(0).getServiceDefinition() == null))).thenAnswer(Invocation -> Invocation.getArgument(0));
+		when(pushOrchJobQueue.add(any())).thenReturn(true);
+
+		final Pair<Boolean, String> expected = Pair.of(false, "11111111-1111-1111-1111-111111111111");
+		final Pair<Boolean, String> actual = service.pushSubscribe("Consumer1", dto, true, "test origin");
+		assertEquals(expected, actual);
+
+		verify(subscriptionDbService).get("Consumer1", "Consumer1", null);
+		verify(subscriptionDbService).create(List.of(simpleOrchRequest), "Consumer1");
+		@SuppressWarnings("unchecked")
+		final ArgumentCaptor<List<OrchestrationJob>> dbCaptor = ArgumentCaptor.forClass(List.class);
+		verify(orchJobDbService).create(dbCaptor.capture());
+		verify(pushOrchJobQueue).add(dbCaptor.getValue().get(0).getId());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushUnsubscribeExistingSubscription() {
+
+		when(validator.validateAndNormalizeRequester("Provider1", "test origin")).thenReturn("Provider1");
+		when(validator.validateAndNormalizePushUnsubscribe("11111111-1111-1111-1111-111111111111", "test origin")).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+		when(subscriptionDbService.deleteById(UUID.fromString("11111111-1111-1111-1111-111111111111"))).thenReturn(true);
+
+		final OrchestrationNotifyInterfaceDTO intfDTO = new OrchestrationNotifyInterfaceDTO("generic_http", Map.of("port", "4040"));
+		final SimpleOrchestrationRequest normalizedOrchRequest = new SimpleOrchestrationRequest(null, null, null, null);
+
+		final Subscription existingSubscription = new Subscription(
+				"Provider1",
+				"Consumer1",
+				"service1",
+				ZonedDateTime.parse("2026-01-27T01:53:02Z"),
+				"generic_http",
+				Utilities.toJson(intfDTO),
+				Utilities.toJson(normalizedOrchRequest));
+		when(subscriptionDbService.get(UUID.fromString("11111111-1111-1111-1111-111111111111"))).thenReturn(Optional.of(existingSubscription));
+
+		assertTrue(service.pushUnsubscribe("Provider1", "11111111-1111-1111-1111-111111111111", "test origin"));
+		verify(subscriptionDbService).deleteById(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushUnsubscribeNotExistingSubscription() {
+		when(validator.validateAndNormalizeRequester("Provider1", "test origin")).thenReturn("Provider1");
+		when(validator.validateAndNormalizePushUnsubscribe("11111111-1111-1111-1111-111111111111", "test origin")).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+		when(subscriptionDbService.get(UUID.fromString("11111111-1111-1111-1111-111111111111"))).thenReturn(Optional.empty());
+
+		assertTrue(!service.pushUnsubscribe("Provider1", "11111111-1111-1111-1111-111111111111", "test origin"));
+		verify(subscriptionDbService, never()).deleteById(any());
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testPushUnsubscribeThrowsForbiddenException() {
+
+		when(validator.validateAndNormalizeRequester("Provider1", "test origin")).thenReturn("Provider1");
+		when(validator.validateAndNormalizePushUnsubscribe("11111111-1111-1111-1111-111111111111", "test origin")).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+
+		final OrchestrationNotifyInterfaceDTO intfDTO = new OrchestrationNotifyInterfaceDTO("generic_http", Map.of("port", "4040"));
+		final SimpleOrchestrationRequest normalizedOrchRequest = new SimpleOrchestrationRequest(null, null, null, null);
+
+		final Subscription existingSubscription = new Subscription(
+				"Consumer1",
+				"Consumer1",
+				"service1",
+				ZonedDateTime.parse("2026-01-27T01:53:02Z"),
+				"generic_http",
+				Utilities.toJson(intfDTO),
+				Utilities.toJson(normalizedOrchRequest));
+		when(subscriptionDbService.get(UUID.fromString("11111111-1111-1111-1111-111111111111"))).thenReturn(Optional.of(existingSubscription));
+
+		final ForbiddenException ex = assertThrows(ForbiddenException.class, () -> service.pushUnsubscribe("Provider1", "11111111-1111-1111-1111-111111111111", "test origin"));
+		assertEquals("test origin", ex.getOrigin());
+		assertEquals("Provider1 is not the subscription owner", ex.getMessage());
 	}
 }
