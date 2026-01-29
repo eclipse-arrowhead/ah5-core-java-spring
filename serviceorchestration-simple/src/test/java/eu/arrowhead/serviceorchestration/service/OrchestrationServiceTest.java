@@ -17,12 +17,44 @@
 
 package eu.arrowhead.serviceorchestration.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ForbiddenException;
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.dto.*;
+import eu.arrowhead.dto.OrchestrationNotifyInterfaceDTO;
+import eu.arrowhead.dto.OrchestrationRequestDTO;
+import eu.arrowhead.dto.OrchestrationResponseDTO;
+import eu.arrowhead.dto.OrchestrationResultDTO;
+import eu.arrowhead.dto.OrchestrationServiceRequirementDTO;
+import eu.arrowhead.dto.OrchestrationSubscriptionRequestDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
-import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationConstants;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
@@ -33,30 +65,6 @@ import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationReques
 import eu.arrowhead.serviceorchestration.service.model.SimpleOrchestrationSubscriptionRequest;
 import eu.arrowhead.serviceorchestration.service.utils.ServiceOrchestration;
 import eu.arrowhead.serviceorchestration.service.validation.OrchestrationServiceValidation;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.invocation.Invocation;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.awt.event.InvocationEvent;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class OrchestrationServiceTest {
