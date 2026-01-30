@@ -119,7 +119,7 @@ public class OrchestrationHistoryManagementValidationTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizeQueryServiceWithStatusesContainsNull() {
-		final OrchestrationHistoryQueryRequestDTO dto = new OrchestrationHistoryQueryRequestDTO( null, null, Arrays.asList("PENDING", null), null, null, null, null, null);
+		final OrchestrationHistoryQueryRequestDTO dto = new OrchestrationHistoryQueryRequestDTO(null, null, Arrays.asList("PENDING", null), null, null, null, null, null);
 
 		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizeQueryService(dto, "test origin"));
 		assertEquals("Status list contains empty element", ex.getMessage());
