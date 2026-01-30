@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -299,7 +300,7 @@ public class SubscriptionDbServiceTest {
 		final PageRequest pagination = PageRequest.of(0, 10);
 
 		when(subscriptionRepo.findAllByOwnerSystemIn(List.of("Owner1"))).thenReturn(List.of());
-		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
+		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
 		final Page<Subscription> result = dbService.query(List.of("Owner1"), null, null, pagination);
 
@@ -329,7 +330,7 @@ public class SubscriptionDbServiceTest {
 		final PageRequest pagination = PageRequest.of(0, 10);
 
 		when(subscriptionRepo.findAllByTargetSystemIn(List.of("Target1"))).thenReturn(List.of());
-		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
+		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
 		final Page<Subscription> result = dbService.query(null, List.of("Target1"), null, pagination);
 
@@ -359,7 +360,7 @@ public class SubscriptionDbServiceTest {
 		final PageRequest pagination = PageRequest.of(0, 10);
 
 		when(subscriptionRepo.findAllByServiceDefinitionIn(List.of("serviceDef1"))).thenReturn(List.of());
-		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
+		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
 		final Page<Subscription> result = dbService.query(null, null, List.of("serviceDef1"), pagination);
 
@@ -373,7 +374,7 @@ public class SubscriptionDbServiceTest {
 		final PageRequest pagination = PageRequest.of(0, 10);
 
 		when(subscriptionRepo.findAllByOwnerSystemIn(List.of("Owner1"))).thenReturn(List.of());
-		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
+		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
 		final Page<Subscription> result = dbService.query(List.of("Owner1"), List.of("Target1"), List.of("serviceDef1"), pagination);
 
@@ -401,7 +402,7 @@ public class SubscriptionDbServiceTest {
 		
 		final Subscription subscription = new Subscription("Owner1", "Target1", "serviceDef2", null, "HTTPS", "{}", "{}");
 		when(subscriptionRepo.findAllByTargetSystemIn(List.of("Target1"))).thenReturn(List.of(subscription));
-		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
+		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
 		final Page<Subscription> result = dbService.query(null, List.of("Target1"), List.of("serviceDef1"), pagination);
 
@@ -429,7 +430,7 @@ public class SubscriptionDbServiceTest {
 		
 		final Subscription subscription = new Subscription("Owner1", "Target1", "serviceDef1", null, "HTTPS", "{}", "{}");
 		when(subscriptionRepo.findAllByOwnerSystemIn(List.of("Owner1"))).thenReturn(List.of(subscription));
-		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
+		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
 		final Page<Subscription> result = dbService.query(List.of("Owner1"), List.of("Target2"), null, pagination);
 

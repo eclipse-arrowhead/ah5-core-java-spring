@@ -128,7 +128,7 @@ public class OrchestrationHistoryManagementServiceTest {
 		when(validator.validateAndNormalizeQueryService(eq(requestDTO), eq(origin))).thenReturn(normalizedRequest);
 		doThrow(new InternalServerError("test message")).when(jobDbService).query(any(NormalizedOrchestrationJobQueryRequest.class));
 
-		final Throwable ex = assertThrows(Throwable.class, () -> historyService.query(requestDTO, origin));
+		final InternalServerError ex = assertThrows(InternalServerError.class, () -> historyService.query(requestDTO, origin));
 
 		verify(validator).validateAndNormalizeQueryService(eq(requestDTO), eq(origin));
 		verify(jobDbService).query(jobQueryRequestCaptor.capture());
@@ -136,6 +136,6 @@ public class OrchestrationHistoryManagementServiceTest {
 
 		assertEquals(requestDTO.subscriptionIds().get(0), jobQueryRequestCaptor.getValue().getSubscriptionIds().get(0).toString());
 		assertEquals("test message", ex.getMessage());
-		assertEquals(origin, ((InternalServerError) ex).getOrigin());
+		assertEquals(origin, ex.getOrigin());
 	}
 }
