@@ -181,7 +181,7 @@ public class OrchestrationJobDbService {
 				if (baseFilter != BaseFilter.STATUS && !Utilities.isEmpty(queryRequest.getStatuses()) && !queryRequest.getStatuses().contains(job.getStatus())) {
 					matching = false;
 
-					// Match against to job type
+					// Match against to orchestration type
 				} else if (queryRequest.getType() != null && queryRequest.getType() != job.getType()) {
 					matching = false;
 
