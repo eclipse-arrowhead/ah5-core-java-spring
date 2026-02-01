@@ -32,7 +32,6 @@ import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +52,6 @@ import eu.arrowhead.dto.OrchestrationResponseDTO;
 import eu.arrowhead.dto.enums.OrchestrationType;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
-import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
 import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.jpa.service.OrchestrationJobDbService;
 import eu.arrowhead.serviceorchestration.jpa.service.SubscriptionDbService;
@@ -177,6 +175,27 @@ public class PushOrchestrationWorkerTest {
 
 		verify(httpService).sendRequest(any(), eq(HttpMethod.POST), eq(Void.class), eq(responseDTO));
 	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRunWithHttpsNotificationCallsHttpService() {
+		final UUID subscriptionId = UUID.randomUUID();
+		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
+		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
+		final String notifyProperties = "{\"address\":\"localhost\",\"port\":\"8080\",\"method\":\"POST\",\"path\":\"/notify\"}";
+		final Subscription subscription = createSubscription(subscriptionId, "HTTPS", notifyProperties, orchestrationRequest);
+		final OrchestrationResponseDTO responseDTO = new OrchestrationResponseDTO(List.of(), null);
+
+		when(orchJobDbService.getById(jobId)).thenReturn(Optional.of(job));
+		when(orchJobDbService.setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), any())).thenReturn(job);
+		when(subscriptionDbService.get(subscriptionId)).thenReturn(Optional.of(subscription));
+		when(serviceOrchestration.orchestrate(eq(jobId), anyString(), any())).thenReturn(List.of());
+		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(any(), any())).thenReturn(responseDTO);
+
+		worker.run();
+
+		verify(httpService).sendRequest(any(), eq(HttpMethod.POST), eq(Void.class), eq(responseDTO));
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -191,39 +210,17 @@ public class PushOrchestrationWorkerTest {
 		when(orchJobDbService.getById(jobId)).thenReturn(Optional.of(job));
 		when(orchJobDbService.setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), any())).thenReturn(job);
 		when(subscriptionDbService.get(subscriptionId)).thenReturn(Optional.of(subscription));
-		when(serviceOrchestration.orchestrate(eq(jobId), eq("targetSystem"), any())).thenReturn(List.of());
+		when(serviceOrchestration.orchestrate(eq(jobId), eq("TargetSystem"), any())).thenReturn(List.of());
 		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(any(), any())).thenReturn(responseDTO);
 
 		worker.run();
 
-		verify(serviceOrchestration).orchestrate(eq(jobId), eq("targetSystem"), any());
+		verify(serviceOrchestration).orchestrate(eq(jobId), eq("TargetSystem"), any());
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunCallsDtoConverter() {
-		final UUID subscriptionId = UUID.randomUUID();
-		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
-		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
-		final String notifyProperties = "{\"address\":\"localhost\",\"port\":\"8080\",\"method\":\"POST\",\"path\":\"/notify\"}";
-		final Subscription subscription = createSubscription(subscriptionId, "HTTP", notifyProperties, orchestrationRequest);
-		final List<OrchestrationStore> orchResult = List.of();
-		final OrchestrationResponseDTO responseDTO = new OrchestrationResponseDTO(List.of(), null);
-
-		when(orchJobDbService.getById(jobId)).thenReturn(Optional.of(job));
-		when(orchJobDbService.setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), any())).thenReturn(job);
-		when(subscriptionDbService.get(subscriptionId)).thenReturn(Optional.of(subscription));
-		when(serviceOrchestration.orchestrate(any(), any(), any())).thenReturn(orchResult);
-		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(eq(orchResult), any())).thenReturn(responseDTO);
-
-		worker.run();
-
-		verify(dtoConverter).convertStoreEntitiesToOrchestrationResponseDTO(eq(orchResult), any());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testRunWithMqttNotificationCallsMqttService() throws MqttPersistenceException, MqttException {
+	public void testRunWithMqttNotificationCallsMqttService() {
 		final UUID subscriptionId = UUID.randomUUID();
 		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
 		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
@@ -238,19 +235,54 @@ public class PushOrchestrationWorkerTest {
 		when(serviceOrchestration.orchestrate(eq(jobId), anyString(), any())).thenReturn(List.of());
 		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(any(), any())).thenReturn(responseDTO);
 		when(sysInfo.isMqttApiEnabled()).thenReturn(true);
-		when(sysInfo.getSystemName()).thenReturn("Orchestrator");
+		when(sysInfo.getSystemName()).thenReturn("SimpleStoreServiceOrchestration");
 		when(mqttService.client(any())).thenReturn(mqttClient);
 
 		worker.run();
 
 		verify(mqttService).client(any());
-		verify(mqttClient).publish(eq("orchestration/notify"), any(MqttMessage.class));
+		try {
+			verify(mqttClient).publish(eq("orchestration/notify"), any(MqttMessage.class));
+		} catch (final MqttException ex) {
+			// do nothing
+		}
+
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	@Test
+	public void testRunWithMqttsNotificationCallsMqttService() {
+		final UUID subscriptionId = UUID.randomUUID();
+		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
+		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
+		final String notifyProperties = "{\"topic\":\"orchestration/notify\"}";
+		final Subscription subscription = createSubscription(subscriptionId, "MQTTS", notifyProperties, orchestrationRequest);
+		final OrchestrationResponseDTO responseDTO = new OrchestrationResponseDTO(List.of(), null);
+		final MqttClient mqttClient = mock(MqttClient.class);
+
+		when(orchJobDbService.getById(jobId)).thenReturn(Optional.of(job));
+		when(orchJobDbService.setStatus(eq(jobId), eq(OrchestrationJobStatus.IN_PROGRESS), any())).thenReturn(job);
+		when(subscriptionDbService.get(subscriptionId)).thenReturn(Optional.of(subscription));
+		when(serviceOrchestration.orchestrate(eq(jobId), anyString(), any())).thenReturn(List.of());
+		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(any(), any())).thenReturn(responseDTO);
+		when(sysInfo.isMqttApiEnabled()).thenReturn(true);
+		when(sysInfo.getSystemName()).thenReturn("SimpleStoreServiceOrchestration");
+		when(mqttService.client(any())).thenReturn(mqttClient);
+
+		worker.run();
+
+		verify(mqttService).client(any());
+		try {
+			verify(mqttClient).publish(eq("orchestration/notify"), any(MqttMessage.class));
+		} catch (final MqttException ex) {
+			// do nothing
+		}
 
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunWithMqttNotificationWhenMqttDisabledSetsErrorStatus() {
+	public void testRunWithMqttNotificationMqttDisabled() {
 		final UUID subscriptionId = UUID.randomUUID();
 		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
 		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
@@ -273,7 +305,7 @@ public class PushOrchestrationWorkerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunWithUnsupportedProtocolSetsErrorStatus() {
+	public void testRunWithUnsupportedProtocolError() {
 		final UUID subscriptionId = UUID.randomUUID();
 		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
 		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
@@ -294,17 +326,16 @@ public class PushOrchestrationWorkerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunWithExceptionSetsErrorStatus() {
+	public void testRunWithDbException() {
 		when(orchJobDbService.getById(jobId)).thenThrow(new InternalServerError("DB error"));
 
 		worker.run();
-
 		verify(orchJobDbService).setStatus(eq(jobId), eq(OrchestrationJobStatus.ERROR), eq("DB error"));
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunWithHttpNotificationExceptionSetsErrorStatus() {
+	public void testRunWithHttpNotificationException() {
 		final UUID subscriptionId = UUID.randomUUID();
 		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
 		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
@@ -317,7 +348,7 @@ public class PushOrchestrationWorkerTest {
 		when(subscriptionDbService.get(subscriptionId)).thenReturn(Optional.of(subscription));
 		when(serviceOrchestration.orchestrate(eq(jobId), anyString(), any())).thenReturn(List.of());
 		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(any(), any())).thenReturn(responseDTO);
-		doThrow(new RuntimeException("Connection refused")).when(httpService).sendRequest(
+		doThrow(new RuntimeException("Connection error")).when(httpService).sendRequest(
 				any(UriComponents.class),
 		        any(HttpMethod.class),
 		        eq(Void.class),
@@ -329,7 +360,7 @@ public class PushOrchestrationWorkerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunWithMqttNotificationExceptionSetsErrorStatus() throws MqttPersistenceException, MqttException {
+	public void testRunWithMqttNotificationException() {
 		final UUID subscriptionId = UUID.randomUUID();
 		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
 		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
@@ -344,9 +375,13 @@ public class PushOrchestrationWorkerTest {
 		when(serviceOrchestration.orchestrate(eq(jobId), anyString(), any())).thenReturn(List.of());
 		when(dtoConverter.convertStoreEntitiesToOrchestrationResponseDTO(any(), any())).thenReturn(responseDTO);
 		when(sysInfo.isMqttApiEnabled()).thenReturn(true);
-		when(sysInfo.getSystemName()).thenReturn("Orchestrator");
+		when(sysInfo.getSystemName()).thenReturn("SimpleStoreServiceOrchestration");
 		when(mqttService.client(any())).thenReturn(mqttClient);
-		doThrow(new MqttException(MqttException.REASON_CODE_CLIENT_NOT_CONNECTED)).when(mqttClient).publish(anyString(), any(MqttMessage.class));
+		try {
+			doThrow(new MqttException(MqttException.REASON_CODE_CLIENT_NOT_CONNECTED)).when(mqttClient).publish(anyString(), any(MqttMessage.class));
+		} catch (MqttException e) {
+			// do nothing
+		}
 
 		worker.run();
 
@@ -355,11 +390,11 @@ public class PushOrchestrationWorkerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunWithInvalidNotifyPropertiesJsonSetsErrorStatus() {
+	public void testRunWithInvalidNotifyPropertiesJsonError() {
 		final UUID subscriptionId = UUID.randomUUID();
 		final OrchestrationJob job = createOrchestrationJob(jobId, subscriptionId.toString());
 		final String orchestrationRequest = "{\"serviceDefinition\":\"testService\"}";
-		final String notifyProperties = "invalid-json-not-parseable";
+		final String notifyProperties = "invalid-json";
 		final Subscription subscription = createSubscription(subscriptionId, "HTTP", notifyProperties, orchestrationRequest);
 		final OrchestrationResponseDTO responseDTO = new OrchestrationResponseDTO(List.of(), null);
 
@@ -379,14 +414,14 @@ public class PushOrchestrationWorkerTest {
 
 	//-------------------------------------------------------------------------------------------------
 	private OrchestrationJob createOrchestrationJob(final UUID id, final String subscriptionId) {
-		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PUSH, "requesterSystem", "targetSystem", "serviceDef", subscriptionId);
+		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PUSH, "RequesterSystem", "TargetSystem", "serviceDef", subscriptionId);
 		setJobId(job, id);
 		return job;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	private Subscription createSubscription(final UUID id, final String protocol, final String notifyProperties, final String orchestrationRequest) {
-		final Subscription subscription = new Subscription("ownerSystem", "targetSystem", "serviceDef", null, protocol, notifyProperties, orchestrationRequest);
+		final Subscription subscription = new Subscription("OwnerSystem", "TargetSystem", "serviceDef", null, protocol, notifyProperties, orchestrationRequest);
 		subscription.setId(id);
 		return subscription;
 	}

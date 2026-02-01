@@ -16,12 +16,15 @@
  *******************************************************************************/
 package eu.arrowhead.serviceorchestration.service.thread;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,6 +34,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -38,13 +42,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 import eu.arrowhead.serviceorchestration.SimpleStoreServiceOrchestrationSystemInfo;
 
 @ExtendWith(MockitoExtension.class)
-@SuppressWarnings("checkstyle:MagicNumber")
 public class PushOrchestrationThreadTest {
 
 	//=================================================================================================
 	// members
 
-	private PushOrchestrationThread pushOrchestrationThread;
+	@InjectMocks
+	private PushOrchestrationThread thread;
 
 	@Mock
 	private SimpleStoreServiceOrchestrationSystemInfo sysInfo;
@@ -52,84 +56,83 @@ public class PushOrchestrationThreadTest {
 	@Mock
 	private Function<UUID, PushOrchestrationWorker> pushOrchestrationWorkerFactory;
 
-	@Mock
-	private PushOrchestrationWorker worker;
-
-	private BlockingQueue<UUID> pushOrchJobQueue;
-
 	//=================================================================================================
 	// methods
 
-	//-------------------------------------------------------------------------------------------------
 	@BeforeEach
-	public void setup() {
-		pushOrchestrationThread = new PushOrchestrationThread();
-		pushOrchJobQueue = new LinkedBlockingQueue<>();
-
-		ReflectionTestUtils.setField(pushOrchestrationThread, "pushOrchJobQueue", pushOrchJobQueue);
-		ReflectionTestUtils.setField(pushOrchestrationThread, "sysInfo", sysInfo);
-		ReflectionTestUtils.setField(pushOrchestrationThread, "pushOrchestrationWorkerFactory", pushOrchestrationWorkerFactory);
-
-		when(sysInfo.getPushOrchestrationMaxThread()).thenReturn(5);
-		// Call init to create the threadpool
-		ReflectionTestUtils.invokeMethod(pushOrchestrationThread, "init");
+	public void callPostConstructInit() throws Exception {
+		// Manually invoke PostConstruct
+		when(sysInfo.getPushOrchestrationMaxThread()).thenReturn(1);
+		Method postConstruct = PushOrchestrationThread.class.getDeclaredMethod("init");
+		postConstruct.setAccessible(true);
+		postConstruct.invoke(thread);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunProcessesJobFromQueue() throws InterruptedException {
+	public void testRun() {
 		final UUID jobId = UUID.randomUUID();
+		final BlockingQueue<UUID> testQueue = new LinkedBlockingQueue<>();
+		testQueue.add(jobId);
+		ReflectionTestUtils.setField(thread, "pushOrchJobQueue", testQueue);
 
-		when(pushOrchestrationWorkerFactory.apply(jobId)).thenReturn(worker);
-		pushOrchestrationThread.start();
-		pushOrchJobQueue.put(jobId);
-		Thread.sleep(100);
-		pushOrchestrationThread.interrupt();
+		final DummyPushOrchestrationWorker testWorker = new DummyPushOrchestrationWorker(jobId);
 
-		verify(pushOrchestrationWorkerFactory).apply(jobId);
+		when(pushOrchestrationWorkerFactory.apply(eq(jobId))).thenAnswer(invocation -> {
+			ReflectionTestUtils.setField(thread, "doWork", false);
+			return testWorker;
+		});
+
+		assertDoesNotThrow(() -> thread.run());
+
+		verify(sysInfo).getPushOrchestrationMaxThread();
+		verify(pushOrchestrationWorkerFactory).apply(eq(jobId));
+
+		final boolean doWork = (boolean) ReflectionTestUtils.getField(thread, "doWork");
+		assertFalse(doWork);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
-	public void testRunProcessesMultipleJobsFromQueue() throws InterruptedException {
-		final UUID jobId1 = UUID.randomUUID();
-		final UUID jobId2 = UUID.randomUUID();
+	public void testRunInterrupt() {
+		final UUID jobId = UUID.randomUUID();
+		final BlockingQueue<UUID> testQueue = new LinkedBlockingQueue<>();
+		testQueue.add(jobId);
+		ReflectionTestUtils.setField(thread, "pushOrchJobQueue", testQueue);
 
-		when(pushOrchestrationWorkerFactory.apply(any(UUID.class))).thenReturn(worker);
+		when(pushOrchestrationWorkerFactory.apply(eq(jobId))).thenAnswer(invocation -> {
+			ReflectionTestUtils.setField(thread, "doWork", false);
+			throw new InterruptedException();
+		});
 
-		pushOrchestrationThread.start();
-		pushOrchJobQueue.put(jobId1);
-		pushOrchJobQueue.put(jobId2);
-		Thread.sleep(200);
-		pushOrchestrationThread.interrupt();
+		assertDoesNotThrow(() -> thread.run());
 
-		verify(pushOrchestrationWorkerFactory).apply(jobId1);
-		verify(pushOrchestrationWorkerFactory).apply(jobId2);
+		verify(sysInfo).getPushOrchestrationMaxThread();
+		verify(pushOrchestrationWorkerFactory).apply(eq(jobId));
+
+		final boolean doWork = (boolean) ReflectionTestUtils.getField(thread, "doWork");
+		assertFalse(doWork);
 	}
 
 	//=================================================================================================
-	// Tests for interrupt
+	// nested classes
 
 	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testInterruptStopsThread() throws InterruptedException {
+	public static final class DummyPushOrchestrationWorker extends PushOrchestrationWorker {
 
-		pushOrchestrationThread.start();
-		pushOrchestrationThread.interrupt();
-		pushOrchestrationThread.join(1000);
+		//-------------------------------------------------------------------------------------------------
+		public DummyPushOrchestrationWorker(final UUID jobid) {
+			super(jobid);
+		}
 
-		assertFalse(pushOrchestrationThread.isAlive() && !pushOrchestrationThread.isInterrupted());
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	@Test
-	public void testInterruptSetsDoWorkToFalse() throws InterruptedException {
-
-		pushOrchestrationThread.start();
-		pushOrchestrationThread.interrupt();
-
-		Thread.sleep(100);
-		final Boolean doWork = (Boolean) ReflectionTestUtils.getField(pushOrchestrationThread, "doWork");
-		assertFalse(doWork);
+		//-------------------------------------------------------------------------------------------------
+		@SuppressWarnings("checkstyle:MagicNumber")
+		public void run() {
+			try {
+				Thread.sleep(100);
+			} catch (final InterruptedException ex) {
+				// intentionally blank
+			}
+		}
 	}
 }
