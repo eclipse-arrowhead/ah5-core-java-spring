@@ -48,7 +48,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 	// members
 
 	@InjectMocks
-	private OrchestrationStoreManagementServiceNormalization normalization;
+	private OrchestrationStoreManagementServiceNormalization normalizer;
 
 	@Mock
 	private ServiceInstanceIdentifierNormalizer serviceInstanceIdNormalizer;
@@ -70,7 +70,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		when(systemNameNormalizer.normalize("Consumer")).thenReturn("Consumer");
 		when(serviceInstanceIdNormalizer.normalize("Provider1|service1|1.0.0")).thenReturn("Provider1|service1|1.0.0");
 
-		final OrchestrationSimpleStoreRequestDTO result = normalization.normalizeCreate(dto);
+		final OrchestrationSimpleStoreRequestDTO result = normalizer.normalizeCreate(dto);
 
 		assertNotNull(result);
 		assertEquals("Consumer", result.consumer());
@@ -90,7 +90,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		dto.put(id1.toString(), 1);
 		dto.put(id2.toString(), 2);
 
-		final Map<UUID, Integer> result = normalization.normalizePriorityRequestDTO(dto);
+		final Map<UUID, Integer> result = normalizer.normalizePriorityRequestDTO(dto);
 
 		assertEquals(2, result.size());
 		assertEquals(1, result.get(id1));
@@ -104,7 +104,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		final PriorityRequestDTO dto = new PriorityRequestDTO();
 		dto.put("  " + id1.toString() + "  ", 1);
 
-		final Map<UUID, Integer> result = normalization.normalizePriorityRequestDTO(dto);
+		final Map<UUID, Integer> result = normalizer.normalizePriorityRequestDTO(dto);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
@@ -117,7 +117,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		final PageDTO pagination = new PageDTO(0, 10, "id", "ASC");
 		final OrchestrationSimpleStoreQueryRequestDTO dto = new OrchestrationSimpleStoreQueryRequestDTO(pagination, null, null, null, null, null, null, null);
 
-		final NormalizedOrchestrationSimpleStoreQueryRequest result = normalization.normalizeQuery(dto);
+		final NormalizedOrchestrationSimpleStoreQueryRequest result = normalizer.normalizeQuery(dto);
 
 		assertEquals(pagination, result.pagination());
 		assertNull(result.ids());
@@ -149,7 +149,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		when(serviceInstanceIdNormalizer.normalize("Provider1|serviceDef1|1.0.0")).thenReturn("Provider1|serviceDef1|1.0.0");
 		when(systemNameNormalizer.normalize("Creator")).thenReturn("Creator");
 
-		final NormalizedOrchestrationSimpleStoreQueryRequest result = normalization.normalizeQuery(dto);
+		final NormalizedOrchestrationSimpleStoreQueryRequest result = normalizer.normalizeQuery(dto);
 
 		assertEquals(1, result.ids().size());
 		assertEquals(id1, result.ids().get(0));
@@ -180,7 +180,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 				List.of(id1.toString(), "  " + id2.toString() + "  "),
 				null, null, null, null, null, null);
 
-		final NormalizedOrchestrationSimpleStoreQueryRequest result = normalization.normalizeQuery(dto);
+		final NormalizedOrchestrationSimpleStoreQueryRequest result = normalizer.normalizeQuery(dto);
 
 		assertEquals(2, result.ids().size());
 		assertEquals(id1, result.ids().get(0));
@@ -194,7 +194,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		final UUID id2 = UUID.randomUUID();
 		final List<String> uuids = List.of(id1.toString(), id2.toString());
 
-		final List<UUID> result = normalization.normalizeRemove(uuids);
+		final List<UUID> result = normalizer.normalizeRemove(uuids);
 
 		assertEquals(2, result.size());
 		assertEquals(id1, result.get(0));
@@ -207,7 +207,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 		final UUID id1 = UUID.randomUUID();
 		final List<String> uuids = List.of("  " + id1.toString() + "  ");
 
-		final List<UUID> result = normalization.normalizeRemove(uuids);
+		final List<UUID> result = normalizer.normalizeRemove(uuids);
 
 		assertEquals(1, result.size());
 		assertEquals(id1, result.get(0));
