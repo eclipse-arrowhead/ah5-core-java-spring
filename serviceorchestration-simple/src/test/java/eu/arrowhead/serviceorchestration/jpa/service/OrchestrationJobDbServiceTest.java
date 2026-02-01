@@ -26,14 +26,11 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +56,7 @@ import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationJobQueryRequest;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("checkstyle:MagicNumber")
 public class OrchestrationJobDbServiceTest {
 
 	//=================================================================================================
@@ -78,7 +76,7 @@ public class OrchestrationJobDbServiceTest {
 	public void testCreateOk() {
 		final OrchestrationJob job1 = new OrchestrationJob(OrchestrationType.PULL, "Requester1", "Target1", "serviceDef1", null);
 		final OrchestrationJob job2 = new OrchestrationJob(OrchestrationType.PUSH, "Requester2", "Target2", "serviceDef2", UUID.randomUUID().toString());
-		final List<OrchestrationJob> jobs = List.of(job1, job2); 
+		final List<OrchestrationJob> jobs = List.of(job1, job2);
 
 		when(jobRepo.saveAllAndFlush(jobs)).thenReturn(jobs);
 
@@ -103,11 +101,11 @@ public class OrchestrationJobDbServiceTest {
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetByIdOk() {
-		
+
 		final UUID id = UUID.randomUUID();
 		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PULL, "Requester1", "Target1", "serviceDef1", UUID.randomUUID().toString());
 		job.setId(id);
-		
+
 		when(jobRepo.findById(id)).thenReturn(Optional.of(job));
 
 		final Optional<OrchestrationJob> result = dbService.getById(id);
@@ -149,7 +147,7 @@ public class OrchestrationJobDbServiceTest {
 		job1.setStatus(OrchestrationJobStatus.PENDING);
 		final OrchestrationJob job2 = new OrchestrationJob(OrchestrationType.PUSH, "Requester2", "Target2", "serviceDef2", UUID.randomUUID().toString());
 		job2.setStatus(OrchestrationJobStatus.IN_PROGRESS);
-		
+
 		when(jobRepo.findAllByStatusIn(statuses)).thenReturn(List.of(job1, job2));
 
 		final List<OrchestrationJob> result = dbService.getAllByStatusIn(statuses);
@@ -180,7 +178,7 @@ public class OrchestrationJobDbServiceTest {
 
 		when(jobRepo.findById(jobId)).thenReturn(Optional.of(job));
 		when(jobRepo.saveAndFlush(any(OrchestrationJob.class))).thenReturn(job);
-		
+
 		OrchestrationJob result = null;
 		try (MockedStatic<Utilities> utilitiesMock = Mockito.mockStatic(Utilities.class)) {
 		    utilitiesMock.when(Utilities::utcNow)
@@ -205,7 +203,7 @@ public class OrchestrationJobDbServiceTest {
 
 		when(jobRepo.findById(jobId)).thenReturn(Optional.of(job));
 		when(jobRepo.saveAndFlush(any(OrchestrationJob.class))).thenReturn(job);
-		
+
 		OrchestrationJob result = null;
 		try (MockedStatic<Utilities> utilitiesMock = Mockito.mockStatic(Utilities.class)) {
 		    utilitiesMock.when(Utilities::utcNow)
@@ -230,7 +228,7 @@ public class OrchestrationJobDbServiceTest {
 
 		when(jobRepo.findById(jobId)).thenReturn(Optional.of(job));
 		when(jobRepo.saveAndFlush(any(OrchestrationJob.class))).thenReturn(job);
-		
+
 		OrchestrationJob result = null;
 		try (MockedStatic<Utilities> utilitiesMock = Mockito.mockStatic(Utilities.class)) {
 		    utilitiesMock.when(Utilities::utcNow)
@@ -276,7 +274,7 @@ public class OrchestrationJobDbServiceTest {
 		verify(jobRepo).findAllById(List.of(id));
 		verify(jobRepo).findAllByIdIn(anyList(), eq(pagination));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByIdsAndStatusNoMatch() {
@@ -308,7 +306,7 @@ public class OrchestrationJobDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(jobRepo).findAllByStatusIn(List.of(OrchestrationJobStatus.PENDING));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByOrchestrationTypeAndMatch() {
@@ -324,7 +322,7 @@ public class OrchestrationJobDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(jobRepo).findAll();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByIdsAndOrchestrationTypeNoMatch() {
@@ -333,7 +331,7 @@ public class OrchestrationJobDbServiceTest {
 		final NormalizedOrchestrationJobQueryRequest queryRequest = new NormalizedOrchestrationJobQueryRequest(pagination, List.of(id), List.of(), OrchestrationType.PUSH, List.of(), List.of(), List.of(), List.of());
 
 		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PULL, "Requester1", "Target1", "serviceDef1", null);
-		
+
 		when(jobRepo.findAllById(List.of(id))).thenReturn(List.of(job));
 		when(jobRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
 
@@ -357,14 +355,14 @@ public class OrchestrationJobDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(jobRepo).findAllByRequesterSystemIn(List.of("Requester1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByIdsAndRequesterSystemsNoMatch() {
 		final UUID id = UUID.randomUUID();
 		final PageRequest pagination = PageRequest.of(0, 10);
 		final NormalizedOrchestrationJobQueryRequest queryRequest = new NormalizedOrchestrationJobQueryRequest(pagination, List.of(id), List.of(), null, List.of("Requester1"), List.of(), List.of(), List.of());
-		
+
 		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PULL, "Requester2", "Target1", "serviceDef1", null);
 		when(jobRepo.findAllById(List.of(id))).thenReturn(List.of(job));
 		when(jobRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
@@ -389,14 +387,14 @@ public class OrchestrationJobDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(jobRepo).findAllByTargetSystemIn(List.of("Target1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByIdsAndTargetSystemsNoMatch() {
 		final UUID id = UUID.randomUUID();
 		final PageRequest pagination = PageRequest.of(0, 10);
 		final NormalizedOrchestrationJobQueryRequest queryRequest = new NormalizedOrchestrationJobQueryRequest(pagination, List.of(id), List.of(), null, List.of(), List.of("Target1"), List.of(), List.of());
-		
+
 		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PULL, "Requester1", "Target2", "serviceDef1", null);
 		when(jobRepo.findAllById(List.of(id))).thenReturn(List.of(job));
 		when(jobRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
@@ -421,14 +419,14 @@ public class OrchestrationJobDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(jobRepo).findAllByServiceDefinitionIn(List.of("serviceDef1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByIdsAndServiceDefinitionsNoMatch() {
 		final UUID id = UUID.randomUUID();
 		final PageRequest pagination = PageRequest.of(0, 10);
 		final NormalizedOrchestrationJobQueryRequest queryRequest = new NormalizedOrchestrationJobQueryRequest(pagination, List.of(id), List.of(), null, List.of(), List.of(), List.of("serviceDef1"), List.of());
-		
+
 		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PULL, "Requester1", "Target1", "serviceDef2", null);
 		when(jobRepo.findAllById(List.of(id))).thenReturn(List.of(job));
 		when(jobRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
@@ -437,7 +435,6 @@ public class OrchestrationJobDbServiceTest {
 
 		assertEquals(0, result.getContent().size());
 	}
-	
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -455,7 +452,7 @@ public class OrchestrationJobDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(jobRepo).findAll();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByIdsAndSubscriptionIdsNoMatch() {
@@ -463,7 +460,7 @@ public class OrchestrationJobDbServiceTest {
 		final PageRequest pagination = PageRequest.of(0, 10);
 		final UUID subscriptionId = UUID.randomUUID();
 		final NormalizedOrchestrationJobQueryRequest queryRequest = new NormalizedOrchestrationJobQueryRequest(pagination, List.of(id), List.of(), null, List.of(), List.of(), List.of(), List.of(subscriptionId));
-		
+
 		final OrchestrationJob job = new OrchestrationJob(OrchestrationType.PULL, "Requester1", "Target1", "serviceDef2", null);
 		when(jobRepo.findAllById(List.of(id))).thenReturn(List.of(job));
 		when(jobRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of()));

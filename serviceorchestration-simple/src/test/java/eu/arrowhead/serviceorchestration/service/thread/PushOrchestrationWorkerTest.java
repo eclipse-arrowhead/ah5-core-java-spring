@@ -175,7 +175,7 @@ public class PushOrchestrationWorkerTest {
 
 		verify(httpService).sendRequest(any(), eq(HttpMethod.POST), eq(Void.class), eq(responseDTO));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testRunWithHttpsNotificationCallsHttpService() {
@@ -248,7 +248,7 @@ public class PushOrchestrationWorkerTest {
 		}
 
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testRunWithMqttsNotificationCallsMqttService() {

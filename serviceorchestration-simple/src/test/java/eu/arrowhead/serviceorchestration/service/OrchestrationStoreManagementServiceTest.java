@@ -17,15 +17,18 @@
 
 package eu.arrowhead.serviceorchestration.service;
 
-import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.common.exception.InvalidParameterException;
-import eu.arrowhead.common.service.PageService;
-import eu.arrowhead.dto.*;
-import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
-import eu.arrowhead.serviceorchestration.jpa.service.SimpleStoreDbService;
-import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
-import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationSimpleStoreQueryRequest;
-import eu.arrowhead.serviceorchestration.service.validation.OrchestrationStoreManagementServiceValidation;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -36,17 +39,24 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import eu.arrowhead.common.exception.InternalServerError;
+import eu.arrowhead.common.exception.InvalidParameterException;
+import eu.arrowhead.common.service.PageService;
+import eu.arrowhead.dto.OrchestrationSimpleStoreListRequestDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreListResponseDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreQueryRequestDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreRequestDTO;
+import eu.arrowhead.dto.OrchestrationSimpleStoreResponseDTO;
+import eu.arrowhead.dto.PageDTO;
+import eu.arrowhead.dto.PriorityRequestDTO;
+import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationStore;
+import eu.arrowhead.serviceorchestration.jpa.service.SimpleStoreDbService;
+import eu.arrowhead.serviceorchestration.service.dto.DTOConverter;
+import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationSimpleStoreQueryRequest;
+import eu.arrowhead.serviceorchestration.service.validation.OrchestrationStoreManagementServiceValidation;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("checkstyle:MagicNumber")
 public class OrchestrationStoreManagementServiceTest {
 
 	//=================================================================================================

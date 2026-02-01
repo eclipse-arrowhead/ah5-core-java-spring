@@ -160,7 +160,7 @@ public class SubscriptionDbServiceTest {
 		assertTrue(result.isPresent());
 		verify(subscriptionRepo).findByOwnerSystemAndTargetSystemAndServiceDefinition("Owner", "Target", "serviceDef");
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetByOwnerTargetServiceDefThrowsInternalServerError() {
@@ -293,7 +293,7 @@ public class SubscriptionDbServiceTest {
 		assertEquals("Owner1", result.getContent().get(0).getOwnerSystem());
 		verify(subscriptionRepo).findAllByOwnerSystemIn(List.of("Owner1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByOwnerSystemsButNoMatch() {
@@ -323,7 +323,7 @@ public class SubscriptionDbServiceTest {
 		assertEquals("Target1", result.getContent().get(0).getTargetSystem());
 		verify(subscriptionRepo).findAllByTargetSystemIn(List.of("Target1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByTargetSystemsOkButNoMatch() {
@@ -353,7 +353,7 @@ public class SubscriptionDbServiceTest {
 		assertEquals("serviceDef1", result.getContent().get(0).getServiceDefinition());
 		verify(subscriptionRepo).findAllByServiceDefinitionIn(List.of("serviceDef1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByServiceDefinitionsButNoMatch() {
@@ -367,7 +367,7 @@ public class SubscriptionDbServiceTest {
 		assertEquals(0, result.getContent().size());
 		verify(subscriptionRepo).findAllByServiceDefinitionIn(List.of("serviceDef1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByEverythingButNoMatch() {
@@ -380,7 +380,7 @@ public class SubscriptionDbServiceTest {
 
 		assertEquals(0, result.getContent().size());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByEverythingAndMatch() {
@@ -394,12 +394,12 @@ public class SubscriptionDbServiceTest {
 
 		assertEquals(1, result.getContent().size());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByTargetAndServiceDefinitonsButNoMatch() {
 		final PageRequest pagination = PageRequest.of(0, 10);
-		
+
 		final Subscription subscription = new Subscription("Owner1", "Target1", "serviceDef2", null, "HTTPS", "{}", "{}");
 		when(subscriptionRepo.findAllByTargetSystemIn(List.of("Target1"))).thenReturn(List.of(subscription));
 		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));
@@ -408,12 +408,12 @@ public class SubscriptionDbServiceTest {
 
 		assertEquals(0, result.getContent().size());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByTargetAndServiceDefinitonsAndMatch() {
 		final PageRequest pagination = PageRequest.of(0, 10);
-		
+
 		final Subscription subscription = new Subscription("Owner1", "Target1", "serviceDef1", null, "HTTPS", "{}", "{}");
 		when(subscriptionRepo.findAllByTargetSystemIn(List.of("Target1"))).thenReturn(List.of(subscription));
 		when(subscriptionRepo.findAllByIdIn(anyList(), eq(pagination))).thenReturn(new PageImpl<>(List.of(subscription)));
@@ -422,12 +422,12 @@ public class SubscriptionDbServiceTest {
 
 		assertEquals(1, result.getContent().size());
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testQueryByOwnerAndTargetButNoMatch() {
 		final PageRequest pagination = PageRequest.of(0, 10);
-		
+
 		final Subscription subscription = new Subscription("Owner1", "Target1", "serviceDef1", null, "HTTPS", "{}", "{}");
 		when(subscriptionRepo.findAllByOwnerSystemIn(List.of("Owner1"))).thenReturn(List.of(subscription));
 		when(subscriptionRepo.findAllByIdIn(argThat(list -> list.size() == 0), eq(pagination))).thenReturn(new PageImpl<>(List.of()));

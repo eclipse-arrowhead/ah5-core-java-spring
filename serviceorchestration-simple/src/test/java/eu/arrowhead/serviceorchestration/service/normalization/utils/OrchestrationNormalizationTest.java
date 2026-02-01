@@ -19,7 +19,6 @@ package eu.arrowhead.serviceorchestration.service.normalization.utils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -144,28 +143,6 @@ public class OrchestrationNormalizationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	/*@Test
-	public void testNormalizePullFlagsNormalizedToUpperCase() {
-		final Map<String, Boolean> flags = new HashMap<>();
-		flags.put("  flag1  ", true);
-		flags.put("FLAG2", false);
-
-		final SimpleOrchestrationRequest request = new SimpleOrchestrationRequest(
-				"ServiceDefinition",
-				null,
-				flags,
-				null);
-
-		when(serviceDefNameNormalizer.normalize("ServiceDefinition")).thenReturn("servicedefinition");
-
-		normalizer.normalizePull(request);
-
-		assertEquals(2, request.getOrchestrationFlags().size());
-		assertEquals(true, request.getOrchestrationFlags().get("FLAG1"));
-		assertEquals(false, request.getOrchestrationFlags().get("FLAG2"));
-	}*/
-
-	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testNormalizeSubscribeOk() {
 		final Map<String, String> notifyProps = new HashMap<>();
@@ -204,29 +181,6 @@ public class OrchestrationNormalizationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	/*@Test
-	public void testNormalizeSubscribeWithNullTargetSystemName() {
-		final OrchestrationNotifyInterfaceDTO notifyInterface = new OrchestrationNotifyInterfaceDTO("https", Map.of("address", "localhost"));
-		final SimpleOrchestrationRequest orchRequest = new SimpleOrchestrationRequest(
-				"serviceDefinition",
-				null,
-				null,
-				null);
-		final SimpleOrchestrationSubscriptionRequest request = new SimpleOrchestrationSubscriptionRequest(
-				null,
-				orchRequest,
-				notifyInterface,
-				60L);
-
-		when(serviceDefNameNormalizer.normalize("serviceDefinition")).thenReturn("serviceDefinition");
-
-		normalizer.normalizeSubscribe(request);
-
-		assertNull(request.getTargetSystemName());
-		verify(serviceDefNameNormalizer).normalize("serviceDefinition");
-	}*/
-
-	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testNormalizeSubscribeWithEmptyTargetSystemName() {
 		final OrchestrationNotifyInterfaceDTO notifyInterface = new OrchestrationNotifyInterfaceDTO("https", Map.of("address", "localhost"));
@@ -247,88 +201,6 @@ public class OrchestrationNormalizationTest {
 
 		assertNull(request.getTargetSystemName());
 	}
-
-	//-------------------------------------------------------------------------------------------------
-	/*@Test
-	public void testNormalizeSubscribeProtocolNormalizedToUpperCase() {
-		final OrchestrationNotifyInterfaceDTO notifyInterface = new OrchestrationNotifyInterfaceDTO("  http  ", Map.of("address", "localhost"));
-		final SimpleOrchestrationRequest orchRequest = new SimpleOrchestrationRequest(
-				"serviceDefinition",
-				null,
-				null,
-				null);
-		final SimpleOrchestrationSubscriptionRequest request = new SimpleOrchestrationSubscriptionRequest(
-				"target",
-				orchRequest,
-				notifyInterface,
-				60L);
-
-		when(systemNameNormalizer.normalize("target")).thenReturn("target");
-		when(serviceDefNameNormalizer.normalize("serviceDefinition")).thenReturn("serviceDefinition");
-
-		normalizer.normalizeSubscribe(request);
-
-		assertEquals("HTTP", request.getNotifyInterface().protocol());
-	}*/
-
-	//-------------------------------------------------------------------------------------------------
-	/*@Test
-	public void testNormalizeSubscribeNotifyPropertiesKeysNormalizedToLowerCase() {
-		final Map<String, String> notifyProps = new HashMap<>();
-		notifyProps.put("  ADDRESS  ", "localhost");
-		notifyProps.put("PORT", "8080");
-		notifyProps.put("customKey", "value");
-
-		final OrchestrationNotifyInterfaceDTO notifyInterface = new OrchestrationNotifyInterfaceDTO("https", notifyProps);
-		final SimpleOrchestrationRequest orchRequest = new SimpleOrchestrationRequest(
-				"serviceDefinition",
-				null,
-				null,
-				null);
-		final SimpleOrchestrationSubscriptionRequest request = new SimpleOrchestrationSubscriptionRequest(
-				"target",
-				orchRequest,
-				notifyInterface,
-				60L);
-
-		when(systemNameNormalizer.normalize("target")).thenReturn("target");
-		when(serviceDefNameNormalizer.normalize("serviceDefinition")).thenReturn("serviceDefinition");
-
-		normalizer.normalizeSubscribe(request);
-
-		assertEquals(3, request.getNotifyInterface().properties().size());
-		assertEquals("localhost", request.getNotifyInterface().properties().get("address"));
-		assertEquals("8080", request.getNotifyInterface().properties().get("port"));
-		assertEquals("value", request.getNotifyInterface().properties().get("customkey"));
-	}*/
-
-	//-------------------------------------------------------------------------------------------------
-	/*@Test
-	public void testNormalizeSubscribeNotifyPropertiesValuesTrimmed() {
-		final Map<String, String> notifyProps = new HashMap<>();
-		notifyProps.put("address", "  localhost  ");
-		notifyProps.put("port", "  8080  ");
-
-		final OrchestrationNotifyInterfaceDTO notifyInterface = new OrchestrationNotifyInterfaceDTO("https", notifyProps);
-		final SimpleOrchestrationRequest orchRequest = new SimpleOrchestrationRequest(
-				"serviceDefinition",
-				null,
-				null,
-				null);
-		final SimpleOrchestrationSubscriptionRequest request = new SimpleOrchestrationSubscriptionRequest(
-				"target",
-				orchRequest,
-				notifyInterface,
-				60L);
-
-		when(systemNameNormalizer.normalize("target")).thenReturn("target");
-		when(serviceDefNameNormalizer.normalize("serviceDefinition")).thenReturn("serviceDefinition");
-
-		normalizer.normalizeSubscribe(request);
-
-		assertEquals("localhost", request.getNotifyInterface().properties().get("address"));
-		assertEquals("8080", request.getNotifyInterface().properties().get("port"));
-	}*/
 
 	//-------------------------------------------------------------------------------------------------
 	@Test

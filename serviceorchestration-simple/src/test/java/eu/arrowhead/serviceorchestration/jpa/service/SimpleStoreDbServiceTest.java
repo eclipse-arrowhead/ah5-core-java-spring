@@ -19,19 +19,16 @@ package eu.arrowhead.serviceorchestration.jpa.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -157,7 +154,7 @@ public class SimpleStoreDbServiceTest {
 		assertEquals("Consumer1", result.getContent().get(0).getConsumer());
 		verify(storeRepo).findAllByConsumerIn(List.of("Consumer1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersWithIdsConsumerNamesButNoMatch() {
@@ -188,7 +185,7 @@ public class SimpleStoreDbServiceTest {
 		assertEquals("serviceDef1", result.getContent().get(0).getServiceDefinition());
 		verify(storeRepo).findAllByServiceDefinitionIn(List.of("serviceDef1"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersWithIdsAndServiceDefinitionsButNoMatch() {
@@ -219,7 +216,7 @@ public class SimpleStoreDbServiceTest {
 		assertEquals("Provider1|serviceDef1|1.0.0", result.getContent().get(0).getServiceInstanceId());
 		verify(storeRepo).findAllByServiceInstanceIdIn(List.of("Provider1|serviceDef1|1.0.0"));
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersWithServiceInstanceIdsButNoMatch() {
@@ -250,7 +247,7 @@ public class SimpleStoreDbServiceTest {
 		assertEquals("Creator", result.getContent().get(0).getCreatedBy());
 		verify(storeRepo).findAllByCreatedBy("Creator");
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersWithCreatedByButNoMatch() {
@@ -281,7 +278,7 @@ public class SimpleStoreDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(storeRepo).findAll();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersWithMinPriorityButNoMatch() {
@@ -312,7 +309,7 @@ public class SimpleStoreDbServiceTest {
 		assertEquals(1, result.getContent().size());
 		verify(storeRepo).findAll();
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testGetPageByFiltersWithMaxPriorityButNoMatch() {
@@ -336,7 +333,7 @@ public class SimpleStoreDbServiceTest {
 		when(storeRepo.findAll(pagination)).thenThrow(new ArrowheadException("DB error"));
 
 		final InternalServerError ex = assertThrows(InternalServerError.class, () -> dbService.getPageByFilters(pagination, null, null, null, null, null, null, null));
-	
+
 		assertEquals("Database operation error", ex.getMessage());
 	}
 

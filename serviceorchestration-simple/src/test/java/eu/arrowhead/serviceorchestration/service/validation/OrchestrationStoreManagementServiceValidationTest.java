@@ -53,6 +53,7 @@ import eu.arrowhead.serviceorchestration.service.model.NormalizedOrchestrationSi
 import eu.arrowhead.serviceorchestration.service.normalization.OrchestrationStoreManagementServiceNormalization;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("checkstyle:MagicNumber")
 public class OrchestrationStoreManagementServiceValidationTest {
 
 	//=================================================================================================

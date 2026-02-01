@@ -123,21 +123,6 @@ public class OrchestrationServiceValidationTest {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	/*@Test
-	public void testValidateAndNormalizePullWithFlagsOk() {
-		final OrchestrationRequestDTO dto = new OrchestrationRequestDTO(null, Map.of("MATCHMAKING", true, "ONLY_PREFERRED", false), null, null);
-		final SimpleOrchestrationRequest expected = new SimpleOrchestrationRequest(null, null, Map.of("MATCHMAKING", true, "ONLY_PREFERRED", false), null);
-
-		when(orchValidator.validateAndNormalizeOrchestrationRequest(eq(dto), eq("test origin"))).thenReturn(expected);
-
-		final SimpleOrchestrationRequest result = validator.validateAndNormalizePull(dto, "test origin");
-
-		assertNotNull(result);
-		assertEquals(expected.getOrchestrationFlags(), result.getOrchestrationFlags());
-		verify(orchValidator).validateAndNormalizeOrchestrationRequest(dto, "test origin");
-	}*/
-
-	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testValidateAndNormalizePushSubscribeOk() {
 		final OrchestrationNotifyInterfaceDTO notifyInterface = new OrchestrationNotifyInterfaceDTO("HTTPS", Map.of("address", "localhost", "port", "8080", "method", "POST", "path", "/notify"));
@@ -162,7 +147,7 @@ public class OrchestrationServiceValidationTest {
 	public void testValidateAndNormalizePushSubscribeNullDto() {
 		doThrow(new InvalidParameterException("Request payload is missing", "test origin")).when(orchValidator).validateAndNormalizePushSubscribe(eq(null), any(String.class), eq("test origin"));
 
-		final InvalidParameterException ex = assertThrows(InvalidParameterException.class,() -> validator.validateAndNormalizePushSubscribe(null, "TestConsumer", "test origin"));
+		final InvalidParameterException ex = assertThrows(InvalidParameterException.class, () -> validator.validateAndNormalizePushSubscribe(null, "TestConsumer", "test origin"));
 		assertEquals("Request payload is missing", ex.getMessage());
 		assertEquals("test origin", ex.getOrigin());
 		verify(orchValidator).validateAndNormalizePushSubscribe(null, "TestConsumer", "test origin");

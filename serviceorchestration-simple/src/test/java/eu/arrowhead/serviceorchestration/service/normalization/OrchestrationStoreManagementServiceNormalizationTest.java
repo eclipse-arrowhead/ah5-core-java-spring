@@ -131,6 +131,7 @@ public class OrchestrationStoreManagementServiceNormalizationTest {
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
+	@SuppressWarnings("checkstyle:MagicNumber")
 	public void testNormalizeQueryOk() {
 		final UUID id1 = UUID.randomUUID();
 		final PageDTO pagination = new PageDTO(0, 10, "id", "ASC");

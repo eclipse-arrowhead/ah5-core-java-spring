@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -55,6 +54,7 @@ import eu.arrowhead.serviceorchestration.jpa.entity.Subscription;
 import eu.arrowhead.serviceorchestration.service.enums.OrchestrationJobStatus;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("checkstyle:MagicNumber")
 public class DTOConverterTest {
 
 	//=================================================================================================
@@ -186,9 +186,9 @@ public class DTOConverterTest {
 		assertEquals("Provider1", entry.orchestrationRequest().serviceRequirement().preferredProviders().get(0));
 		assertEquals("localhost", entry.notifyInterface().properties().get("address"));
 		assertEquals("8080", entry.notifyInterface().properties().get("port"));
-		
+
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testConvertSubscriptionListToDtoPreferredProvidersIsNull() {
@@ -204,9 +204,9 @@ public class DTOConverterTest {
 		final OrchestrationSubscriptionResponseDTO entry = result.entries().get(0);
 		assertEquals("testService", entry.orchestrationRequest().serviceRequirement().serviceDefinition());
 		assertNull(entry.orchestrationRequest().serviceRequirement().preferredProviders());
-		
+
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testConvertSubscriptionListToDtoServiceDefinitionIsNull() {
@@ -222,9 +222,9 @@ public class DTOConverterTest {
 		final OrchestrationSubscriptionResponseDTO entry = result.entries().get(0);
 		assertEquals("Provider1", entry.orchestrationRequest().serviceRequirement().preferredProviders().get(0));
 		assertNull(entry.orchestrationRequest().serviceRequirement().serviceDefinition());
-		
+
 	}
-	
+
 	//-------------------------------------------------------------------------------------------------
 	@Test
 	public void testConvertSubscriptionListToDtoServiceDefinitionIsNullPreferredProvidersIsNull() {
@@ -239,7 +239,7 @@ public class DTOConverterTest {
 		assertEquals(1, result.entries().size());
 		final OrchestrationSubscriptionResponseDTO entry = result.entries().get(0);
 		assertNull(entry.orchestrationRequest().serviceRequirement());
-		
+
 	}
 	//-------------------------------------------------------------------------------------------------
 	@Test
@@ -259,7 +259,8 @@ public class DTOConverterTest {
 		final List<Subscription> subscriptions = List.of(subscription);
 
 		final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> dtoConverter.convertSubscriptionListToDTO(subscriptions, 1));
-		assertTrue(ex.getMessage().contains("DTOconverter.createOrchestrationNotifyInterfaceDTO failed. Error: "));}
+		assertTrue(ex.getMessage().contains("DTOconverter.createOrchestrationNotifyInterfaceDTO failed. Error: "));
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	@Test
