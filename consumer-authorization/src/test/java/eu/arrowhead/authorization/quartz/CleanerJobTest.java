@@ -18,7 +18,6 @@ package eu.arrowhead.authorization.quartz;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -242,21 +241,15 @@ public class CleanerJobTest {
 		when(tokenHeaderDbService.query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull())).thenReturn(page);
 		when(usageLimitedTokenDbService.getByHeader(header)).thenReturn(Optional.of(token));
 		when(sysInfo.getTokenMaxAge()).thenReturn(100);
-		doNothing().when(tokenHeaderDbService).deleteById(anySet());
 
 		assertDoesNotThrow(() -> job.execute(null));
-
-		@SuppressWarnings("unchecked")
-		final ArgumentCaptor<Set<Long>> idListCaptor = ArgumentCaptor.forClass(Set.class);
 
 		verify(tokenHeaderDbService).query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull());
 		verify(usageLimitedTokenDbService).getByHeader(header);
 		verify(timeLimitedTokenDbService, never()).getByHeader(header);
 		verify(selfContainedTokenDbService, never()).getByHeader(header);
 		verify(sysInfo).getTokenMaxAge();
-		verify(tokenHeaderDbService).deleteById(idListCaptor.capture());
-
-		assertTrue(idListCaptor.getValue().isEmpty());
+		verify(tokenHeaderDbService, never()).deleteById(anySet());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -399,21 +392,15 @@ public class CleanerJobTest {
 		when(tokenHeaderDbService.query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull())).thenReturn(page);
 		when(timeLimitedTokenDbService.getByHeader(header)).thenReturn(Optional.of(token));
 		when(sysInfo.getTokenMaxAge()).thenReturn(100);
-		doNothing().when(tokenHeaderDbService).deleteById(anySet());
 
 		assertDoesNotThrow(() -> job.execute(null));
-
-		@SuppressWarnings("unchecked")
-		final ArgumentCaptor<Set<Long>> idListCaptor = ArgumentCaptor.forClass(Set.class);
 
 		verify(tokenHeaderDbService).query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull());
 		verify(usageLimitedTokenDbService, never()).getByHeader(header);
 		verify(timeLimitedTokenDbService).getByHeader(header);
 		verify(selfContainedTokenDbService, never()).getByHeader(header);
 		verify(sysInfo).getTokenMaxAge();
-		verify(tokenHeaderDbService).deleteById(idListCaptor.capture());
-
-		assertTrue(idListCaptor.getValue().isEmpty());
+		verify(tokenHeaderDbService, never()).deleteById(anySet());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -556,21 +543,15 @@ public class CleanerJobTest {
 		when(tokenHeaderDbService.query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull())).thenReturn(page);
 		when(selfContainedTokenDbService.getByHeader(header)).thenReturn(Optional.of(token));
 		when(sysInfo.getTokenMaxAge()).thenReturn(100);
-		doNothing().when(tokenHeaderDbService).deleteById(anySet());
 
 		assertDoesNotThrow(() -> job.execute(null));
-
-		@SuppressWarnings("unchecked")
-		final ArgumentCaptor<Set<Long>> idListCaptor = ArgumentCaptor.forClass(Set.class);
 
 		verify(tokenHeaderDbService).query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull());
 		verify(usageLimitedTokenDbService, never()).getByHeader(header);
 		verify(timeLimitedTokenDbService, never()).getByHeader(header);
 		verify(selfContainedTokenDbService).getByHeader(header);
 		verify(sysInfo).getTokenMaxAge();
-		verify(tokenHeaderDbService).deleteById(idListCaptor.capture());
-
-		assertTrue(idListCaptor.getValue().isEmpty());
+		verify(tokenHeaderDbService, never()).deleteById(anySet());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -590,20 +571,14 @@ public class CleanerJobTest {
 		final Page<TokenHeader> page = new PageImpl<>(List.of(header));
 
 		when(tokenHeaderDbService.query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull())).thenReturn(page);
-		doNothing().when(tokenHeaderDbService).deleteById(anySet());
 
 		assertDoesNotThrow(() -> job.execute(null));
-
-		@SuppressWarnings("unchecked")
-		final ArgumentCaptor<Set<Long>> idListCaptor = ArgumentCaptor.forClass(Set.class);
 
 		verify(tokenHeaderDbService).query(any(Pageable.class), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull());
 		verify(usageLimitedTokenDbService, never()).getByHeader(header);
 		verify(timeLimitedTokenDbService, never()).getByHeader(header);
 		verify(selfContainedTokenDbService, never()).getByHeader(header);
-		verify(tokenHeaderDbService).deleteById(idListCaptor.capture());
-
-		assertTrue(idListCaptor.getValue().isEmpty());
+		verify(tokenHeaderDbService, never()).deleteById(anySet());
 	}
 
 	//-------------------------------------------------------------------------------------------------
