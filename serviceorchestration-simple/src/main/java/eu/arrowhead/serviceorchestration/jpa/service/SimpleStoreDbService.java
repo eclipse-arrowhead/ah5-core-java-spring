@@ -103,18 +103,17 @@ public class SimpleStoreDbService {
 		logger.debug("getPage started...");
 		Assert.notNull(pagination, "page is null");
 
-		// without filters
-		if (Utilities.isEmpty(ids)
-				&& Utilities.isEmpty(serviceInstanceIds)
-				&& Utilities.isEmpty(serviceDefinitions)
-				&& Utilities.isEmpty(consumerNames)
-				&& Utilities.isEmpty(createdBy)
-				&& minPriority == null
-				&& maxPriority == null) {
-			return storeRepo.findAll(pagination);
-		}
-
 		try {
+			// without filters
+			if (Utilities.isEmpty(ids)
+					&& Utilities.isEmpty(serviceInstanceIds)
+					&& Utilities.isEmpty(serviceDefinitions)
+					&& Utilities.isEmpty(consumerNames)
+					&& Utilities.isEmpty(createdBy)
+					&& minPriority == null
+					&& maxPriority == null) {
+				return storeRepo.findAll(pagination);
+			}
 
 			// with filters
 			BaseFilter baseFilter = BaseFilter.NONE;

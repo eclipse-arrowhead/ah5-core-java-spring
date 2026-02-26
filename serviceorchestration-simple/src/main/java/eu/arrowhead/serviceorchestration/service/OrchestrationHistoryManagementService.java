@@ -18,7 +18,6 @@
 package eu.arrowhead.serviceorchestration.service;
 
 import eu.arrowhead.common.exception.InternalServerError;
-import eu.arrowhead.common.service.PageService;
 import eu.arrowhead.dto.OrchestrationHistoryQueryRequestDTO;
 import eu.arrowhead.dto.OrchestrationHistoryResponseDTO;
 import eu.arrowhead.serviceorchestration.jpa.entity.OrchestrationJob;
@@ -43,9 +42,6 @@ public class OrchestrationHistoryManagementService {
 
 	@Autowired
 	private OrchestrationJobDbService jobDbService;
-
-	@Autowired
-	private PageService pageService;
 
 	@Autowired
 	private DTOConverter dtoConverter;
