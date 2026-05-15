@@ -60,7 +60,7 @@ public class SystemAddress extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "SystemAddress [id = " + id + ", system = " + system + ", addressType = " + addressType + ", address = " + address + "]";
+		return "SystemAddress [id=" + id + ", updatedAt=" + updatedAt + ", createdAt=" + createdAt + ", system=" + system + ", addressType=" + addressType + ", address=" + address + "]";
 	}
 
 	//=================================================================================================

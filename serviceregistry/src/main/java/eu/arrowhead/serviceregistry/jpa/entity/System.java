@@ -59,7 +59,7 @@ public class System extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "System [id = " + id + ", name = " + name + ", metadata = " + metadata + ", version = " + version + "]";
+		return "System [id=" + id + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", name=" + name + ", metadata=" + metadata + ", version=" + version + "]";
 	}
 
 	//=================================================================================================

@@ -63,8 +63,8 @@ public class ServiceInterfaceTemplateProperty extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceInterfaceTemplateProperty [id = " + id + ", serviceInterfaceTemplate = " + serviceInterfaceTemplate + ", propertyName = " + propertyName + ", mandatory = " + mandatory
-				+ ", validator = " + validator + "]";
+		return "ServiceInterfaceTemplateProperty [id=" + id + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", serviceInterfaceTemplate=" + serviceInterfaceTemplate
+				+ ", propertyName=" + propertyName + ", mandatory=" + mandatory + ", validator=" + validator + "]";
 	}
 
 	//=================================================================================================
