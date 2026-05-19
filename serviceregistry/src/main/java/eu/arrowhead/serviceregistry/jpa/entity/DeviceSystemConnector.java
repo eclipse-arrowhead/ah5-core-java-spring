@@ -56,7 +56,7 @@ public class DeviceSystemConnector extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "DeviceSystemConnector [id = " + id + ", device = " + device + ", system = " + system + "]";
+		return "DeviceSystemConnector [id=" + id + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", device=" + device + ", system=" + system + "]";
 	}
 
 	//=================================================================================================

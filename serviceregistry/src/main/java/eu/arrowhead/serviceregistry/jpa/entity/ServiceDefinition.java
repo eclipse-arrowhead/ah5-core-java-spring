@@ -49,7 +49,7 @@ public class ServiceDefinition extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceDefinition [id = " + id + ", name = " + name + "]";
+		return "ServiceDefinition [id=" + id + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", name=" + name + "]";
 	}
 
 	//=================================================================================================

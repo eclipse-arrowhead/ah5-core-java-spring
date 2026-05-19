@@ -60,7 +60,7 @@ public class DeviceAddress extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "DeviceAddress [id = " + id + ", device = " + device + ", addressType = " + addressType + ", address = " + address + "]";
+		return "DeviceAddress [id=" + id + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", device=" + device + ", addressType=" + addressType + ", address=" + address + "]";
 	}
 
 	//=================================================================================================
