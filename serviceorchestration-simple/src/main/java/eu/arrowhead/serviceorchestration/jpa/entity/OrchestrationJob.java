@@ -103,8 +103,8 @@ public class OrchestrationJob {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "OrchestrationJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition"
-				+ serviceDefinition + ", subscriptionId = " + subscriptionId + ", message =" + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
+		return "OrchestrationJob [id = " + id + ", status = " + status + ", type = " + type + ", requesterSystem = " + requesterSystem + ", targetSystem = " + targetSystem + ", serviceDefinition = "
+				+ serviceDefinition + ", subscriptionId = " + subscriptionId + ", message = " + message + ", createdAt = " + createdAt + ", startedAt = " + startedAt + ", finishedAt = "
 				+ finishedAt + "]";
 	}
 

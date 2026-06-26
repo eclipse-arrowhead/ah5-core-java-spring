@@ -129,7 +129,7 @@ public class OrchestrationStore {
 	//-------------------------------------------------------------------------------------------------
 	public String toString() {
 		return "ServiceInstance [id = " + id + ", serviceDefinition = " + serviceDefinition + ", serviceInstanceId = " + serviceInstanceId + ", priority = " + priority
-				+ ", createdBy = " + createdBy + ", updatedBy = " + updatedBy + " createdAt " + createdAt + " updatedAt " + updatedAt + "]";
+				+ ", createdBy = " + createdBy + ", updatedBy = " + updatedBy + ", createdAt " + createdAt + ", updatedAt " + updatedAt + "]";
 	}
 
 	//=================================================================================================

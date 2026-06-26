@@ -213,13 +213,13 @@ public class LocalServiceOrchestration {
 			}
 
 			// Deal with translations
-			String translationBirdgeId = null;
+			String translationBridgeId = null;
 			if (translationAllowed) {
 				if (checkIfHasNativeOnes(candidates)) {
 					candidates = filterOutNonNativeOnes(candidates);
 				} else {
 					final Pair<String, List<OrchestrationCandidate>> translatable = filterOutNotTranslatableOnesAndChooseTranslatableInterfaces(form, candidates); // translation discovery
-					translationBirdgeId = translatable.getFirst();
+					translationBridgeId = translatable.getFirst();
 					candidates = translatable.getSecond();
 					if (Utilities.isEmpty(candidates)) {
 						return doInterCloudOrReturn(jobId, form);
@@ -278,14 +278,14 @@ public class LocalServiceOrchestration {
 			}
 
 			// Obtain Authorization tokens when required
-			if (sysInfo.isAuthorizationEnabled() && Utilities.isEmpty(translationBirdgeId)) {
+			if (sysInfo.isAuthorizationEnabled() && Utilities.isEmpty(translationBridgeId)) {
 				obtainAuthorizationTokensIfRequired(form, candidates);
 			}
 
 			// Create translation bridge if necessary
-			if (!Utilities.isEmpty(translationBirdgeId)) {
+			if (!Utilities.isEmpty(translationBridgeId)) {
 				Assert.isTrue(form.getFlag(OrchestrationFlag.MATCHMAKING), "There was no matchmaking, while translation bridge should have been initiated");
-				buildTranslationBridge(translationBirdgeId, form.getOperations().getFirst(), candidates.getFirst());
+				buildTranslationBridge(translationBridgeId, form.getOperations().getFirst(), candidates.getFirst());
 				warnings.add(DynamicServiceOrchestrationConstants.ORCH_WARN_FORCED_INTERFACE_SECURITY_POLICY);
 			}
 

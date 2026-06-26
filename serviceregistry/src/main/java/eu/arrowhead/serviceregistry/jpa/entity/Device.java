@@ -49,11 +49,11 @@ public class Device extends ArrowheadEntity {
 		this.name = name;
 		this.metadata = metadata;
 	}
-
+	
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "Device [id = " + id + ", name = " + name + ", metadata = " + metadata + "]";
+		return "Device [id=" + id + ", updatedAt=" + updatedAt + ", createdAt=" + createdAt + ", name=" + name + ", metadata=" + metadata + "]";
 	}
 
 	//=================================================================================================

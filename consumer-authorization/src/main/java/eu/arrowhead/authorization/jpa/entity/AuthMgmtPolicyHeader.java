@@ -62,8 +62,8 @@ public class AuthMgmtPolicyHeader extends AuthPolicyHeader {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "AuthMgmtPolicyHeader [instanceId=" + instanceId + ", targetType=" + targetType + ", cloud=" + cloud + ", provider=" + provider + ", target=" + target + ", description=" + description
-				+ ", createdBy=" + createdBy + ", id=" + id + ", createdAt=" + createdAt + "]";
+		return "AuthMgmtPolicyHeader [id=" + id + ", createdAt=" + createdAt + ", instanceId=" + instanceId + ", targetType=" + targetType + ", cloud=" + cloud + ", provider=" + provider
+				+ ", target=" + target + ", description=" + description + ", createdBy=" + createdBy + "]";
 	}
 
 	//=================================================================================================
