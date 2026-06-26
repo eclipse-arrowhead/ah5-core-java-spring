@@ -222,7 +222,7 @@ public class OrchestrationStoreManagementServiceValidation {
 		logger.debug("validateQuery started...");
 
 		if (dto == null) {
-			throw new InvalidParameterException("Request payload is missing");
+			throw new InvalidParameterException("Request payload is missing", origin);
 		}
 
 		pageValidator.validatePageParameter(dto.pagination(), OrchestrationStore.SORTABLE_FIELDS_BY, origin);
@@ -233,7 +233,7 @@ public class OrchestrationStoreManagementServiceValidation {
 				&& Utilities.isEmpty(dto.serviceInstanceIds())
 				&& Utilities.isEmpty(dto.createdBy())) {
 			throw new InvalidParameterException("At least one of the following fields must be specified: "
-					+ "ids, consumerNames, serviceDefinitions, serviceInstanceIds, createdBy");
+					+ "ids, consumerNames, serviceDefinitions, serviceInstanceIds, createdBy", origin);
 		}
 
 		if (!Utilities.isEmpty(dto.ids())) {
@@ -242,7 +242,7 @@ public class OrchestrationStoreManagementServiceValidation {
 			}
 			dto.ids().forEach(id -> {
 				if (!Utilities.isUUID(id.trim())) {
-					throw new InvalidParameterException("Invalid UUID: " + id.trim());
+					throw new InvalidParameterException("Invalid UUID: " + id.trim(), origin);
 				}
 			});
 		}

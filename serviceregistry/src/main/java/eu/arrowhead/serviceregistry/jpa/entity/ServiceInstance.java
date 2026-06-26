@@ -81,8 +81,8 @@ public class ServiceInstance extends ArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "ServiceInstance [id = " + id + ", serviceInstanceId = " + serviceInstanceId + ", system = " + system + ", serviceDefinition = " + serviceDefinition + ", version = " + version
-				+ ", expiresAt = " + expiresAt + ", metadata = " + metadata + "]";
+		return "ServiceInstance [id=" + id + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", serviceInstanceId=" + serviceInstanceId + ", system=" + system
+				+ ", serviceDefinition=" + serviceDefinition + ", version=" + version + ", expiresAt=" + expiresAt + ", metadata=" + metadata + "]";
 	}
 
 	//=================================================================================================

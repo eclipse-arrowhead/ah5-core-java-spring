@@ -99,8 +99,8 @@ public class TokenHeader extends UnmodifiableArrowheadEntity {
 	//-------------------------------------------------------------------------------------------------
 	@Override
 	public String toString() {
-		return "TokenHeader [tokenType=" + tokenType + ", tokenHash=" + tokenHash + ", requester=" + requester + ", consumerCloud=" + consumerCloud + ", consumer=" + consumer + ", provider="
-				+ provider + ", targetType=" + targetType + ", target=" + target + ", scope=" + scope + ", id=" + id + ", createdAt=" + createdAt + "]";
+		return "TokenHeader [id=" + id + ", createdAt=" + createdAt + ", tokenType=" + tokenType + ", tokenHash=" + tokenHash + ", requester=" + requester + ", consumerCloud=" + consumerCloud
+				+ ", consumer=" + consumer + ", provider=" + provider + ", targetType=" + targetType + ", target=" + target + ", scope=" + scope + "]";
 	}
 
 	//=================================================================================================

@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -103,7 +102,7 @@ public class OrchestrationValidation {
 		logger.debug("validateAndNormalizeOrchestrationRequest started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		final SimpleOrchestrationRequest request = validateSimpleOrchestrationRequest(dto, origin);
+		final SimpleOrchestrationRequest request = validateOrchestrationRequest(dto, origin);
 		normalizer.normalizePull(request);
 
 		try {
@@ -124,6 +123,7 @@ public class OrchestrationValidation {
 		if (!Utilities.isEmpty(request.getOrchestrationFlags()) && request.getOrchestrationFlags().getOrDefault(OrchestrationFlag.ONLY_PREFERRED.toString(), false) && Utilities.isEmpty(request.getPreferredProviders())) {
 			throw new InvalidParameterException(OrchestrationFlag.ONLY_PREFERRED.toString() + " flag is present, but no preferred provider is defined", origin);
 		}
+
 
 		return request;
 	}
@@ -193,11 +193,11 @@ public class OrchestrationValidation {
 		logger.debug("validateUUID started...");
 		Assert.isTrue(!Utilities.isEmpty(origin), "origin is empty");
 
-		if (Utilities.isEmpty(uuid)) {
+		if (Utilities.isEmpty(uuid.trim())) {
 			throw new InvalidParameterException("UUID is missing", origin);
 		}
 
-		if (!Utilities.isUUID(uuid)) {
+		if (!Utilities.isUUID(uuid.trim())) {
 			throw new InvalidParameterException("Invalid UUID id", origin);
 		}
 	}
@@ -206,7 +206,7 @@ public class OrchestrationValidation {
 	// assistant methods
 
 	//-----------------------------------------------------------------------------------------------
-	private SimpleOrchestrationRequest validateSimpleOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
+	private SimpleOrchestrationRequest validateOrchestrationRequest(final OrchestrationRequestDTO dto, final String origin) {
 
 		SimpleOrchestrationRequest simpleOrchestrationRequest = new SimpleOrchestrationRequest(null, null, null, null);
 
@@ -285,7 +285,7 @@ public class OrchestrationValidation {
 		}
 
 		if (!Utilities.isEmpty(ignoredFields)) {
-			simpleOrchestrationRequest.setWarnings(Set.of(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields)));
+			simpleOrchestrationRequest.addWarning(ignoredFieldsToString(SimpleStoreServiceOrchestrationConstants.ORCH_WARN_IGNORED_FIELDS_KEY, ignoredFields));
 		}
 
 		return simpleOrchestrationRequest;
@@ -299,7 +299,7 @@ public class OrchestrationValidation {
 		}
 
 		// orchestration request
-		final SimpleOrchestrationRequest validatedOrchestrationRequest = validateSimpleOrchestrationRequest(dto.orchestrationRequest(), origin);
+		final SimpleOrchestrationRequest validatedOrchestrationRequest = validateOrchestrationRequest(dto.orchestrationRequest(), origin);
 
 		// notify interface
 		if (Utilities.isEmpty(dto.notifyInterface().protocol())) {

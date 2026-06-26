@@ -59,6 +59,13 @@ public class QosEvalResult extends UnmodifiableArrowheadEntity {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	@Override
+	public String toString() {
+		return "QosEvalResult [id=" + id + ", createdAt=" + createdAt + ", orchestrationJob=" + orchestrationJob + ", evaluationType=" + evaluationType + ", operation=" + operation
+				+ ", result=" + result + "]";
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	public OrchestrationJob getOrchestrationJob() {
 		return orchestrationJob;
 	}
