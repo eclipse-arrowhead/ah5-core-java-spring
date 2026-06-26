@@ -8,7 +8,6 @@
         <version>${revision}</version>
     </parent>
     <artifactId>arrowhead-serviceorchestration-simple</artifactId>
-    <version>5.2.0</version>
     <packaging>jar</packaging>
     <name>Arrowhead System SimpleServiceOrchestration</name>
     <description>Arrowhead Service Orchestration (Simple) using Spring Boot</description>
