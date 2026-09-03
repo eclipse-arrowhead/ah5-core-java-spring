@@ -26,6 +26,7 @@ import eu.arrowhead.common.Constants;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.http.filter.ArrowheadFilter;
+import eu.arrowhead.common.security.SecurityUtilities;
 import eu.arrowhead.serviceregistry.ServiceRegistryConstants;
 import eu.arrowhead.serviceregistry.ServiceRegistrySystemInfo;
 import eu.arrowhead.serviceregistry.service.ServiceDiscoveryPolicy;
@@ -51,7 +52,7 @@ public class ServiceLookupFilter extends ArrowheadFilter {
 	@Override
 	protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
 		try {
-			final String requestTarget = Utilities.stripEndSlash(request.getRequestURL().toString());
+			final String requestTarget = Utilities.stripEndSlash(SecurityUtilities.getDecodedUri(request.getRequestURL().toString()));
 			if (requestTarget.endsWith(ServiceRegistryConstants.HTTP_API_SERVICE_DISCOVERY_PATH + ServiceRegistryConstants.HTTP_API_OP_LOOKUP_PATH)) {
 				final ServiceDiscoveryPolicy policy = sysInfo.getServiceDiscoveryPolicy();
 				if (policy == ServiceDiscoveryPolicy.RESTRICTED) {
