@@ -40,6 +40,7 @@ import eu.arrowhead.common.http.model.HttpInterfaceModel;
 import eu.arrowhead.common.http.model.HttpOperationModel;
 import eu.arrowhead.common.model.InterfaceModel;
 import eu.arrowhead.common.model.ServiceModel;
+import eu.arrowhead.common.security.SecurityUtilities;
 import eu.arrowhead.common.service.validation.name.ServiceDefinitionNameNormalizer;
 import eu.arrowhead.common.service.validation.name.ServiceOperationNameNormalizer;
 import eu.arrowhead.common.service.validation.name.SystemNameNormalizer;
@@ -82,7 +83,7 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 	protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
 		logger.debug("InternalManagementServiceFilter.doFilterInternal started...");
 
-		final String requestTarget = request.getRequestURL().toString();
+		final String requestTarget = SecurityUtilities.getDecodedUri(request.getRequestURL().toString());
 		if (requestTarget.contains(mgmtPath)) {
 			final String systemName = (String) request.getAttribute(Constants.HTTP_ATTR_ARROWHEAD_AUTHENTICATED_SYSTEM);
 			final String normalizedSystemName = systemNameNormalizer.normalize(systemName);
@@ -154,6 +155,7 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 		logger.debug("InternalManagementServiceFilter.findServiceDefinitionAndOperation started...");
 
 		final String templateName = sysInfo.isSslEnabled() ? Constants.GENERIC_HTTPS_INTERFACE_TEMPLATE_NAME : Constants.GENERIC_HTTP_INTERFACE_TEMPLATE_NAME;
+		final String decodedPath = SecurityUtilities.getDecodedUri(path);
 		String serviceDefinition = null;
 		String operation = null;
 
@@ -167,7 +169,7 @@ public class InternalManagementServiceFilter extends ArrowheadFilter {
 				for (final Entry<String, HttpOperationModel> opEntry : iModel.operations().entrySet()) {
 					final String candidateMethod = opEntry.getValue().method();
 					final String candidatePath = iModel.basePath() + opEntry.getValue().path();
-					if (method.equalsIgnoreCase(candidateMethod) && path.equals(candidatePath)) {
+					if (method.equalsIgnoreCase(candidateMethod) && decodedPath.equals(candidatePath)) {
 						serviceDefinition = sModel.serviceDefinition();
 						operation = opEntry.getKey();
 						break OUTER;
