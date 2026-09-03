@@ -35,6 +35,7 @@ import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.InternalServerError;
 import eu.arrowhead.common.http.filter.ArrowheadFilter;
 import eu.arrowhead.common.http.filter.authentication.IAuthenticationPolicyFilter;
+import eu.arrowhead.common.security.SecurityUtilities;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,8 +64,9 @@ public class InternalAuthenticationFilter extends ArrowheadFilter implements IAu
 	protected void doFilterInternal(final HttpServletRequest request, final HttpServletResponse response, final FilterChain chain) throws IOException, ServletException {
 		try {
 			initializeRequestAttributes(request);
+			final String requestTarget = SecurityUtilities.getDecodedUri(request.getRequestURL().toString());
 
-			if (needTokenCheck(request.getRequestURL().toString())) {
+			if (needTokenCheck(requestTarget)) {
 				final String token = processAuthHeader(request);
 
 				Optional<ActiveSession> sessionOpt = Optional.empty();
